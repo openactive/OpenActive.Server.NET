@@ -49,10 +49,10 @@ jobs:
         pid=$!
     - name: Run OpenActive Test Suite in Random Mode
       run: |
-        NODE_CONFIG='{ "sellers": { "primary": { "@id": "https://localhost:5001/api/identifiers/sellers/0" }, "secondary": { "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": true, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
+        NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": true, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
     - name: Run OpenActive Test Suite in Controlled Mode
       run: |
-        NODE_CONFIG='{ "sellers": { "primary": { "@id": "https://localhost:5001/api/identifiers/sellers/0" }, "secondary": { "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": false, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
+        NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": false, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
     - name: Kill Processes
       run: |
         kill $pid
