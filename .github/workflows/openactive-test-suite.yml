@@ -16,12 +16,12 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: main
-    - name: Checkout tools repo
+    - name: Checkout OpenActive Test Suite
       uses: actions/checkout@v2
       with:
         repository: openactive/openactive-test-suite
         path: tests
-    - name: Setup .NET Core
+    - name: Setup .NET Core 2.1.808
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 2.1.808
@@ -53,7 +53,7 @@ jobs:
     - name: Run OpenActive Test Suite in Controlled Mode
       run: |
         NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": false, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
-    - name: Kill Processes
+    - name: Kill processes
       run: |
         kill $pid
         kill $refpid
