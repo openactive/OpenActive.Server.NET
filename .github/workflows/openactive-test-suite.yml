@@ -16,7 +16,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: server
-    - name: Use matching feature branch in OpenActive Test Suite 
+    - name: Use matching feature branch ${{ github.head_ref }} in OpenActive Test Suite 
       if: ${{ startsWith(github.head_ref, 'feature/') }}
       run: echo "::set-env name=mirror_ref::${{ github.head_ref }}"
     - name: Checkout OpenActive Test Suite ${{ env.mirror_ref }}
