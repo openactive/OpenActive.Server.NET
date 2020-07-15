@@ -1,0 +1,57 @@
+name: OpenActive Test Suite
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout OpenActive.Server.NET
+      uses: actions/checkout@v2
+      with:
+        path: server
+    - name: Use matching feature branch ${{ github.head_ref }} in OpenActive Test Suite 
+      if: ${{ startsWith(github.head_ref, 'feature/') }}
+      run: echo "::set-env name=mirror_ref::${{ github.head_ref }}"
+    - name: Checkout OpenActive Test Suite ${{ env.mirror_ref }}
+      uses: actions/checkout@v2
+      with:
+        repository: openactive/openactive-test-suite
+        ref: ${{ env.mirror_ref }}
+        path: tests
+    - name: Setup .NET Core 2.1.808
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.1.808
+    - name: Setup Node.js 12.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+    - name: Install OpenActive.Server.NET dependencies
+      run: dotnet restore ./server/
+    - name: Run OpenActive.Server.NET Tests
+      run: dotnet test ./server/OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
+    - name: Build OpenActive.Server.NET Reference Implementation
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
+    - name: Start OpenActive.Server.NET Reference Implementation
+      run: |
+        dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore &
+    - name: Install OpenActive Test Suite
+      run: | 
+        npm install --prefix tests/packages/openactive-broker-microservice
+        npm install --prefix tests/packages/openactive-integration-tests
+    - name: Start Broker Microservice
+      run: | 
+        NODE_CONFIG='{"waitForHarvestCompletion": true, "datasetSiteUrl": "https://localhost:5001/openactive"}' npm start --prefix tests/packages/openactive-broker-microservice &
+    - name: Run OpenActive Integration Tests in Random Mode
+      run: |
+        NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": true, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
+    - name: Run OpenActive Integration Tests in Controlled Mode
+      run: |
+        NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": false, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
