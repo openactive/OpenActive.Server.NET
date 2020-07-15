@@ -45,7 +45,7 @@ jobs:
         npm install --prefix tests/packages/openactive-integration-tests
     - name: Start Broker Microservice
       run: | 
-        NODE_CONFIG='{"waitForHarvestCompletion": true, "datasetSiteUrl": "https://localhost:5000/openactive"}' npm start --prefix tests/packages/openactive-broker-microservice &
+        NODE_CONFIG='{"waitForHarvestCompletion": true, "datasetSiteUrl": "http://localhost:5000/openactive"}' npm start --prefix tests/packages/openactive-broker-microservice &
         pid=$!
     - name: Run OpenActive Test Suite in Random Mode
       run: |
