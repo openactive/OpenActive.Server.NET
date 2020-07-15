@@ -19,9 +19,9 @@ jobs:
         dotnet-version: 2.1.808
     - name: Install dependencies
       run: dotnet restore
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-    - name: Test
-      run: dotnet test --project ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --no-restore --verbosity normal
-    - name: Run
-      run: dotnet run --project ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj
+    - name: .NET Tests
+      run: dotnet test --project ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
+    - name: Build Reference Implementation
+      run: dotnet build --project ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
+    - name: Run Reference Implementation
+      run: dotnet run --project ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
