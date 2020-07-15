@@ -12,15 +12,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Matching branch ${{ github.head_ref }} in OpenActive Test Suite 
+      if: ${{ startsWith(github.head_ref, 'refs/heads/feature') }}
+      run: echo "::set-env name=mirror_ref::${{ github.head_ref }}"
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
       with:
         path: main
-    - name: Checkout OpenActive Test Suite
+    - name: Checkout OpenActive Test Suite ${{ env.mirror_ref }}
       uses: actions/checkout@v2
       with:
         repository: openactive/openactive-test-suite
-        ref: ${{ github.head_ref }}
+        ref: ${{ env.mirror_ref }}
         path: tests
     - name: Setup .NET Core 2.1.808
       uses: actions/setup-dotnet@v1
