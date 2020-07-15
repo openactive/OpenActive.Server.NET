@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
       with:
         path: main
@@ -29,13 +29,13 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
-    - name: Install dependencies
+    - name: Install OpenActive.Server.NET dependencies
       run: dotnet restore ./main/
-    - name: .NET Tests
+    - name: Run OpenActive.Server.NET Tests
       run: dotnet test ./main/OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
-    - name: Build Reference Implementation
+    - name: Build OpenActive.Server.NET Reference Implementation
       run: dotnet build ./main/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
-    - name: Run Reference Implementation
+    - name: Run OpenActive.Server.NET Reference Implementation
       run: |
         dotnet run --project ./main/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore &
         echo '::set-env name=REF_PID::$!'
