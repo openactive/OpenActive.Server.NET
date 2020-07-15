@@ -38,7 +38,7 @@ jobs:
     - name: Run Reference Implementation
       run: |
         dotnet run --project ./main/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore &
-        refpid=$!
+        echo '::set-env name=REF_PID::$!'
     - name: Install test suite
       run: | 
         npm install --prefix tests/packages/openactive-broker-microservice
@@ -46,7 +46,7 @@ jobs:
     - name: Start Broker Microservice
       run: | 
         NODE_CONFIG='{"waitForHarvestCompletion": true, "datasetSiteUrl": "https://localhost:5001/openactive"}' npm start --prefix tests/packages/openactive-broker-microservice &
-        pid=$!
+        echo '::set-env name=MICRO_PID::$!'
     - name: Run OpenActive Test Suite in Random Mode
       run: |
         NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": true, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
@@ -55,5 +55,5 @@ jobs:
         NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": false, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
     - name: Kill processes
       run: |
-        kill $pid
-        kill $refpid
+        kill $REF_PID
+        kill $MICRO_PID
