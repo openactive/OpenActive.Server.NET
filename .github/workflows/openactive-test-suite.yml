@@ -57,3 +57,4 @@ jobs:
       run: |
         kill $REF_PID
         kill $MICRO_PID
+
