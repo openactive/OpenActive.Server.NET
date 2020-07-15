@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Use matching feature branch in OpenActive Test Suite 
-      if: ${{ startsWith(github.head_ref, 'refs/heads/feature') }}
-      run: echo "::set-env name=mirror_ref::${{ github.head_ref }}"
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
       with:
         path: main
+    - name: Use matching feature branch in OpenActive Test Suite 
+      if: ${{ startsWith(github.head_ref, 'refs/heads/feature') }}
+      run: echo "::set-env name=mirror_ref::${{ github.head_ref }}"
     - name: Checkout OpenActive Test Suite ${{ env.mirror_ref }}
       uses: actions/checkout@v2
       with:
