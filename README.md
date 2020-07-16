@@ -1,5 +1,5 @@
 ﻿
-# OpenActive.Server.NET
+# OpenActive.Server.NET ![OpenActive Test Suite](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive%20Test%20Suite/badge.svg)
 
 This .NET implementation of the Open Booking SDK provides components that aid the implementation of the OpenActive Open Booking API.
 
