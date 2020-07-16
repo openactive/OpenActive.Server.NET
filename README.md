@@ -3,6 +3,8 @@
 
 This .NET implementation of the Open Booking SDK provides components that aid the implementation of the OpenActive Open Booking API.
 
+Further documentation, including a step-by-step tutorial, can be found at https://tutorials.openactive.io/open-booking-sdk/.
+
 ## Library structure
 
 The entire library system is designed to be modular:
