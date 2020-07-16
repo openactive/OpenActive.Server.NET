@@ -1,7 +1,7 @@
 ﻿
 # OpenActive.Server.NET
 
-This library provides components that aid the implementation of the OpenActive Open Booking API in .NET.
+This .NET implementation of the Open Booking SDK provides components that aid the implementation of the OpenActive Open Booking API.
 
 ## Library structure
 
