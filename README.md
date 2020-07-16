@@ -1,5 +1,5 @@
 ﻿
-# OpenActive.Server.NET [![OpenActive Test Suite](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive%20Test%20Suite/badge.svg)](https://openactive.io/openactive-test-suite/example-output/random/summary) [![Nuget](https://img.shields.io/nuget/v/OpenActive.Server.NET.svg)](https://www.nuget.org/packages/OpenActive.Server.NET/)
+# OpenActive.Server.NET [![Nuget](https://img.shields.io/nuget/v/OpenActive.Server.NET.svg)] [![OpenActive Test Suite](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive%20Test%20Suite/badge.svg)](https://openactive.io/openactive-test-suite/example-output/random/summary) (https://www.nuget.org/packages/OpenActive.Server.NET/)
 
 This .NET implementation of the Open Booking SDK provides components that aid the implementation of the OpenActive Open Booking API.
 
