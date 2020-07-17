@@ -19,6 +19,6 @@ jobs:
       with:
         dotnet-version: 2.1.808
     - name: Build OpenActive.FakeDatabase.NET.Tests
-      run: dotnet build ./OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release
+      run: dotnet build ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release
     - name: Run OpenActive.FakeDatabase.NET.Tests
-      run: dotnet test ./OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release --no-build --verbosity normal
+      run: dotnet test ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release --no-build --verbosity normal
