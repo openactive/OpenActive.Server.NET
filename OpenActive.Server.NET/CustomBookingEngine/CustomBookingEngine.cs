@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Text;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
@@ -64,7 +62,7 @@ namespace OpenActive.Server.NET.CustomBooking
             foreach (var idConfiguration in settings.IdConfiguration) {
                 idConfiguration.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
             }
-            settings.OrderIdTemplate.RequiredBaseUrl = settings.OrderBaseUrl;
+            settings.OrderIdTemplate.RequiredBaseUrl = openBookingAPIBaseUrl;
             settings.SellerIdTemplate.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
 
             // Create a lookup of each IdTemplate to pass into the appropriate RpdeGenerator
@@ -90,7 +88,9 @@ namespace OpenActive.Server.NET.CustomBooking
                 kv.Value.SetConfiguration(OpportunityTypes.Configurations[kv.Key], settings.JsonLdIdBaseUrl, settings.RPDEPageSize, this.feedAssignedTemplates[kv.Key], settings.SellerIdTemplate, openDataFeedBaseUrl);
             }
 
-            settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, settings.OrdersFeedUrl);
+            // Note that this library does not currently support custom Orders Feed URLs
+            var ordersFeedUrl = new Uri(openBookingAPIBaseUrl.ToString() + "orders-rpde");
+            settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, ordersFeedUrl);
 
             settings.SellerStore.SetConfiguration(settings.SellerIdTemplate);
 
@@ -220,7 +220,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// Designed to be used on a single controller method with a "feedname" parameter,
         /// for uses in situations where the framework does not automatically validate numeric values
         /// </summary>
-        /// <param name="authtoken">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
         /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
@@ -240,7 +240,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// Handler for an Orders RPDE endpoint (separate to the open data endpoint for security)
         /// For uses in situations where the framework does not automatically validate numeric values
         /// </summary>
-        /// <param name="authtoken">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
         /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
@@ -253,7 +253,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <summary>
         /// Handler for Orders RPDE endpoint
         /// </summary>
-        /// <param name="authtoken">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
         /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
@@ -262,7 +262,7 @@ namespace OpenActive.Server.NET.CustomBooking
         {
             if (settings.OrderFeedGenerator != null)
             {
-                // Add lookup against authtoken and pass this into generator?
+                // Add lookup against clientId and pass this into generator?
                 return settings.OrderFeedGenerator.GetRPDEPage(clientId, afterTimestamp, afterId, afterChangeNumber);
             }
             else

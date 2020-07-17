@@ -1,5 +1,4 @@
-﻿
-using Xunit;
+﻿using Xunit;
 using System.Linq;
 using Xunit.Abstractions;
 using OpenActive.FakeDatabase.NET;

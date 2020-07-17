@@ -65,6 +65,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <c>true</c> if the specified <see cref="object" /> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
         public override bool Equals(object obj) => this.Equals(obj as SellerIdComponents);
+
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
+        /// </returns>
+        public override int GetHashCode() => Schema.NET.HashCode.Of(this.SellerIdLong).And(this.SellerIdString);
     }
 
     public class OrderIdComponents

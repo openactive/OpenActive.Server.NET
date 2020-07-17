@@ -19,7 +19,16 @@ namespace BookingSystem
                 {
                     Id = this.RenderSingleSellerId(),
                     Name = "Test Seller",
-                    TaxMode = TaxMode.TaxGross
+                    TaxMode = TaxMode.TaxGross,
+                    LegalName = "Test Seller Ltd",
+                    Address = new PostalAddress
+                    {
+                        StreetAddress = "1 Hidden Gem",
+                        AddressLocality = "Another town",
+                        AddressRegion = "Oxfordshire",
+                        PostalCode = "OX1 1AA",
+                        AddressCountry = "GB"
+                    }
                 };
 
             }
@@ -34,12 +43,30 @@ namespace BookingSystem
                     {
                         Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
                         Name = seller.Name,
-                        TaxMode = TaxMode.TaxGross
+                        TaxMode = TaxMode.TaxGross,
+                        LegalName = seller.Name,
+                        Address = new PostalAddress
+                        {
+                            StreetAddress = "1 Fake Place",
+                            AddressLocality = "Faketown",
+                            AddressRegion = "Oxfordshire",
+                            PostalCode = "OX1 1AA",
+                            AddressCountry = "GB"
+                        }
                     } : (ILegalEntity)new Organization
                     {
                         Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
                         Name = seller.Name,
-                        TaxMode = TaxMode.TaxGross
+                        TaxMode = TaxMode.TaxGross,
+                        LegalName = seller.Name,
+                        Address = new PostalAddress
+                        {
+                            StreetAddress = "1 Hidden Gem",
+                            AddressLocality = "Another town",
+                            AddressRegion = "Oxfordshire",
+                            PostalCode = "OX1 1AA",
+                            AddressCountry = "GB"
+                        }
                     };
                 }
                 else

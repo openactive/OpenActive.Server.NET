@@ -21,18 +21,13 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// The first ID is for the opportunity, the second ID is for the offer.
         /// </summary>
         public List<IBookablePairIdTemplate> IdConfiguration { get; set;  }
-        public Uri OrderBaseUrl { get; set; }
         public OrderIdTemplate OrderIdTemplate { get; set; }
         public SingleIdTemplate<SellerIdComponents> SellerIdTemplate { get; set; }
         public Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> OpenDataFeeds { get; set; }
         public int RPDEPageSize { get; set; } = 500;
         public Uri JsonLdIdBaseUrl { get; set; }
         public OrdersRPDEFeedGenerator OrderFeedGenerator { get; set; }
-        public Uri OrdersFeedUrl { get; set; }
         public SellerStore SellerStore { get; set; }
         public bool HasSingleSeller { get; set; }
     }
-
-
-
 }

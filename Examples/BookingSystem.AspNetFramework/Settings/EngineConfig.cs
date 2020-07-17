@@ -140,15 +140,8 @@ namespace BookingSystem
                         }
                     },
 
-
-                    // QUESTION: Would it be useful to have the Base URL auto-populated from the controller here?
-
-                    // Note unlike IDs this one needs to match URL of the feed, from whatever is in the controller
-                    OrdersFeedUrl = new Uri(baseUrl + "api/openbooking/orders-rpde"),
-
                     // Note unlike other IDs this one needs to be resolvable
                     // and must match the controller configuration
-                    OrderBaseUrl = new Uri(baseUrl + "api/openbooking/"),
                     OrderIdTemplate = new OrderIdTemplate(
                         "{+BaseUrl}{OrderType}/{uuid}",
                         "{+BaseUrl}{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
@@ -176,6 +169,8 @@ namespace BookingSystem
                     BackgroundImageUrl = "https://data.better.org.uk/images/bg.jpg".ParseUrlOrNull(),
                     DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
                     OpenBookingAPIBaseUrl = (baseUrl + "api/openbooking/").ParseUrlOrNull(),
+                    OpenBookingAPIRegistrationUrl = new Uri("https://example.com/api-landing-page"),
+                    OpenBookingAPITermsOfServiceUrl = new Uri("https://example.com/api-terms-page")
                 },
                 new StoreBookingEngineSettings
                 {
