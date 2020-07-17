@@ -31,5 +31,5 @@ The helper methods within these are isolated from each other and provide a usefu
 
 This is designed to have its code copied-and-pasted to provide a quick working starting point for any implementation.
 
-# OpenActive.Server.NET.FakeBookingSystem [![Nuget](https://img.shields.io/nuget/v/OpenActive.Server.NET.FakeBookingSystem.svg)](https://www.nuget.org/packages/OpenActive.Server.NET.FakeBookingSystem/)
+# OpenActive.FakeDatabase.NET [![Nuget](https://img.shields.io/nuget/v/OpenActive.FakeDatabase.NET.svg)](https://www.nuget.org/packages/OpenActive.FakeDatabase.NET/)
 This is an in-memory database that is used by BookingSystem.AspNetCore for illustration purposes. It can be added as a dependency to your project during the initial stages of implementation, to get a conformant test implementation as a starting position.
