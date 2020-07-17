@@ -1,4 +1,4 @@
-name: OpenActive.Server.NET.Test
+name: OpenActive.Server.NET.Tests
 
 on:
   push:
