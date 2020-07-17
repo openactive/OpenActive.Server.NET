@@ -35,8 +35,6 @@ jobs:
         node-version: 12.x
     - name: Install OpenActive.Server.NET dependencies
       run: dotnet restore ./server/
-    - name: Run OpenActive.Server.NET Tests
-      run: dotnet test ./server/OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
     - name: Build OpenActive.Server.NET Reference Implementation
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
     - name: Start OpenActive.Server.NET Reference Implementation
