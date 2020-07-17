@@ -35,8 +35,6 @@ jobs:
         node-version: 12.x
     - name: Install OpenActive.Server.NET dependencies
       run: dotnet restore ./server/
-    - name: Run OpenActive.Server.NET Tests
-      run: dotnet test ./server/OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
     - name: Build OpenActive.Server.NET Reference Implementation
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
     - name: Start OpenActive.Server.NET Reference Implementation
@@ -54,4 +52,14 @@ jobs:
         NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": true, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
     - name: Run OpenActive Integration Tests in Controlled Mode
       run: |
-        NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": false, "generateConformanceCertificate": false }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
+        NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": false, "generateConformanceCertificate": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
+        mkdir -p ./publish/certification
+        cp ./tests/packages/openactive-integration-tests/output/certification/* ./publish/certification
+    - name: Deploy certificate to GitHub Pages (master branch only)
+      uses: peaceiris/actions-gh-pages@v3
+      if: ${{ github.ref == 'refs/heads/master' }}
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./publish
+        force_orphan: true
+        enable_jekyll: true
