@@ -331,3 +331,6 @@ ASALocalRun/
 
 # Test Suite output
 **/output/*.txt
+
+# MacOS
+.DS_Store

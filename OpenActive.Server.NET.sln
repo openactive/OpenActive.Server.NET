@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29411.108
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.Server.NET", "OpenActive.Server.NET\OpenActive.Server.NET.csproj", "{0FAB48CA-E132-4272-A314-77002BBE57A0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookingSystem.AspNetCore", "Examples\BookingSystem.AspNetCore\BookingSystem.AspNetCore.csproj", "{29A8AF39-ED3C-4433-8103-3535CE8C32EC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.AspNetCore", "Examples\BookingSystem.AspNetCore\BookingSystem.AspNetCore.csproj", "{29A8AF39-ED3C-4433-8103-3535CE8C32EC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{10E2B727-375B-4DAF-9341-96516A00B5E1}"
 	ProjectSection(SolutionItems) = preProject
@@ -16,11 +16,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.AspNetFramewo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.AspNetFramework.Tests", "Examples\BookingSystem.AspNetFramework.Tests\BookingSystem.AspNetFramework.Tests.csproj", "{6D779718-C02A-4EF1-8E16-229F52A416C7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.Server.NET.Tests", "OpenActive.Server.NET.Tests\OpenActive.Server.NET.Tests.csproj", "{28577B26-CC31-4BC7-A3C0-AF77711A046A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenActive.Server.NET.Tests", "OpenActive.Server.NET.Tests\OpenActive.Server.NET.Tests.csproj", "{28577B26-CC31-4BC7-A3C0-AF77711A046A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Fakes", "Fakes", "{1AA583F8-863F-47D4-9FDF-C43664DAAF6E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.FakeDatabase.NET", "Fakes\OpenActive.FakeDatabase.NET\OpenActive.FakeDatabase.NET.csproj", "{81C43FE1-AA19-435F-95A3-6AADFE9637FB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenActive.FakeDatabase.NET", "Fakes\OpenActive.FakeDatabase.NET\OpenActive.FakeDatabase.NET.csproj", "{81C43FE1-AA19-435F-95A3-6AADFE9637FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenActive.FakeDatabase.NET.Tests", "Fakes\OpenActive.FakeDatabase.NET.Tests\OpenActive.FakeDatabase.NET.Tests.csproj", "{A4EE1C5D-798C-4B53-880B-5AACF16AFE01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,6 +54,10 @@ Global
 		{81C43FE1-AA19-435F-95A3-6AADFE9637FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81C43FE1-AA19-435F-95A3-6AADFE9637FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81C43FE1-AA19-435F-95A3-6AADFE9637FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4EE1C5D-798C-4B53-880B-5AACF16AFE01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4EE1C5D-798C-4B53-880B-5AACF16AFE01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4EE1C5D-798C-4B53-880B-5AACF16AFE01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4EE1C5D-798C-4B53-880B-5AACF16AFE01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -61,6 +67,7 @@ Global
 		{CF04DB83-3371-4F14-B05B-86C0F7EADF30} = {10E2B727-375B-4DAF-9341-96516A00B5E1}
 		{6D779718-C02A-4EF1-8E16-229F52A416C7} = {10E2B727-375B-4DAF-9341-96516A00B5E1}
 		{81C43FE1-AA19-435F-95A3-6AADFE9637FB} = {1AA583F8-863F-47D4-9FDF-C43664DAAF6E}
+		{A4EE1C5D-798C-4B53-880B-5AACF16AFE01} = {1AA583F8-863F-47D4-9FDF-C43664DAAF6E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7CBBF4D4-3F0D-47FE-95D2-5BE1D604F9F3}
