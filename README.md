@@ -12,5 +12,5 @@ Further documentation, including a step-by-step tutorial, can be found at https:
 
 This is designed to have its code copied-and-pasted to provide a quick working starting point for any implementation.
 
-# OpenActive.FakeDatabase.NET [![Nuget](https://img.shields.io/nuget/v/OpenActive.FakeDatabase.NET.svg)](https://www.nuget.org/packages/OpenActive.FakeDatabase.NET/)
+# OpenActive.FakeDatabase.NET [![Nuget](https://img.shields.io/nuget/v/OpenActive.FakeDatabase.NET.svg)](https://www.nuget.org/packages/OpenActive.FakeDatabase.NET/) [![OpenActive.FakeDatabase.NET.Tests](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive.FakeDatabase.NET.Tests/badge.svg)](https://github.com/openactive/OpenActive.Server.NET/actions?query=workflow%3AOpenActive.FakeDatabase.NET.Tests)
 [`OpenActive.FakeDatabase.NET`](https://github.com/openactive/OpenActive.Server.NET/tree/master/Fakes/OpenActive.FakeDatabase.NET) is an in-memory database that is used by BookingSystem.AspNetCore for illustration purposes. It can be added as a dependency to your project during the initial stages of implementation, to get a conformant test implementation as a starting position.
