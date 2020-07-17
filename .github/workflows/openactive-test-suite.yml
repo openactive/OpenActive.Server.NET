@@ -56,7 +56,7 @@ jobs:
       run: |
         NODE_CONFIG='{ "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/0", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/0" } }, "secondary": { "@type": "Person", "@id": "https://localhost:5001/api/identifiers/sellers/1" } }, "useRandomOpportunities": false, "generateConformanceCertificate": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }' npm test --prefix tests/packages/openactive-integration-tests --runInBand -- test/features/
         mkdir -p ./publish/certification
-        cp ./output/certification/* ./publish/certification
+        cp ./tests/packages/openactive-integration-tests/output/certification/* ./publish/certification
     - name: Deploy certificate to GitHub Pages (master branch only)
       uses: peaceiris/actions-gh-pages@v3
       if: ${{ github.ref == 'refs/heads/master' }}
