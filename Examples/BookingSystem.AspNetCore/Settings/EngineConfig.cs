@@ -170,7 +170,7 @@ namespace BookingSystem
                     OrganisationPlainTextDescription = "The Reference Implementation provides an example of an full conformant implementation of the OpenActive specifications.",
                     OrganisationLogoUrl = "http://data.better.org.uk/images/logo.png".ParseUrlOrNull(),
                     OrganisationEmail = "hello@openactive.io",
-                    PlatformName = "Open Booking SDK Reference Implementation",
+                    PlatformName = "OpenActive Reference Implementation",
                     PlatformUrl = "https://tutorials.openactive.io/open-booking-sdk/".ParseUrlOrNull(),
                     PlatformVersion = "1.0",
                     BackgroundImageUrl = "https://images.unsplash.com/photo-1594899756066-46964fff3add?fit=crop&w=1500&q=80".ParseUrlOrNull(),
