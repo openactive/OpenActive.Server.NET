@@ -1,5 +1,5 @@
 ﻿
-# OpenActive.Server.NET [![Nuget](https://img.shields.io/nuget/v/OpenActive.Server.NET.svg)](https://www.nuget.org/packages/OpenActive.Server.NET/) [![OpenActive Test Suite](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive%20Test%20Suite/badge.svg)](https://openactive.io/OpenActive.Server.NET/certification/) 
+# OpenActive.Server.NET [![Nuget](https://img.shields.io/nuget/v/OpenActive.Server.NET.svg)](https://www.nuget.org/packages/OpenActive.Server.NET/)
 
 This Open Booking SDK for .NET provides components that aid the implementation of the OpenActive specificiations, including the [Open Booking API](https://openactive.io/open-booking-api/EditorsDraft/).
 
@@ -26,12 +26,10 @@ Helper methods are designed to be used independently, for those who prefer flexi
 
 The helper methods within these are isolated from each other and provide a useful toolbox for any implementation.
 
-## Examples
+# OpenActive Reference Implementation [![OpenActive Test Suite](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive%20Test%20Suite/badge.svg)](https://openactive.io/OpenActive.Server.NET/certification/)
+`BookingSystem.AspNetCore` provides an example use of the OpenActive.Server.NET library, as a fully standards compliant reference implementation of the OpenActive specifications, including the Open Booking API.
 
-This provides an example use of the library with a fully standards compliant reference implementation of the OpenActive Open Booking API.
+This is designed to have its code copied-and-pasted to provide a quick working starting point for any implementation.
 
-### BookingSystem.AspNetCore
-A reference implementation is provided `BookingSystem.AspNetCore` that is designed to have its code copied-and-pasted to provide a quick working starting point for any implementation.
-
-### OpenActive.Server.NET.FakeBookingSystem
+# OpenActive.Server.NET.FakeBookingSystem
 This is an in-memory database that is used by BookingSystem.AspNetCore for illustration purposes. It can be added as a dependency to your project during the initial stages of implementation, to get a conformant test implementation as a starting position.
