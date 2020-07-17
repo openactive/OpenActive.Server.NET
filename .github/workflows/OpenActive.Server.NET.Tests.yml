@@ -18,7 +18,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 2.1.808
-    - name: Build OpenActive.Server.NET Tests and dependencies
+    - name: Build OpenActive.Server.NET.Tests and dependencies
       run: dotnet build ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release
-    - name: Run OpenActive.Server.NET Tests
+    - name: Run OpenActive.Server.NET.Tests
       run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-build --verbosity normal
