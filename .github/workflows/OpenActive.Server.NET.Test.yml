@@ -18,11 +18,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 2.1.808
-    - name: Setup Node.js 12.x
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12.x
-    - name: Install OpenActive.Server.NET dependencies
-      run: dotnet restore ./
+    - name: Build OpenActive.Server.NET Reference Implementation
+      run: dotnet build ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release
     - name: Run OpenActive.Server.NET Tests
-      run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
+      run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-build --verbosity detailed
