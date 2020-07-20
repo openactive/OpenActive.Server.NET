@@ -57,7 +57,8 @@ jobs:
     - name: Run OpenActive Integration Tests in Controlled Mode
       run: |
         npm start
-        cp ./packages/openactive-integration-tests/output/certification/* ../publish/certification
+        mkdir -p ../publish/certification/
+        cp ./packages/openactive-integration-tests/output/certification/* ../publish/certification/
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
