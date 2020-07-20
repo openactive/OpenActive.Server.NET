@@ -16,19 +16,19 @@ namespace BookingSystem
         protected override List<RpdeItem<ScheduledSession>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
             var query = from occurances in FakeBookingSystem.Database.Occurrences
-                        orderby occurances.Modified.ToUnixTimeMilliseconds(), occurances.Id
+                        orderby occurances.Modified, occurances.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
-                              occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||  
-                              (occurances.Modified.ToUnixTimeMilliseconds() == afterTimestamp && occurances.Id > afterId)
+                              occurances.Modified > afterTimestamp ||
+                              (occurances.Modified == afterTimestamp && occurances.Id > afterId)
                               // Ensure the RPDE endpoint filters out all items with a "modified" date after 2 seconds in the past, to delay items appearing in the feed
                               // https://app.gitbook.com/@openactive/s/openactive-developer/publishing-data/data-feeds/implementing-rpde-feeds
-                              && occurances.Modified < DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)
+                              && occurances.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks
 
                         select new RpdeItem<ScheduledSession>
                         {
                             Kind = RpdeKind.ScheduledSession,
                             Id = occurances.Id,
-                            Modified = occurances.Modified.ToUnixTimeMilliseconds(),
+                            Modified = occurances.Modified,
                             State = occurances.Deleted ? RpdeState.Deleted : RpdeState.Updated,
                             Data = occurances.Deleted ? null : new ScheduledSession
                             {
@@ -76,19 +76,19 @@ namespace BookingSystem
         {
             var query = from @class in FakeBookingSystem.Database.Classes
                         join seller in FakeBookingSystem.Database.Sellers on @class.SellerId equals seller.Id
-                        orderby @class.Modified.ToUnixTimeMilliseconds(), @class.Id
+                        orderby @class.Modified, @class.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
-                              @class.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
-                              (@class.Modified.ToUnixTimeMilliseconds() == afterTimestamp && @class.Id > afterId)
+                              @class.Modified > afterTimestamp ||
+                              (@class.Modified == afterTimestamp && @class.Id > afterId)
                               // Ensure the RPDE endpoint filters out all items with a "modified" date after 2 seconds in the past, to delay items appearing in the feed
-                              // https://app.gitbook.com/@openactive/s/openactive-developer/publishing-data/data-feeds/implementing-rpde-feeds
-                              && @class.Modified < DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)
+                              // https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds
+                              && @class.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks
 
                         select new RpdeItem<SessionSeries>
                         {
                             Kind = RpdeKind.SessionSeries,
                             Id = @class.Id,
-                            Modified = @class.Modified.ToUnixTimeMilliseconds(),
+                            Modified = @class.Modified,
                             State = @class.Deleted ? RpdeState.Deleted : RpdeState.Updated,
                             Data = @class.Deleted ? null : new SessionSeries
                             {
