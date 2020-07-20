@@ -25,6 +25,7 @@ jobs:
         repository: openactive/openactive-test-suite
         ref: ${{ env.mirror_ref }}
         path: tests
+
     - name: Setup .NET Core 2.1.808
       uses: actions/setup-dotnet@v1
       with:
@@ -33,6 +34,7 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
+
     - name: Install OpenActive.Server.NET dependencies
       run: dotnet restore ./server/
     - name: Build OpenActive.Server.NET Reference Implementation
