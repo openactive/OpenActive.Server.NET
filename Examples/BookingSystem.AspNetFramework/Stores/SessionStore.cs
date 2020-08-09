@@ -6,6 +6,7 @@ using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
+using ServiceStack.OrmLite;
 
 namespace BookingSystem
 {
@@ -76,9 +77,17 @@ namespace BookingSystem
 
             // Response OrderItems must be updated into supplied orderItemContexts (including duplicates for multi-party booking)
 
+            List<OccurrenceTable> occurrenceTable;
+            List<ClassTable> classTable;
+            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            {
+                occurrenceTable = db.Select<OccurrenceTable>();
+                classTable = db.Select<ClassTable>();
+            }
+
             var query = (from orderItemContext in orderItemContexts
-                         join occurances in FakeBookingSystem.Database.Occurrences on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurances.Id
-                         join classes in FakeBookingSystem.Database.Classes on occurances.ClassId equals classes.Id
+                         join occurances in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurances.Id
+                         join classes in classTable on occurances.ClassId equals classes.Id
                          // and offers.id = opportunityOfferId.OfferId
                          select occurances == null ? null : new {
                              OrderItem = new OrderItem

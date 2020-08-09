@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using NPoco;
+using ServiceStack.DataAnnotations;
+using ServiceStack.OrmLite;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -13,10 +14,11 @@ namespace OpenActive.FakeDatabase.NET
     public enum BookingStatus { CustomerCancelled, SellerCancelled, Confirmed, Attended }
 
 
-    [PrimaryKey("RpdeId", AutoIncrement = true)]
     public abstract class Table
     {
-        [Column("RpdeId")]
+        [PrimaryKey]
+        [AutoIncrement]
+        [Alias("RpdeId")]
         public long Id { get; set; }
         public bool Deleted { get; set; } = false;
         public long Modified { get; set; } = DateTimeOffset.Now.UtcTicks;
@@ -26,6 +28,9 @@ namespace OpenActive.FakeDatabase.NET
     {
         public string TestDatasetIdentifier { get; set; }
         public string Title { get; set; }
+        [Reference]
+        public SellerTable SellerTable { get; set; }
+        [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; }
         public decimal? Price { get; set; }
     }
@@ -35,6 +40,9 @@ namespace OpenActive.FakeDatabase.NET
     public class OccurrenceTable : Table
     {
         public string TestDatasetIdentifier { get; set; }
+        [Reference]
+        public ClassTable ClassTable { get; set; }
+        [ForeignKey(typeof(ClassTable), OnDelete = "CASCADE")]
         public long ClassId { get; set; }
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
@@ -50,9 +58,14 @@ namespace OpenActive.FakeDatabase.NET
         public string OpportunityJsonLdType { get; set; }
         public string OpportunityJsonLdId { get; set; }
         public string OfferJsonLdId { get; set; }
+        [Reference]
+        public OrderTable OrderTable { get; set; }
+        [ForeignKey(typeof(OrderTable), OnDelete = "CASCADE")]
         public string OrderId { get; set; }
+        [Reference]
+        public OccurrenceTable OccurrenceTable { get; set; }
+        [ForeignKey(typeof(OccurrenceTable), OnDelete = "CASCADE")]
         public long OccurrenceId { get; set; }
-        [ColumnType(typeof(string))]
         public BookingStatus Status { get; set; }
         public decimal Price { get; set; }
     }
@@ -61,9 +74,11 @@ namespace OpenActive.FakeDatabase.NET
     {
         public string ClientId { get; set; }
         public string OrderId { get; set; }
+        [Reference]
+        public SellerTable SellerTable { get; set; }
+        [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; }
         public bool CustomerIsOrganization { get; set; }
-        [ColumnType(typeof(string))]
         public BrokerRole BrokerRole { get; set; }
         public string BrokerName { get; set; }
         public string CustomerEmail { get; set; }
@@ -82,58 +97,20 @@ namespace OpenActive.FakeDatabase.NET
 
     public static class DatabaseCreator
     {
-        public static List<string> GetCreateTableStatements(NPoco.Database db)
+        public static void CreateTables(OrmLiteConnectionFactory dbFactory)
         {
-            var subclassTypes = Assembly
-            .GetAssembly(typeof(Table))
-            .GetTypes()
-            .Where(t => t.IsSubclassOf(typeof(Table)));
-
-            var createStatements = new List<string>();
-
-            foreach (var subclassType in subclassTypes)
+            using (var db = dbFactory.Open())
             {
-                var table = db.PocoDataFactory.ForType(subclassType);
-                var tableName = table.TableInfo.TableName;
-
-                var columnDefinition = new List<string>();
-
-                foreach (var column in table.AllColumns)
-                {
-                    if (column.ColumnName == "RpdeId")
-                    {
-                        columnDefinition.Add("RpdeId INTEGER PRIMARY KEY");
-                    } else
-                    {
-                        columnDefinition.Add($"{column.ColumnName} {ConvertColumnType(column.ColumnType)}");
-                    }
-                }
-
-                var columnDefinitions = string.Join(", ", columnDefinition);
-                createStatements.Add($"CREATE TABLE IF NOT EXISTS {tableName} ({columnDefinitions})");
-            }
-
-            return createStatements;
-        }
-
-        public static Dictionary<Type, string> TypeLookup = new Dictionary<Type, string> {
-            { typeof(string), "TEXT NULL" },
-            { typeof(int), "INTEGER NULL" },
-            { typeof(long), "INTEGER NULL" },
-            { typeof(DateTime), "DATETIME NULL" },
-            { typeof(bool), "BOOLEAN NULL" },
-            { typeof(decimal), "DECIMAL(5,2) NULL" },
-            { typeof(decimal?), "DECIMAL(5,2) NULL" },
-        };
-
-        public static string ConvertColumnType(Type type)
-        {
-            if (TypeLookup.ContainsKey(type))
-            {
-                return TypeLookup[type];
-            } else
-            {
-                return "TEXT NULL";
+                db.DropTable<OrderItemsTable>();
+                db.DropTable<OccurrenceTable>();
+                db.DropTable<OrderTable>();
+                db.DropTable<ClassTable>();
+                db.DropTable<SellerTable>();
+                db.CreateTable<SellerTable>();
+                db.CreateTable<ClassTable>();
+                db.CreateTable<OrderTable>();
+                db.CreateTable<OccurrenceTable>();
+                db.CreateTable<OrderItemsTable>();
             }
         }
     }

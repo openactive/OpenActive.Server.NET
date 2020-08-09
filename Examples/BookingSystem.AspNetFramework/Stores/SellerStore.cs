@@ -1,6 +1,7 @@
 ﻿using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
+using ServiceStack.OrmLite;
 using System.Linq;
 
 namespace BookingSystem
@@ -34,46 +35,47 @@ namespace BookingSystem
             }
             else
             {
-
                 // Otherwise it may be looked up based on supplied sellerIdComponents which are extacted from the sellerId.
-                var seller = FakeBookingSystem.Database.Sellers.SingleOrDefault(x => x.Id == sellerIdComponents.SellerIdLong);
-                if (seller != null)
+                using (var db =FakeBookingSystem.Database.Mem.Database.Open())
                 {
-                    return seller.IsIndividual ? (ILegalEntity)new Person
+                    var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
+                    if (seller != null)
                     {
-                        Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
-                        Name = seller.Name,
-                        TaxMode = TaxMode.TaxGross,
-                        LegalName = seller.Name,
-                        Address = new PostalAddress
+                        return seller.IsIndividual ? (ILegalEntity)new Person
                         {
-                            StreetAddress = "1 Fake Place",
-                            AddressLocality = "Faketown",
-                            AddressRegion = "Oxfordshire",
-                            PostalCode = "OX1 1AA",
-                            AddressCountry = "GB"
-                        }
-                    } : (ILegalEntity)new Organization
+                            Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                            Name = seller.Name,
+                            TaxMode = TaxMode.TaxGross,
+                            LegalName = seller.Name,
+                            Address = new PostalAddress
+                            {
+                                StreetAddress = "1 Fake Place",
+                                AddressLocality = "Faketown",
+                                AddressRegion = "Oxfordshire",
+                                PostalCode = "OX1 1AA",
+                                AddressCountry = "GB"
+                            }
+                        } : (ILegalEntity)new Organization
+                        {
+                            Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                            Name = seller.Name,
+                            TaxMode = TaxMode.TaxGross,
+                            LegalName = seller.Name,
+                            Address = new PostalAddress
+                            {
+                                StreetAddress = "1 Hidden Gem",
+                                AddressLocality = "Another town",
+                                AddressRegion = "Oxfordshire",
+                                PostalCode = "OX1 1AA",
+                                AddressCountry = "GB"
+                            }
+                        };
+                    }
+                    else
                     {
-                        Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
-                        Name = seller.Name,
-                        TaxMode = TaxMode.TaxGross,
-                        LegalName = seller.Name,
-                        Address = new PostalAddress
-                        {
-                            StreetAddress = "1 Hidden Gem",
-                            AddressLocality = "Another town",
-                            AddressRegion = "Oxfordshire",
-                            PostalCode = "OX1 1AA",
-                            AddressCountry = "GB"
-                        }
-                    };
+                        return null;
+                    }
                 }
-                else
-                {
-                    return null;
-                }
-
             }
         }
     }
