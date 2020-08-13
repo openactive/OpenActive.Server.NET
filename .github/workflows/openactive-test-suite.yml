@@ -88,6 +88,8 @@ jobs:
         enable_jekyll: true
 
   deploy-reference-implementation:
+    # Master branch only
+    if: ${{ github.ref == 'refs/heads/master' }}
     needs: openactive-test-suite
     runs-on: ubuntu-latest
     steps:
@@ -106,7 +108,7 @@ jobs:
         run: dotnet restore
       - name: Build OpenActive.Server.NET Reference Implementation
         run: dotnet build ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
-      - name: Start OpenActive.Server.NET Reference Implementation
+      - name: Publish OpenActive.Server.NET Reference Implementation
         run: dotnet publish ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build --output './web-app-package' 
           
       # Deploy to Azure Web apps
