@@ -7,7 +7,7 @@ A readme is available within the [`OpenActive.Server.NET`](https://github.com/op
 
 Further documentation, including a step-by-step tutorial, can be found at https://tutorials.openactive.io/open-booking-sdk/.
 
-# OpenActive Reference Implementation [![OpenActive Test Suite](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive%20Test%20Suite/badge.svg?branch=master)](https://openactive.io/OpenActive.Server.NET/certification/)
+# OpenActive Reference Implementation [![OpenActive Test Suite](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive%20Reference%20Implementation/badge.svg?branch=master)](https://openactive.io/OpenActive.Server.NET/certification/)
 [`BookingSystem.AspNetCore`](https://github.com/openactive/OpenActive.Server.NET/tree/master/Examples/BookingSystem.AspNetCore) provides an example use of the OpenActive.Server.NET library, as a fully standards compliant reference implementation of the OpenActive specifications, including the Open Booking API.
 
 This is designed to have its code copied-and-pasted to provide a quick working starting point for any implementation.
