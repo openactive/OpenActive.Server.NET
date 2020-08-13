@@ -103,14 +103,15 @@ jobs:
           dotnet-version: 2.1.808
       
       # Run dotnet build and publish
+      - name: Install OpenActive.Server.NET dependencies
+        run: dotnet restore
       - name: Build OpenActive.Server.NET Reference Implementation
-        run: |
-          dotnet restore
-          dotnet build --configuration Release
-          dotnet publish -c Release -o './web-app-package' 
+        run: dotnet build ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
+      - name: Start OpenActive.Server.NET Reference Implementation
+        run: dotnet publish ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build --output './web-app-package' 
           
       # Deploy to Azure Web apps
-      - name: 'Run Azure webapp deploy action using publish profile credentials'
+      - name: 'Deploy Azure webapp using publish profile credentials'
         uses: azure/webapps-deploy@v2
         with: 
           app-name: openactive-reference-implementation # Replace with your app name
