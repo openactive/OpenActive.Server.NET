@@ -89,9 +89,21 @@ namespace BookingSystem
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
 
-        public override void DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public override DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            FakeBookingSystem.Database.DeleteOrder(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong ?? null /* Small hack to allow use of FakeDatabase when in Single Seller mode */);
+            var result = FakeBookingSystem.Database.DeleteOrder(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong ?? null /* Small hack to allow use of FakeDatabase when in Single Seller mode */);
+            switch (result)
+            {
+                case FakeDatabaseDeleteOrderResult.OrderSuccessfullyDeleted:
+                // "OrderWasAlreadyDeleted" is being treated as a success because the order did
+                // exist - maintains idempotency.
+                case FakeDatabaseDeleteOrderResult.OrderWasAlreadyDeleted:
+                    return DeleteOrderResult.OrderSuccessfullyDeleted;
+                case FakeDatabaseDeleteOrderResult.OrderWasNotFound:
+                    return DeleteOrderResult.OrderDidNotExist;
+                default:
+                    throw new Exception($"Unexpected FakeDatabaseDeleteOrderResult: {result}");
+            }
         }
 
         public override void UpdateLease(OrderQuote responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)

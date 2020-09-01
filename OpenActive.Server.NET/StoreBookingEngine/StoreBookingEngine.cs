@@ -219,9 +219,9 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected override void ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
+        protected override DeleteOrderResult ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            storeBookingEngineSettings.OrderStore.DeleteOrder(orderId, sellerId);
+            return storeBookingEngineSettings.OrderStore.DeleteOrder(orderId, sellerId);
         }
 
         protected override void ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
