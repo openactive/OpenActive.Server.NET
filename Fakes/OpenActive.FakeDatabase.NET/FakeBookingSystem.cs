@@ -197,7 +197,6 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 // Set the Order to deleted in the feed, and erase all associated personal data
-                //var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.IsLease && x.OrderId == uuid && !x.Deleted);
                 var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid && !x.IsLease);
                 if (order == null)
                 {

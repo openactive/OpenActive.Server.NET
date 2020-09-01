@@ -351,7 +351,6 @@ namespace OpenActive.Server.NET.CustomBooking
                     return ResponseContent.OpenBookingNoContentResponse();
                 case DeleteOrderResult.OrderDidNotExist:
                     throw new OpenBookingException(new NotFoundError());
-                //return ResponseContent.OpenBookingErrorResponse("hi", HttpStatusCode.NotFound);
                 default:
                     throw new Exception($"Unexpected DeleteOrderResult: {result}");
             }
