@@ -35,8 +35,9 @@ namespace BookingSystem
             }
             else
             {
+
                 // Otherwise it may be looked up based on supplied sellerIdComponents which are extacted from the sellerId.
-                using (var db =FakeBookingSystem.Database.Mem.Database.Open())
+                using (var db = FakeBookingSystem.Database.Mem.Database.Open())
                 {
                     var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
                     if (seller != null)

@@ -103,7 +103,7 @@ namespace BookingSystem
                 case FakeDatabaseDeleteOrderResult.OrderWasNotFound:
                     return DeleteOrderResult.OrderDidNotExist;
                 default:
-                    throw new Exception($"Unexpected FakeDatabaseDeleteOrderResult: {result}");
+                    throw new OpenBookingException(new OpenBookingError(), $"Unexpected FakeDatabaseDeleteOrderResult: {result}");
             }
         }
 

@@ -84,7 +84,7 @@ namespace BookingSystem
                 occurrenceTable = db.Select<OccurrenceTable>();
                 classTable = db.Select<ClassTable>();
             }
-
+           
             var query = (from orderItemContext in orderItemContexts
                          join occurances in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurances.Id
                          join classes in classTable on occurances.ClassId equals classes.Id

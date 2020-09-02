@@ -352,7 +352,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 case DeleteOrderResult.OrderDidNotExist:
                     throw new OpenBookingException(new NotFoundError());
                 default:
-                    throw new Exception($"Unexpected DeleteOrderResult: {result}");
+                    throw new OpenBookingException(new OpenBookingError(), $"Unexpected DeleteOrderResult: {result}");
             }
         }
 
