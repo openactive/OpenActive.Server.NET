@@ -47,6 +47,15 @@ namespace OpenActive.FakeDatabase.NET
         }
     }
 
+    /// <summary>
+    /// Result of deleting (or attempting to delete) an Order in a FakeDatabase
+    /// </summary>
+    public enum FakeDatabaseDeleteOrderResult
+    {
+        OrderWasAlreadyDeleted,
+        OrderSuccessfullyDeleted,
+        OrderWasNotFound
+    }
 
     public class FakeDatabase
     {
@@ -183,27 +192,33 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public void DeleteOrder(string clientId, string uuid, long? sellerId)
+        public FakeDatabaseDeleteOrderResult DeleteOrder(string clientId, string uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())
             {
                 // Set the Order to deleted in the feed, and erase all associated personal data
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.IsLease && x.OrderId == uuid && !x.Deleted);
-                if (order != null)
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid && !x.IsLease);
+                if (order == null)
                 {
-                    if (sellerId.HasValue && order.SellerId != sellerId)
-                    {
-                        throw new ArgumentException("SellerId does not match Order");
-                    }
-                    order.Deleted = true;
-                    order.CustomerEmail = null;
-                    order.Modified = DateTimeOffset.Now.UtcTicks;
-                    db.Update(order);
-
-                    var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId).Select(x => x.OccurrenceId).Distinct();
-                    db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId);
-                    RecalculateSpaces(occurrenceIds);
+                    return FakeDatabaseDeleteOrderResult.OrderWasNotFound;
                 }
+                if (order.Deleted)
+                {
+                    return FakeDatabaseDeleteOrderResult.OrderWasAlreadyDeleted;
+                }
+                if (sellerId.HasValue && order.SellerId != sellerId)
+                {
+                    throw new ArgumentException("SellerId does not match Order");
+                }
+                order.Deleted = true;
+                order.CustomerEmail = null;
+                order.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(order);
+
+                var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId).Select(x => x.OccurrenceId).Distinct();
+                db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId);
+                RecalculateSpaces(occurrenceIds);
+                return FakeDatabaseDeleteOrderResult.OrderSuccessfullyDeleted;
             }
         }
 

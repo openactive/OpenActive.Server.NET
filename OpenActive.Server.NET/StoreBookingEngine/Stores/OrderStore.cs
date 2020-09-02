@@ -6,6 +6,15 @@ using System.Text;
 
 namespace OpenActive.Server.NET.StoreBooking
 {
+    /// <summary>
+    /// Result of deleting (or attempting to delete) an Order in a store
+    /// </summary>
+    public enum DeleteOrderResult
+    {
+        OrderSuccessfullyDeleted,
+        OrderDidNotExist
+    }
+
     public interface IOrderStore
     {
         IDatabaseTransaction BeginOrderTransaction(FlowStage stage);
@@ -15,7 +24,7 @@ namespace OpenActive.Server.NET.StoreBooking
         IStateContext InitialiseFlow(StoreBookingFlowContext flowContext);
         void UpdateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         void UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
-        void DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
+        DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
     }
 
@@ -71,7 +80,7 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
         public abstract bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
-        public abstract void DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
+        public abstract DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         public abstract void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
     }
 

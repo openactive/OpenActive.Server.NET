@@ -6,6 +6,7 @@ using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET.OpenBookingHelper;
+using OpenActive.Server.NET.StoreBooking;
 
 namespace OpenActive.Server.NET.CustomBooking
 {
@@ -343,11 +344,19 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public ResponseContent DeleteOrder(string clientId, Uri sellerId, string uuid)
         {
-            ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
-            return ResponseContent.OpenBookingNoContentResponse();
+            var result = ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
+            switch (result)
+            {
+                case DeleteOrderResult.OrderSuccessfullyDeleted:
+                    return ResponseContent.OpenBookingNoContentResponse();
+                case DeleteOrderResult.OrderDidNotExist:
+                    throw new OpenBookingException(new NotFoundError());
+                default:
+                    throw new OpenBookingException(new OpenBookingError(), $"Unexpected DeleteOrderResult: {result}");
+            }
         }
 
-        protected abstract void ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
+        protected abstract DeleteOrderResult ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
 
         public ResponseContent DeleteOrderQuote(string clientId, Uri sellerId, string uuid)
         {

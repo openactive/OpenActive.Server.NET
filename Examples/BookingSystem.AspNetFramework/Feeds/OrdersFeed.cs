@@ -22,9 +22,9 @@ namespace BookingSystem
                 .Join<SellerTable>()
                 .Join<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
                 .OrderBy(x => x.Modified)
-                .OrderBy(x => x.Id)
+                .ThenBy(x => x.Id)
                 .Where(x => x.VisibleInFeed && x.ClientId == clientId && (!afterTimestamp.HasValue || x.Modified > afterTimestamp ||
-                        (x.Modified == afterTimestamp && x.OrderId.CompareTo(afterId) > 0)) && x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
+                        (x.Modified == afterTimestamp && string.Compare(afterId, x.OrderId) > 0)) && x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
                 .Take(this.RPDEPageSize);
 
                 var query = db
@@ -37,42 +37,42 @@ namespace BookingSystem
                         OrderItemsTable = result.Select(item => new { item.Item3 }).ToList()
                     })
                     .Select((result) => new RpdeItem
-                    {
-                        Kind = RpdeKind.Order,
-                        Id = result.OrderTable.OrderId,
-                        Modified = result.OrderTable.Modified,
-                        State = result.OrderTable.Deleted ? RpdeState.Deleted : RpdeState.Updated,
-                        Data = result.OrderTable.Deleted ? null : new Order
-                        {
-                            Id = this.RenderOrderId(OrderType.Order, result.OrderTable.OrderId),
-                            Identifier = result.OrderTable.OrderId,
-                            TotalPaymentDue = new PriceSpecification
-                            {
-                                Price = result.OrderTable.TotalOrderPrice,
-                                PriceCurrency = "GBP"
-                            },
-                            OrderedItem = result.OrderItemsTable.Select((orderItem) => new OrderItem
-                            {
-                                Id = this.RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Item3.Id),
-                                AcceptedOffer = new Offer
-                                {
-                                    Id = new Uri(orderItem.Item3.OfferJsonLdId),
-                                    Price = orderItem.Item3.Price,
-                                    PriceCurrency = "GBP"
-                                },
-                                OrderedItem = RenderOpportunityWithOnlyId(orderItem.Item3.OpportunityJsonLdType, new Uri(orderItem.Item3.OpportunityJsonLdId)),
-                                OrderItemStatus =
-                                    orderItem.Item3.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
-                                    orderItem.Item3.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
-                                    orderItem.Item3.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
-                                    orderItem.Item3.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended : (OrderItemStatus?)null
+                     {
+                         Kind = RpdeKind.Order,
+                         Id = result.OrderTable.OrderId,
+                         Modified = result.OrderTable.Modified,
+                         State = result.OrderTable.Deleted ? RpdeState.Deleted : RpdeState.Updated,
+                         Data = result.OrderTable.Deleted ? null : new Order
+                         {
+                             Id = this.RenderOrderId(OrderType.Order, result.OrderTable.OrderId),
+                             Identifier = result.OrderTable.OrderId,
+                             TotalPaymentDue = new PriceSpecification
+                             {
+                                 Price = result.OrderTable.TotalOrderPrice,
+                                 PriceCurrency = "GBP"
+                             },
+                             OrderedItem = result.OrderItemsTable.Select((orderItem) => new OrderItem
+                             {
+                                 Id = this.RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Item3.Id),
+                                 AcceptedOffer = new Offer
+                                 {
+                                     Id = new Uri(orderItem.Item3.OfferJsonLdId),
+                                     Price = orderItem.Item3.Price,
+                                     PriceCurrency = "GBP"
+                                 },
+                                 OrderedItem = RenderOpportunityWithOnlyId(orderItem.Item3.OpportunityJsonLdType, new Uri(orderItem.Item3.OpportunityJsonLdId)),
+                                 OrderItemStatus =
+                                     orderItem.Item3.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
+                                     orderItem.Item3.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
+                                     orderItem.Item3.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
+                                     orderItem.Item3.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended : (OrderItemStatus?)null
 
-                            }).ToList()
-                        }
-                    });
+                             }).ToList()
+                         }
+                     });
 
                 return query.ToList();
-            }
+            }  
         }
     }
 }
