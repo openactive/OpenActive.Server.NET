@@ -96,7 +96,7 @@ namespace BookingSystem
             {
                 case FakeDatabaseDeleteOrderResult.OrderSuccessfullyDeleted:
                 // "OrderWasAlreadyDeleted" is being treated as a success because the order did
-                // exist - This maintains idempotency as requests success to a correct request
+                // exist - This maintains idempotency as requests that follow a successful request
                 // will still return a 2xx.
                 case FakeDatabaseDeleteOrderResult.OrderWasAlreadyDeleted:
                     return DeleteOrderResult.OrderSuccessfullyDeleted;
