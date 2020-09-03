@@ -243,5 +243,12 @@ namespace BookingSystem.AspNetCore.Controllers
             }
         }
 
+        [Route("{*url}")]
+        public IActionResult UnknownEndpoint([FromServices] IBookingEngine bookingEngine)
+        {
+            var error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
+            return error.ErrorResponseContent.GetContentResult();
+        }
+
     }
 }
