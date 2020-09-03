@@ -243,12 +243,34 @@ namespace BookingSystem.AspNetCore.Controllers
             }
         }
 
+        /// <summary>
+        /// Catch-all endpoint for requests to non-existent endpoints.
+        /// This method catches requests with JSON bodies (e.g. PUT requests).
+        ///
+        /// There needs to be a method for with and without JSON bodies,
+        /// otherwise ASP.NET will return a 415 Unsupported Media Type for a
+        /// non-matching request.
+        /// </summary>
         [Route("{*url}")]
-        public IActionResult UnknownEndpoint([FromServices] IBookingEngine bookingEngine)
+        public IActionResult UnknownEndpointWithBody([FromServices] IBookingEngine bookingEngine, [FromBody] string json)
         {
             var error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
             return error.ErrorResponseContent.GetContentResult();
         }
 
+        /// <summary>
+        /// Catch-all endpoint for requests to non-existent endpoints.
+        /// This method catches requests without JSON bodies (e.g. GET requests).
+        ///
+        /// There needs to be a method for with and without JSON bodies,
+        /// otherwise ASP.NET will return a 415 Unsupported Media Type for a
+        /// non-matching request.
+        /// </summary>
+        [Route("{*url}")]
+        public IActionResult UnknownEndpointWithoutBody([FromServices] IBookingEngine bookingEngine)
+        {
+            var error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
+            return error.ErrorResponseContent.GetContentResult();
+        }
     }
 }
