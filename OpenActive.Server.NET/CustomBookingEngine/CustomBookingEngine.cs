@@ -13,7 +13,7 @@ namespace OpenActive.Server.NET.CustomBooking
     /// <summary>
     /// The AbstractBookingEngine provides a simple, basic and extremely flexible implementation of Open Booking API.
     /// 
-    /// It is designed for systems where their needs are not met by StoreBookingEngine to provide a solid foundation for thier implementations.
+    /// It is designed for systems where their needs are not met by StoreBookingEngine to provide a solid foundation for their implementations.
     /// 
     /// Methods of this class will return OpenActive POCO models that can be rendered using ToOpenActiveString(),
     /// and throw exceptions that subclass OpenActiveException, on which GetHttpStatusCode() and ToOpenActiveString() can
@@ -350,7 +350,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 case DeleteOrderResult.OrderSuccessfullyDeleted:
                     return ResponseContent.OpenBookingNoContentResponse();
                 case DeleteOrderResult.OrderDidNotExist:
-                    throw new OpenBookingException(new NotFoundError());
+                    throw new OpenBookingException(new UnknownOrderError());
                 default:
                     throw new OpenBookingException(new OpenBookingError(), $"Unexpected DeleteOrderResult: {result}");
             }
