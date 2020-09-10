@@ -215,7 +215,7 @@ namespace OpenActive.Server.NET.StoreBooking
         {
             if (!storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderId, sellerId, orderIdTemplate, orderItemIds))
             {
-                throw new OpenBookingException(new NotFoundError(), "Order not found");
+                throw new OpenBookingException(new UnknownOrderError(), "Order not found");
             }
         }
 
