@@ -47,7 +47,7 @@ namespace BookingSystem.AspNetCore
 
             //QUESTION: Should all these be configured here? Are we using the pattern correctly?
             //https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/dependency-injection?view=aspnetcore-3.0
-            string BaseUrl = Configuration["ApplicationHostBaseUrl"] ?? "https://localhost:5001/";
+            string BaseUrl = Configuration["ApplicationHostBaseUrl"] ?? "http://localhost:15562/";
             services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(BaseUrl));
         }
 
