@@ -81,7 +81,7 @@ namespace BookingSystem.AspNetFramework.Controllers
 
         /// <summary>
         /// Order Creation B
-        /// GET api/openbooking/orders/ABCD1234
+        /// PUT api/openbooking/orders/ABCD1234
         /// </summary>
         [HttpPut]
         [Route("orders/{uuid}")]
@@ -119,7 +119,7 @@ namespace BookingSystem.AspNetFramework.Controllers
 
         /// <summary>
         /// Order Cancellation
-        /// GET api/openbooking/orders/ABCD1234
+        /// PATCH api/openbooking/orders/ABCD1234
         /// </summary>
         [HttpPatch]
         [Route("orders/{uuid}")]
