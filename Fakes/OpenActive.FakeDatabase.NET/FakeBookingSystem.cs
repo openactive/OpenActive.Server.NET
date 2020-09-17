@@ -347,12 +347,12 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 var order = db.Single<OrderTable>(x => x.ClientId == clientId && !x.IsLease && x.OrderId == uuid && !x.Deleted);
-                if (sellerId.HasValue && order.SellerId != sellerId)
-                {
-                    throw new ArgumentException("SellerId does not match Order");
-                }
                 if (order != null)
                 {
+                    if (sellerId.HasValue && order.SellerId != sellerId)
+                    {
+                        throw new ArgumentException("SellerId does not match Order");
+                    }
                     List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
                     foreach (OrderItemsTable orderItem in db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && orderItemIds.Contains(x.Id)))
                     {

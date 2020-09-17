@@ -120,7 +120,7 @@ namespace BookingSystem.AspNetCore.Controllers
 
         /// <summary>
         /// Order Cancellation
-        /// GET api/openbooking/orders/ABCD1234
+        /// PATCH api/openbooking/orders/ABCD1234
         /// </summary>
         [HttpPatch("orders/{uuid}")]
         public IActionResult OrderUpdate([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
