@@ -18,6 +18,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             if (ReferenceEquals(other, null)) return false;
             if (other.SellerIdLong != null && this.SellerIdLong != null) return other.SellerIdLong == this.SellerIdLong;
             if (other.SellerIdString != null && this.SellerIdString != null) return other.SellerIdString == this.SellerIdString;
+            if (other.SellerIdString == null && this.SellerIdString == null && other.SellerIdLong == null && this.SellerIdLong == null) return true;
             return false;                
         }
         

@@ -12,7 +12,7 @@
     <PackageTags>OpenActive booking</PackageTags>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.9.1</Version>
+    <Version>0.9.2</Version>
     <Description>.NET server library for OpenActive implementation</Description>
     <PackageId>OpenActive.Server.NET</PackageId>
   </PropertyGroup>
@@ -31,7 +31,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="OpenActive.DatasetSite.NET" Version="3.4.0" />
-    <PackageReference Include="OpenActive.NET" Version="12.4.1" />
+    <PackageReference Include="OpenActive.NET" Version="12.4.2" />
     <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
   </ItemGroup>
 
