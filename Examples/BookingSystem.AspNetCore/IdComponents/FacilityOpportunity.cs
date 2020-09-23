@@ -14,7 +14,7 @@ namespace BookingSystem
     public class FacilityOpportunity : IBookableIdComponents
     {
         public OpportunityType? OpportunityType { get; set; }
-        public string FacilityUseId { get; set; }
+        public long? FacilityUseId { get; set; }
         public long? SlotId { get; set; }
         public long? OfferId { get; set; }
 

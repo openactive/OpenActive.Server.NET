@@ -66,6 +66,11 @@ namespace OpenActive.FakeDatabase.NET
         public OccurrenceTable OccurrenceTable { get; set; }
         [ForeignKey(typeof(OccurrenceTable), OnDelete = "CASCADE")]
         public long OccurrenceId { get; set; }
+        [Reference]
+        public SlotTable SlotTable { get; set; }
+        [ForeignKey(typeof(SlotTable), OnDelete = "CASCADE")]
+        public long SlotId { get; set; }
+
         public BookingStatus Status { get; set; }
         public decimal Price { get; set; }
     }
@@ -95,6 +100,33 @@ namespace OpenActive.FakeDatabase.NET
         public bool IsIndividual { get; set; }
     }
 
+    public class SlotTable : Table
+    {
+        public string TestDatasetIdentifier { get; set; }
+        [Reference]
+        public FacilityUseTable FacilityUseTable { get; set; }
+        [ForeignKey(typeof(FacilityUseTable), OnDelete = "CASCADE")]
+        public long FacilityUseId { get; set; }
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public long MaximumUses { get; set; }
+        public long LeasedUses { get; set; }
+
+        public long RemainingUses { get; set; }
+    }
+
+    public class FacilityUseTable : Table
+    {
+        public string TestDatasetIdentifier { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        [Reference]
+        public SellerTable SellerTable { get; set; }
+        [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
+        public long SellerId { get; set; } // Provider
+        public decimal? Price { get; set; }
+    }
+
     public static class DatabaseCreator
     {
         public static void CreateTables(OrmLiteConnectionFactory dbFactory)
@@ -106,11 +138,15 @@ namespace OpenActive.FakeDatabase.NET
                 db.DropTable<OrderTable>();
                 db.DropTable<ClassTable>();
                 db.DropTable<SellerTable>();
+                db.DropTable<FacilityUseTable>();
+                db.DropTable<SlotTable>();
                 db.CreateTable<SellerTable>();
                 db.CreateTable<ClassTable>();
                 db.CreateTable<OrderTable>();
                 db.CreateTable<OccurrenceTable>();
                 db.CreateTable<OrderItemsTable>();
+                db.CreateTable<FacilityUseTable>();
+                db.CreateTable<SlotTable>();
             }
         }
     }
