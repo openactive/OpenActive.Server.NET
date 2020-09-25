@@ -100,7 +100,7 @@ namespace BookingSystem
                                         new TaxChargeSpecification
                                         {
                                             Name = "VAT at 20%",
-                                            Price = facility.Price * (decimal?)0.2,
+                                            Price = slot.Price * (decimal?)0.2,
                                             PriceCurrency = "GBP",
                                             Rate = (decimal?)0.2
                                         }
@@ -109,7 +109,7 @@ namespace BookingSystem
                                  {
                                      // Note this should always use RenderOfferId with the supplied SessioFacilityOpportunitynOpportunity, to take into account inheritance and OfferType
                                      Id = this.RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
-                                     Price = facility.Price,
+                                     Price = slot.Price,
                                      PriceCurrency = "GBP"
                                  },
                                  OrderedItem = new Slot

@@ -444,7 +444,7 @@ namespace OpenActive.FakeDatabase.NET
                                 OpportunityJsonLdId = opportunityJsonLdId,
                                 OfferJsonLdId = offerJsonLdId,
                                 // Include the price locked into the OrderItem as the opportunity price may change
-                                Price = thisFacility.Price.Value
+                                Price = thisSlot.Price.Value
                             }, true);
                             OrderItemIds.Add(orderItemId);
                         }
@@ -590,7 +590,8 @@ namespace OpenActive.FakeDatabase.NET
                     Start = x.StartDate,
                     End = x.StartDate + TimeSpan.FromMinutes(faker.Random.Int(30, 360)),
                     MaximumUses = x.TotalUses,
-                    RemainingUses = x.TotalUses
+                    RemainingUses = x.TotalUses,
+                    Price = Decimal.Parse(faker.Random.Bool() ? "0.00" : faker.Commerce.Price(0, 20)),
                 })
                 .ToList();
 
@@ -600,7 +601,6 @@ namespace OpenActive.FakeDatabase.NET
                     Id = id,
                     Deleted = false,
                     Name = faker.Commerce.ProductMaterial() + " " + faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall"),
-                    Price = Decimal.Parse(faker.Random.Bool() ? "0.00" : faker.Commerce.Price(0, 20)),
                     SellerId = faker.Random.Long(1, 2)
                 })
                 .ToList();
@@ -643,7 +643,7 @@ namespace OpenActive.FakeDatabase.NET
 
             var sellers = new List<SellerTable> {
                 new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false },
-                new SellerTable { Id = 2, Name = "Jane Smith", IsIndividual = true }
+                new SellerTable { Id = 2, Name = "Jane Smith", IsIndividual = false }
             };
 
             using (var db = Mem.Database.Open())
@@ -691,7 +691,6 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     Name = title,
-                    Price = price,
                     SellerId = seller
                 }, true);
 
@@ -703,7 +702,8 @@ namespace OpenActive.FakeDatabase.NET
                     Start = startTime.DateTime,
                     End = endTime.DateTime,
                     MaximumUses = totalUses,
-                    RemainingUses = totalUses
+                    RemainingUses = totalUses,
+                    Price = price
                 }, true);
 
                 return ((int)facilityId, (int)slotId);

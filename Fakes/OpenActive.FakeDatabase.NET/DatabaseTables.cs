@@ -111,8 +111,8 @@ namespace OpenActive.FakeDatabase.NET
         public DateTime End { get; set; }
         public long MaximumUses { get; set; }
         public long LeasedUses { get; set; }
-
         public long RemainingUses { get; set; }
+        public decimal? Price { get; set; }
     }
 
     public class FacilityUseTable : Table
@@ -124,7 +124,6 @@ namespace OpenActive.FakeDatabase.NET
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; } // Provider
-        public decimal? Price { get; set; }
     }
 
     public static class DatabaseCreator
