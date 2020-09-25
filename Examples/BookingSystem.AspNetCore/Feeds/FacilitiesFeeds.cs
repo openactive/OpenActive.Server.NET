@@ -95,21 +95,25 @@ namespace BookingSystem
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
-                var query = db.Select<SlotTable>()
+                var q = db.From<SlotTable>()
+                .Join<FacilityUseTable>()
                 .OrderBy(x => x.Modified)
                 .ThenBy(x => x.Id)
                 .Where(x => !afterTimestamp.HasValue && !afterId.HasValue ||
                     x.Modified > afterTimestamp ||
                     (x.Modified == afterTimestamp && x.Id > afterId) &&
                     x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
-                .Take(this.RPDEPageSize)
-                .Select(x => new RpdeItem<Slot>
+                .Take(this.RPDEPageSize);
+
+
+                var query = db.SelectMulti<SlotTable, FacilityUseTable>(q)
+                .Select(result => new RpdeItem<Slot>
                 {
                     Kind = RpdeKind.FacilityUseSlot,
-                    Id = x.Id,
-                    Modified = x.Modified,
-                    State = x.Deleted ? RpdeState.Deleted : RpdeState.Updated,
-                    Data = x.Deleted ? null : new Slot
+                    Id = result.Item1.Id,
+                    Modified = result.Item1.Modified,
+                    State = result.Item1.Deleted ? RpdeState.Deleted : RpdeState.Updated,
+                    Data = result.Item1.Deleted ? null : new Slot
                     {
                         // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                         // the parent class? Current thinking is it's more extensible on parent class as function signature remains
@@ -117,30 +121,30 @@ namespace BookingSystem
                         Id = this.RenderOpportunityId(new FacilityOpportunity
                         {
                             OpportunityType = OpportunityType.FacilityUseSlot,
-                            FacilityUseId = x.FacilityUseId,
-                            SlotId = x.Id
+                            FacilityUseId = result.Item1.FacilityUseId,
+                            SlotId = result.Item1.Id
                         }),
                         FacilityUse = this.RenderOpportunityId(new FacilityOpportunity
                         {
                             OpportunityType = OpportunityType.FacilityUse,
-                            FacilityUseId = x.FacilityUseId
+                            FacilityUseId = result.Item1.FacilityUseId
                         }),
-                        Identifier = x.Id,
-                        StartDate = (DateTimeOffset)x.Start,
-                        EndDate = (DateTimeOffset)x.End,
-                        Duration = x.End - x.Start,
-                        RemainingUses = x.RemainingUses,
-                        MaximumUses = x.MaximumUses,
+                        Identifier = result.Item1.Id,
+                        StartDate = (DateTimeOffset)result.Item1.Start,
+                        EndDate = (DateTimeOffset)result.Item1.End,
+                        Duration = result.Item1.End - result.Item1.Start,
+                        RemainingUses = result.Item1.RemainingUses,
+                        MaximumUses = result.Item1.MaximumUses,
                         Offers = new List<Offer> { new Offer
                                 {
                                     Id = this.RenderOfferId(new FacilityOpportunity
                                     {
                                         OfferId = 0,
-                                        FacilityUseId = x.FacilityUseId,
+                                        FacilityUseId = result.Item1.FacilityUseId,
                                         OpportunityType = OpportunityType.FacilityUseSlot,
-                                        SlotId = x.Id
+                                        SlotId = result.Item1.Id
                                     }),
-                                    Price = new Decimal(11.1),
+                                    Price = result.Item2.Price,
                                     PriceCurrency = "GBP",
                                     AvailableChannel = new List<AvailableChannelType>
                                     {
