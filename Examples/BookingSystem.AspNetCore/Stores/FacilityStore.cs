@@ -84,7 +84,7 @@ namespace BookingSystem
                 slotTable = db.Select<SlotTable>();
                 facilityTable = db.Select<FacilityUseTable>();
             }
-           
+
             var query = (from orderItemContext in orderItemContexts
                          join slot in slotTable on orderItemContext.RequestBookableOpportunityOfferId.SlotId equals slot.Id
                          join facility in facilityTable on slot.FacilityUseId equals facility.Id
@@ -151,8 +151,8 @@ namespace BookingSystem
                                      },
                                      StartDate = (DateTimeOffset)slot.Start,
                                      EndDate = (DateTimeOffset)slot.End,
-                                     MaximumAttendeeCapacity = slot.MaximumUses,
-                                     RemainingAttendeeCapacity = slot.RemainingUses
+                                     MaximumUses = slot.MaximumUses,
+                                     RemainingUses= slot.RemainingUses
                                  }
                              },
                              SellerId = new SellerIdComponents { SellerIdLong = facility.SellerId }
@@ -170,7 +170,7 @@ namespace BookingSystem
                 {
                     ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
-                    if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
+                    if (((Slot)item.OrderItem.OrderedItem).RemainingUses == 0)
                     {
                         ctx.AddError(new OpportunityIsFullError());
                     }
