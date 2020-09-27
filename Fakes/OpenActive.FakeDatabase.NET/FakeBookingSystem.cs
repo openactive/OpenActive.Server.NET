@@ -601,7 +601,7 @@ namespace OpenActive.FakeDatabase.NET
                     Id = id,
                     Deleted = false,
                     Name = faker.Commerce.ProductMaterial() + " " + faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall"),
-                    SellerId = faker.Random.Long(1, 2)
+                    SellerId = 1
                 })
                 .ToList();
 
