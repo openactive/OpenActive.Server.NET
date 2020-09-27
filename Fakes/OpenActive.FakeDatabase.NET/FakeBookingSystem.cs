@@ -643,7 +643,8 @@ namespace OpenActive.FakeDatabase.NET
 
             var sellers = new List<SellerTable> {
                 new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false },
-                new SellerTable { Id = 2, Name = "Jane Smith", IsIndividual = false }
+                new SellerTable { Id = 2, Name = "Jane Smith", IsIndividual = true },
+                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false }
             };
 
             using (var db = Mem.Database.Open())
