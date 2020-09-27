@@ -601,7 +601,7 @@ namespace OpenActive.FakeDatabase.NET
                     Id = id,
                     Deleted = false,
                     Name = faker.Commerce.ProductMaterial() + " " + faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall"),
-                    SellerId = 1
+                    SellerId = faker.Random.Bool() ? 1 : 3
                 })
                 .ToList();
 
@@ -637,7 +637,7 @@ namespace OpenActive.FakeDatabase.NET
                 Deleted = false,
                 Title = faker.Commerce.ProductMaterial() + " " + faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping"),
                 Price = Decimal.Parse(faker.Random.Bool() ? "0.00" : faker.Commerce.Price(0, 20)),
-                SellerId = faker.Random.Long(1, 2)
+                SellerId = faker.Random.Long(1, 3)
             })
             .ToList();
 
