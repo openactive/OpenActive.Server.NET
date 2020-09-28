@@ -57,6 +57,17 @@ namespace OpenActive.FakeDatabase.NET
         OrderWasNotFound
     }
 
+    /// <summary>
+    /// Result of booking (or attempting to book) an OrderProposal in a FakeDatabase
+    /// </summary>
+    public enum FakeDatabaseBookOrderProposalResult
+    {
+        OrderProposalVersionOutdated,
+        OrderSuccessfullyBooked,
+        OrderWasNotFound
+    }
+    
+
     public class FakeDatabase
     {
         public InMemorySQLite Mem = new InMemorySQLite();
@@ -101,14 +112,14 @@ namespace OpenActive.FakeDatabase.NET
                         BrokerName = brokerName,
                         SellerId = sellerId ?? default,
                         CustomerEmail = customerEmail,
-                        IsLease = true,
+                        OrderMode = OrderMode.Lease,
                         LeaseExpires = leaseExpires.DateTime,
                         VisibleInFeed = false
                     });
                     return true;
                 }
-                // Return false if there's a clash
-                else if (!existingOrder.IsLease || existingOrder.Deleted)
+                // Return false if there's a clash with an existing Order or OrderProposal
+                else if (existingOrder.OrderMode != OrderMode.Lease || existingOrder.Deleted)
                 {
                     return false;
                 }
@@ -119,7 +130,7 @@ namespace OpenActive.FakeDatabase.NET
                     existingOrder.BrokerName = brokerName;
                     existingOrder.SellerId = sellerId ?? default;
                     existingOrder.CustomerEmail = customerEmail;
-                    existingOrder.IsLease = true;
+                    existingOrder.OrderMode = OrderMode.Lease;
                     existingOrder.LeaseExpires = leaseExpires.DateTime;
                     db.Update(existingOrder);
 
@@ -133,7 +144,7 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 // TODO: Note this should throw an error if the Seller ID does not match, same as DeleteOrder
-                if (db.Exists<OrderTable>(x => x.ClientId == clientId && x.IsLease && x.OrderId == uuid && (!sellerId.HasValue || x.SellerId == sellerId)))
+                if (db.Exists<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Lease && x.OrderId == uuid && (!sellerId.HasValue || x.SellerId == sellerId)))
                 {
                     var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid).Select(x => x.OccurrenceId).Distinct();
 
@@ -145,7 +156,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction)
+        public bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid)
         {
             using (var db = Mem.Database.Open())
             {
@@ -165,13 +176,14 @@ namespace OpenActive.FakeDatabase.NET
                         CustomerEmail = customerEmail,
                         PaymentIdentifier = paymentIdentifier,
                         TotalOrderPrice = totalOrderPrice,
-                        IsLease = false,
-                        VisibleInFeed = false
+                        OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking,
+                        VisibleInFeed = false,
+                        ProposalVersionId = proposalVersionUuid
                     });
                     return true;
                 }
-                // Return false if there's a clash
-                else if (!existingOrder.IsLease || existingOrder.Deleted)
+                // Return false if there's a clash with an existing Order or OrderProposal
+                else if (existingOrder.OrderMode != OrderMode.Lease || existingOrder.Deleted)
                 {
                     return false;
                 }
@@ -184,7 +196,8 @@ namespace OpenActive.FakeDatabase.NET
                     existingOrder.CustomerEmail = customerEmail;
                     existingOrder.PaymentIdentifier = paymentIdentifier;
                     existingOrder.TotalOrderPrice = totalOrderPrice;
-                    existingOrder.IsLease = false;
+                    existingOrder.OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking;
+                    existingOrder.ProposalVersionId = proposalVersionUuid;
                     db.Update(existingOrder);
 
                     return true;
@@ -197,7 +210,7 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 // Set the Order to deleted in the feed, and erase all associated personal data
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid && !x.IsLease);
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OrderMode != OrderMode.Lease);
                 if (order == null)
                 {
                     return FakeDatabaseDeleteOrderResult.OrderWasNotFound;
@@ -263,7 +276,8 @@ namespace OpenActive.FakeDatabase.NET
                                 ClientId = clientId,
                                 Deleted = false,
                                 OrderId = uuid,
-                                OccurrenceId = occurrenceId
+                                OccurrenceId = occurrenceId,
+                                Status = BookingStatus.None
                             });
                         }
 
@@ -346,7 +360,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && !x.IsLease && x.OrderId == uuid && !x.Deleted);
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid && !x.Deleted);
                 if (order != null)
                 {
                     if (sellerId.HasValue && order.SellerId != sellerId)
@@ -363,10 +377,125 @@ namespace OpenActive.FakeDatabase.NET
                         }
                     }
                     // Update the total price and modified date on the Order to update the feed, if something has changed
+                    // This makes the call idempotent
                     if (updatedOrderItems.Count > 0)
                     {
                         var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
                         order.TotalOrderPrice = totalPrice;
+                        order.VisibleInFeed = true;
+                        order.Modified = DateTimeOffset.Now.UtcTicks;
+                        db.Update(order);
+                        // Note an actual implementation would need to handle different opportunity types here
+                        // Update the number of spaces available as a result of cancellation
+                        RecalculateSpaces(updatedOrderItems.Select(x => x.OccurrenceId).Distinct());
+                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool AcceptOrderProposal(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var order = db.Single<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid && !x.Deleted);
+                if (order != null)
+                {
+                    // This makes the call idempotent
+                    if (order.ProposalStatus != ProposalStatus.SellerAccepted)
+                    {
+                        // Update the status and modified date of the OrderProposal to update the feed
+                        order.ProposalStatus = ProposalStatus.SellerAccepted;
+                        order.VisibleInFeed = true;
+                        order.Modified = DateTimeOffset.Now.UtcTicks;
+                        db.Update(order);
+                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public FakeDatabaseBookOrderProposalResult BookOrderProposal(string clientId, long? sellerId, string uuid, string proposalVersionUuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                // Note call is idempotent, so it might already be in the booked state
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && (x.OrderMode == OrderMode.Proposal || x.OrderMode == OrderMode.Booking) && x.OrderId == uuid && !x.Deleted);
+                if (order != null)
+                {
+                    if (sellerId.HasValue && order.SellerId != sellerId)
+                    {
+                        throw new ArgumentException("SellerId does not match OrderProposal");
+                    }
+                    if (order.ProposalVersionId != proposalVersionUuid)
+                    {
+                        return FakeDatabaseBookOrderProposalResult.OrderProposalVersionOutdated;
+                    }
+                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
+                    foreach (OrderItemsTable orderItem in db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId))
+                    {
+                        if (orderItem.Status == BookingStatus.Proposed)
+                        {
+                            updatedOrderItems.Add(orderItem);
+                            db.UpdateOnly(() => new OrderItemsTable { Status = BookingStatus.Confirmed });
+                        }
+                    }
+                    // Update the status and modified date of the OrderProposal to update the feed, if something has changed
+                    // This makes the call idempotent
+                    if (updatedOrderItems.Count > 0)
+                    {
+                        var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
+                        order.ProposalStatus = ProposalStatus.SellerAccepted;
+                        order.VisibleInFeed = true;
+                        order.Modified = DateTimeOffset.Now.UtcTicks;
+                        db.Update(order);
+                        // Note an actual implementation would need to handle different opportunity types here
+                        // Update the number of spaces available as a result of cancellation
+                        RecalculateSpaces(updatedOrderItems.Select(x => x.OccurrenceId).Distinct());
+                    }
+                    return FakeDatabaseBookOrderProposalResult.OrderSuccessfullyBooked;
+                }
+                else
+                {
+                    return FakeDatabaseBookOrderProposalResult.OrderWasNotFound;
+                }
+            }
+        }
+
+
+        public bool RejectOrderProposal(string clientId, long? sellerId, string uuid, bool customerRejected)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Proposal && x.OrderId == uuid && !x.Deleted);
+                if (order != null)
+                {
+                    if (sellerId.HasValue && order.SellerId != sellerId)
+                    {
+                        throw new ArgumentException("SellerId does not match OrderProposal");
+                    }
+                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
+                    foreach (OrderItemsTable orderItem in db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId))
+                    {
+                        if (orderItem.Status == BookingStatus.Proposed)
+                        {
+                            updatedOrderItems.Add(orderItem);
+                            db.UpdateOnly(() => new OrderItemsTable { Status = BookingStatus.Rejected });
+                        }
+                    }
+                    // Update the status and modified date of the OrderProposal to update the feed, if something has changed
+                    if (updatedOrderItems.Count > 0)
+                    {
+                        var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
+                        order.ProposalStatus = customerRejected ? ProposalStatus.CustomerRejected : ProposalStatus.SellerRejected;
                         order.VisibleInFeed = true;
                         order.Modified = DateTimeOffset.Now.UtcTicks;
                         db.Update(order);
@@ -397,11 +526,11 @@ namespace OpenActive.FakeDatabase.NET
                     var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
 
                     // Update number of leased spaces remaining for the opportunity
-                    var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.IsLease && x.OccurrenceId == occurrenceId).Count();
+                    var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OccurrenceId == occurrenceId && x.Status != BookingStatus.Rejected).Count();
                     thisOccurrence.LeasedSpaces = leasedSpaces;
 
                     // Update number of actual spaces remaining for the opportunity
-                    var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => !x.OrderTable.IsLease && x.OccurrenceId == occurrenceId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+                    var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrenceId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
                     thisOccurrence.RemainingSpaces = thisOccurrence.TotalSpaces - totalSpacesTaken;
 
                     // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
@@ -445,6 +574,7 @@ namespace OpenActive.FakeDatabase.NET
                 Deleted = false,
                 Title = faker.Commerce.ProductMaterial() + " " + faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping"),
                 Price = Decimal.Parse(faker.Random.Bool() ? "0.00" : faker.Commerce.Price(0, 20)),
+                RequiresApproval = faker.Random.Bool(),
                 SellerId = faker.Random.Long(1, 2)
             })
             .ToList();

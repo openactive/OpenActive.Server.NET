@@ -11,7 +11,11 @@ namespace OpenActive.FakeDatabase.NET
 
     public enum BrokerRole { AgentBroker, ResellerBroker, NoBroker }
 
-    public enum BookingStatus { CustomerCancelled, SellerCancelled, Confirmed, Attended }
+    public enum BookingStatus { None, CustomerCancelled, SellerCancelled, Confirmed, Attended, Proposed, Rejected }
+
+    public enum ProposalStatus { AwaitingSellerConfirmation, SellerAccepted, SellerRejected, CustomerRejected }
+
+    public enum OrderMode { Lease, Proposal, Booking }
 
 
     public abstract class Table
@@ -33,6 +37,7 @@ namespace OpenActive.FakeDatabase.NET
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; }
         public decimal? Price { get; set; }
+        public bool RequiresApproval { get; set; }
     }
 
 
@@ -84,9 +89,11 @@ namespace OpenActive.FakeDatabase.NET
         public string CustomerEmail { get; set; }
         public string PaymentIdentifier { get; set; }
         public decimal TotalOrderPrice { get; set; }
-        public bool IsLease { get; set; }
+        public OrderMode OrderMode { get; set; }
         public DateTime LeaseExpires { get; set; }
         public bool VisibleInFeed { get; set; }
+        public ProposalStatus ProposalStatus { get; set; }
+        public string ProposalVersionId { get; set; }
     }
 
     public class SellerTable : Table

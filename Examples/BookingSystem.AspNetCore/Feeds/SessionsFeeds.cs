@@ -120,7 +120,10 @@ namespace BookingSystem
                                     AvailableChannel = new List<AvailableChannelType>
                                     {
                                         AvailableChannelType.OpenBookingPrepayment
-                                    }
+                                    },
+                                    OpenBookingFlowRequirement = result.Item1.RequiresApproval 
+                                        ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
+                                        : null,
                                 }
                             },
                             Location = new Place

@@ -7,53 +7,20 @@ using OpenActive.NET.Rpde.Version1;
 // TODO: Consolidate this logic with RpdeBase.cs to remove duplication (using generics?)
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
-    public abstract class OrdersRPDEFeedGenerator : IRPDEFeedGenerator
+    public abstract class OrdersRPDEFeedGenerator : OrdersModelSupport, IRPDEFeedGenerator
     {
         public int RPDEPageSize { get; private set; }
-        private OrderIdTemplate OrderIdTemplate { get; set; }
-        private SingleIdTemplate<SellerIdComponents> SellerIdTemplate { get; set; }
+
         protected Uri FeedUrl { get; private set; }
 
         internal void SetConfiguration(int rpdePageSize, OrderIdTemplate orderIdTemplate, SingleIdTemplate<SellerIdComponents> sellerIdTemplate, Uri offersFeedUrl)
         {
-            this.OrderIdTemplate = orderIdTemplate;
-
-            this.SellerIdTemplate = sellerIdTemplate;
+            base.SetConfiguration(orderIdTemplate, sellerIdTemplate);
 
             this.RPDEPageSize = rpdePageSize;
 
             // Allow these to be overridden by implementations if customisation is required
             this.FeedUrl = offersFeedUrl;
-        }
-
-        protected Uri RenderOrderId(OrderType orderType, string uuid)
-        {
-            return this.OrderIdTemplate.RenderOrderId(orderType, uuid);
-        }
-
-        //TODO reduce duplication of the strings / logic below
-        protected Uri RenderOrderItemId(OrderType orderType, string uuid, string orderItemId)
-        {
-            return this.OrderIdTemplate.RenderOrderItemId(orderType, uuid, orderItemId);
-        }
-        protected Uri RenderOrderItemId(OrderType orderType, string uuid, long orderItemId)
-        {
-            return this.OrderIdTemplate.RenderOrderItemId(orderType, uuid, orderItemId);
-        }
-
-        protected Uri RenderSellerId(SellerIdComponents sellerIdComponents)
-        {
-            return this.SellerIdTemplate.RenderId(sellerIdComponents);
-        }
-
-        protected Uri RenderSingleSellerId()
-        {
-            return this.SellerIdTemplate.RenderId(new SellerIdComponents());
-        }
-
-        protected static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)
-        {
-            return OrderCalculations.RenderOpportunityWithOnlyId(jsonLdType, id);
         }
 
         /// <summary>
