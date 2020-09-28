@@ -197,39 +197,43 @@ namespace OpenActive.Server.NET.StoreBooking
 
         protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate)
         {
-            if (simulateAction.Object.Type == nameof(Order) ||
-                simulateAction.Object.Type == nameof(OrderProposal) ||
-                simulateAction.Object.Type == nameof(OrderQuote))
+            switch (simulateAction.Object.Value)
             {
-                var idComponents = orderIdTemplate.GetOrderIdComponents(null, simulateAction.Object.Id);
+                case Order order:
+                    var orderIdComponents = orderIdTemplate.GetOrderIdComponents(null, order.Id);
 
-                if (idComponents == null)
-                {
-                    throw new OpenBookingException(new UnknownOrderError(), $"Order ID is not the expected format for a '{simulateAction.Object.Type}': '{simulateAction.Object.Id}'");
-                }
+                    if (orderIdComponents == null)
+                    {
+                        throw new OpenBookingException(new UnknownOrderError(), $"Order ID is not the expected format for a '{order.Type}': '{order.Id}'");
+                    }
 
-                storeBookingEngineSettings.OrderStore.TriggerTestAction(simulateAction, idComponents);
-            } else
-            {
-                var idComponents = base.ResolveOpportunityID(simulateAction.Object.Type, simulateAction.Object.Id);
+                    storeBookingEngineSettings.OrderStore.TriggerTestAction(simulateAction, orderIdComponents);
+                    break;
 
-                if (idComponents == null)
-                {
-                    throw new OpenBookingException(new InvalidOpportunityOrOfferIdError(), $"Opportunity ID is not the expected format for a '{simulateAction.Object.Type}': '{simulateAction.Object.Id}'");
-                }
+                case Event @event:
+                    var opportunityIdComponents = base.ResolveOpportunityID(@event.Type, @event.Id);
 
-                if (idComponents.OpportunityType == null)
-                {
-                    throw new EngineConfigurationException("OpportunityType must be configured for each IdComponent entry in the settings.");
-                }
+                    if (opportunityIdComponents == null)
+                    {
+                        throw new OpenBookingException(new InvalidOpportunityOrOfferIdError(), $"Opportunity ID is not the expected format for a '{@event.Type}': '{@event.Id}'");
+                    }
 
-                var store = storeRouting[idComponents.OpportunityType.Value];
-                if (store == null)
-                {
-                    throw new EngineConfigurationException($"Store is not defined for {idComponents.OpportunityType.Value}");
-                }
+                    if (opportunityIdComponents.OpportunityType == null)
+                    {
+                        throw new EngineConfigurationException("OpportunityType must be configured for each IdComponent entry in the settings.");
+                    }
 
-                store.TriggerTestAction(simulateAction, idComponents);
+                    var store = storeRouting[opportunityIdComponents.OpportunityType.Value];
+                    if (store == null)
+                    {
+                        throw new EngineConfigurationException($"Store is not defined for {opportunityIdComponents.OpportunityType.Value}");
+                    }
+
+                    store.TriggerTestAction(simulateAction, opportunityIdComponents);
+                    break;
+
+                default:
+                    throw new OpenBookingException(new OpenBookingError(), $"Object was not supplied");
             }
         }
 

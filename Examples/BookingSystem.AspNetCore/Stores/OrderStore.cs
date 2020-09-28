@@ -41,12 +41,22 @@ namespace BookingSystem
         {
             switch (simulateAction)
             {
-                case ReplacementSimulateAction _:
+                case SellerAcceptOrderProposalSimulateAction _:
                     if (idComponents.OrderType != OrderType.OrderProposal)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
                     }
                     if (!FakeBookingSystem.Database.AcceptOrderProposal(idComponents.uuid)) {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                case SellerRejectOrderProposalSimulateAction _:
+                    if (idComponents.OrderType != OrderType.OrderProposal)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
+                    }
+                    if (!FakeBookingSystem.Database.RejectOrderProposal(idComponents.ClientId, null, idComponents.uuid, false))
+                    {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;

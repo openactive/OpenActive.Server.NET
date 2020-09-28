@@ -155,8 +155,9 @@ namespace BookingSystem
                                      RemainingUses= slot.RemainingUses
                                  }
                              },
-                             SellerId = new SellerIdComponents { SellerIdLong = facility.SellerId }
-                           });
+                             SellerId = new SellerIdComponents { SellerIdLong = facility.SellerId },
+                             RequiresApproval = slot.RequiresApproval
+                         });
 
             // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
             foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
@@ -169,6 +170,8 @@ namespace BookingSystem
                 else
                 {
                     ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
+
+                    if (item.RequiresApproval) ctx.SetRequiresApproval();
 
                     if (((Slot)item.OrderItem.OrderedItem).RemainingUses == 0)
                     {
@@ -251,6 +254,39 @@ namespace BookingSystem
             }
         }
 
+
+        // TODO check logic here, it's just been copied from BookOrderItems. Possibly could remove duplication here.
+        protected override void ProposeOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        {
+            // Check that there are no conflicts between the supplied opportunities
+            // Also take into account spaces requested across OrderItems against total spaces in each opportunity
+
+            foreach (var ctxGroup in orderItemContexts.GroupBy(x => x.RequestBookableOpportunityOfferId))
+            {
+                // Check that the Opportunity ID and type are as expected for the store 
+                if (ctxGroup.Key.OpportunityType != OpportunityType.FacilityUseSlot || !ctxGroup.Key.SlotId.HasValue)
+                {
+                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                }
+
+                // Attempt to book for those with the same IDs, which is atomic
+                List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForFacilitySlot(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
+
+                if (orderItemIds != null)
+                {
+                    // Set OrderItemId for each orderItemContext
+                    foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
+                    {
+                        ctx.SetOrderItemId(flowContext, id);
+                    }
+                }
+                else
+                {
+                    // Note: A real implementation would not through an error this vague
+                    throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
+                }
+            }
+        }
     }
 
 }

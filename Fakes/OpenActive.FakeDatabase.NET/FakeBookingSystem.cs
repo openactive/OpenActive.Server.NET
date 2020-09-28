@@ -87,8 +87,8 @@ namespace OpenActive.FakeDatabase.NET
 
                 foreach (OrderTable order in db.Select<OrderTable>(x => x.LeaseExpires < DateTimeOffset.Now))
                 {
-                    occurrenceIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.OccurrenceId != 0).Select(x => x.OccurrenceId));
-                    slotIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.SlotId != 0).Select(x => x.SlotId));
+                    occurrenceIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value));
+                    slotIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.SlotId.HasValue).Select(x => x.SlotId.Value));
                     db.Delete<OrderItemsTable>(x => x.OrderId == order.OrderId);
                     db.Delete<OrderTable>(x => x.OrderId == order.OrderId);
                 }
@@ -150,8 +150,8 @@ namespace OpenActive.FakeDatabase.NET
                 // TODO: Note this should throw an error if the Seller ID does not match, same as DeleteOrder
                 if (db.Exists<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Lease && x.OrderId == uuid && (!sellerId.HasValue || x.SellerId == sellerId)))
                 {
-                    var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId != 0).Select(x => x.OccurrenceId).Distinct();
-                    var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId != 0).Select(x => x.SlotId).Distinct();
+                    var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
+                    var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
 
                     db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid);
                     db.Delete<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid);
@@ -234,8 +234,8 @@ namespace OpenActive.FakeDatabase.NET
                 order.Modified = DateTimeOffset.Now.UtcTicks;
                 db.Update(order);
 
-                var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && x.OccurrenceId != 0).Select(x => x.OccurrenceId).Distinct();
-                var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId != 0).Select(x => x.SlotId).Distinct();
+                var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
+                var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
                 db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId);
 
                 RecalculateSpaces(occurrenceIds);
@@ -250,8 +250,8 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 // Set the Order to deleted in the feed, and erase all associated personal data
-                var occurrenceIds = db.Select<OrderItemsTable>(x => x.OrderId == uuid && x.OccurrenceId != 0).Select(x => x.OccurrenceId).Distinct();
-                var slotIds = db.Select<OrderItemsTable>(x => x.OrderId == uuid && x.SlotId != 0).Select(x => x.SlotId).Distinct();
+                var occurrenceIds = db.Select<OrderItemsTable>(x => x.OrderId == uuid && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
+                var slotIds = db.Select<OrderItemsTable>(x => x.OrderId == uuid && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
 
                 db.Delete<OrderTable>(x => x.OrderId == uuid);
                 db.Delete<OrderItemsTable>(x => x.OrderId == uuid);
@@ -510,8 +510,8 @@ namespace OpenActive.FakeDatabase.NET
                         db.Update(order);
                         // Note an actual implementation would need to handle different opportunity types here
                         // Update the number of spaces available as a result of cancellation
-                        RecalculateSpaces(updatedOrderItems.Where(x => x.OccurrenceId != 0).Select(x => x.OccurrenceId).Distinct());
-                        RecalculateSlotUses(updatedOrderItems.Where(x => x.SlotId != 0).Select(x => x.SlotId).Distinct());
+                        RecalculateSpaces(updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                        RecalculateSlotUses(updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
                     }
                     return true;
                 }
@@ -577,13 +577,14 @@ namespace OpenActive.FakeDatabase.NET
                     if (updatedOrderItems.Count > 0)
                     {
                         var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
-                        order.ProposalStatus = ProposalStatus.SellerAccepted;
+                        order.OrderMode = OrderMode.Booking;
                         order.VisibleInFeed = true;
                         order.Modified = DateTimeOffset.Now.UtcTicks;
                         db.Update(order);
                         // Note an actual implementation would need to handle different opportunity types here
                         // Update the number of spaces available as a result of cancellation
-                        RecalculateSpaces(updatedOrderItems.Select(x => x.OccurrenceId).Distinct());
+                        RecalculateSpaces(updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                        RecalculateSlotUses(updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
                     }
                     return FakeDatabaseBookOrderProposalResult.OrderSuccessfullyBooked;
                 }
@@ -625,7 +626,8 @@ namespace OpenActive.FakeDatabase.NET
                         db.Update(order);
                         // Note an actual implementation would need to handle different opportunity types here
                         // Update the number of spaces available as a result of cancellation
-                        RecalculateSpaces(updatedOrderItems.Select(x => x.OccurrenceId).Distinct());
+                        RecalculateSpaces(updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                        RecalculateSlotUses(updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
                     }
                     return true;
                 }
@@ -636,9 +638,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public void RecalculateSlotUses(long slotId)
+        public void RecalculateSlotUses(long? slotId)
         {
-            RecalculateSlotUses(new List<long> { slotId });
+            if (slotId.HasValue) RecalculateSlotUses(new List<long> { slotId.Value });
         }
 
         public void RecalculateSlotUses(IEnumerable<long> slotIds)
@@ -650,11 +652,11 @@ namespace OpenActive.FakeDatabase.NET
                     var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
 
                     // Update number of leased spaces remaining for the opportunity
-                    var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.IsLease && x.OccurrenceId == slotId).Count();
+                    var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OccurrenceId == slotId).Count();
                     thisSlot.LeasedUses = leasedUses;
 
                     // Update number of actual spaces remaining for the opportunity
-                    var totalUsesTaken = db.LoadSelect<OrderItemsTable>(x => !x.OrderTable.IsLease && x.OccurrenceId == slotId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+                    var totalUsesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slotId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
                     thisSlot.RemainingUses = thisSlot.MaximumUses - totalUsesTaken;
 
                     // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) 
@@ -665,9 +667,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public void RecalculateSpaces(long occurrenceId)
+        public void RecalculateSpaces(long? occurrenceId)
         {
-            RecalculateSpaces(new List<long> { occurrenceId });
+            if (occurrenceId.HasValue) RecalculateSpaces(new List<long> { occurrenceId.Value });
         }
 
         public void RecalculateSpaces(IEnumerable<long> occurrenceIds)
@@ -721,6 +723,7 @@ namespace OpenActive.FakeDatabase.NET
                     MaximumUses = x.TotalUses,
                     RemainingUses = x.TotalUses,
                     Price = Decimal.Parse(faker.Random.Bool() ? "0.00" : faker.Commerce.Price(0, 20)),
+                    RequiresApproval = faker.Random.Bool(),
                 })
                 .ToList();
 

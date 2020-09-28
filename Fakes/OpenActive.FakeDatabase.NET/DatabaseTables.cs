@@ -70,11 +70,11 @@ namespace OpenActive.FakeDatabase.NET
         [Reference]
         public OccurrenceTable OccurrenceTable { get; set; }
         [ForeignKey(typeof(OccurrenceTable), OnDelete = "CASCADE")]
-        public long OccurrenceId { get; set; }
+        public long? OccurrenceId { get; set; }
         [Reference]
         public SlotTable SlotTable { get; set; }
         [ForeignKey(typeof(SlotTable), OnDelete = "CASCADE")]
-        public long SlotId { get; set; }
+        public long? SlotId { get; set; }
 
         public BookingStatus Status { get; set; }
         public decimal Price { get; set; }
@@ -120,6 +120,7 @@ namespace OpenActive.FakeDatabase.NET
         public long LeasedUses { get; set; }
         public long RemainingUses { get; set; }
         public decimal? Price { get; set; }
+        public bool RequiresApproval { get; set; }
     }
 
     public class FacilityUseTable : Table

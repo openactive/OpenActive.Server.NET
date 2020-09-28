@@ -608,7 +608,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new OpenBookingError(), "Invalid type specified. Type must subclass OpenBookingSimulateAction.");
             }
 
-            if (action.Object == null || action.Object.Id == null)
+            if (!action.Object.HasValue || ((Schema.NET.JsonLdObject)action.Object.Value).Id == null)
             {
                 throw new OpenBookingException(new OpenBookingError(), "Invalid OpenBookingSimulateAction object specified.");
             }
