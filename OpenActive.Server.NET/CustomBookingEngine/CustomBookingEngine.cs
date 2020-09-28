@@ -484,7 +484,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         ResponseContent IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
         {
-            Event genericEvent = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
+            Event genericEvent = OpenActiveSerializer.Deserialize<Event>(eventJson);
 
             // Note opportunityType is required here to facilitate routing to the correct store to handle the request
             OpportunityType? opportunityType = null;
