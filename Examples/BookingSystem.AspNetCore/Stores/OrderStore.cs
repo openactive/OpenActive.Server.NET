@@ -117,8 +117,10 @@ namespace BookingSystem
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
 
-        public override void CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public override string CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
+            var version = Guid.NewGuid().ToString();
+
             var result = databaseTransaction.Database.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
@@ -129,9 +131,11 @@ namespace BookingSystem
                 flowContext.Payment?.Identifier,
                 responseOrderProposal.TotalPaymentDue.Price.Value,
                 databaseTransaction.Transaction,
-                Guid.NewGuid().ToString());
+                version);
 
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
+
+            return version;
         }
 
         public override DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
@@ -169,8 +173,10 @@ namespace BookingSystem
 
         public override bool CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
         {
-            // TODO extract version UUID from orderProposalVersion (probably much further up the stack?)
-            var result = FakeBookingSystem.Database.BookOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, orderProposalVersion.ToString());
+            // TODO more elegantly extract version UUID from orderProposalVersion (probably much further up the stack?)
+            var version = orderProposalVersion.ToString().Split('/').Last();
+
+            var result = FakeBookingSystem.Database.BookOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, version);
             // TODO return enum to allow errors cases to be handled in the engine
             switch (result)
             {

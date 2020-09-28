@@ -502,7 +502,8 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
+                            var version = storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
+                            responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id.ToString()}/versions/{version}");
 
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
@@ -526,7 +527,7 @@ namespace OpenActive.Server.NET.StoreBooking
                             responseOrderProposal.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
 
                             storeBookingEngineSettings.OrderStore.UpdateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
-
+                            
                             dbTransaction.Commit();
                         }
                         catch
