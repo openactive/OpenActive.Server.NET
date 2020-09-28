@@ -84,7 +84,7 @@ namespace BookingSystem
                 occurrenceTable = db.Select<OccurrenceTable>();
                 classTable = db.Select<ClassTable>();
             }
-           
+
             var query = (from orderItemContext in orderItemContexts
                          join occurances in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurances.Id
                          join classes in classTable on occurances.ClassId equals classes.Id
@@ -155,8 +155,9 @@ namespace BookingSystem
                                      RemainingAttendeeCapacity = occurances.RemainingSpaces
                                  }
                              },
-                             SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId }
-                           });
+                             SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId },
+                             RequiresApproval = classes.RequiresApproval
+                         }); ;
 
             // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
             foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
@@ -169,6 +170,8 @@ namespace BookingSystem
                 else
                 {
                     ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
+
+                    if (item.RequiresApproval) ctx.SetRequiresApproval();
 
                     if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
                     {

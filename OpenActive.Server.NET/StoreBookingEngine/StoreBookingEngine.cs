@@ -17,6 +17,7 @@ namespace OpenActive.Server.NET.StoreBooking
         OrderIdComponents ResponseOrderItemId { get; }
         OrderItem RequestOrderItem { get; set; }
         OrderItem ResponseOrderItem { get; }
+        bool RequiresApproval { get; }
     }
 
     public class UnknownOrderItemContext : OrderItemContext<NullBookableIdComponents>
@@ -48,12 +49,18 @@ namespace OpenActive.Server.NET.StoreBooking
         public OrderIdComponents ResponseOrderItemId { get; private set; }
         public OrderItem RequestOrderItem { get; set; }
         public OrderItem ResponseOrderItem { get; private set; }
+        public bool RequiresApproval { get; set; } = false;
 
         public void AddError(OpenBookingError openBookingError)
         {
             if (ResponseOrderItem == null) throw new NotSupportedException("AddError cannot be used before SetResponseOrderItem.");
             if (ResponseOrderItem.Error == null) ResponseOrderItem.Error = new List<OpenBookingError>();
             ResponseOrderItem.Error.Add(openBookingError);
+        }
+
+        public void SetRequiresApproval()
+        {
+            RequiresApproval = true;
         }
 
         public void AddError(OpenBookingError openBookingError, string description)
@@ -534,9 +541,6 @@ namespace OpenActive.Server.NET.StoreBooking
                     if (!(context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2))
                         throw new OpenBookingException(new UnexpectedOrderTypeError());
 
-                    // This library does not yet support approval
-                    responseOrderQuote.OrderRequiresApproval = false;
-
                     // If "payment" has been supplied unnecessarily, simply do not return it
                     if (responseOrderQuote.Payment != null && responseOrderQuote.TotalPaymentDue.Price.Value == 0)
                     {
@@ -562,6 +566,9 @@ namespace OpenActive.Server.NET.StoreBooking
 
                                 // Update this in case ResponseOrderItem was overwritten in Lease
                                 responseOrderQuote.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
+
+                                // Note OrderRequiresApproval is only required during C1 and C2
+                                responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
 
                                 storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction);
 
