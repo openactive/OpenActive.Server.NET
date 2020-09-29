@@ -246,10 +246,10 @@ namespace BookingSystem
                 var order = db.Single<OrderTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid && !x.Deleted);
                 var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid);
 
-                var o = GetOrderFromDatabaseResult(this.RenderOrderId(OrderType.Order, order.OrderId), order, 
+                var o = GetOrderFromDatabaseResult(this.RenderOrderId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId), order, 
                     orderItems.Select((orderItem) => new OrderItem
                     {
-                        Id = this.RenderOrderItemId(OrderType.Order, order.OrderId, orderItem.Id),
+                        Id = this.RenderOrderItemId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId, orderItem.Id),
                         AcceptedOffer = new Offer
                         {
                             Id = new Uri(orderItem.OfferJsonLdId),
