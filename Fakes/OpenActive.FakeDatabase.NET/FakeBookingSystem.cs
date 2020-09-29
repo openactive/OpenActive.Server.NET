@@ -568,7 +568,7 @@ namespace OpenActive.FakeDatabase.NET
                     List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
                     foreach (OrderItemsTable orderItem in db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId))
                     {
-                        if (orderItem.Status == BookingStatus.Proposed)
+                        if (orderItem.Status != BookingStatus.Confirmed)
                         {
                             updatedOrderItems.Add(orderItem);
                             db.UpdateOnly(() => new OrderItemsTable { Status = BookingStatus.Confirmed });
@@ -576,7 +576,7 @@ namespace OpenActive.FakeDatabase.NET
                     }
                     // Update the status and modified date of the OrderProposal to update the feed, if something has changed
                     // This makes the call idempotent
-                    if (updatedOrderItems.Count > 0)
+                    if (updatedOrderItems.Count > 0 || order.OrderMode != OrderMode.Booking)
                     {
                         var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
                         order.OrderMode = OrderMode.Booking;
