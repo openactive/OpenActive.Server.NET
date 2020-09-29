@@ -46,7 +46,7 @@ namespace BookingSystem
                             AcmeOrderStore.GetOrderFromDatabaseResult(this.RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
                                 result.OrderItemsTable.Select((orderItem) => new OrderItem
                                 {
-                                    Id = this.RenderOrderItemId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId, orderItem.Id),
+                                    Id = result.OrderTable.OrderMode == OrderMode.Booking ? this.RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id) : null,
                                     AcceptedOffer = new Offer
                                     {
                                         Id = new Uri(orderItem.OfferJsonLdId),

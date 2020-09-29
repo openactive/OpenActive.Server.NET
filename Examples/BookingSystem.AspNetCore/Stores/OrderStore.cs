@@ -249,7 +249,7 @@ namespace BookingSystem
                 var o = GetOrderFromDatabaseResult(this.RenderOrderId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId), order, 
                     orderItems.Select((orderItem) => new OrderItem
                     {
-                        Id = this.RenderOrderItemId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId, orderItem.Id),
+                        Id = order.OrderMode == OrderMode.Booking ? this.RenderOrderItemId(OrderType.Order, order.OrderId, orderItem.Id) : null,
                         AcceptedOffer = new Offer
                         {
                             Id = new Uri(orderItem.OfferJsonLdId),

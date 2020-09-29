@@ -365,7 +365,7 @@ namespace OpenActive.FakeDatabase.NET
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
-        public List<long> BookOrderItemsForClassOccurrence(string clientId, long? sellerId, string uuid, long occurrenceId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces)
+        public List<long> BookOrderItemsForClassOccurrence(string clientId, long? sellerId, string uuid, long occurrenceId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces, bool proposal)
         {
             using (var db = Mem.Database.Open())
             {
@@ -395,7 +395,7 @@ namespace OpenActive.FakeDatabase.NET
                                 ClientId = clientId,
                                 Deleted = false,
                                 OrderId = uuid,
-                                Status = BookingStatus.Confirmed,
+                                Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
                                 OccurrenceId = occurrenceId,
                                 OpportunityJsonLdType = opportunityJsonLdType,
                                 OpportunityJsonLdId = opportunityJsonLdId,
@@ -424,7 +424,7 @@ namespace OpenActive.FakeDatabase.NET
 
 
         // TODO this should reuse code of LeaseOrderItemsForFacilityOccurrence
-        public List<long> BookOrderItemsForFacilitySlot(string clientId, long? sellerId, string uuid, long slotId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces)
+        public List<long> BookOrderItemsForFacilitySlot(string clientId, long? sellerId, string uuid, long slotId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces, bool proposal)
         {
             using (var db = Mem.Database.Open())
             {
@@ -454,7 +454,7 @@ namespace OpenActive.FakeDatabase.NET
                                 ClientId = clientId,
                                 Deleted = false,
                                 OrderId = uuid,
-                                Status = BookingStatus.Confirmed,
+                                Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
                                 SlotId = slotId,
                                 OpportunityJsonLdType = opportunityJsonLdType,
                                 OpportunityJsonLdId = opportunityJsonLdId,

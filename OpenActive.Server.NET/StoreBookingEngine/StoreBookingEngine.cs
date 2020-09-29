@@ -311,6 +311,13 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // Expand OrderItems based on the flowContext
             var (orderItemContexts, _) = GetOrderItemContexts(order.OrderedItem, flowContext, null);
+
+            // Maintain IDs and OrderItemStatus from GetOrderStatus that will have been overwritten by expansion
+            foreach (var ctx in orderItemContexts)
+            {
+                ctx.ResponseOrderItem.Id = ctx.RequestOrderItem.Id;
+                ctx.ResponseOrderItem.OrderItemStatus = ctx.RequestOrderItem.OrderItemStatus;
+            }
             order.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
 
             // TODO: Should other properties be extracted from the flowContext for consistency, or do we trust the internals not to create excessive props?

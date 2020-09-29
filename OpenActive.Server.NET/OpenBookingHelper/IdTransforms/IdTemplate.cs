@@ -421,8 +421,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         }
         public Uri RenderOrderItemId(OrderType orderType, string uuid, long orderItemId)
         {
-            // TODO remove "&& orderType != OrderType.OrderProposal" when framework supports OrderVersion
-            if (orderType != OrderType.Order && orderType != OrderType.OrderProposal) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
+            if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
             return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdLong = orderItemId });
         }
 
