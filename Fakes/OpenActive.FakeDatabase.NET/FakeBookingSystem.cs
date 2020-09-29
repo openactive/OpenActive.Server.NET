@@ -162,7 +162,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid)
+        public bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             using (var db = Mem.Database.Open())
             {
@@ -184,7 +184,8 @@ namespace OpenActive.FakeDatabase.NET
                         TotalOrderPrice = totalOrderPrice,
                         OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking,
                         VisibleInFeed = false,
-                        ProposalVersionId = proposalVersionUuid
+                        ProposalVersionId = proposalVersionUuid,
+                        ProposalStatus = proposalStatus
                     });
                     return true;
                 }
@@ -204,6 +205,7 @@ namespace OpenActive.FakeDatabase.NET
                     existingOrder.TotalOrderPrice = totalOrderPrice;
                     existingOrder.OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking;
                     existingOrder.ProposalVersionId = proposalVersionUuid;
+                    existingOrder.ProposalStatus = proposalStatus;
                     db.Update(existingOrder);
 
                     return true;

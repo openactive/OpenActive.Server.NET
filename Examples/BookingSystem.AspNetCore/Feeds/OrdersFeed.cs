@@ -34,43 +34,36 @@ namespace BookingSystem
                     {
                         OrderTable = result.Select(item => new { item.Item1 }).FirstOrDefault().Item1,
                         Seller = result.Select(item => new { item.Item2 }).FirstOrDefault().Item2,
-                        OrderItemsTable = result.Select(item => new { item.Item3 }).ToList()
+                        OrderItemsTable = result.Select(item => new { item.Item3 }).ToList().Select(orderItem => orderItem.Item3).ToList()
                     })
                     .Select((result) => new RpdeItem
-                     {
-                         Kind = RpdeKind.Order,
-                         Id = result.OrderTable.OrderId,
-                         Modified = result.OrderTable.Modified,
-                         State = result.OrderTable.Deleted ? RpdeState.Deleted : RpdeState.Updated,
-                         Data = result.OrderTable.Deleted ? null : new Order
-                         {
-                             Id = this.RenderOrderId(OrderType.Order, result.OrderTable.OrderId),
-                             Identifier = result.OrderTable.OrderId,
-                             TotalPaymentDue = new PriceSpecification
-                             {
-                                 Price = result.OrderTable.TotalOrderPrice,
-                                 PriceCurrency = "GBP"
-                             },
-                             OrderedItem = result.OrderItemsTable.Select((orderItem) => new OrderItem
-                             {
-                                 Id = this.RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Item3.Id),
-                                 AcceptedOffer = new Offer
-                                 {
-                                     Id = new Uri(orderItem.Item3.OfferJsonLdId),
-                                     Price = orderItem.Item3.Price,
-                                     PriceCurrency = "GBP"
-                                 },
-                                 OrderedItem = RenderOpportunityWithOnlyId(orderItem.Item3.OpportunityJsonLdType, new Uri(orderItem.Item3.OpportunityJsonLdId)),
-                                 OrderItemStatus =
-                                     orderItem.Item3.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
-                                     orderItem.Item3.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
-                                     orderItem.Item3.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
-                                     orderItem.Item3.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended :
-                                     orderItem.Item3.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
+                    {
+                        Kind = RpdeKind.Order,
+                        Id = result.OrderTable.OrderId,
+                        Modified = result.OrderTable.Modified,
+                        State = result.OrderTable.Deleted ? RpdeState.Deleted : RpdeState.Updated,
+                        Data = result.OrderTable.Deleted ? null :
+                            AcmeOrderStore.GetOrderFromDatabaseResult(this.RenderOrderId(OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
+                                result.OrderItemsTable.Select((orderItem) => new OrderItem
+                                {
+                                    Id = this.RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id),
+                                    AcceptedOffer = new Offer
+                                    {
+                                        Id = new Uri(orderItem.OfferJsonLdId),
+                                        Price = orderItem.Price,
+                                        PriceCurrency = "GBP"
+                                    },
+                                    OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
+                                    OrderItemStatus =
+                                        orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
+                                        orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
+                                        orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
+                                        orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended :
+                                        orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
 
-                             }).ToList()
-                         }
-                     });
+                                }).ToList()
+                            )
+                    });
 
                 return query.ToList();
             }  

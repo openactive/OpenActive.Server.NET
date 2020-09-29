@@ -97,7 +97,7 @@ namespace OpenActive.FakeDatabase.NET
         public OrderMode OrderMode { get; set; }
         public DateTime LeaseExpires { get; set; }
         public bool VisibleInFeed { get; set; }
-        public ProposalStatus ProposalStatus { get; set; }
+        public ProposalStatus? ProposalStatus { get; set; }
         public string ProposalVersionId { get; set; }
     }
 

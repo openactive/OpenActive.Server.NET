@@ -122,12 +122,13 @@ namespace BookingSystem
                 flowContext.Payment?.Identifier,
                 responseOrder.TotalPaymentDue.Price.Value,
                 databaseTransaction.Transaction,
+                null,
                 null);
 
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
 
-        public override string CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public override (string, OrderProposalStatus) CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             var version = Guid.NewGuid().ToString();
 
@@ -141,11 +142,12 @@ namespace BookingSystem
                 flowContext.Payment?.Identifier,
                 responseOrderProposal.TotalPaymentDue.Price.Value,
                 databaseTransaction.Transaction,
-                version);
+                version,
+                ProposalStatus.AwaitingSellerConfirmation);
 
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
 
-            return version;
+            return (version, OrderProposalStatus.AwaitingSellerConfirmation);
         }
 
         public override DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
@@ -201,7 +203,7 @@ namespace BookingSystem
             }
         }
 
-        public Order CreateOrderFromOrderMode(OrderMode orderMode)
+        public static Order CreateOrderFromOrderMode(OrderMode orderMode, Uri orderId, string proposalVersionId, ProposalStatus? proposalStatus)
         {
             switch (orderMode)
             {
@@ -210,10 +212,30 @@ namespace BookingSystem
                 case OrderMode.Lease:
                     return new OrderQuote();
                 case OrderMode.Proposal:
-                    return new OrderProposal();
+                    var o = new OrderProposal();
+                    o.OrderProposalVersion = new Uri($"{orderId.ToString()}/versions/{proposalVersionId}");
+                    o.OrderProposalStatus = proposalStatus == ProposalStatus.AwaitingSellerConfirmation ? OrderProposalStatus.AwaitingSellerConfirmation :
+                        proposalStatus == ProposalStatus.CustomerRejected ? OrderProposalStatus.CustomerRejected :
+                        proposalStatus == ProposalStatus.SellerAccepted ? OrderProposalStatus.SellerAccepted :
+                        proposalStatus == ProposalStatus.SellerRejected ? OrderProposalStatus.SellerRejected : (OrderProposalStatus?)null;
+                    return o;
                 default:
                     throw new ArgumentOutOfRangeException("Unrecognised OrderMode");
             }
+        }
+
+        public static Order GetOrderFromDatabaseResult(Uri orderId, OrderTable order, List<OrderItem> orderItems)
+        {
+            var o = CreateOrderFromOrderMode(order.OrderMode, orderId, order.ProposalVersionId, order.ProposalStatus);
+            o.Id = orderId;
+            o.Identifier = order.OrderId;
+            o.TotalPaymentDue = new PriceSpecification
+            {
+                Price = order.TotalOrderPrice,
+                PriceCurrency = "GBP"
+            };
+            o.OrderedItem = orderItems;
+            return o;
         }
 
         //TODO return Order
@@ -224,10 +246,25 @@ namespace BookingSystem
                 var order = db.Single<OrderTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid && !x.Deleted);
                 var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid);
 
-                // TODO: Ensure the appropriate type is created
-                var o = CreateOrderFromOrderMode(order.OrderMode);
-                o.Id = this.RenderOrderId(OrderType.Order, order.OrderId);
-                o.Identifier = order.OrderId;
+                var o = GetOrderFromDatabaseResult(this.RenderOrderId(OrderType.Order, order.OrderId), order, 
+                    orderItems.Select((orderItem) => new OrderItem
+                    {
+                        Id = this.RenderOrderItemId(OrderType.Order, order.OrderId, orderItem.Id),
+                        AcceptedOffer = new Offer
+                        {
+                            Id = new Uri(orderItem.OfferJsonLdId),
+                        },
+                        OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
+                        OrderItemStatus =
+                            orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
+                            orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
+                            orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
+                            orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended :
+                            orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
+
+                    }).ToList());
+
+                // These additional properties that are only available in the Order Status endpoint
                 o.Seller = seller;
 
                 // Todo take these from database (and check whether Customer should be included from a GDPR point of view?!)
@@ -241,27 +278,6 @@ namespace BookingSystem
                     Email = "temp@example.com"
                 };
 
-                o.TotalPaymentDue = new PriceSpecification
-                {
-                    Price = order.TotalOrderPrice,
-                    PriceCurrency = "GBP"
-                };
-                o.OrderedItem = orderItems.Select((orderItem) => new OrderItem
-                {
-                    Id = this.RenderOrderItemId(OrderType.Order, order.OrderId, orderItem.Id),
-                    AcceptedOffer = new Offer
-                    {
-                        Id = new Uri(orderItem.OfferJsonLdId)
-                    },
-                    OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
-                    OrderItemStatus =
-                        orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
-                        orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
-                        orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
-                        orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended : 
-                        orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
-
-                }).ToList();
                 return o;
             }
         }

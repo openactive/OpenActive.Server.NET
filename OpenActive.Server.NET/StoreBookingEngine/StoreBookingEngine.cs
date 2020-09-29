@@ -506,8 +506,9 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            var version = storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
+                            var (version, orderProposalStatus) = storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
                             responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id.ToString()}/versions/{version}");
+                            responseOrderProposal.OrderProposalStatus = orderProposalStatus;
 
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
