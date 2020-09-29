@@ -23,7 +23,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaid:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
-                            var (facilityId1, slotId1) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10);
+                            var (facilityId1, slotId1) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false);
                             return new FacilityOpportunity
                             {
                                 OpportunityType = opportunityType,
@@ -31,7 +31,7 @@ namespace BookingSystem
                                 SlotId = slotId1
                             };
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                            var (facilityId2, slotId2) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10);
+                            var (facilityId2, slotId2) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false);
                             return new FacilityOpportunity
                             {
                                 OpportunityType = opportunityType,
@@ -39,17 +39,24 @@ namespace BookingSystem
                                 SlotId = slotId2
                             };
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
-                            var (facilityId3, slotId3) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 0);
+                            var (facilityId3, slotId3) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility No Spaces", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 0, false);
                             return new FacilityOpportunity
                             {
                                 OpportunityType = opportunityType,
                                 FacilityUseId = facilityId3,
                                 SlotId = slotId3
                             };
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
+                            var (facilityId4, slotId4) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
+                            return new FacilityOpportunity
+                            {
+                                OpportunityType = opportunityType,
+                                FacilityUseId = facilityId4,
+                                SlotId = slotId4
+                            };
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
-
 
                 default:
                     throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");

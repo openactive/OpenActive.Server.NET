@@ -23,7 +23,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaid:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
-                            var (classId1, occurrenceId1) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10);
+                            var (classId1, occurrenceId1) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false);
                             return new SessionOpportunity
                             {
                                 OpportunityType = opportunityType,
@@ -31,7 +31,7 @@ namespace BookingSystem
                                 ScheduledSessionId = occurrenceId1
                             };
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                            var (classId2, occurrenceId2) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10);
+                            var (classId2, occurrenceId2) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false);
                             return new SessionOpportunity
                             {
                                 OpportunityType = opportunityType,
@@ -39,12 +39,20 @@ namespace BookingSystem
                                 ScheduledSessionId = occurrenceId2
                             };
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
-                            var (classId3, occurrenceId3) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 0);
+                            var (classId3, occurrenceId3) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event No Spaces", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 0, false);
                             return new SessionOpportunity
                             {
                                 OpportunityType = opportunityType,
                                 SessionSeriesId = classId3,
                                 ScheduledSessionId = occurrenceId3
+                            };
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
+                            var (classId4, occurrenceId4) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
+                            return new SessionOpportunity
+                            {
+                                OpportunityType = opportunityType,
+                                SessionSeriesId = classId4,
+                                ScheduledSessionId = occurrenceId4
                             };
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");

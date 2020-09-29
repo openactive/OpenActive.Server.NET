@@ -790,7 +790,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (int, int) AddClass(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces)
+        public (int, int) AddClass(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces, bool requiresApproval)
         {
             using (var db = Mem.Database.Open())
             {
@@ -800,7 +800,8 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     Title = title,
                     Price = price,
-                    SellerId = seller
+                    SellerId = seller,
+                    RequiresApproval = requiresApproval
                 }, true);
 
                 var occurrenceId = db.Insert(new OccurrenceTable
@@ -818,7 +819,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (int, int) AddFacility(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalUses)
+        public (int, int) AddFacility(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalUses, bool requiresApproval)
         {
             using (var db = Mem.Database.Open())
             {
@@ -839,7 +840,8 @@ namespace OpenActive.FakeDatabase.NET
                     End = endTime.DateTime,
                     MaximumUses = totalUses,
                     RemainingUses = totalUses,
-                    Price = price
+                    Price = price,
+                    RequiresApproval = requiresApproval
                 }, true);
 
                 return ((int)facilityId, (int)slotId);
