@@ -157,7 +157,7 @@ namespace BookingSystem
                              },
                              SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId },
                              RequiresApproval = classes.RequiresApproval
-                         }); ;
+                         });
 
             // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
             foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
@@ -271,15 +271,7 @@ namespace BookingSystem
                 // Attempt to book for those with the same IDs, which is atomic
                 List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
 
-                if (orderItemIds != null)
-                {
-                    // Set OrderItemId for each orderItemContext
-                    foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
-                    {
-                        ctx.SetOrderItemId(flowContext, id);
-                    }
-                }
-                else
+                if (orderItemIds == null)
                 {
                     // Note: A real implementation would not through an error this vague
                     throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");

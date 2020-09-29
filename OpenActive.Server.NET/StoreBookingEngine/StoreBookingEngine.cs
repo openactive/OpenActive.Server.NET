@@ -517,10 +517,10 @@ namespace OpenActive.Server.NET.StoreBooking
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
-                                    // Check that OrderItem Id was added
-                                    if (ctx.ResponseOrderItemId == null || ctx.ResponseOrderItem.Id == null)
+                                    // Remove OrderItem Id that may have been added
+                                    if (ctx.ResponseOrderItemId != null || ctx.ResponseOrderItem.Id != null)
                                     {
-                                        throw new ArgumentException("SetOrderItemId must be called for each OrderItemContext in ProposeOrderItems");
+                                        throw new ArgumentException("SetOrderItemId must not be called for any OrderItemContext in ProposeOrderItems");
                                     }
 
                                     // Set the orderItemStatus to be https://openactive.io/OrderItemProposed (as it must always be so in the response of P)
