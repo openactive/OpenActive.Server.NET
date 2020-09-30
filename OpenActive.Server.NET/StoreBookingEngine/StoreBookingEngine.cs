@@ -454,6 +454,11 @@ namespace OpenActive.Server.NET.StoreBooking
                         throw new OpenBookingException(new UnnecessaryPaymentDetailsError(), "Payment details were erroneously supplied for a free Order.");
                     }
 
+                    // If payment property is missing from order, throw an error.
+                    if (order.Payment == null && responseOrder.TotalPaymentDue?.Price != 0) { 
+                        throw new OpenBookingException(new MissingPaymentDetailsError(), "Payment property must be supplied Order that are not free");
+                    }
+
                     // Throw error on incomplete broker details
                     if (order.TotalPaymentDue?.Price != responseOrder.TotalPaymentDue?.Price)
                     {
