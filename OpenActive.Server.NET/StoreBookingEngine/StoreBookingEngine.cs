@@ -448,6 +448,12 @@ namespace OpenActive.Server.NET.StoreBooking
                         throw new OpenBookingException(new UnableToProcessOrderItemError());
                     }
 
+                    // If Identifier is missing from "payment" for paid order, throw an error
+                    if (responseOrder.Payment?.Identifier == null && responseOrder.TotalPaymentDue?.Price != 0)
+                    {
+                        throw new OpenBookingException(new IncompletePaymentDetailsError(), "Payment must contain identifier for paid Order.");
+                    }
+
                     // If "payment" has been supplied unnecessarily, throw an error
                     if (responseOrder.Payment != null && responseOrder.TotalPaymentDue?.Price == 0)
                     {
