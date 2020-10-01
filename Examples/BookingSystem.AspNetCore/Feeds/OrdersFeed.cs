@@ -22,14 +22,14 @@ namespace BookingSystem
                 .Join<SellerTable>()
                 .Join<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
                 .OrderBy(x => x.Modified)
-                .ThenBy(x => x.Id)
+                .ThenBy(x => x.OrderId)
                 .Where(x => x.VisibleInFeed && x.ClientId == clientId && (!afterTimestamp.HasValue || x.Modified > afterTimestamp ||
                         (x.Modified == afterTimestamp && string.Compare(afterId, x.OrderId) > 0)) && x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
                 .Take(this.RPDEPageSize);
 
                 var query = db
                     .SelectMulti<OrderTable, SellerTable, OrderItemsTable>(q)
-                    .GroupBy(x => new { x.Item1.Id })
+                    .GroupBy(x => new { x.Item1.OrderId })
                     .Select((result) => new
                     {
                         OrderTable = result.Select(item => new { item.Item1 }).FirstOrDefault().Item1,

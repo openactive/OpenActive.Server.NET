@@ -80,10 +80,16 @@ namespace OpenActive.FakeDatabase.NET
         public decimal Price { get; set; }
     }
 
-    public class OrderTable : Table
+    public class OrderTable
     {
-        public string ClientId { get; set; }
+        [PrimaryKey]
+        [Alias("RpdeId")]
         public string OrderId { get; set; }
+
+        public bool Deleted { get; set; } = false;
+        public long Modified { get; set; } = DateTimeOffset.Now.UtcTicks;
+        public string ClientId { get; set; }
+
         [Reference]
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]

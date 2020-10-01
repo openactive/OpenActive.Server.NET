@@ -24,7 +24,7 @@ namespace BookingSystem
         public override bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
             //throw new OpenBookingException(new CancellationNotPermittedError());
-            return FakeBookingSystem.Database.CancelOrderItem(orderId.ClientId, sellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
+            return FakeBookingSystem.Database.CancelOrderItems(orderId.ClientId, sellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace BookingSystem
                 // TODO: Make the lease duration configurable
                 var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
 
-                var result = databaseTransaction.Database.AddLease(
+                var result = FakeDatabase.AddLease(
                     flowContext.OrderId.ClientId,
                     flowContext.OrderId.uuid,
                     flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
@@ -88,7 +88,7 @@ namespace BookingSystem
                     flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                     flowContext.Customer.Email,
                     leaseExpires,
-                    databaseTransaction?.Transaction
+                    databaseTransaction.FakeDatabaseTransaction
                     );
 
                 if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
@@ -112,7 +112,7 @@ namespace BookingSystem
 
         public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
-            var result = databaseTransaction.Database.AddOrder(
+            var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
@@ -121,7 +121,7 @@ namespace BookingSystem
                 flowContext.Customer.Email,
                 flowContext.Payment?.Identifier,
                 responseOrder.TotalPaymentDue.Price.Value,
-                databaseTransaction.Transaction,
+                databaseTransaction.FakeDatabaseTransaction,
                 null,
                 null);
 
@@ -132,7 +132,7 @@ namespace BookingSystem
         {
             var version = Guid.NewGuid().ToString();
 
-            var result = databaseTransaction.Database.AddOrder(
+            var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
@@ -141,7 +141,7 @@ namespace BookingSystem
                 flowContext.Customer.Email,
                 flowContext.Payment?.Identifier,
                 responseOrderProposal.TotalPaymentDue.Price.Value,
-                databaseTransaction.Transaction,
+                databaseTransaction.FakeDatabaseTransaction,
                 version,
                 ProposalStatus.AwaitingSellerConfirmation);
 
