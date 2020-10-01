@@ -18,11 +18,11 @@ namespace OpenActive.FakeDatabase.NET
     public enum OrderMode { Lease, Proposal, Booking }
 
 
+    [CompositeIndex(nameof(Modified), nameof(Id))]
     public abstract class Table
     {
         [PrimaryKey]
         [AutoIncrement]
-        [Alias("RpdeId")]
         public long Id { get; set; }
         public bool Deleted { get; set; } = false;
         public long Modified { get; set; } = DateTimeOffset.Now.UtcTicks;
@@ -80,10 +80,10 @@ namespace OpenActive.FakeDatabase.NET
         public decimal Price { get; set; }
     }
 
+    [CompositeIndex(nameof(Modified), nameof(OrderId))]
     public class OrderTable
     {
         [PrimaryKey]
-        [Alias("RpdeId")]
         public string OrderId { get; set; }
 
         public bool Deleted { get; set; } = false;

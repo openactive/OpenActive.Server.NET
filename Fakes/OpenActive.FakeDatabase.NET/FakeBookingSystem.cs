@@ -691,7 +691,7 @@ namespace OpenActive.FakeDatabase.NET
             .Select(n => new {
                 Id = n,
                 StartDate = faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
-                TotalUses = faker.Random.Int(0, 50)
+                TotalUses = faker.Random.Int(0, 8)
             })
             .Select(x => new SlotTable
             {
@@ -727,7 +727,7 @@ namespace OpenActive.FakeDatabase.NET
             .Select(n => new {
                 Id = n,
                 StartDate = faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
-                TotalSpaces = faker.Random.Int(0, 50)
+                TotalSpaces = faker.Random.Bool() ? faker.Random.Int(0, 50) : faker.Random.Int(0, 3)
             })
             .Select(x => new OccurrenceTable
             {
