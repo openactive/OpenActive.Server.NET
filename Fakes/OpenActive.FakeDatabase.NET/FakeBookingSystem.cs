@@ -65,7 +65,8 @@ namespace OpenActive.FakeDatabase.NET
     {
         OrderProposalVersionOutdated,
         OrderSuccessfullyBooked,
-        OrderWasNotFound
+        OrderWasNotFound,
+        OrderProposalNotAccepted
     }
     
 
@@ -565,6 +566,10 @@ namespace OpenActive.FakeDatabase.NET
                     {
                         return FakeDatabaseBookOrderProposalResult.OrderProposalVersionOutdated;
                     }
+                    if (order.ProposalStatus != ProposalStatus.SellerAccepted)
+                    {
+                        return FakeDatabaseBookOrderProposalResult.OrderProposalNotAccepted;
+                    }
                     List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
                     foreach (OrderItemsTable orderItem in db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId))
                     {
@@ -602,24 +607,15 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Proposal && x.OrderId == uuid && !x.Deleted);
+                var order = db.Single<OrderTable>(x => (clientId == null || x.ClientId == clientId) && x.OrderMode == OrderMode.Proposal && x.OrderId == uuid && !x.Deleted);
                 if (order != null)
                 {
                     if (sellerId.HasValue && order.SellerId != sellerId)
                     {
                         throw new ArgumentException("SellerId does not match OrderProposal");
                     }
-                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
-                    foreach (OrderItemsTable orderItem in db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId))
-                    {
-                        if (orderItem.Status == BookingStatus.Proposed)
-                        {
-                            updatedOrderItems.Add(orderItem);
-                            db.UpdateOnly(() => new OrderItemsTable { Status = BookingStatus.Rejected });
-                        }
-                    }
                     // Update the status and modified date of the OrderProposal to update the feed, if something has changed
-                    if (updatedOrderItems.Count > 0)
+                    if (order.ProposalStatus != ProposalStatus.CustomerRejected && order.ProposalStatus != ProposalStatus.SellerRejected)
                     {
                         var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
                         order.ProposalStatus = customerRejected ? ProposalStatus.CustomerRejected : ProposalStatus.SellerRejected;
@@ -628,6 +624,7 @@ namespace OpenActive.FakeDatabase.NET
                         db.Update(order);
                         // Note an actual implementation would need to handle different opportunity types here
                         // Update the number of spaces available as a result of cancellation
+                        List<OrderItemsTable> updatedOrderItems = db.Select<OrderItemsTable>(x => (clientId == null || x.ClientId == clientId) && x.OrderId == order.OrderId).ToList();
                         RecalculateSpaces(updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
                         RecalculateSlotUses(updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
                     }
@@ -654,7 +651,7 @@ namespace OpenActive.FakeDatabase.NET
                     var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
 
                     // Update number of leased spaces remaining for the opportunity
-                    var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OccurrenceId == slotId).Count();
+                    var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == slotId).Count();
                     thisSlot.LeasedUses = leasedUses;
 
                     // Update number of actual spaces remaining for the opportunity
@@ -683,7 +680,7 @@ namespace OpenActive.FakeDatabase.NET
                     var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
 
                     // Update number of leased spaces remaining for the opportunity
-                    var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OccurrenceId == occurrenceId && x.Status != BookingStatus.Rejected).Count();
+                    var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurrenceId).Count();
                     thisOccurrence.LeasedSpaces = leasedSpaces;
 
                     // Update number of actual spaces remaining for the opportunity

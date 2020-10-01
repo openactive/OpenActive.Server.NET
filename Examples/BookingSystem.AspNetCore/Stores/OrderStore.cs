@@ -55,7 +55,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
                     }
-                    if (!FakeBookingSystem.Database.RejectOrderProposal(idComponents.ClientId, null, idComponents.uuid, false))
+                    if (!FakeBookingSystem.Database.RejectOrderProposal(null, null, idComponents.uuid, false))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -196,6 +196,8 @@ namespace BookingSystem
                     return true;
                 case FakeDatabaseBookOrderProposalResult.OrderProposalVersionOutdated:
                     return false;
+                case FakeDatabaseBookOrderProposalResult.OrderProposalNotAccepted:
+                    throw new OpenBookingException(new OrderCreationFailedError(), "OrderProposal has not been accepted by the Seller");
                 case FakeDatabaseBookOrderProposalResult.OrderWasNotFound:
                     throw new OpenBookingException(new UnknownOrderError());
                 default:

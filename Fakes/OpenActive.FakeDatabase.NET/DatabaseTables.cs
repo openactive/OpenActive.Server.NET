@@ -11,7 +11,7 @@ namespace OpenActive.FakeDatabase.NET
 
     public enum BrokerRole { AgentBroker, ResellerBroker, NoBroker }
 
-    public enum BookingStatus { None, CustomerCancelled, SellerCancelled, Confirmed, Attended, Proposed, Rejected }
+    public enum BookingStatus { None, CustomerCancelled, SellerCancelled, Confirmed, Attended, Proposed }
 
     public enum ProposalStatus { AwaitingSellerConfirmation, SellerAccepted, SellerRejected, CustomerRejected }
 
