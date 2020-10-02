@@ -280,7 +280,7 @@ namespace OpenActive.FakeDatabase.NET
                 // Remove existing leases
                 // Note a real implementation would likely maintain existing leases instead of removing and recreating them
                 db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
-                RecalculateSpaces(db, occurrenceId);
+                RecalculateSpaces(db, thisOccurrence);
 
                 // Only lease if all spaces requested are available
                 if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces >= numberOfSpaces)
@@ -298,7 +298,7 @@ namespace OpenActive.FakeDatabase.NET
                     }
 
                     // Update number of spaces remaining for the opportunity
-                    RecalculateSpaces(db, occurrenceId);
+                    RecalculateSpaces(db, thisOccurrence);
 
                     return (ReserveOrderItemsResult.Success, null, null);
                 }
@@ -332,7 +332,7 @@ namespace OpenActive.FakeDatabase.NET
                 // Remove existing leases
                 // Note a real implementation would likely maintain existing leases instead of removing and recreating them
                 db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == slotId);
-                RecalculateSlotUses(db, slotId);
+                RecalculateSlotUses(db, thisSlot);
 
                 // Only lease if all spaces requested are available
                 if (thisSlot.RemainingUses - thisSlot.LeasedUses >= numberOfSpaces)
@@ -349,7 +349,7 @@ namespace OpenActive.FakeDatabase.NET
                     }
 
                     // Update number of spaces remaining for the opportunity
-                    RecalculateSlotUses(db, slotId);
+                    RecalculateSlotUses(db, thisSlot);
 
                     return (ReserveOrderItemsResult.Success, null, null);
                 }
@@ -384,7 +384,7 @@ namespace OpenActive.FakeDatabase.NET
                 // Remove existing leases
                 // Note a real implementation would likely maintain existing leases instead of removing and recreating them
                 db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
-                RecalculateSpaces(db, occurrenceId);
+                RecalculateSpaces(db, thisOccurrence);
 
                 // Only lease if all spaces requested are available
                 if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces >= numberOfSpaces)
@@ -409,7 +409,7 @@ namespace OpenActive.FakeDatabase.NET
                         OrderItemIds.Add(orderItem.Id);
                     }
 
-                    RecalculateSpaces(db, occurrenceId);
+                    RecalculateSpaces(db, thisOccurrence);
 
                     return (ReserveOrderItemsResult.Success, OrderItemIds);
                 }
@@ -442,7 +442,7 @@ namespace OpenActive.FakeDatabase.NET
                 // Remove existing leases
                 // Note a real implementation would likely maintain existing leases instead of removing and recreating them
                 db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == slotId);
-                RecalculateSlotUses(db, slotId);
+                RecalculateSlotUses(db, thisSlot);
 
                 // Only lease if all spaces requested are available
                 if (thisSlot.RemainingUses - thisSlot.LeasedUses >= numberOfSpaces)
@@ -467,7 +467,7 @@ namespace OpenActive.FakeDatabase.NET
                         OrderItemIds.Add(orderItem.Id);
                     }
 
-                    RecalculateSlotUses(db, slotId);
+                    RecalculateSlotUses(db, thisSlot);
 
                     return (ReserveOrderItemsResult.Success, OrderItemIds);
                 }
@@ -637,9 +637,24 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static void RecalculateSlotUses(IDbConnection db, long? slotId)
+        public static void RecalculateSlotUses(IDbConnection db, SlotTable slot)
         {
-            if (slotId.HasValue) RecalculateSlotUses(db, new List<long> { slotId.Value });
+            if (slot != null)
+            {
+                // Update number of leased spaces remaining for the opportunity
+                var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == slot.Id).Count();
+                slot.LeasedUses = leasedUses;
+
+                // Update number of actual spaces remaining for the opportunity
+                var totalUsesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+                slot.RemainingUses = slot.MaximumUses - totalUsesTaken;
+
+                // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) 
+                // TODO: Document this!
+                slot.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(slot);
+            }
+
         }
 
         public static void RecalculateSlotUses(IDbConnection db, IEnumerable<long> slotIds)
@@ -647,25 +662,26 @@ namespace OpenActive.FakeDatabase.NET
             foreach (var slotId in slotIds)
             {
                 var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
-
-                // Update number of leased spaces remaining for the opportunity
-                var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == slotId).Count();
-                thisSlot.LeasedUses = leasedUses;
-
-                // Update number of actual spaces remaining for the opportunity
-                var totalUsesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slotId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
-                thisSlot.RemainingUses = thisSlot.MaximumUses - totalUsesTaken;
-
-                // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) 
-                // TODO: Document this!
-                thisSlot.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(thisSlot);
+                RecalculateSlotUses(db, thisSlot);
             }
         }
 
-        public static void RecalculateSpaces(IDbConnection db, long? occurrenceId)
+        public static void RecalculateSpaces(IDbConnection db, OccurrenceTable occurrence)
         {
-            if (occurrenceId.HasValue) RecalculateSpaces(db, new List<long> { occurrenceId.Value });
+            if (occurrence != null)
+            {
+                // Update number of leased spaces remaining for the opportunity
+                var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurrence.Id).Count();
+                occurrence.LeasedSpaces = leasedSpaces;
+
+                // Update number of actual spaces remaining for the opportunity
+                var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+                occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
+
+                // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
+                occurrence.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(occurrence);
+            }
         }
 
         public static void RecalculateSpaces(IDbConnection db, IEnumerable<long> occurrenceIds)
@@ -673,18 +689,7 @@ namespace OpenActive.FakeDatabase.NET
             foreach (var occurrenceId in occurrenceIds)
             {
                 var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
-
-                // Update number of leased spaces remaining for the opportunity
-                var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurrenceId).Count();
-                thisOccurrence.LeasedSpaces = leasedSpaces;
-
-                // Update number of actual spaces remaining for the opportunity
-                var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrenceId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
-                thisOccurrence.RemainingSpaces = thisOccurrence.TotalSpaces - totalSpacesTaken;
-
-                // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
-                thisOccurrence.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(thisOccurrence);
+                RecalculateSpaces(db, thisOccurrence);
             }
         }
 
