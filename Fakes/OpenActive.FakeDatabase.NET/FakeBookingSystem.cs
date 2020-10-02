@@ -78,7 +78,18 @@ namespace OpenActive.FakeDatabase.NET
         OrderWasNotFound,
         OrderProposalNotAccepted
     }
-    
+
+    /// <summary>
+    /// Result of booking (or attempting to book) an OrderProposal in a FakeDatabase
+    /// </summary>
+    public enum ReserveOrderItemsResult
+    {
+        Success,
+        SellerIdMismatch,
+        OpportunityNotFound,
+        NotEnoughCapacity
+    }
+
 
     public class FakeDatabase
     {
@@ -253,7 +264,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static bool LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, long numberOfSpaces)
+        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, long numberOfSpaces)
         {
             var db = transaction.DatabaseConnection;
             var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
@@ -263,7 +274,7 @@ namespace OpenActive.FakeDatabase.NET
             {
                 if (sellerId.HasValue && thisClass.SellerId != sellerId)
                 {
-                    throw new ArgumentException("SellerId does not match Order");
+                    return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
                 }
 
                 // Remove existing leases
@@ -289,20 +300,23 @@ namespace OpenActive.FakeDatabase.NET
                     // Update number of spaces remaining for the opportunity
                     RecalculateSpaces(db, occurrenceId);
 
-                    return true;
+                    return (ReserveOrderItemsResult.Success, null, null);
                 }
                 else
                 {
-                    return false;
+                    var capacityErrors = Math.Max(0, numberOfSpaces - thisOccurrence.RemainingSpaces);
+                    var capacityErrorsCausedByLeasing = Math.Max(0, numberOfSpaces - (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces));
+
+                    return (ReserveOrderItemsResult.NotEnoughCapacity, capacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
                 }
             }
             else
             {
-                return false;
+                return (ReserveOrderItemsResult.OpportunityNotFound, null, null);
             }
         }
 
-        public static bool LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long numberOfSpaces)
+        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long numberOfSpaces)
         {
             var db = transaction.DatabaseConnection;
             var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
@@ -312,7 +326,7 @@ namespace OpenActive.FakeDatabase.NET
             {
                 if (sellerId.HasValue && thisFacility.SellerId != sellerId)
                 {
-                    throw new ArgumentException("SellerId does not match Order");
+                    return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
                 }
 
                 // Remove existing leases
@@ -337,21 +351,24 @@ namespace OpenActive.FakeDatabase.NET
                     // Update number of spaces remaining for the opportunity
                     RecalculateSlotUses(db, slotId);
 
-                    return true;
+                    return (ReserveOrderItemsResult.Success, null, null);
                 }
                 else
                 {
-                    return false;
+                    var capacityErrors = Math.Max(0, numberOfSpaces - thisSlot.RemainingUses);
+                    var capacityErrorsCausedByLeasing = Math.Max(0, numberOfSpaces - (thisSlot.RemainingUses - thisSlot.LeasedUses));
+
+                    return (ReserveOrderItemsResult.NotEnoughCapacity, capacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
                 }
             }
             else
             {
-                return false;
+                return (ReserveOrderItemsResult.OpportunityNotFound, null, null);
             }
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
-        public static List<long> BookOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces, bool proposal)
+        public static (ReserveOrderItemsResult, List<long>) BookOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces, bool proposal)
         {
             var db = transaction.DatabaseConnection;
             var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
@@ -361,7 +378,7 @@ namespace OpenActive.FakeDatabase.NET
             {
                 if (sellerId.HasValue && thisClass.SellerId != sellerId)
                 {
-                    throw new ArgumentException("SellerId does not match Order");
+                    return (ReserveOrderItemsResult.SellerIdMismatch, null);
                 }
 
                 // Remove existing leases
@@ -394,22 +411,22 @@ namespace OpenActive.FakeDatabase.NET
 
                     RecalculateSpaces(db, occurrenceId);
 
-                    return OrderItemIds;
+                    return (ReserveOrderItemsResult.Success, OrderItemIds);
                 }
                 else
                 {
-                    return null;
+                    return (ReserveOrderItemsResult.NotEnoughCapacity, null);
                 }
             }
             else
             {
-                return null;
+                return (ReserveOrderItemsResult.OpportunityNotFound, null);
             }
         }
 
 
         // TODO this should reuse code of LeaseOrderItemsForFacilityOccurrence
-        public static List<long> BookOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces, bool proposal)
+        public static (ReserveOrderItemsResult, List<long>) BookOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces, bool proposal)
         {
             var db = transaction.DatabaseConnection;
             var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
@@ -419,7 +436,7 @@ namespace OpenActive.FakeDatabase.NET
             {
                 if (sellerId.HasValue && thisFacility.SellerId != sellerId)
                 {
-                    throw new ArgumentException("SellerId does not match Order");
+                    return (ReserveOrderItemsResult.SellerIdMismatch, null);
                 }
 
                 // Remove existing leases
@@ -452,16 +469,16 @@ namespace OpenActive.FakeDatabase.NET
 
                     RecalculateSlotUses(db, slotId);
 
-                    return OrderItemIds;
+                    return (ReserveOrderItemsResult.Success, OrderItemIds);
                 }
                 else
                 {
-                    return null;
+                    return (ReserveOrderItemsResult.NotEnoughCapacity, null);
                 }
             }
             else
             {
-                return null;
+                return (ReserveOrderItemsResult.OpportunityNotFound, null);
             }
         }
 

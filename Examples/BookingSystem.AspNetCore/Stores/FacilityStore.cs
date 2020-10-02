@@ -215,14 +215,46 @@ namespace BookingSystem
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    bool result = FakeDatabase.LeaseOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, ctxGroup.Count());
+                    var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, ctxGroup.Count());
 
-                    if (!result)
+                    switch (result)
                     {
-                        foreach (var ctx in ctxGroup)
-                        {
-                            ctx.AddError(new OpportunityIntractableError(), "OrderItem could not be leased for unexpected reasons.");
-                        }
+                        case ReserveOrderItemsResult.Success:
+                            // Do nothing, no errors to add
+                            break;
+                        case ReserveOrderItemsResult.SellerIdMismatch:
+                            foreach (var ctx in ctxGroup)
+                            {
+                                ctx.AddError(new SellerMismatchError(), "An OrderItem SellerID did not match");
+                            }
+                            break;
+                        case ReserveOrderItemsResult.OpportunityNotFound:
+                            foreach (var ctx in ctxGroup)
+                            {
+                                ctx.AddError(new UnableToProcessOrderItemError(), "Opportunity not found");
+                            }
+                            break;
+                        case ReserveOrderItemsResult.NotEnoughCapacity:
+                            foreach (var ctx in ctxGroup)
+                            {
+                                if (capacityErrors > 0)
+                                {
+                                    ctx.AddError(new OpportunityHasInsufficientCapacityError());
+                                    capacityErrors--;
+                                }
+                                else if (capacityLeaseErrors > 0)
+                                {
+                                    ctx.AddError(new OpportunityCapacityIsReservedByLeaseError());
+                                    capacityLeaseErrors--;
+                                }
+                            }
+                            break;
+                        default:
+                            foreach (var ctx in ctxGroup)
+                            {
+                                ctx.AddError(new OpportunityIntractableError(), "OrderItem could not be leased for unexpected reasons.");
+                            }
+                            break;
                     }
                 }
             }
@@ -243,20 +275,25 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                List<long> orderItemIds = FakeDatabase.BookOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count(), false);
+                var (result, orderItemIds) = FakeDatabase.BookOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count(), false);
 
-                if (orderItemIds != null)
+                switch (result)
                 {
-                    // Set OrderItemId for each orderItemContext
-                    foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
-                    {
-                        ctx.SetOrderItemId(flowContext, id);
-                    }
-                }
-                else
-                {
-                    // Note: A real implementation would not through an error this vague
-                    throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
+                    case ReserveOrderItemsResult.Success:
+                        // Set OrderItemId for each orderItemContext
+                        foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
+                        {
+                            ctx.SetOrderItemId(flowContext, id);
+                        }
+                        break;
+                    case ReserveOrderItemsResult.SellerIdMismatch:
+                        throw new OpenBookingException(new SellerMismatchError(), "An OrderItem SellerID did not match");
+                    case ReserveOrderItemsResult.OpportunityNotFound:
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity not found");
+                    case ReserveOrderItemsResult.NotEnoughCapacity:
+                        throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
+                    default:
+                        throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
             }
         }
@@ -277,12 +314,21 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                List<long> orderItemIds = FakeDatabase.BookOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count(), true);
+                var (result, orderItemIds) = FakeDatabase.BookOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count(), true);
 
-                if (orderItemIds == null)
+                switch (result)
                 {
-                    // Note: A real implementation would not through an error this vague
-                    throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
+                    case ReserveOrderItemsResult.Success:
+                        // Do nothing
+                        break;
+                    case ReserveOrderItemsResult.SellerIdMismatch:
+                        throw new OpenBookingException(new SellerMismatchError(), "An OrderItem SellerID did not match");
+                    case ReserveOrderItemsResult.OpportunityNotFound:
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity not found");
+                    case ReserveOrderItemsResult.NotEnoughCapacity:
+                        throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
+                    default:
+                        throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
             }
         }
