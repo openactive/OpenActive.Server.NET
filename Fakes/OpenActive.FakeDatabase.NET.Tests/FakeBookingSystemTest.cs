@@ -60,8 +60,7 @@ namespace OpenActive.FakeDatabase.NET.Test
                 using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
                 {
                     db.Insert(testSeller);
-                    //transaction.Complete();
-                    transaction.Dispose();
+                    // Note transaction.Commit(); not called
                 }
 
                 var count = db.Select<SellerTable>().Where(x => x.Id == testSeller.Id).Count();
