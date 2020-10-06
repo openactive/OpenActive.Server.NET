@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using OpenActive.FakeDatabase.NET;
@@ -9,34 +10,31 @@ namespace BookingSystem
 {
     public sealed class OrderTransaction : IDatabaseTransaction
     {
-        private FakeDatabaseTransaction _fakeDatabaseTransaction;
-
-        public FakeDatabase Database { get => _fakeDatabaseTransaction.Database; }
-        public FakeDatabaseTransaction Transaction { get => _fakeDatabaseTransaction; }
+        public FakeDatabaseTransaction FakeDatabaseTransaction;
 
         public OrderTransaction()
         {
-            _fakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
+            FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
         }
 
         public void Commit()
         {
-            _fakeDatabaseTransaction.CommitTransaction();
+            FakeDatabaseTransaction.CommitTransaction();
         }
 
         public void Rollback()
         {
-            _fakeDatabaseTransaction.RollbackTransaction();
+            FakeDatabaseTransaction.RollbackTransaction();
         }
 
         public void Dispose()
         {
             // Note dispose pattern of checking for null first,
             // to ensure Dispose() is not called twice
-            if (_fakeDatabaseTransaction != null)
+            if (FakeDatabaseTransaction != null)
             {
-                _fakeDatabaseTransaction.Dispose();
-                _fakeDatabaseTransaction = null;
+                FakeDatabaseTransaction.Dispose();
+                FakeDatabaseTransaction = null;
             }
         }
     }

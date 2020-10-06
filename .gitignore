@@ -335,5 +335,6 @@ ASALocalRun/
 # MacOS
 .DS_Store
 
-# Fake database
+# Fake databases
 fakedatabase.db
+Examples/BookingSystem.AspNetCore/filedatabase.db*

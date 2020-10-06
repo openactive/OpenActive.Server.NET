@@ -129,7 +129,7 @@ namespace BookingSystem
                         StartDate = (DateTimeOffset)x.Start,
                         EndDate = (DateTimeOffset)x.End,
                         Duration = x.End - x.Start,
-                        RemainingUses = x.RemainingUses,
+                        RemainingUses = x.RemainingUses - x.LeasedUses,
                         MaximumUses = x.MaximumUses,
                         Offers = new List<Offer> { new Offer
                                 {

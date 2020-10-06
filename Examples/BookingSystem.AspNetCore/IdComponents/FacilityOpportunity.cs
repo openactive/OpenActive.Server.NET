@@ -18,5 +18,32 @@ namespace BookingSystem
         public long? SlotId { get; set; }
         public long? OfferId { get; set; }
 
+        public override bool Equals(object obj)
+        {
+            var other = obj as FacilityOpportunity;
+            if (ReferenceEquals(other, null))
+                return false;
+
+            return OpportunityType == other.OpportunityType &&
+                   FacilityUseId == other.FacilityUseId &&
+                   SlotId == other.SlotId &&
+                   OfferId == other.OfferId;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = OpportunityType.GetHashCode();
+                hashCode = (hashCode * 397) ^ FacilityUseId.GetHashCode();
+                hashCode = (hashCode * 397) ^ SlotId.GetHashCode();
+                hashCode = (hashCode * 397) ^ OfferId.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        public static bool operator ==(FacilityOpportunity x, FacilityOpportunity y) => x != null && x.Equals(y);
+
+        public static bool operator !=(FacilityOpportunity x, FacilityOpportunity y) => !(x == y);
     }
 }

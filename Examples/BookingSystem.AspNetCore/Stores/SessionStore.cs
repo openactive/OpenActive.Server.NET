@@ -46,13 +46,21 @@ namespace BookingSystem
                                 SessionSeriesId = classId3,
                                 ScheduledSessionId = occurrenceId3
                             };
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
-                            var (classId4, occurrenceId4) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
+                            var (classId4, occurrenceId4) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Five Spaces", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 5, false);
                             return new SessionOpportunity
                             {
                                 OpportunityType = opportunityType,
                                 SessionSeriesId = classId4,
                                 ScheduledSessionId = occurrenceId4
+                            };
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
+                            var (classId5, occurrenceId5) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
+                            return new SessionOpportunity
+                            {
+                                OpportunityType = opportunityType,
+                                SessionSeriesId = classId5,
+                                ScheduledSessionId = occurrenceId5
                             };
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
@@ -78,7 +86,6 @@ namespace BookingSystem
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
         protected override void GetOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
-
             // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
 
             // Additionally this method must check that there are enough spaces in each entry
@@ -87,109 +94,111 @@ namespace BookingSystem
 
             List<OccurrenceTable> occurrenceTable;
             List<ClassTable> classTable;
-            List<OrderItemsTable> orderItemsTable;
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
                 occurrenceTable = db.Select<OccurrenceTable>();
                 classTable = db.Select<ClassTable>();
-                orderItemsTable = db.Select<OrderItemsTable>();
-            }
 
-            var query = (from orderItemContext in orderItemContexts
-                         join occurances in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurances.Id
-                         join classes in classTable on occurances.ClassId equals classes.Id
-                         // and offers.id = opportunityOfferId.OfferId
-                         select occurances == null ? null : new {
-                             OrderItem = new OrderItem
-                             {
-                                 AllowCustomerCancellationFullRefund = true,
-                                 // TODO: The static example below should come from the database (which doesn't currently support tax)
-                                 UnitTaxSpecification = flowContext.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
-                                     new List<TaxChargeSpecification>
-                                     {
-                                        new TaxChargeSpecification
-                                        {
-                                            Name = "VAT at 20%",
-                                            Price = classes.Price * (decimal?)0.2,
-                                            PriceCurrency = "GBP",
-                                            Rate = (decimal?)0.2
-                                        }
-                                     } : null,
-                                 AcceptedOffer = new Offer
+                var query = (from orderItemContext in orderItemContexts
+                             join occurrences in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurrences.Id
+                             join classes in classTable on occurrences.ClassId equals classes.Id
+                             // and offers.id = opportunityOfferId.OfferId
+                             select occurrences == null ? null : new {
+                                 OrderItem = new OrderItem
                                  {
-                                     // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
-                                     Id = this.RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
-                                     Price = classes.Price,
-                                     PriceCurrency = "GBP"
-                                 },
-                                 OrderedItem = new ScheduledSession
-                                 {
-                                     // Note this should always be driven from the database, with new SessionOpportunity's instantiated
-                                     Id = this.RenderOpportunityId(new SessionOpportunity
+                                     AllowCustomerCancellationFullRefund = true,
+                                     // TODO: The static example below should come from the database (which doesn't currently support tax)
+                                     UnitTaxSpecification = flowContext.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
+                                         new List<TaxChargeSpecification>
+                                         {
+                                            new TaxChargeSpecification
+                                            {
+                                                Name = "VAT at 20%",
+                                                Price = classes.Price * (decimal?)0.2,
+                                                PriceCurrency = "GBP",
+                                                Rate = (decimal?)0.2
+                                            }
+                                         } : null,
+                                     AcceptedOffer = new Offer
                                      {
-                                         OpportunityType = OpportunityType.ScheduledSession,
-                                         SessionSeriesId = occurances.ClassId,
-                                         ScheduledSessionId = occurances.Id
-                                     }),
-                                     SuperEvent = new SessionSeries
+                                         // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
+                                         Id = this.RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
+                                         Price = classes.Price,
+                                         PriceCurrency = "GBP"
+                                     },
+                                     OrderedItem = new ScheduledSession
                                      {
+                                         // Note this should always be driven from the database, with new SessionOpportunity's instantiated
                                          Id = this.RenderOpportunityId(new SessionOpportunity
                                          {
-                                             OpportunityType = OpportunityType.SessionSeries,
-                                             SessionSeriesId = occurances.ClassId
+                                             OpportunityType = OpportunityType.ScheduledSession,
+                                             SessionSeriesId = occurrences.ClassId,
+                                             ScheduledSessionId = occurrences.Id
                                          }),
-                                         Name = classes.Title,
-                                         Url = new Uri("https://example.com/events/" + occurances.ClassId),
-                                         Location = new Place
+                                         SuperEvent = new SessionSeries
                                          {
-                                             Name = "Fake fitness studio",
-                                             Geo = new GeoCoordinates
+                                             Id = this.RenderOpportunityId(new SessionOpportunity
                                              {
-                                                 Latitude = 51.6201M,
-                                                 Longitude = 0.302396M
+                                                 OpportunityType = OpportunityType.SessionSeries,
+                                                 SessionSeriesId = occurrences.ClassId
+                                             }),
+                                             Name = classes.Title,
+                                             Url = new Uri("https://example.com/events/" + occurrences.ClassId),
+                                             Location = new Place
+                                             {
+                                                 Name = "Fake fitness studio",
+                                                 Geo = new GeoCoordinates
+                                                 {
+                                                     Latitude = 51.6201M,
+                                                     Longitude = 0.302396M
+                                                 }
+                                             },
+                                             Activity = new List<Concept>
+                                             {
+                                                 new Concept
+                                                 {
+                                                     Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
+                                                     PrefLabel = "Rave Fitness",
+                                                     InScheme = new Uri("https://openactive.io/activity-list")
+                                                 }
                                              }
                                          },
-                                         Activity = new List<Concept>
-                                         {
-                                             new Concept
-                                             {
-                                                 Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
-                                                 PrefLabel = "Rave Fitness",
-                                                 InScheme = new Uri("https://openactive.io/activity-list")
-                                             }
-                                         }
-                                     },
-                                     StartDate = (DateTimeOffset)occurances.Start,
-                                     EndDate = (DateTimeOffset)occurances.End,
-                                     MaximumAttendeeCapacity = occurances.TotalSpaces,
-                                     // Exclude current Order from the returned lease count
-                                     RemainingAttendeeCapacity = occurances.RemainingSpaces - orderItemsTable.Select(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurances.Id && x.OrderId != flowContext.OrderId.uuid).Count()
-                                 }
-                             },
-                             SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId },
-                             RequiresApproval = classes.RequiresApproval
-                         });
+                                         StartDate = (DateTimeOffset)occurrences.Start,
+                                         EndDate = (DateTimeOffset)occurrences.End,
+                                         MaximumAttendeeCapacity = occurrences.TotalSpaces,
+                                         // Exclude current Order from the returned lease count
+                                         RemainingAttendeeCapacity = occurrences.RemainingSpaces - db.Count<OrderItemsTable>(
+                                            x => x.OrderTable.OrderMode != OrderMode.Booking &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
+                                                 x.OccurrenceId == occurrences.Id &&
+                                                 x.OrderId != flowContext.OrderId.uuid)
+                                     }
+                                 },
+                                 SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId },
+                                 RequiresApproval = classes.RequiresApproval
+                             }).ToArray();
 
-            // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
-            foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
-            {
-                if (item == null)
+                // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
+                foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
                 {
-                    ctx.SetResponseOrderItemAsSkeleton();
-                    ctx.AddError(new UnknownOpportunityError());
-                }
-                else
-                {
-                    ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
-
-                    if (item.RequiresApproval) ctx.SetRequiresApproval();
-
-                    if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
+                    if (item == null)
                     {
-                        ctx.AddError(new OpportunityIsFullError());
+                        ctx.SetResponseOrderItemAsSkeleton();
+                        ctx.AddError(new UnknownOpportunityError());
+                    }
+                    else
+                    {
+                        ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
+
+                        if (item.RequiresApproval) ctx.SetRequiresApproval();
+
+                        if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
+                        {
+                            ctx.AddError(new OpportunityIsFullError());
+                        }
                     }
                 }
-                
             }
 
             // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
@@ -198,7 +207,6 @@ namespace BookingSystem
 
             // Additional attendee detail validation logic goes here
             // ...
-
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -239,18 +247,22 @@ namespace BookingSystem
                             }
                             break;
                         case ReserveOrderItemsResult.NotEnoughCapacity:
-                            foreach (var ctx in ctxGroup)
+                            var contexts = ctxGroup.ToArray();
+                            for (var i = contexts.Length - 1; i >= 0; i--)
                             {
+                                var ctx = contexts[i];
                                 if (capacityErrors > 0)
                                 {
                                     ctx.AddError(new OpportunityHasInsufficientCapacityError());
                                     capacityErrors--;
-                                } else if (capacityLeaseErrors > 0)
+                                }
+                                else if (capacityLeaseErrors > 0)
                                 {
                                     ctx.AddError(new OpportunityCapacityIsReservedByLeaseError());
                                     capacityLeaseErrors--;
                                 }
                             }
+
                             break;
                         default:
                             foreach (var ctx in ctxGroup)
