@@ -334,3 +334,6 @@ ASALocalRun/
 
 # MacOS
 .DS_Store
+
+# Temp dbs
+Examples/BookingSystem.AspNetCore/filedatabase.db*
