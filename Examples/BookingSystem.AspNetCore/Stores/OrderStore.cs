@@ -226,7 +226,7 @@ namespace BookingSystem
             }
         }
 
-        public static Order GetOrderFromDatabaseResult(Uri orderId, OrderTable order, List<OrderItem> orderItems)
+        public static Order RenderOrderFromDatabaseResult(Uri orderId, OrderTable order, List<OrderItem> orderItems)
         {
             var o = CreateOrderFromOrderMode(order.OrderMode, orderId, order.ProposalVersionId, order.ProposalStatus);
             o.Id = orderId;
@@ -240,7 +240,6 @@ namespace BookingSystem
             return o;
         }
 
-        //TODO return Order
         public override Order GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
@@ -248,7 +247,7 @@ namespace BookingSystem
                 var order = db.Single<OrderTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid && !x.Deleted);
                 var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid);
 
-                var o = GetOrderFromDatabaseResult(this.RenderOrderId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId), order, 
+                var o = RenderOrderFromDatabaseResult(this.RenderOrderId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId), order, 
                     orderItems.Select((orderItem) => new OrderItem
                     {
                         Id = order.OrderMode == OrderMode.Booking ? this.RenderOrderItemId(OrderType.Order, order.OrderId, orderItem.Id) : null,

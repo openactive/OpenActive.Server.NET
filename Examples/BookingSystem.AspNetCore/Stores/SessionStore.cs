@@ -87,10 +87,12 @@ namespace BookingSystem
 
             List<OccurrenceTable> occurrenceTable;
             List<ClassTable> classTable;
+            List<OrderItemsTable> orderItemsTable;
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
                 occurrenceTable = db.Select<OccurrenceTable>();
                 classTable = db.Select<ClassTable>();
+                orderItemsTable = db.Select<OrderItemsTable>();
             }
 
             var query = (from orderItemContext in orderItemContexts
@@ -160,7 +162,8 @@ namespace BookingSystem
                                      StartDate = (DateTimeOffset)occurances.Start,
                                      EndDate = (DateTimeOffset)occurances.End,
                                      MaximumAttendeeCapacity = occurances.TotalSpaces,
-                                     RemainingAttendeeCapacity = occurances.RemainingSpaces
+                                     // Exclude current Order from the returned lease count
+                                     RemainingAttendeeCapacity = occurances.RemainingSpaces - orderItemsTable.Select(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurances.Id && x.OrderId != flowContext.OrderId.uuid).Count()
                                  }
                              },
                              SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId },

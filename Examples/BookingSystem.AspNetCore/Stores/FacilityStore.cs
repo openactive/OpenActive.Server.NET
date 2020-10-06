@@ -86,10 +86,12 @@ namespace BookingSystem
 
             List<SlotTable> slotTable;
             List<FacilityUseTable> facilityTable;
+            List<OrderItemsTable> orderItemsTable;
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
                 slotTable = db.Select<SlotTable>();
                 facilityTable = db.Select<FacilityUseTable>();
+                orderItemsTable = db.Select<OrderItemsTable>();
             }
 
             var query = (from orderItemContext in orderItemContexts
@@ -159,7 +161,8 @@ namespace BookingSystem
                                      StartDate = (DateTimeOffset)slot.Start,
                                      EndDate = (DateTimeOffset)slot.End,
                                      MaximumUses = slot.MaximumUses,
-                                     RemainingUses= slot.RemainingUses
+                                     // Exclude current Order from the returned lease count
+                                     RemainingUses = slot.RemainingUses - orderItemsTable.Select(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.SlotId == slot.Id && x.OrderId != flowContext.OrderId.uuid).Count()
                                  }
                              },
                              SellerId = new SellerIdComponents { SellerIdLong = facility.SellerId },

@@ -43,7 +43,7 @@ namespace BookingSystem
                         Modified = result.OrderTable.Modified,
                         State = result.OrderTable.Deleted ? RpdeState.Deleted : RpdeState.Updated,
                         Data = result.OrderTable.Deleted ? null :
-                            AcmeOrderStore.GetOrderFromDatabaseResult(this.RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
+                            AcmeOrderStore.RenderOrderFromDatabaseResult(this.RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
                                 result.OrderItemsTable.Select((orderItem) => new OrderItem
                                 {
                                     Id = result.OrderTable.OrderMode == OrderMode.Booking ? this.RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id) : null,
