@@ -40,4 +40,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <PropertyGroup>
+    <NoWarn>1701;1702;1591</NoWarn>
+  </PropertyGroup>
+
 </Project>

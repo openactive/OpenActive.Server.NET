@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{10E2B727-375B-4DAF-9341-96516A00B5E1}"
 	ProjectSection(SolutionItems) = preProject
 		Examples\updateFrameworkFromCore.cmd = Examples\updateFrameworkFromCore.cmd
+		Examples\updateFrameworkFromCore.sh = Examples\updateFrameworkFromCore.sh
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.AspNetFramework", "Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj", "{CF04DB83-3371-4F14-B05B-86C0F7EADF30}"

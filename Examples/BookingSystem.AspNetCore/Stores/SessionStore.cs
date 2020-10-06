@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BookingSystem.AspNetCore.Helpers;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
@@ -46,13 +47,21 @@ namespace BookingSystem
                                 SessionSeriesId = classId3,
                                 ScheduledSessionId = occurrenceId3
                             };
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
-                            var (classId4, occurrenceId4) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableTwoSpaces: // ToDo: TestOpportunityBookableFiveSpaces
+                            var (classId4, occurrenceId4) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Five Spaces", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 5, false);
                             return new SessionOpportunity
                             {
                                 OpportunityType = opportunityType,
                                 SessionSeriesId = classId4,
                                 ScheduledSessionId = occurrenceId4
+                            };
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
+                            var (classId5, occurrenceId5) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
+                            return new SessionOpportunity
+                            {
+                                OpportunityType = opportunityType,
+                                SessionSeriesId = classId5,
+                                ScheduledSessionId = occurrenceId5
                             };
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
@@ -160,7 +169,7 @@ namespace BookingSystem
                                      StartDate = (DateTimeOffset)occurances.Start,
                                      EndDate = (DateTimeOffset)occurances.End,
                                      MaximumAttendeeCapacity = occurances.TotalSpaces,
-                                     RemainingAttendeeCapacity = occurances.RemainingSpaces
+                                     RemainingAttendeeCapacity = occurances.RemainingSpaces - occurances.LeasedSpaces
                                  }
                              },
                              SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId },
@@ -195,7 +204,6 @@ namespace BookingSystem
 
             // Additional attendee detail validation logic goes here
             // ...
-
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -236,18 +244,22 @@ namespace BookingSystem
                             }
                             break;
                         case ReserveOrderItemsResult.NotEnoughCapacity:
-                            foreach (var ctx in ctxGroup)
+                            var contexts = ctxGroup.ToArray();
+                            for (var i = contexts.Length - 1; i >= 0; i--)
                             {
+                                var ctx = contexts[i];
                                 if (capacityErrors > 0)
                                 {
                                     ctx.AddError(new OpportunityHasInsufficientCapacityError());
                                     capacityErrors--;
-                                } else if (capacityLeaseErrors > 0)
+                                }
+                                else if (capacityLeaseErrors > 0)
                                 {
                                     ctx.AddError(new OpportunityCapacityIsReservedByLeaseError());
                                     capacityLeaseErrors--;
                                 }
                             }
+
                             break;
                         default:
                             foreach (var ctx in ctxGroup)

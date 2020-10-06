@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BookingSystem.AspNetCore.Helpers;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
@@ -23,7 +24,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaid:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
-                            var (classId1, occurrenceId1) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10);
+                            var (classId1, occurrenceId1) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false);
                             return new SessionOpportunity
                             {
                                 OpportunityType = opportunityType,
@@ -31,7 +32,7 @@ namespace BookingSystem
                                 ScheduledSessionId = occurrenceId1
                             };
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                            var (classId2, occurrenceId2) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10);
+                            var (classId2, occurrenceId2) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false);
                             return new SessionOpportunity
                             {
                                 OpportunityType = opportunityType,
@@ -39,12 +40,28 @@ namespace BookingSystem
                                 ScheduledSessionId = occurrenceId2
                             };
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
-                            var (classId3, occurrenceId3) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 0);
+                            var (classId3, occurrenceId3) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event No Spaces", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 0, false);
                             return new SessionOpportunity
                             {
                                 OpportunityType = opportunityType,
                                 SessionSeriesId = classId3,
                                 ScheduledSessionId = occurrenceId3
+                            };
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableTwoSpaces: // ToDo: TestOpportunityBookableFiveSpaces
+                            var (classId4, occurrenceId4) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Five Spaces", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 5, false);
+                            return new SessionOpportunity
+                            {
+                                OpportunityType = opportunityType,
+                                SessionSeriesId = classId4,
+                                ScheduledSessionId = occurrenceId4
+                            };
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
+                            var (classId5, occurrenceId5) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
+                            return new SessionOpportunity
+                            {
+                                OpportunityType = opportunityType,
+                                SessionSeriesId = classId5,
+                                ScheduledSessionId = occurrenceId5
                             };
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
@@ -84,7 +101,7 @@ namespace BookingSystem
                 occurrenceTable = db.Select<OccurrenceTable>();
                 classTable = db.Select<ClassTable>();
             }
-           
+
             var query = (from orderItemContext in orderItemContexts
                          join occurances in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurances.Id
                          join classes in classTable on occurances.ClassId equals classes.Id
@@ -152,11 +169,12 @@ namespace BookingSystem
                                      StartDate = (DateTimeOffset)occurances.Start,
                                      EndDate = (DateTimeOffset)occurances.End,
                                      MaximumAttendeeCapacity = occurances.TotalSpaces,
-                                     RemainingAttendeeCapacity = occurances.RemainingSpaces
+                                     RemainingAttendeeCapacity = occurances.RemainingSpaces - occurances.LeasedSpaces
                                  }
                              },
-                             SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId }
-                           });
+                             SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId },
+                             RequiresApproval = classes.RequiresApproval
+                         });
 
             // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
             foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
@@ -169,6 +187,8 @@ namespace BookingSystem
                 else
                 {
                     ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
+
+                    if (item.RequiresApproval) ctx.SetRequiresApproval();
 
                     if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
                     {
@@ -184,7 +204,6 @@ namespace BookingSystem
 
             // Additional attendee detail validation logic goes here
             // ...
-
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -205,14 +224,49 @@ namespace BookingSystem
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    bool result = databaseTransaction.Database.LeaseOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, ctxGroup.Count());
+                    var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForClassOccurrence(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, ctxGroup.Count());
 
-                    if (!result)
+                    switch (result)
                     {
-                        foreach (var ctx in ctxGroup)
-                        {
-                            ctx.AddError(new OpportunityIntractableError(), "OrderItem could not be leased for unexpected reasons.");
-                        }
+                        case ReserveOrderItemsResult.Success:
+                            // Do nothing, no errors to add
+                            break;
+                        case ReserveOrderItemsResult.SellerIdMismatch:
+                            foreach (var ctx in ctxGroup)
+                            {
+                                ctx.AddError(new SellerMismatchError(), "An OrderItem SellerID did not match");
+                            }
+                            break;
+                        case ReserveOrderItemsResult.OpportunityNotFound:
+                            foreach (var ctx in ctxGroup)
+                            {
+                                ctx.AddError(new UnableToProcessOrderItemError(), "Opportunity not found");
+                            }
+                            break;
+                        case ReserveOrderItemsResult.NotEnoughCapacity:
+                            var contexts = ctxGroup.ToArray();
+                            for (var i = contexts.Length - 1; i >= 0; i--)
+                            {
+                                var ctx = contexts[i];
+                                if (capacityErrors > 0)
+                                {
+                                    ctx.AddError(new OpportunityHasInsufficientCapacityError());
+                                    capacityErrors--;
+                                }
+                                else if (capacityLeaseErrors > 0)
+                                {
+                                    ctx.AddError(new OpportunityCapacityIsReservedByLeaseError());
+                                    capacityLeaseErrors--;
+                                }
+                            }
+
+                            break;
+                        default:
+                            foreach (var ctx in ctxGroup)
+                            {
+                                ctx.AddError(new OpportunityIntractableError(), "OrderItem could not be leased for unexpected reasons.");
+                            }
+                            break;
                     }
                 }
             }
@@ -233,24 +287,62 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
-
-                if (orderItemIds != null)
+                var (result, orderItemIds) = FakeDatabase.BookOrderItemsForClassOccurrence(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count(), false);
+                
+                switch (result)
                 {
-                    // Set OrderItemId for each orderItemContext
-                    foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
-                    {
-                        ctx.SetOrderItemId(flowContext, id);
-                    }
-                }
-                else
-                {
-                    // Note: A real implementation would not through an error this vague
-                    throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
+                    case ReserveOrderItemsResult.Success:
+                        // Set OrderItemId for each orderItemContext
+                        foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
+                        {
+                            ctx.SetOrderItemId(flowContext, id);
+                        }
+                        break;
+                    case ReserveOrderItemsResult.SellerIdMismatch:
+                        throw new OpenBookingException(new SellerMismatchError(), "An OrderItem SellerID did not match");
+                    case ReserveOrderItemsResult.OpportunityNotFound:
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity not found");
+                    case ReserveOrderItemsResult.NotEnoughCapacity:
+                        throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
+                    default:
+                        throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
             }
         }
 
+        // TODO check logic here, it's just been copied from BookOrderItems. Possibly could remove duplication here.
+        protected override void ProposeOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        {
+            // Check that there are no conflicts between the supplied opportunities
+            // Also take into account spaces requested across OrderItems against total spaces in each opportunity
+
+            foreach (var ctxGroup in orderItemContexts.GroupBy(x => x.RequestBookableOpportunityOfferId))
+            {
+                // Check that the Opportunity ID and type are as expected for the store 
+                if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
+                {
+                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                }
+
+                // Attempt to book for those with the same IDs, which is atomic
+                var (result, orderItemIds) = FakeDatabase.BookOrderItemsForClassOccurrence(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count(), true);
+
+                switch (result)
+                {
+                    case ReserveOrderItemsResult.Success:
+                        // Do nothing
+                        break;
+                    case ReserveOrderItemsResult.SellerIdMismatch:
+                        throw new OpenBookingException(new SellerMismatchError(), "An OrderItem SellerID did not match");
+                    case ReserveOrderItemsResult.OpportunityNotFound:
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity not found");
+                    case ReserveOrderItemsResult.NotEnoughCapacity:
+                        throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
+                    default:
+                        throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
+                }
+            }
+        }
     }
 
 }
