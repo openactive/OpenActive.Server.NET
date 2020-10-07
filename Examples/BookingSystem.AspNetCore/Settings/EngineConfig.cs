@@ -182,7 +182,8 @@ namespace BookingSystem
                         Email = p.Email,
                         GivenName = p.GivenName,
                         FamilyName = p.FamilyName,
-                        Telephone = p.Telephone
+                        Telephone = p.Telephone,
+                        Identifier = p.Identifier
                     },
                     // A list of the supported fields that are accepted by your system for guest checkout bookings
                     // These are reflected back to the broker
