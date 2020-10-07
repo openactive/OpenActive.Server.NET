@@ -35,7 +35,7 @@ namespace BookingSystem
                                 OpportunityIdTemplate = "{+BaseUrl}session-series/{SessionSeriesId}",
                                 OfferIdTemplate =       "{+BaseUrl}session-series/{SessionSeriesId}#/offers/{OfferId}",
                                 Bookable = false
-                            }), 
+                            }),
 
                         new BookablePairIdTemplate<FacilityOpportunity> (
                             // Opportunity
@@ -108,7 +108,7 @@ namespace BookingSystem
 
                     JsonLdIdBaseUrl = new Uri(baseUrl + "api/identifiers/"),
 
-                
+
                     // Multiple Seller Mode
                     SellerStore = new AcmeSellerStore(),
                     SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
@@ -157,12 +157,12 @@ namespace BookingSystem
                     DatasetDiscussionUrl = "https://github.com/openactive/OpenActive.Server.NET/issues".ParseUrlOrNull(),
                     DatasetDocumentationUrl = "https://developer.openactive.io/".ParseUrlOrNull(),
                     DatasetLanguages = new List<string> { "en-GB" },
-                    OrganisationName = "OpenActive",
-                    OrganisationUrl = "https://www.openactive.io/".ParseUrlOrNull(),
-                    OrganisationLegalEntity = "OpenActive",
+                    OrganisationName = "Example",
+                    OrganisationUrl = "https://www.example.com/".ParseUrlOrNull(),
+                    OrganisationLegalEntity = "Example",
                     OrganisationPlainTextDescription = "The Reference Implementation provides an example of an full conformant implementation of the OpenActive specifications.",
                     OrganisationLogoUrl = "http://data.better.org.uk/images/logo.png".ParseUrlOrNull(),
-                    OrganisationEmail = "hello@openactive.io",
+                    OrganisationEmail = "hello@example.com",
                     PlatformName = "OpenActive Reference Implementation",
                     PlatformUrl = "https://tutorials.openactive.io/open-booking-sdk/".ParseUrlOrNull(),
                     PlatformVersion = "1.0",
@@ -177,7 +177,8 @@ namespace BookingSystem
                     // A list of the supported fields that are accepted by your system for guest checkout bookings
                     // These are reflected back to the broker
                     // Note that only E-mail address is required, as per Open Booking API spec
-                    CustomerPersonSupportedFields = p => new Person {
+                    CustomerPersonSupportedFields = p => new Person
+                    {
                         Email = p.Email,
                         GivenName = p.GivenName,
                         FamilyName = p.FamilyName,
@@ -186,7 +187,8 @@ namespace BookingSystem
                     // A list of the supported fields that are accepted by your system for guest checkout bookings
                     // These are reflected back to the broker
                     // Note that only E-mail address is required, as per Open Booking API spec
-                    CustomerOrganizationSupportedFields = o => new Organization {
+                    CustomerOrganizationSupportedFields = o => new Organization
+                    {
                         Email = o.Email,
                         Name = o.Name,
                         Telephone = o.Telephone
@@ -194,7 +196,8 @@ namespace BookingSystem
                     // A list of the supported fields that are accepted by your system for broker details
                     // These are reflected back to the broker
                     // Note that storage of these details is entirely optional
-                    BrokerSupportedFields = o => new Organization {
+                    BrokerSupportedFields = o => new Organization
+                    {
                         Name = o.Name,
                         Url = o.Url,
                         Telephone = o.Telephone
@@ -227,6 +230,9 @@ namespace BookingSystem
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
                             new SessionStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                        },
+                        {
+                            new FacilityStore(), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
                         }
                     },
                     OrderStore = new AcmeOrderStore(),

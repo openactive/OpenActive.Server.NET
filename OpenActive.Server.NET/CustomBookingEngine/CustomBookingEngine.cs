@@ -273,6 +273,22 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
+        public ResponseContent GetOrderStatus(string clientId, Uri sellerId, string uuid)
+        {
+            var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
+            var result = ProcessGetOrderStatus(orderId, sellerIdComponents, seller);
+            if (result == null)
+            {
+                throw new OpenBookingException(new UnknownOrderError());
+            } else
+            {
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(result), HttpStatusCode.OK);
+            }
+        }
+
+        protected abstract Order ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
+
+
         protected bool IsOpportunityTypeRecognised(string opportunityTypeString)
         {
             return this.idConfigurationLookup.ContainsKey(opportunityTypeString);
@@ -315,7 +331,8 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
-            var orderResponse = ValidateFlowRequest<OrderQuote>(clientId, sellerId, flowStage, uuid, orderType, orderQuote);
+            var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, orderType);
+            var orderResponse = ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
             // Return a 409 status code if any OrderItem level errors exist
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
                 orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
@@ -329,7 +346,24 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for B");
             }
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(ValidateFlowRequest<Order>(clientId, sellerId, FlowStage.B, uuid, OrderType.Order, order)), HttpStatusCode.OK);
+            var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
+            var response = order.OrderProposalVersion != null ?
+                 ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
+                 ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
+            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.OK);
+        }
+
+        public ResponseContent ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson)
+        {
+            // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
+            // If C1 and C2 are used correctly, P should not fail except in very exceptional cases.
+            OrderProposal order = OpenActiveSerializer.Deserialize<OrderProposal>(orderJson);
+            if (order == null || order.GetType() != typeof(OrderProposal))
+            {
+                throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
+            }
+            var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.OrderProposal);
+            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
         }
 
         private SellerIdComponents GetSellerIdComponentsFromApiKey(Uri sellerId)
@@ -371,6 +405,11 @@ namespace OpenActive.Server.NET.CustomBooking
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
             SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
 
+            if (order == null || order.GetType() != typeof(Order))
+            {
+                throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for Order Cancellation");
+            }
+
             // Check for PatchContainsExcessiveProperties
             Order orderWithOnlyAllowedProperties = new Order
             {
@@ -406,6 +445,42 @@ namespace OpenActive.Server.NET.CustomBooking
         }
 
         public abstract void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
+
+
+        public ResponseContent ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderProposalJson)
+        {
+            OrderProposal orderProposal = OpenActiveSerializer.Deserialize<OrderProposal>(orderProposalJson);
+            SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
+
+            if (orderProposal == null || orderProposal.GetType() != typeof(Order))
+            {
+                throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for Order Cancellation");
+            }
+
+            // Check for PatchContainsExcessiveProperties
+            OrderProposal orderProposalWithOnlyAllowedProperties = new OrderProposal
+            {
+                OrderProposalStatus = orderProposal.OrderProposalStatus,
+                OrderCustomerNote = orderProposal.OrderCustomerNote
+            };
+            if (OpenActiveSerializer.Serialize<OrderProposal>(orderProposal) != OpenActiveSerializer.Serialize<OrderProposal>(orderProposalWithOnlyAllowedProperties))
+            {
+                throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
+            }
+
+            // Check for PatchNotAllowedOnProperty
+            if (orderProposal.OrderProposalStatus != OrderProposalStatus.CustomerRejected)
+            {
+                throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerRejected' is permitted for this property.");
+            }
+
+            ProcessOrderProposalCustomerRejection(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderProposal, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate);
+
+            return ResponseContent.OpenBookingNoContentResponse();
+        }
+
+        public abstract void ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
+
 
         ResponseContent IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
         {
@@ -533,21 +608,19 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new OpenBookingError(), "Invalid type specified. Type must subclass OpenBookingSimulateAction.");
             }
 
-            if (action.Object == null || action.Object.Id == null)
+            if (!action.Object.HasValue || ((Schema.NET.JsonLdObject)action.Object.Value).Id == null)
             {
                 throw new OpenBookingException(new OpenBookingError(), "Invalid OpenBookingSimulateAction object specified.");
             }
 
-            this.TriggerTestAction(action);
+            this.TriggerTestAction(action, settings.OrderIdTemplate);
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction);
+        protected abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate);
 
-
-        //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
-        private O ValidateFlowRequest<O>(string clientId, Uri authenticationSellerId, FlowStage stage, string uuid, OrderType orderType, O orderQuote) where O : Order, new()
+        private (OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller) ConstructIdsFromRequest(string clientId, Uri authenticationSellerId, string uuid, OrderType orderType)
         {
             var orderId = new OrderIdComponents
             {
@@ -566,8 +639,14 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new SellerNotFoundError());
             }
-            
-            if (orderQuote?.Seller?.Id != null && seller?.Id != orderQuote?.Seller?.Id)
+
+            return (orderId, sellerIdComponents, seller);
+        }
+
+        //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
+        protected BookingFlowContext ValidateFlowRequest<O>(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller, FlowStage stage, O order) where O : Order, new()
+        {
+            if (order?.Seller?.Id != null && seller?.Id != order?.Seller?.Id)
             {
                 throw new OpenBookingException(new SellerMismatchError());
             }
@@ -580,14 +659,19 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // Default to BusinessToConsumer if no customer provided
             TaxPayeeRelationship taxPayeeRelationship =
-                orderQuote.Customer == null ? 
+                order.Customer == null ? 
                     TaxPayeeRelationship.BusinessToConsumer :
-                    orderQuote.BrokerRole == BrokerType.ResellerBroker || orderQuote.Customer.IsOrganization
+                    order.BrokerRole == BrokerType.ResellerBroker || order.Customer.IsOrganization
                         ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
 
-            var payer = orderQuote.BrokerRole == BrokerType.ResellerBroker ? orderQuote.Broker : orderQuote.Customer;
+            if (order.BrokerRole == null)
+            {
+                throw new OpenBookingException(new IncompleteBrokerDetailsError());
+            }
 
-            return ProcessFlowRequest<O>(new BookingFlowContext {
+            var payer = order.BrokerRole == BrokerType.ResellerBroker ? order.Broker : order.Customer;
+
+            return new BookingFlowContext {
                 Stage = stage,
                 OrderId = orderId,
                 OrderIdTemplate = settings.OrderIdTemplate,
@@ -595,10 +679,12 @@ namespace OpenActive.Server.NET.CustomBooking
                 SellerId = sellerIdComponents,
                 TaxPayeeRelationship = taxPayeeRelationship,
                 Payer = payer 
-            }, orderQuote);
+            };
         }
 
         public abstract TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new();
+
+        public abstract Order ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order);
 
     }
 }

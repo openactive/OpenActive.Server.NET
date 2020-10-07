@@ -1,5 +1,7 @@
-﻿using System;
+﻿using ServiceStack.OrmLite;
+using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 
@@ -7,32 +9,41 @@ namespace OpenActive.FakeDatabase.NET
 {
     public class FakeDatabaseTransaction : IDisposable
     {
-        internal List<string> OrdersIds = new List<string>();
+        public IDbConnection DatabaseConnection;
+        private IDbTransaction transaction;
 
         public FakeDatabaseTransaction(FakeDatabase database)
         {
-            Database = database;
+            DatabaseConnection = database.Mem.Database.Open();
+            transaction = DatabaseConnection.OpenTransaction(IsolationLevel.Serializable);
         }
 
         public void CommitTransaction()
         {
-            // No action required
+            transaction.Commit();
         }
 
         public void RollbackTransaction()
         {
-            foreach (var orderIds in OrdersIds)
-            {
-                Database.RollbackOrder(orderIds);
-            }
+            transaction.Rollback();
         }
 
         public void Dispose()
         {
-            // No implementation required if not disposable
-        }
+            // Note dispose pattern of checking for null first,
+            // to ensure Dispose() is not called twice
+            if (transaction != null)
+            {
+                transaction.Dispose();
+                transaction = null;
+            }
 
-        public FakeDatabase Database { get; set; }
+            if (DatabaseConnection != null)
+            {
+                DatabaseConnection.Dispose();
+                DatabaseConnection = null;
+            }
+        }
     }
 
 }

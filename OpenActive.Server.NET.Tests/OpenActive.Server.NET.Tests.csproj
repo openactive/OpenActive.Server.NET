@@ -18,4 +18,8 @@
     <ProjectReference Include="..\OpenActive.Server.NET\OpenActive.Server.NET.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <NoWarn>1701;1702;1591</NoWarn>
+  </PropertyGroup>
+
 </Project>
