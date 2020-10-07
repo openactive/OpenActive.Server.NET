@@ -306,9 +306,9 @@ namespace OpenActive.Server.NET.StoreBooking
             }
 
             // If order is not free, payment identifier is required
-            if (requestOrder.TotalPaymentDue?.Price > 0 && requestOrder.Payment?.Identifier == null)
+            if (requestOrder.TotalPaymentDue?.Price != 0 && requestOrder.Payment?.Identifier == null)
             {
-                throw new OpenBookingException(new IncompletePaymentDetailsError());
+                throw new OpenBookingException(new IncompletePaymentDetailsError(), "Payment must contain identifier for paid Order.");
             }
         }
 
