@@ -18,5 +18,35 @@ namespace BookingSystem
         public long? SessionSeriesId { get; set; }
         public long? ScheduledSessionId { get; set; }
         public long? OfferId { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as SessionOpportunity;
+            if (ReferenceEquals(other, null))
+                return false;
+
+            return OpportunityType == other.OpportunityType &&
+                   OfferOpportunityType == other.OfferOpportunityType &&
+                   SessionSeriesId == other.SessionSeriesId &&
+                   ScheduledSessionId == other.ScheduledSessionId &&
+                   OfferId == other.OfferId;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = OpportunityType.GetHashCode();
+                hashCode = (hashCode * 397) ^ OfferOpportunityType.GetHashCode();
+                hashCode = (hashCode * 397) ^ SessionSeriesId.GetHashCode();
+                hashCode = (hashCode * 397) ^ ScheduledSessionId.GetHashCode();
+                hashCode = (hashCode * 397) ^ OfferId.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        public static bool operator ==(SessionOpportunity x, SessionOpportunity y) => x != null && x.Equals(y);
+
+        public static bool operator !=(SessionOpportunity x, SessionOpportunity y) => !(x == y);
     }
 }

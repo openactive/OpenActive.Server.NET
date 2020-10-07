@@ -51,7 +51,7 @@ namespace BookingSystem
                         StartDate = (DateTimeOffset)x.Start,
                         EndDate = (DateTimeOffset)x.End,
                         Duration = x.End - x.Start,
-                        RemainingAttendeeCapacity = x.RemainingSpaces,
+                        RemainingAttendeeCapacity = x.RemainingSpaces - x.LeasedSpaces,
                         MaximumAttendeeCapacity = x.TotalSpaces
                     }
                 });
@@ -120,7 +120,10 @@ namespace BookingSystem
                                     AvailableChannel = new List<AvailableChannelType>
                                     {
                                         AvailableChannelType.OpenBookingPrepayment
-                                    }
+                                    },
+                                    OpenBookingFlowRequirement = result.Item1.RequiresApproval 
+                                        ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
+                                        : null,
                                 }
                             },
                             Location = new Place
