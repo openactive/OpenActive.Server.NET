@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
@@ -46,7 +47,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <param name="afterId"></param>
         /// <param name="afterChangeNumber"></param>
         /// <returns></returns>
-        public static RpdePage GetRPDEPage(this IRPDEFeedGenerator generator, string feedidentifier, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public static async Task<RpdePage> GetRPDEPage(this IRPDEFeedGenerator generator, string feedidentifier, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             switch (generator)
             {

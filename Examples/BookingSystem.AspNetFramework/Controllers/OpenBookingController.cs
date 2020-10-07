@@ -32,7 +32,7 @@ namespace BookingSystem.AspNetFramework.Controllers
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessCheckpoint1(clientId, sellerId, uuid, orderQuote).GetContentResult();
+                return _bookingEngine.ProcessCheckpoint1Async(clientId, sellerId, uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -51,7 +51,7 @@ namespace BookingSystem.AspNetFramework.Controllers
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessCheckpoint2(clientId, sellerId, uuid, orderQuote).GetContentResult();
+                return _bookingEngine.ProcessCheckpoint2Async(clientId, sellerId, uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -90,7 +90,7 @@ namespace BookingSystem.AspNetFramework.Controllers
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessOrderCreationB(clientId, sellerId, uuid, order).GetContentResult();
+                return _bookingEngine.ProcessOrderCreationBAsync(clientId, sellerId, uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -147,7 +147,7 @@ namespace BookingSystem.AspNetFramework.Controllers
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
                 string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
-                return _bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return _bookingEngine.GetOrdersRPDEPageForFeedAsync(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -162,7 +162,7 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                return _bookingEngine.InsertTestOpportunity(testDatasetIdentifier, @event).GetContentResult();
+                return _bookingEngine.InsertTestOpportunityAsync(testDatasetIdentifier, @event).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

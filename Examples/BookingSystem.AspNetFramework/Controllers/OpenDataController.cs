@@ -33,7 +33,7 @@ namespace BookingSystem.AspNetFramework.Controllers
             {
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
-                return _bookingEngine.GetOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return _bookingEngine.GetOpenDataRPDEPageForFeedAsync(feedname, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
             catch (KeyNotFoundException kn)
             {

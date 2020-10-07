@@ -33,12 +33,12 @@ namespace BookingSystem.AspNetCore.Controllers
         /// GET api/openbooking/order-quote-templates/ABCD1234
         /// </summary>
         [HttpPut("order-quote-templates/{uuid}")]
-        public ContentResult OrderQuoteCreationC1([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
+        public async Task<ContentResult> OrderQuoteCreationC1([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return bookingEngine.ProcessCheckpoint1(clientId, sellerId, uuid, orderQuote).GetContentResult();                
+                return (await bookingEngine.ProcessCheckpoint1Async(clientId, sellerId, uuid, orderQuote)).GetContentResult();                
             }
             catch (OpenBookingException obe)
             {
@@ -51,12 +51,12 @@ namespace BookingSystem.AspNetCore.Controllers
         /// GET api/openbooking/order-quotes/ABCD1234
         /// </summary>
         [HttpPut("order-quotes/{uuid}")]
-        public ContentResult OrderQuoteCreationC2([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
+        public async Task<ContentResult> OrderQuoteCreationC2([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return bookingEngine.ProcessCheckpoint2(clientId, sellerId, uuid, orderQuote).GetContentResult();
+                return (await bookingEngine.ProcessCheckpoint2Async(clientId, sellerId, uuid, orderQuote)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -69,12 +69,12 @@ namespace BookingSystem.AspNetCore.Controllers
         /// GET api/openbooking/order-proposals/ABCD1234
         /// </summary>
         [HttpPut("order-proposals/{uuid}")]
-        public ContentResult OrderProposalCreationP([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderProposal)
+        public async Task<ContentResult> OrderProposalCreationP([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderProposal)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return bookingEngine.ProcessOrderProposalCreationP(clientId, sellerId, uuid, orderProposal).GetContentResult();
+                return (await bookingEngine.ProcessOrderProposalCreationPAsync(clientId, sellerId, uuid, orderProposal)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -105,12 +105,12 @@ namespace BookingSystem.AspNetCore.Controllers
         /// GET api/openbooking/orders/ABCD1234
         /// </summary>
         [HttpPut("orders/{uuid}")]
-        public ContentResult OrderCreationB([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
+        public async Task<ContentResult> OrderCreationB([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return bookingEngine.ProcessOrderCreationB(clientId, sellerId, uuid, order).GetContentResult();
+                return (await bookingEngine.ProcessOrderCreationBAsync(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -146,7 +146,7 @@ namespace BookingSystem.AspNetCore.Controllers
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order).GetContentResult();
+                return (bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -175,12 +175,12 @@ namespace BookingSystem.AspNetCore.Controllers
 
         // GET api/openbooking/orders/ABCD1234
         [HttpGet("orders/{uuid}")]
-        public IActionResult GetOrderStatus([FromServices] IBookingEngine bookingEngine, string uuid)
+        public async Task<IActionResult> GetOrderStatus([FromServices] IBookingEngine bookingEngine, string uuid)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return bookingEngine.GetOrderStatus(clientId, sellerId, uuid).GetContentResult();
+                return (await bookingEngine.GetOrderStatusAsync(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -190,7 +190,7 @@ namespace BookingSystem.AspNetCore.Controllers
 
         // GET api/openbooking/orders-rpde
         [HttpGet("orders-rpde")]
-        public IActionResult GetOrdersFeed([FromServices] IBookingEngine bookingEngine, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public async Task<IActionResult> GetOrdersFeed([FromServices] IBookingEngine bookingEngine, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             try
             {
@@ -198,7 +198,7 @@ namespace BookingSystem.AspNetCore.Controllers
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
                 string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
-                return bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return (await bookingEngine.GetOrdersRPDEPageForFeedAsync(clientId, afterTimestamp, afterId, afterChangeNumber)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -209,11 +209,11 @@ namespace BookingSystem.AspNetCore.Controllers
 
         // POST api/openbooking/test-interface/datasets/uat-ci/opportunities
         [HttpPost("test-interface/datasets/{testDatasetIdentifier}/opportunities")]
-        public IActionResult TestInterfaceDatasetInsert([FromServices] IBookingEngine bookingEngine, string testDatasetIdentifier, [FromBody] string @event)
+        public async Task<IActionResult> TestInterfaceDatasetInsert([FromServices] IBookingEngine bookingEngine, string testDatasetIdentifier, [FromBody] string @event)
         {
             try
             {
-                return bookingEngine.InsertTestOpportunity(testDatasetIdentifier, @event).GetContentResult();
+                return (await bookingEngine.InsertTestOpportunityAsync(testDatasetIdentifier, @event)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

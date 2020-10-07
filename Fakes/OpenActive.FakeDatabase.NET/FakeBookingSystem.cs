@@ -8,6 +8,7 @@ using System.Linq;
 using Bogus;
 using ServiceStack.OrmLite;
 using ServiceStack.Text;
+using System.Threading.Tasks;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -182,14 +183,14 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
+        public static async Task<bool> AddOrderAsync(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             var db = transaction.DatabaseConnection;
 
             var existingOrder = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid);
             if (existingOrder == null)
             {
-                db.Insert(new OrderTable
+                await db.InsertAsync(new OrderTable
                 {
                     ClientId = clientId,
                     OrderId = uuid,
@@ -224,7 +225,7 @@ namespace OpenActive.FakeDatabase.NET
                 existingOrder.OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking;
                 existingOrder.ProposalVersionId = proposalVersionUuid;
                 existingOrder.ProposalStatus = proposalStatus;
-                db.Update(existingOrder);
+                await db.UpdateAsync(existingOrder);
 
                 return true;
             }
@@ -790,9 +791,9 @@ namespace OpenActive.FakeDatabase.NET
             db.InsertAll(sellers);
         }
 
-        public (int, int) AddClass(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces, bool requiresApproval)
+        public async Task<(int, int)> AddClass(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces, bool requiresApproval)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
                 var @class = new ClassTable
@@ -804,7 +805,7 @@ namespace OpenActive.FakeDatabase.NET
                     SellerId = seller,
                     RequiresApproval = requiresApproval
                 };
-                db.Save(@class);
+                await db.SaveAsync(@class);
 
                 var occurrence = new OccurrenceTable
                 {
@@ -816,7 +817,7 @@ namespace OpenActive.FakeDatabase.NET
                     TotalSpaces = totalSpaces,
                     RemainingSpaces = totalSpaces
                 };
-                db.Save(occurrence);
+                await db.SaveAsync(occurrence);
 
                 transaction.Commit();
 
@@ -824,9 +825,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (int, int) AddFacility(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalUses, bool requiresApproval)
+        public async Task<(int, int)> AddFacility(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalUses, bool requiresApproval)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
                 var facility = new FacilityUseTable
@@ -836,7 +837,7 @@ namespace OpenActive.FakeDatabase.NET
                     Name = title,
                     SellerId = seller
                 };
-                db.Save(facility);
+                await db.SaveAsync(facility);
 
                 var slot = new SlotTable
                 {
@@ -850,7 +851,7 @@ namespace OpenActive.FakeDatabase.NET
                     Price = price,
                     RequiresApproval = requiresApproval
                 };
-                db.Save(slot);
+                await db.SaveAsync(slot);
 
                 transaction.Commit();
 

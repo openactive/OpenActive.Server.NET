@@ -3,13 +3,14 @@ using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using ServiceStack.OrmLite;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BookingSystem
 {
     public class AcmeSellerStore : SellerStore
     {
         // If the Seller is not found, simply return null to generate the correct Open Booking error
-        protected override ILegalEntity GetSeller(SellerIdComponents sellerIdComponents)
+        protected override async Task<ILegalEntity> GetSeller(SellerIdComponents sellerIdComponents)
         {
             // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required.
             if (sellerIdComponents.SellerIdLong == null && sellerIdComponents.SellerIdString == null)
@@ -37,9 +38,9 @@ namespace BookingSystem
             {
 
                 // Otherwise it may be looked up based on supplied sellerIdComponents which are extacted from the sellerId.
-                using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+                using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
                 {
-                    var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
+                    var seller = await db.SingleByIdAsync<SellerTable>(sellerIdComponents.SellerIdLong);
                     if (seller != null)
                     {
                         return seller.IsIndividual ? (ILegalEntity)new Person

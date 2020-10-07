@@ -18,9 +18,9 @@ namespace BookingSystem.AspNetCore.Controllers
     public class DatasetSiteController : Controller
     {
         // GET: /openactive/
-        public IActionResult Index([FromServices] IBookingEngine bookingEngine)
+        public async Task<IActionResult> Index([FromServices] IBookingEngine bookingEngine)
         {
-            return bookingEngine.RenderDatasetSite().GetContentResult();
+            return (await bookingEngine.RenderDatasetSiteAsync()).GetContentResult();
         }
     }
 }

@@ -6,6 +6,7 @@ using ServiceStack.OrmLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BookingSystem
 {
@@ -110,9 +111,9 @@ namespace BookingSystem
             FakeBookingSystem.Database.DeleteLease(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong.Value);
         }
 
-        public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public override async Task CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
-            var result = FakeDatabase.AddOrder(
+            var result = await FakeDatabase.AddOrderAsync(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
@@ -128,11 +129,11 @@ namespace BookingSystem
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
 
-        public override (string, OrderProposalStatus) CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public override async Task<(string, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             var version = Guid.NewGuid().ToString();
 
-            var result = FakeDatabase.AddOrder(
+            var result = await FakeDatabase.AddOrderAsync(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,

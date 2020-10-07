@@ -27,7 +27,7 @@ namespace BookingSystem.AspNetFramework.Controllers
         [HttpGet]
         public HttpResponseMessage Index()
         {
-            return _bookingEngine.RenderDatasetSite().GetContentResult();
+            return _bookingEngine.RenderDatasetSiteAsync().GetContentResult();
         }
 
     }

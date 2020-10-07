@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
@@ -17,26 +18,26 @@ namespace OpenActive.Server.NET
     public interface IBookingEngine
     {
         // These endpoints are fully open
-        ResponseContent RenderDatasetSite();
-        ResponseContent GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber);
-        ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
+        Task<ResponseContent> RenderDatasetSiteAsync();
+        Task<ResponseContent> GetOpenDataRPDEPageForFeedAsync(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber);
+        Task<ResponseContent> GetOpenDataRPDEPageForFeedAsync(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
 
         // These endpoints are authenticated by seller credentials (OAuth Authorization Code Grant)
-        ResponseContent ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
-        ResponseContent ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
-        ResponseContent ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson);
-        ResponseContent ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson);
+        Task<ResponseContent> ProcessCheckpoint1Async(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
+        Task<ResponseContent> ProcessCheckpoint2Async(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
+        Task<ResponseContent> ProcessOrderCreationBAsync(string clientId, Uri sellerId, string uuid, string orderJson);
+        Task<ResponseContent> ProcessOrderProposalCreationPAsync(string clientId, Uri sellerId, string uuid, string orderJson);
         ResponseContent DeleteOrder(string clientId, Uri sellerId, string uuid);
         ResponseContent DeleteOrderQuote(string clientId, Uri sellerId, string uuid);
         ResponseContent ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
         ResponseContent ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
 
         // These endpoints are authenticated by client credentials (OAuth Client Credentials Grant)
-        ResponseContent InsertTestOpportunity(string testDatasetIdentifier, string eventJson);
+        Task<ResponseContent> InsertTestOpportunityAsync(string testDatasetIdentifier, string eventJson);
         ResponseContent DeleteTestDataset(string testDatasetIdentifier);
         ResponseContent TriggerTestAction(string actionJson);
-        ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
-        ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
-        ResponseContent GetOrderStatus(string clientId, Uri sellerId, string uuid);
+        Task<ResponseContent> GetOrdersRPDEPageForFeedAsync(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
+        Task<ResponseContent> GetOrdersRPDEPageForFeedAsync(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
+        Task<ResponseContent> GetOrderStatusAsync(string clientId, Uri sellerId, string uuid);
     }
 }

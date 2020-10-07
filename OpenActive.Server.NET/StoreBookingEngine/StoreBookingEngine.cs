@@ -7,6 +7,7 @@ using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.CustomBooking;
+using System.Threading.Tasks;
 
 namespace OpenActive.Server.NET.StoreBooking
 {
@@ -179,12 +180,12 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
         
-        protected override Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
+        async protected override Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new EngineConfigurationException("Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
 
-            return storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
+            return await storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
         }
 
         protected override void DeleteTestDataset(string testDatasetIdentifier)
@@ -238,7 +239,7 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        public override void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
+        public override async void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
             if (!storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderId, sellerId, orderIdTemplate, orderItemIds))
             {
@@ -301,7 +302,7 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        protected override Order ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
+        protected override async Task<Order> ProcessGetOrderStatusAsync(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
         {
             // Get Order without OrderItems expanded
             var order = storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
@@ -310,7 +311,7 @@ namespace OpenActive.Server.NET.StoreBooking
             var flowContext = AugmentContextFromOrder(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.OrderStatus, order), order);
 
             // Expand OrderItems based on the flowContext
-            var (orderItemContexts, _) = GetOrderItemContexts(order.OrderedItem, flowContext, null);
+            var (orderItemContexts, _) = await GetOrderItemContexts(order.OrderedItem, flowContext, null);
 
             // Maintain IDs and OrderItemStatus from GetOrderStatus that will have been overwritten by expansion
             foreach (var ctx in orderItemContexts)
@@ -325,16 +326,16 @@ namespace OpenActive.Server.NET.StoreBooking
             return order;
         }
 
-        public override Order ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
+        public override async Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
         {
             if (!storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
             {
                 throw new OpenBookingException(new OrderProposalVersionOutdatedError());
             }
-            return ProcessGetOrderStatus(orderId, sellerId, seller);
+            return await ProcessGetOrderStatusAsync(orderId, sellerId, seller);
         }
 
-        private (List<IOrderItemContext>, List<OrderItemContextGroup>) GetOrderItemContexts(List<OrderItem> sourceOrderItems, StoreBookingFlowContext flowContext, IStateContext stateContext)
+        private async Task<(List<IOrderItemContext>, List<OrderItemContextGroup>)> GetOrderItemContexts(List<OrderItem> sourceOrderItems, StoreBookingFlowContext flowContext, IStateContext stateContext)
         {
             // Create OrderItemContext for each OrderItem
             var orderItemContexts = sourceOrderItems.Select((orderItem, index) => {
@@ -369,48 +370,49 @@ namespace OpenActive.Server.NET.StoreBooking
             }).ToList();
 
             // Group by OpportunityType for processing
-            var orderItemGroups = orderItemContexts
+            var orderItemGroups = await Task.WhenAll(
+                orderItemContexts
                 .Where(ctx => ctx.RequestBookableOpportunityOfferId != null)
                 .GroupBy(ctx => ctx.RequestBookableOpportunityOfferId.OpportunityType.Value)
-
-            // Get OrderItems first, to check no conflicts exist and that all items are valid
-            // Resolve the ID of each OrderItem via a store
-            .Select(orderItemContextGroup =>
-            {
-                var opportunityType = orderItemContextGroup.Key;
-                var orderItemContextsWithinGroup = orderItemContextGroup.ToList();
-                var store = storeRouting[opportunityType];
-                if (store == null)
+                // Get OrderItems first, to check no conflicts exist and that all items are valid
+                // Resolve the ID of each OrderItem via a store
+                .Select(async orderItemContextGroup =>
                 {
-                    throw new EngineConfigurationException($"Store is not defined for {opportunityType}");
-                }
+                    var opportunityType = orderItemContextGroup.Key;
+                    var orderItemContextsWithinGroup = orderItemContextGroup.ToList();
+                    var store = storeRouting[opportunityType];
+                    if (store == null)
+                    {
+                        throw new EngineConfigurationException($"Store is not defined for {opportunityType}");
+                    }
 
-                // QUESTION: Should GetOrderItems occur within the transaction?
-                // Currently this is optimised for the transaction to have minimal query coverage (i.e. write-only)
+                    // QUESTION: Should GetOrderItems occur within the transaction?
+                    // Currently this is optimised for the transaction to have minimal query coverage (i.e. write-only)
 
-                store.GetOrderItems(orderItemContextsWithinGroup, flowContext, stateContext);
+                    await store.GetOrderItems(orderItemContextsWithinGroup, flowContext, stateContext).ConfigureAwait(false);
 
-                if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem != null))
-                {
-                    throw new EngineConfigurationException("Not all OrderItemContext have a ResponseOrderItem set. GetOrderItems must always call SetResponseOrderItem for each supplied OrderItemContext.");
-                }
+                    if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem != null))
+                    {
+                        throw new EngineConfigurationException("Not all OrderItemContext have a ResponseOrderItem set. GetOrderItems must always call SetResponseOrderItem for each supplied OrderItemContext.");
+                    }
 
-                if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem?.Error != null || (x.ResponseOrderItem?.AcceptedOffer?.Price != null && x.ResponseOrderItem?.AcceptedOffer?.PriceCurrency != null)))
-                {
-                    throw new EngineConfigurationException("Not all OrderItemContext have a ResponseOrderItem set with an AcceptedOffer containing both Price and PriceCurrency.");
-                }
+                    if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem?.Error != null || (x.ResponseOrderItem?.AcceptedOffer?.Price != null && x.ResponseOrderItem?.AcceptedOffer?.PriceCurrency != null)))
+                    {
+                        throw new EngineConfigurationException("Not all OrderItemContext have a ResponseOrderItem set with an AcceptedOffer containing both Price and PriceCurrency.");
+                    }
 
-                // TODO: Implement error logic for all types of item errors based on the results of this
+                    // TODO: Implement error logic for all types of item errors based on the results of this
 
-                return new OrderItemContextGroup
-                {
-                    OpportunityType = opportunityType,
-                    Store = store,
-                    OrderItemContexts = orderItemContextsWithinGroup
-                };
-            }).ToList();
+                    return new OrderItemContextGroup
+                    {
+                        OpportunityType = opportunityType,
+                        Store = store,
+                        OrderItemContexts = orderItemContextsWithinGroup
+                    };
+                })
+            ).ConfigureAwait(false);
 
-            return (orderItemContexts, orderItemGroups);
+            return (orderItemContexts, orderItemGroups.ToList());
         }
 
         private StoreBookingFlowContext AugmentContextFromOrder<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new()
@@ -467,7 +469,7 @@ namespace OpenActive.Server.NET.StoreBooking
             return context;
         }
 
-        public override TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
+        public override async Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
         {
             var context = AugmentContextFromOrder(request, order);
 
@@ -475,7 +477,7 @@ namespace OpenActive.Server.NET.StoreBooking
             // Useful for transferring state between stages of the flow
             var stateContext = storeBookingEngineSettings.OrderStore.InitialiseFlow(context);
 
-            var (orderItemContexts, orderItemGroups) = GetOrderItemContexts(order.OrderedItem, context, stateContext);
+            var (orderItemContexts, orderItemGroups) = await GetOrderItemContexts(order.OrderedItem, context, stateContext);
 
             // Create a response Order based on the original order of the OrderItems in orderItemContexts
             TOrder responseGenericOrder = new TOrder
@@ -513,7 +515,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            var (version, orderProposalStatus) = storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
+                            var (version, orderProposalStatus) = await storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
                             responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id.ToString()}/versions/{version}");
                             responseOrderProposal.OrderProposalStatus = orderProposalStatus;
 

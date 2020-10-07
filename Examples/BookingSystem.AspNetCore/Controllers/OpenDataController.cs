@@ -23,13 +23,13 @@ namespace BookingSystem.AspNetCore.Controllers
         /// </summary>
         [HttpGet("{feedname}")]
         [Consumes(OpenActiveMediaTypes.RealtimePagedDataExchange.Version1, System.Net.Mime.MediaTypeNames.Application.Json)] 
-        public IActionResult GetOpenDataFeed([FromServices] IBookingEngine bookingEngine, string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public async Task<IActionResult> GetOpenDataFeed([FromServices] IBookingEngine bookingEngine, string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             try
             {
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
-                return bookingEngine.GetOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return (await bookingEngine.GetOpenDataRPDEPageForFeedAsync(feedname, afterTimestamp, afterId, afterChangeNumber)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

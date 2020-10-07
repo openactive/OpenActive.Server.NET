@@ -6,6 +6,7 @@ using System;
 using ServiceStack.OrmLite;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading.Tasks;
 
 namespace OpenActive.FakeDatabase.NET.Test
 {
@@ -123,8 +124,93 @@ namespace OpenActive.FakeDatabase.NET.Test
 
                 Assert.Equal(price, order.TotalOrderPrice);
             }
+        }
 
-            
+        [Fact]
+        public async Task AddClass_OneThreadNoRaceCondition()
+        {
+            List<(int, int)> result = await Task.Run(async () => {
+                var list = new List<(int, int)>();
+
+                for (int z = 0; z < 100; z++)
+                {
+                    list.Add(await FakeBookingSystem.Database.AddClass("test1", 1, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false));
+                }
+
+                return list;
+            });
+
+            var duplicates = CountDuplicates(result);
+
+            Assert.Equal(0, duplicates.Item1);
+            Assert.Equal(0, duplicates.Item2);
+        }
+
+        [Fact]
+        public async void AddClass_TwoThreadsWithRaceCondition()
+        {
+            Task<List<(int, int)>> result1 = Task.Run(async () => {
+                var list = new List<(int, int)>();
+
+                for (int z = 0; z < 100; z++)
+                {
+                    list.Add(await FakeBookingSystem.Database.AddClass("test1", 1, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false));
+                }
+
+                return list;
+            });
+
+            Task<List<(int, int)>> result2 = Task.Run(async () => {
+                var list = new List<(int, int)>();
+
+                for (int z = 0; z < 100; z++)
+                {
+                    list.Add(await FakeBookingSystem.Database.AddClass("test1", 1, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false));
+                }
+
+                return list;
+            });
+
+            var result = (await result1).Concat(await result2);
+
+            Console.WriteLine(CountDuplicates(result));
+
+            var duplicates = CountDuplicates(result);
+
+            Assert.Equal(0, duplicates.Item1);
+            Assert.Equal(0, duplicates.Item2);
+        }
+
+        private (int, int) CountDuplicates(IEnumerable<(int, int)> list)
+        {
+            var set1 = new HashSet<int>();
+            var set2 = new HashSet<int>();
+
+            var cnt1 = 0;
+            var cnt2 = 0;
+
+            foreach (var tuple in list)
+            {
+                if (set1.Contains(tuple.Item1))
+                {
+                    cnt1++;
+                }
+                else
+                {
+                    set1.Add(tuple.Item1);
+                }
+
+                if (set2.Contains(tuple.Item2))
+                {
+                    cnt2++;
+                }
+                else
+                {
+                    set2.Add(tuple.Item2);
+                }
+            }
+
+            return (cnt1, cnt2);
         }
     }
 }
