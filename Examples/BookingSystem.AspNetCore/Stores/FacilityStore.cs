@@ -96,7 +96,6 @@ namespace BookingSystem
             List<FacilityUseTable> facilityTable;
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
-                var q = db.From<OrderItemsTable>().Join<OrderTable, OrderItemsTable>((items, orders) => items.OrderId == orders.OrderId);
 
                 slotTable = db.Select<SlotTable>();
                 facilityTable = db.Select<FacilityUseTable>();

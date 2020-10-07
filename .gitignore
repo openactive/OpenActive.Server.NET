@@ -337,4 +337,3 @@ ASALocalRun/
 
 # Fake databases
 fakedatabase.db
-Examples/BookingSystem.AspNetCore/filedatabase.db*
