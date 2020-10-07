@@ -335,5 +335,5 @@ ASALocalRun/
 # MacOS
 .DS_Store
 
-# Fake database
+# Fake databases
 fakedatabase.db

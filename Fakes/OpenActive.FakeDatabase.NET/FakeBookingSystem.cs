@@ -97,6 +97,8 @@ namespace OpenActive.FakeDatabase.NET
 
         private static readonly Faker faker = new Faker("en");
 
+        private const int OpportunityCount = 1000;
+
         /// <summary>
         /// TODO: Call this on a schedule from both .NET Core and .NET Framework reference implementations
         /// </summary>
@@ -264,7 +266,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, long numberOfSpaces)
+        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, long spacesRequested)
         {
             var db = transaction.DatabaseConnection;
             var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
@@ -283,9 +285,9 @@ namespace OpenActive.FakeDatabase.NET
                 RecalculateSpaces(db, thisOccurrence);
 
                 // Only lease if all spaces requested are available
-                if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces >= numberOfSpaces)
+                if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces >= spacesRequested)
                 {
-                    for (int i = 0; i < numberOfSpaces; i++)
+                    for (int i = 0; i < spacesRequested; i++)
                     {
                         db.Insert(new OrderItemsTable
                         {
@@ -304,10 +306,11 @@ namespace OpenActive.FakeDatabase.NET
                 }
                 else
                 {
-                    var capacityErrors = Math.Max(0, numberOfSpaces - thisOccurrence.RemainingSpaces);
-                    var capacityErrorsCausedByLeasing = Math.Max(0, numberOfSpaces - (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces));
+                    var notionalRemainingSpaces = thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces;
+                    var totalCapacityErrors = Math.Max(0, spacesRequested - notionalRemainingSpaces);
+                    var capacityErrorsCausedByLeasing = Math.Min(totalCapacityErrors, thisOccurrence.LeasedSpaces);
 
-                    return (ReserveOrderItemsResult.NotEnoughCapacity, capacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
+                    return (ReserveOrderItemsResult.NotEnoughCapacity, totalCapacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
                 }
             }
             else
@@ -316,7 +319,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long numberOfSpaces)
+        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long spacesRequested)
         {
             var db = transaction.DatabaseConnection;
             var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
@@ -335,16 +338,17 @@ namespace OpenActive.FakeDatabase.NET
                 RecalculateSlotUses(db, thisSlot);
 
                 // Only lease if all spaces requested are available
-                if (thisSlot.RemainingUses - thisSlot.LeasedUses >= numberOfSpaces)
+                if (thisSlot.RemainingUses - thisSlot.LeasedUses >= spacesRequested)
                 {
-                    for (int i = 0; i < numberOfSpaces; i++)
+                    for (int i = 0; i < spacesRequested; i++)
                     {
                         db.Insert(new OrderItemsTable
                         {
                             ClientId = clientId,
                             Deleted = false,
                             OrderId = uuid,
-                            SlotId = slotId
+                            SlotId = slotId,
+                            Status = BookingStatus.None
                         });
                     }
 
@@ -355,10 +359,11 @@ namespace OpenActive.FakeDatabase.NET
                 }
                 else
                 {
-                    var capacityErrors = Math.Max(0, numberOfSpaces - thisSlot.RemainingUses);
-                    var capacityErrorsCausedByLeasing = Math.Max(0, numberOfSpaces - (thisSlot.RemainingUses - thisSlot.LeasedUses));
+                    var notionalRemainingSpaces = thisSlot.RemainingUses - thisSlot.LeasedUses;
+                    var totalCapacityErrors = Math.Max(0, spacesRequested - notionalRemainingSpaces);
+                    var capacityErrorsCausedByLeasing = Math.Min(totalCapacityErrors, thisSlot.LeasedUses);
 
-                    return (ReserveOrderItemsResult.NotEnoughCapacity, capacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
+                    return (ReserveOrderItemsResult.NotEnoughCapacity, totalCapacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
                 }
             }
             else
@@ -642,7 +647,7 @@ namespace OpenActive.FakeDatabase.NET
             if (slot != null)
             {
                 // Update number of leased spaces remaining for the opportunity
-                var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == slot.Id).Count();
+                var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.SlotId == slot.Id).Count();
                 slot.LeasedUses = leasedUses;
 
                 // Update number of actual spaces remaining for the opportunity
@@ -654,7 +659,6 @@ namespace OpenActive.FakeDatabase.NET
                 slot.Modified = DateTimeOffset.Now.UtcTicks;
                 db.Update(slot);
             }
-
         }
 
         public static void RecalculateSlotUses(IDbConnection db, IEnumerable<long> slotIds)
@@ -709,7 +713,7 @@ namespace OpenActive.FakeDatabase.NET
 
         private static void CreateFakeFacilitiesAndSlots(IDbConnection db)
         {
-            var slots = Enumerable.Range(10, 1000)
+            var slots = Enumerable.Range(10, OpportunityCount * 10)
             .Select(n => new {
                 Id = n,
                 StartDate = faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
@@ -729,7 +733,7 @@ namespace OpenActive.FakeDatabase.NET
             })
             .ToList();
 
-            var facilities = Enumerable.Range(1, 100)
+            var facilities = Enumerable.Range(1, OpportunityCount)
             .Select(id => new FacilityUseTable
             {
                 Id = id,
@@ -745,7 +749,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateFakeClasses(IDbConnection db)
         {
-            var occurrences = Enumerable.Range(10, 1000)
+            var occurrences = Enumerable.Range(10, OpportunityCount * 10)
             .Select(n => new {
                 Id = n,
                 StartDate = faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
@@ -763,7 +767,7 @@ namespace OpenActive.FakeDatabase.NET
             })
             .ToList();
 
-            var classes = Enumerable.Range(1, 100)
+            var classes = Enumerable.Range(1, OpportunityCount)
             .Select(id => new ClassTable
             {
                 Id = id,

@@ -264,7 +264,7 @@ namespace OpenActive.Server.NET.StoreBooking
             storeBookingEngineSettings.OrderStore.DeleteLease(orderId, sellerId);
         }
 
-        private void CheckOrderIntegrity(Order requestOrder, Order responseOrder)
+        private static void CheckOrderIntegrity(Order requestOrder, Order responseOrder)
         {
             // If any capacity errors were returned from GetOrderItems, the booking must fail
             // https://www.openactive.io/open-booking-api/EditorsDraft/#order-creation-b
@@ -287,19 +287,30 @@ namespace OpenActive.Server.NET.StoreBooking
                 throw new OpenBookingException(new UnableToProcessOrderItemError());
             }
 
-            // If "payment" has been supplied unnecessarily, throw an error
-            if (responseOrder.Payment != null && responseOrder.TotalPaymentDue?.Price == 0)
-            {
-                throw new OpenBookingException(new UnnecessaryPaymentDetailsError(), "Payment details were erroneously supplied for a free Order.");
-            }
-
-            // Throw error on incomplete broker details
+            // Throw error on payment due mismatch
             if (requestOrder.TotalPaymentDue?.Price != responseOrder.TotalPaymentDue?.Price)
             {
                 throw new OpenBookingException(new TotalPaymentDueMismatchError());
             }
-        }
 
+            // If "payment" has been supplied unnecessarily, throw an error
+            if (requestOrder.Payment != null && requestOrder.TotalPaymentDue?.Price == 0)
+            {
+                throw new OpenBookingException(new UnnecessaryPaymentDetailsError(), "Payment details were erroneously supplied for a free Order.");
+            }
+
+            // If order is not free, payment details are required
+            if (requestOrder.TotalPaymentDue?.Price > 0 && requestOrder.Payment == null)
+            {
+                throw new OpenBookingException(new MissingPaymentDetailsError());
+            }
+
+            // If order is not free, payment identifier is required
+            if (requestOrder.TotalPaymentDue?.Price > 0 && requestOrder.Payment?.Identifier == null)
+            {
+                throw new OpenBookingException(new IncompletePaymentDetailsError());
+            }
+        }
 
         protected override Order ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
         {

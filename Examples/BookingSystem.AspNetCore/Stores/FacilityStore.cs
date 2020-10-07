@@ -46,13 +46,21 @@ namespace BookingSystem
                                 FacilityUseId = facilityId3,
                                 SlotId = slotId3
                             };
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
-                            var (facilityId4, slotId4) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
+                            var (facilityId4, slotId4) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility Five Spaces", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 5, false);
                             return new FacilityOpportunity
                             {
                                 OpportunityType = opportunityType,
                                 FacilityUseId = facilityId4,
                                 SlotId = slotId4
+                            };
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
+                            var (facilityId5, slotId5) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
+                            return new FacilityOpportunity
+                            {
+                                OpportunityType = opportunityType,
+                                FacilityUseId = facilityId5,
+                                SlotId = slotId5
                             };
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
@@ -86,109 +94,112 @@ namespace BookingSystem
 
             List<SlotTable> slotTable;
             List<FacilityUseTable> facilityTable;
-            List<OrderItemsTable> orderItemsTable;
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
+
                 slotTable = db.Select<SlotTable>();
                 facilityTable = db.Select<FacilityUseTable>();
-                orderItemsTable = db.Select<OrderItemsTable>();
-            }
 
-            var query = (from orderItemContext in orderItemContexts
-                         join slot in slotTable on orderItemContext.RequestBookableOpportunityOfferId.SlotId equals slot.Id
-                         join facility in facilityTable on slot.FacilityUseId equals facility.Id
-                         // and offers.id = opportunityOfferId.OfferId
-                         select slot == null ? null : new {
-                             OrderItem = new OrderItem
-                             {
-                                 AllowCustomerCancellationFullRefund = true,
-                                 // TODO: The static example below should come from the database (which doesn't currently support tax)
-                                 UnitTaxSpecification = flowContext.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
-                                     new List<TaxChargeSpecification>
-                                     {
-                                        new TaxChargeSpecification
-                                        {
-                                            Name = "VAT at 20%",
-                                            Price = slot.Price * (decimal?)0.2,
-                                            PriceCurrency = "GBP",
-                                            Rate = (decimal?)0.2
-                                        }
-                                     } : null,
-                                 AcceptedOffer = new Offer
+                var query = (from orderItemContext in orderItemContexts
+                             join slot in slotTable on orderItemContext.RequestBookableOpportunityOfferId.SlotId equals slot.Id
+                             join facility in facilityTable on slot.FacilityUseId equals facility.Id
+                             // and offers.id = opportunityOfferId.OfferId
+                             select slot == null ? null : new {
+                                 OrderItem = new OrderItem
                                  {
-                                     // Note this should always use RenderOfferId with the supplied SessioFacilityOpportunitynOpportunity, to take into account inheritance and OfferType
-                                     Id = this.RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
-                                     Price = slot.Price,
-                                     PriceCurrency = "GBP"
-                                 },
-                                 OrderedItem = new Slot
-                                 {
-                                     // Note this should always be driven from the database, with new FacilityOpportunity's instantiated
-                                     Id = this.RenderOpportunityId(new FacilityOpportunity
+                                     AllowCustomerCancellationFullRefund = true,
+                                     // TODO: The static example below should come from the database (which doesn't currently support tax)
+                                     UnitTaxSpecification = flowContext.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
+                                         new List<TaxChargeSpecification>
+                                         {
+                                            new TaxChargeSpecification
+                                            {
+                                                Name = "VAT at 20%",
+                                                Price = slot.Price * (decimal?)0.2,
+                                                PriceCurrency = "GBP",
+                                                Rate = (decimal?)0.2
+                                            }
+                                         } : null,
+                                     AcceptedOffer = new Offer
                                      {
-                                         OpportunityType = OpportunityType.FacilityUseSlot,
-                                         FacilityUseId = slot.FacilityUseId,
-                                         SlotId = slot.Id
-                                     }),
-                                     FacilityUse = new FacilityUse
+                                         // Note this should always use RenderOfferId with the supplied SessioFacilityOpportunitynOpportunity, to take into account inheritance and OfferType
+                                         Id = this.RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
+                                         Price = slot.Price,
+                                         PriceCurrency = "GBP"
+                                     },
+                                     OrderedItem = new Slot
                                      {
+                                         // Note this should always be driven from the database, with new FacilityOpportunity's instantiated
                                          Id = this.RenderOpportunityId(new FacilityOpportunity
                                          {
-                                             OpportunityType = OpportunityType.FacilityUse,
-                                             FacilityUseId = slot.FacilityUseId
+                                             OpportunityType = OpportunityType.FacilityUseSlot,
+                                             FacilityUseId = slot.FacilityUseId,
+                                             SlotId = slot.Id
                                          }),
-                                         Name = facility.Name,
-                                         Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
-                                         Location = new Place
+                                         FacilityUse = new FacilityUse
                                          {
-                                             Name = "Fake fitness studio",
-                                             Geo = new GeoCoordinates
+                                             Id = this.RenderOpportunityId(new FacilityOpportunity
                                              {
-                                                 Latitude = 51.6201M,
-                                                 Longitude = 0.302396M
+                                                 OpportunityType = OpportunityType.FacilityUse,
+                                                 FacilityUseId = slot.FacilityUseId
+                                             }),
+                                             Name = facility.Name,
+                                             Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
+                                             Location = new Place
+                                             {
+                                                 Name = "Fake fitness studio",
+                                                 Geo = new GeoCoordinates
+                                                 {
+                                                     Latitude = 51.6201M,
+                                                     Longitude = 0.302396M
+                                                 }
+                                             },
+                                             Activity = new List<Concept>
+                                             {
+                                                 new Concept
+                                                 {
+                                                     Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
+                                                     PrefLabel = "Rave Fitness",
+                                                     InScheme = new Uri("https://openactive.io/activity-list")
+                                                 }
                                              }
                                          },
-                                         Activity = new List<Concept>
-                                         {
-                                             new Concept
-                                             {
-                                                 Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
-                                                 PrefLabel = "Rave Fitness",
-                                                 InScheme = new Uri("https://openactive.io/activity-list")
-                                             }
-                                         }
-                                     },
-                                     StartDate = (DateTimeOffset)slot.Start,
-                                     EndDate = (DateTimeOffset)slot.End,
-                                     MaximumUses = slot.MaximumUses,
-                                     // Exclude current Order from the returned lease count
-                                     RemainingUses = slot.RemainingUses - orderItemsTable.Select(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.SlotId == slot.Id && x.OrderId != flowContext.OrderId.uuid).Count()
-                                 }
-                             },
-                             SellerId = new SellerIdComponents { SellerIdLong = facility.SellerId },
-                             RequiresApproval = slot.RequiresApproval
-                         });
+                                         StartDate = (DateTimeOffset)slot.Start,
+                                         EndDate = (DateTimeOffset)slot.End,
+                                         MaximumUses = slot.MaximumUses,
+                                         // Exclude current Order from the returned lease count
+                                         RemainingUses = slot.RemainingUses - db.Count<OrderItemsTable>(
+                                            x => x.OrderTable.OrderMode != OrderMode.Booking &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
+                                                 x.SlotId == slot.Id &&
+                                                 x.OrderId != flowContext.OrderId.uuid)
+                                     }
+                                 },
+                                 SellerId = new SellerIdComponents { SellerIdLong = facility.SellerId },
+                                 RequiresApproval = slot.RequiresApproval
+                             }).ToArray();
 
-            // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
-            foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
-            {
-                if (item == null)
+                // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
+                foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
                 {
-                    ctx.SetResponseOrderItemAsSkeleton();
-                    ctx.AddError(new UnknownOpportunityError());
-                }
-                else
-                {
-                    ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
-
-                    if (item.RequiresApproval) ctx.SetRequiresApproval();
-
-                    if (((Slot)item.OrderItem.OrderedItem).RemainingUses == 0)
+                    if (item == null)
                     {
-                        ctx.AddError(new OpportunityIsFullError());
+                        ctx.SetResponseOrderItemAsSkeleton();
+                        ctx.AddError(new UnknownOpportunityError());
+                    }
+                    else
+                    {
+                        ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
+
+                        if (item.RequiresApproval) ctx.SetRequiresApproval();
+
+                        if (((Slot)item.OrderItem.OrderedItem).RemainingUses == 0)
+                        {
+                            ctx.AddError(new OpportunityIsFullError());
+                        }
                     }
                 }
-                
             }
 
             // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
@@ -238,8 +249,10 @@ namespace BookingSystem
                             }
                             break;
                         case ReserveOrderItemsResult.NotEnoughCapacity:
-                            foreach (var ctx in ctxGroup)
+                            var contexts = ctxGroup.ToArray();
+                            for (var i = contexts.Length - 1; i >= 0; i--)
                             {
+                                var ctx = contexts[i];
                                 if (capacityErrors > 0)
                                 {
                                     ctx.AddError(new OpportunityHasInsufficientCapacityError());
@@ -251,6 +264,7 @@ namespace BookingSystem
                                     capacityLeaseErrors--;
                                 }
                             }
+
                             break;
                         default:
                             foreach (var ctx in ctxGroup)
