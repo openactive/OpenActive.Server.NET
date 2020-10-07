@@ -25,9 +25,11 @@ namespace OpenActive.Server.NET
         ResponseContent ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
         ResponseContent ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
         ResponseContent ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson);
+        ResponseContent ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson);
         ResponseContent DeleteOrder(string clientId, Uri sellerId, string uuid);
         ResponseContent DeleteOrderQuote(string clientId, Uri sellerId, string uuid);
         ResponseContent ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
+        ResponseContent ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
 
         // These endpoints are authenticated by client credentials (OAuth Client Credentials Grant)
         ResponseContent InsertTestOpportunity(string testDatasetIdentifier, string eventJson);
@@ -35,5 +37,6 @@ namespace OpenActive.Server.NET
         ResponseContent TriggerTestAction(string actionJson);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
+        ResponseContent GetOrderStatus(string clientId, Uri sellerId, string uuid);
     }
 }

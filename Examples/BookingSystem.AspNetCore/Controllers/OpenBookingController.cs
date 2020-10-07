@@ -65,6 +65,24 @@ namespace BookingSystem.AspNetCore.Controllers
         }
 
         /// <summary>
+        /// OrderProposal Creation P
+        /// GET api/openbooking/order-proposals/ABCD1234
+        /// </summary>
+        [HttpPut("order-proposals/{uuid}")]
+        public ContentResult OrderProposalCreationP([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderProposal)
+        {
+            try
+            {
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return bookingEngine.ProcessOrderProposalCreationP(clientId, sellerId, uuid, orderProposal).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+
+        /// <summary>
         /// OrderQuote Deletion
         /// DELETE api/openbooking/orders-quotes/ABCD1234
         /// </summary>
@@ -136,6 +154,39 @@ namespace BookingSystem.AspNetCore.Controllers
             }
         }
 
+
+        /// <summary>
+        /// OrderProposal Update
+        /// PATCH api/openbooking/order-proposals/ABCD1234
+        /// </summary>
+        [HttpPatch("order-proposals/{uuid}")]
+        public IActionResult OrderProposalUpdate([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
+        {
+            try
+            {
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+
+        // GET api/openbooking/orders/ABCD1234
+        [HttpGet("orders/{uuid}")]
+        public IActionResult GetOrderStatus([FromServices] IBookingEngine bookingEngine, string uuid)
+        {
+            try
+            {
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return bookingEngine.GetOrderStatus(clientId, sellerId, uuid).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
 
         // GET api/openbooking/orders-rpde
         [HttpGet("orders-rpde")]

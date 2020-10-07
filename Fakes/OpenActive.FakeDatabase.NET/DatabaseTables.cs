@@ -11,14 +11,18 @@ namespace OpenActive.FakeDatabase.NET
 
     public enum BrokerRole { AgentBroker, ResellerBroker, NoBroker }
 
-    public enum BookingStatus { CustomerCancelled, SellerCancelled, Confirmed, Attended }
+    public enum BookingStatus { None, CustomerCancelled, SellerCancelled, Confirmed, Attended, Proposed }
+
+    public enum ProposalStatus { AwaitingSellerConfirmation, SellerAccepted, SellerRejected, CustomerRejected }
+
+    public enum OrderMode { Lease, Proposal, Booking }
 
 
+    [CompositeIndex(nameof(Modified), nameof(Id))]
     public abstract class Table
     {
         [PrimaryKey]
         [AutoIncrement]
-        [Alias("RpdeId")]
         public long Id { get; set; }
         public bool Deleted { get; set; } = false;
         public long Modified { get; set; } = DateTimeOffset.Now.UtcTicks;
@@ -33,6 +37,7 @@ namespace OpenActive.FakeDatabase.NET
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; }
         public decimal? Price { get; set; }
+        public bool RequiresApproval { get; set; }
     }
 
 
@@ -65,20 +70,26 @@ namespace OpenActive.FakeDatabase.NET
         [Reference]
         public OccurrenceTable OccurrenceTable { get; set; }
         [ForeignKey(typeof(OccurrenceTable), OnDelete = "CASCADE")]
-        public long OccurrenceId { get; set; }
+        public long? OccurrenceId { get; set; }
         [Reference]
         public SlotTable SlotTable { get; set; }
         [ForeignKey(typeof(SlotTable), OnDelete = "CASCADE")]
-        public long SlotId { get; set; }
+        public long? SlotId { get; set; }
 
         public BookingStatus Status { get; set; }
         public decimal Price { get; set; }
     }
 
-    public class OrderTable : Table
+    [CompositeIndex(nameof(Modified), nameof(OrderId))]
+    public class OrderTable
     {
-        public string ClientId { get; set; }
+        [PrimaryKey]
         public string OrderId { get; set; }
+
+        public bool Deleted { get; set; } = false;
+        public long Modified { get; set; } = DateTimeOffset.Now.UtcTicks;
+        public string ClientId { get; set; }
+
         [Reference]
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
@@ -89,9 +100,11 @@ namespace OpenActive.FakeDatabase.NET
         public string CustomerEmail { get; set; }
         public string PaymentIdentifier { get; set; }
         public decimal TotalOrderPrice { get; set; }
-        public bool IsLease { get; set; }
+        public OrderMode OrderMode { get; set; }
         public DateTime LeaseExpires { get; set; }
         public bool VisibleInFeed { get; set; }
+        public ProposalStatus? ProposalStatus { get; set; }
+        public string ProposalVersionId { get; set; }
     }
 
     public class SellerTable : Table
@@ -113,6 +126,7 @@ namespace OpenActive.FakeDatabase.NET
         public long LeasedUses { get; set; }
         public long RemainingUses { get; set; }
         public decimal? Price { get; set; }
+        public bool RequiresApproval { get; set; }
     }
 
     public class FacilityUseTable : Table
