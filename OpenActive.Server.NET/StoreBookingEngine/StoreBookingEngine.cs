@@ -294,19 +294,19 @@ namespace OpenActive.Server.NET.StoreBooking
             }
 
             // If "payment" has been supplied unnecessarily, throw an error
-            if (requestOrder.Payment != null && requestOrder.TotalPaymentDue?.Price == 0)
+            if (responseOrder.TotalPaymentDue?.Price == 0 && requestOrder.Payment != null)
             {
                 throw new OpenBookingException(new UnnecessaryPaymentDetailsError(), "Payment details were erroneously supplied for a free Order.");
             }
 
             // If order is not free, payment details are required
-            if (requestOrder.TotalPaymentDue?.Price > 0 && requestOrder.Payment == null)
+            if (responseOrder.TotalPaymentDue?.Price != 0 && requestOrder.Payment == null)
             {
-                throw new OpenBookingException(new MissingPaymentDetailsError());
+                throw new OpenBookingException(new MissingPaymentDetailsError(), "Payment property must be supplied Order that are not free");
             }
 
             // If order is not free, payment identifier is required
-            if (requestOrder.TotalPaymentDue?.Price != 0 && requestOrder.Payment?.Identifier == null)
+            if (responseOrder.TotalPaymentDue?.Price != 0 && requestOrder.Payment?.Identifier == null)
             {
                 throw new OpenBookingException(new IncompletePaymentDetailsError(), "Payment must contain identifier for paid Order.");
             }
