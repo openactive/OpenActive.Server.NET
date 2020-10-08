@@ -504,7 +504,8 @@ namespace OpenActive.FakeDatabase.NET
                         if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Attended)
                         {
                             updatedOrderItems.Add(orderItem);
-                            db.UpdateOnly(() => new OrderItemsTable { Status = customerCancelled ? BookingStatus.CustomerCancelled : BookingStatus.SellerCancelled });
+                            orderItem.Status = customerCancelled ? BookingStatus.CustomerCancelled : BookingStatus.SellerCancelled;
+                            db.Save(orderItem);
                         }
                     }
                     // Update the total price and modified date on the Order to update the feed, if something has changed
@@ -581,7 +582,8 @@ namespace OpenActive.FakeDatabase.NET
                         if (orderItem.Status != BookingStatus.Confirmed)
                         {
                             updatedOrderItems.Add(orderItem);
-                            db.UpdateOnly(() => new OrderItemsTable { Status = BookingStatus.Confirmed });
+                            orderItem.Status = BookingStatus.Confirmed;
+                            db.Save(orderItem);
                         }
                     }
                     // Update the status and modified date of the OrderProposal to update the feed, if something has changed
