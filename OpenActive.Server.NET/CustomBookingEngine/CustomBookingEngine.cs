@@ -422,7 +422,11 @@ namespace OpenActive.Server.NET.CustomBooking
             // Check for PatchNotAllowedOnProperty
             if (!order.OrderedItem.TrueForAll(x => x.OrderItemStatus == OrderItemStatus.CustomerCancelled))
             {
-                throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.");
+                throw new OpenBookingException(new PatchNotAllowedOnPropertyError()
+                {
+                    Description = "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.",
+                    StatusCode = 400
+                });
             }
 
             var orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(clientId, x.Id)).ToList();
@@ -471,7 +475,11 @@ namespace OpenActive.Server.NET.CustomBooking
             // Check for PatchNotAllowedOnProperty
             if (orderProposal.OrderProposalStatus != OrderProposalStatus.CustomerRejected)
             {
-                throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerRejected' is permitted for this property.");
+                throw new OpenBookingException(new PatchNotAllowedOnPropertyError()
+                {
+                    Description = "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.",
+                    StatusCode = 400
+                });
             }
 
             ProcessOrderProposalCustomerRejection(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderProposal, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate);
