@@ -416,7 +416,11 @@ namespace OpenActive.Server.NET.CustomBooking
                 OrderedItem = order.OrderedItem.Select(x => new OrderItem { Id = x.Id, OrderItemStatus = x.OrderItemStatus }).ToList()
             };
             if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties)) {
-                throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
+                throw new OpenBookingException(new PatchContainsExcessivePropertiesError()
+                {
+                    Description = "PATCH includes unexpected properties that are not permitted.",
+                    StatusCode = 400
+                });
             }
 
             // Check for PatchNotAllowedOnProperty
@@ -465,7 +469,11 @@ namespace OpenActive.Server.NET.CustomBooking
             };
             if (OpenActiveSerializer.Serialize<OrderProposal>(orderProposal) != OpenActiveSerializer.Serialize<OrderProposal>(orderProposalWithOnlyAllowedProperties))
             {
-                throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
+                throw new OpenBookingException(new PatchContainsExcessivePropertiesError()
+                {
+                    Description = "PATCH includes unexpected properties that are not permitted.",
+                    StatusCode = 400
+                });
             }
 
             // Check for PatchNotAllowedOnProperty
