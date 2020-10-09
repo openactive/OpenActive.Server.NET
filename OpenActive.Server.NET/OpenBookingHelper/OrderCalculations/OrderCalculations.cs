@@ -27,6 +27,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                     return new Slot { Id = id };
                 case nameof(CourseInstance):
                     return new CourseInstance { Id = id };
+                case nameof(OnDemandEvent):
+                    return new OnDemandEvent { Id = id };
                 default:
                     return null;
             }
