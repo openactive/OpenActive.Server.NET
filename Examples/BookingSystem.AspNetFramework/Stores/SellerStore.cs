@@ -2,7 +2,6 @@
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using ServiceStack.OrmLite;
-using System.Linq;
 
 namespace BookingSystem
 {
@@ -14,11 +13,10 @@ namespace BookingSystem
             // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required.
             if (sellerIdComponents.SellerIdLong == null && sellerIdComponents.SellerIdString == null)
             {
-
                 // For Single Seller booking systems, no ID will be available from sellerIdComponents, and this data should instead come from your configuration table
                 return new Organization
                 {
-                    Id = this.RenderSingleSellerId(),
+                    Id = RenderSingleSellerId(),
                     Name = "Test Seller",
                     TaxMode = TaxMode.TaxGross,
                     LegalName = "Test Seller Ltd",
@@ -31,7 +29,6 @@ namespace BookingSystem
                         AddressCountry = "GB"
                     }
                 };
-
             }
             else
             {
@@ -42,9 +39,9 @@ namespace BookingSystem
                     var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
                     if (seller != null)
                     {
-                        return seller.IsIndividual ? (ILegalEntity)new Person
+                        return seller.IsIndividual ? new Person
                         {
-                            Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                            Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
                             Name = seller.Name,
                             TaxMode = TaxMode.TaxGross,
                             LegalName = seller.Name,
@@ -58,7 +55,7 @@ namespace BookingSystem
                             }
                         } : (ILegalEntity)new Organization
                         {
-                            Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                            Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
                             Name = seller.Name,
                             TaxMode = TaxMode.TaxGross,
                             LegalName = seller.Name,

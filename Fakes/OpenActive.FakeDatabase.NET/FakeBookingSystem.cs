@@ -1,13 +1,9 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
-using System.Text;
 using System.Linq;
 using Bogus;
 using ServiceStack.OrmLite;
-using ServiceStack.Text;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -32,17 +28,18 @@ namespace OpenActive.FakeDatabase.NET
         }
     }
 
+    // ReSharper disable once InconsistentNaming
     public class InMemorySQLite
     {
-        public OrmLiteConnectionFactory Database;
+        public readonly OrmLiteConnectionFactory Database;
 
         public InMemorySQLite()
         {
             // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
-            const string ConnectionString = "fakedatabase.db";
-            this.Database = new OrmLiteConnectionFactory(ConnectionString, SqliteDialect.Provider);
+            const string connectionString = "fakedatabase.db";
+            Database = new OrmLiteConnectionFactory(connectionString, SqliteDialect.Provider);
 
-            using (var connection = this.Database.Open())
+            using (var connection = Database.Open())
             {
                 // Enable write-ahead logging
                 var walCommand = connection.CreateCommand();
@@ -87,15 +84,16 @@ namespace OpenActive.FakeDatabase.NET
         Success,
         SellerIdMismatch,
         OpportunityNotFound,
+        OpportunityOfferPairNotBookable,
         NotEnoughCapacity
     }
 
 
     public class FakeDatabase
     {
-        public InMemorySQLite Mem = new InMemorySQLite();
+        public readonly InMemorySQLite Mem = new InMemorySQLite();
 
-        private static readonly Faker faker = new Faker("en");
+        private static readonly Faker Faker = new Faker();
 
         private const int OpportunityCount = 1000;
 
@@ -109,8 +107,9 @@ namespace OpenActive.FakeDatabase.NET
                 var occurrenceIds = new List<long>();
                 var slotIds = new List<long>();
 
-                foreach (OrderTable order in db.Select<OrderTable>(x => x.LeaseExpires < DateTimeOffset.Now))
+                foreach (var order in db.Select<OrderTable>(x => x.LeaseExpires < DateTimeOffset.Now))
                 {
+                    // ReSharper disable twice PossibleInvalidOperationException
                     occurrenceIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value));
                     slotIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.SlotId.HasValue).Select(x => x.SlotId.Value));
                     db.Delete<OrderItemsTable>(x => x.OrderId == order.OrderId);
@@ -172,6 +171,7 @@ namespace OpenActive.FakeDatabase.NET
                 // TODO: Note this should throw an error if the Seller ID does not match, same as DeleteOrder
                 if (db.Exists<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Lease && x.OrderId == uuid && (!sellerId.HasValue || x.SellerId == sellerId)))
                 {
+                    // ReSharper disable twice PossibleInvalidOperationException
                     var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
                     var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
 
@@ -272,51 +272,44 @@ namespace OpenActive.FakeDatabase.NET
             var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
             var thisClass = db.Single<ClassTable>(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
 
-            if (thisOccurrence != null && thisClass != null)
-            {
-                if (sellerId.HasValue && thisClass.SellerId != sellerId)
-                {
-                    return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
-                }
-
-                // Remove existing leases
-                // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-                db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
-                RecalculateSpaces(db, thisOccurrence);
-
-                // Only lease if all spaces requested are available
-                if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces >= spacesRequested)
-                {
-                    for (int i = 0; i < spacesRequested; i++)
-                    {
-                        db.Insert(new OrderItemsTable
-                        {
-                            ClientId = clientId,
-                            Deleted = false,
-                            OrderId = uuid,
-                            OccurrenceId = occurrenceId,
-                            Status = BookingStatus.None
-                        });
-                    }
-
-                    // Update number of spaces remaining for the opportunity
-                    RecalculateSpaces(db, thisOccurrence);
-
-                    return (ReserveOrderItemsResult.Success, null, null);
-                }
-                else
-                {
-                    var notionalRemainingSpaces = thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces;
-                    var totalCapacityErrors = Math.Max(0, spacesRequested - notionalRemainingSpaces);
-                    var capacityErrorsCausedByLeasing = Math.Min(totalCapacityErrors, thisOccurrence.LeasedSpaces);
-
-                    return (ReserveOrderItemsResult.NotEnoughCapacity, totalCapacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
-                }
-            }
-            else
-            {
+            if (thisOccurrence == null || thisClass == null)
                 return (ReserveOrderItemsResult.OpportunityNotFound, null, null);
+
+            if (sellerId.HasValue && thisClass.SellerId != sellerId)
+                return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
+
+            if (DateTime.Now < thisOccurrence.Start - thisClass.ValidFromBeforeStartDate)
+                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null, null);
+
+            // Remove existing leases
+            // Note a real implementation would likely maintain existing leases instead of removing and recreating them
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+            RecalculateSpaces(db, thisOccurrence);
+
+            // Only lease if all spaces requested are available
+            if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces < spacesRequested)
+            {
+                var notionalRemainingSpaces = thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces;
+                var totalCapacityErrors = Math.Max(0, spacesRequested - notionalRemainingSpaces);
+                var capacityErrorsCausedByLeasing = Math.Min(totalCapacityErrors, thisOccurrence.LeasedSpaces);
+                return (ReserveOrderItemsResult.NotEnoughCapacity, totalCapacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
             }
+
+            for (var i = 0; i < spacesRequested; i++)
+            {
+                db.Insert(new OrderItemsTable
+                {
+                    ClientId = clientId,
+                    Deleted = false,
+                    OrderId = uuid,
+                    OccurrenceId = occurrenceId,
+                    Status = BookingStatus.None
+                });
+            }
+
+            // Update number of spaces remaining for the opportunity
+            RecalculateSpaces(db, thisOccurrence);
+            return (ReserveOrderItemsResult.Success, null, null);
         }
 
         public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long spacesRequested)
@@ -325,166 +318,165 @@ namespace OpenActive.FakeDatabase.NET
             var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
             var thisFacility = db.Single<FacilityUseTable>(x => x.Id == thisSlot.FacilityUseId && !x.Deleted);
 
-            if (thisSlot != null && thisFacility != null)
-            {
-                if (sellerId.HasValue && thisFacility.SellerId != sellerId)
-                {
-                    return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
-                }
-
-                // Remove existing leases
-                // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-                db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == slotId);
-                RecalculateSlotUses(db, thisSlot);
-
-                // Only lease if all spaces requested are available
-                if (thisSlot.RemainingUses - thisSlot.LeasedUses >= spacesRequested)
-                {
-                    for (int i = 0; i < spacesRequested; i++)
-                    {
-                        db.Insert(new OrderItemsTable
-                        {
-                            ClientId = clientId,
-                            Deleted = false,
-                            OrderId = uuid,
-                            SlotId = slotId,
-                            Status = BookingStatus.None
-                        });
-                    }
-
-                    // Update number of spaces remaining for the opportunity
-                    RecalculateSlotUses(db, thisSlot);
-
-                    return (ReserveOrderItemsResult.Success, null, null);
-                }
-                else
-                {
-                    var notionalRemainingSpaces = thisSlot.RemainingUses - thisSlot.LeasedUses;
-                    var totalCapacityErrors = Math.Max(0, spacesRequested - notionalRemainingSpaces);
-                    var capacityErrorsCausedByLeasing = Math.Min(totalCapacityErrors, thisSlot.LeasedUses);
-
-                    return (ReserveOrderItemsResult.NotEnoughCapacity, totalCapacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
-                }
-            }
-            else
-            {
+            if (thisSlot == null || thisFacility == null)
                 return (ReserveOrderItemsResult.OpportunityNotFound, null, null);
+
+            if (sellerId.HasValue && thisFacility.SellerId != sellerId)
+                return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
+
+            if (DateTime.Now < thisSlot.Start - thisSlot.ValidFromBeforeStartDate)
+                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null, null);
+
+            // Remove existing leases
+            // Note a real implementation would likely maintain existing leases instead of removing and recreating them
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == slotId);
+            RecalculateSlotUses(db, thisSlot);
+
+            // Only lease if all spaces requested are available
+            if (thisSlot.RemainingUses - thisSlot.LeasedUses < spacesRequested)
+            {
+                var notionalRemainingSpaces = thisSlot.RemainingUses - thisSlot.LeasedUses;
+                var totalCapacityErrors = Math.Max(0, spacesRequested - notionalRemainingSpaces);
+                var capacityErrorsCausedByLeasing = Math.Min(totalCapacityErrors, thisSlot.LeasedUses);
+                return (ReserveOrderItemsResult.NotEnoughCapacity, totalCapacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
             }
+
+            for (var i = 0; i < spacesRequested; i++)
+            {
+                db.Insert(new OrderItemsTable
+                {
+                    ClientId = clientId,
+                    Deleted = false,
+                    OrderId = uuid,
+                    SlotId = slotId,
+                    Status = BookingStatus.None
+                });
+            }
+
+            // Update number of spaces remaining for the opportunity
+            RecalculateSlotUses(db, thisSlot);
+            return (ReserveOrderItemsResult.Success, null, null);
+
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
-        public static (ReserveOrderItemsResult, List<long>) BookOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces, bool proposal)
+        public static (ReserveOrderItemsResult, List<long>) BookOrderItemsForClassOccurrence(
+            FakeDatabaseTransaction transaction,
+            string clientId,
+            long? sellerId,
+            string uuid,
+            long occurrenceId,
+            string opportunityJsonLdType,
+            string opportunityJsonLdId,
+            string offerJsonLdId,
+            long numberOfSpaces,
+            bool proposal)
         {
             var db = transaction.DatabaseConnection;
             var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
             var thisClass = db.Single<ClassTable>(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
 
-            if (thisOccurrence != null && thisClass != null)
-            {
-                if (sellerId.HasValue && thisClass.SellerId != sellerId)
-                {
-                    return (ReserveOrderItemsResult.SellerIdMismatch, null);
-                }
-
-                // Remove existing leases
-                // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-                db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
-                RecalculateSpaces(db, thisOccurrence);
-
-                // Only lease if all spaces requested are available
-                if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces >= numberOfSpaces)
-                {
-                    var OrderItemIds = new List<long>();
-                    for (int i = 0; i < numberOfSpaces; i++)
-                    {
-                        var orderItem = new OrderItemsTable
-                        {
-                            ClientId = clientId,
-                            Deleted = false,
-                            OrderId = uuid,
-                            Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
-                            OccurrenceId = occurrenceId,
-                            OpportunityJsonLdType = opportunityJsonLdType,
-                            OpportunityJsonLdId = opportunityJsonLdId,
-                            OfferJsonLdId = offerJsonLdId,
-                            // Include the price locked into the OrderItem as the opportunity price may change
-                            Price = thisClass.Price.Value
-                        };
-                        db.Save(orderItem);
-                        OrderItemIds.Add(orderItem.Id);
-                    }
-
-                    RecalculateSpaces(db, thisOccurrence);
-
-                    return (ReserveOrderItemsResult.Success, OrderItemIds);
-                }
-                else
-                {
-                    return (ReserveOrderItemsResult.NotEnoughCapacity, null);
-                }
-            }
-            else
-            {
+            if (thisOccurrence == null || thisClass == null)
                 return (ReserveOrderItemsResult.OpportunityNotFound, null);
+
+            if (sellerId.HasValue && thisClass.SellerId != sellerId)
+                return (ReserveOrderItemsResult.SellerIdMismatch, null);
+
+            if (DateTime.Now < thisOccurrence.Start - thisClass.ValidFromBeforeStartDate)
+                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null);
+
+            // Remove existing leases
+            // Note a real implementation would likely maintain existing leases instead of removing and recreating them
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+            RecalculateSpaces(db, thisOccurrence);
+
+            // Only lease if all spaces requested are available
+            if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces < numberOfSpaces)
+                return (ReserveOrderItemsResult.NotEnoughCapacity, null);
+
+            var orderItemIds = new List<long>();
+            for (var i = 0; i < numberOfSpaces; i++)
+            {
+                var orderItem = new OrderItemsTable
+                {
+                    ClientId = clientId,
+                    Deleted = false,
+                    OrderId = uuid,
+                    Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
+                    OccurrenceId = occurrenceId,
+                    OpportunityJsonLdType = opportunityJsonLdType,
+                    OpportunityJsonLdId = opportunityJsonLdId,
+                    OfferJsonLdId = offerJsonLdId,
+                    // Include the price locked into the OrderItem as the opportunity price may change
+                    Price = thisClass.Price.Value
+                };
+                db.Save(orderItem);
+                orderItemIds.Add(orderItem.Id);
             }
+
+            RecalculateSpaces(db, thisOccurrence);
+            return (ReserveOrderItemsResult.Success, orderItemIds);
         }
 
-
         // TODO this should reuse code of LeaseOrderItemsForFacilityOccurrence
-        public static (ReserveOrderItemsResult, List<long>) BookOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces, bool proposal)
+        public static (ReserveOrderItemsResult, List<long>) BookOrderItemsForFacilitySlot(
+            FakeDatabaseTransaction transaction,
+            string clientId,
+            long? sellerId,
+            string uuid,
+            long slotId,
+            string opportunityJsonLdType,
+            string opportunityJsonLdId,
+            string offerJsonLdId,
+            long numberOfSpaces,
+            bool proposal)
         {
             var db = transaction.DatabaseConnection;
             var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
             var thisFacility = db.Single<FacilityUseTable>(x => x.Id == thisSlot.FacilityUseId && !x.Deleted);
 
-            if (thisSlot != null && thisFacility != null)
-            {
-                if (sellerId.HasValue && thisFacility.SellerId != sellerId)
-                {
-                    return (ReserveOrderItemsResult.SellerIdMismatch, null);
-                }
-
-                // Remove existing leases
-                // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-                db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == slotId);
-                RecalculateSlotUses(db, thisSlot);
-
-                // Only lease if all spaces requested are available
-                if (thisSlot.RemainingUses - thisSlot.LeasedUses >= numberOfSpaces)
-                {
-                    var OrderItemIds = new List<long>();
-                    for (int i = 0; i < numberOfSpaces; i++)
-                    {
-                        var orderItem = new OrderItemsTable
-                        {
-                            ClientId = clientId,
-                            Deleted = false,
-                            OrderId = uuid,
-                            Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
-                            SlotId = slotId,
-                            OpportunityJsonLdType = opportunityJsonLdType,
-                            OpportunityJsonLdId = opportunityJsonLdId,
-                            OfferJsonLdId = offerJsonLdId,
-                            // Include the price locked into the OrderItem as the opportunity price may change
-                            Price = thisSlot.Price.Value
-                        };
-                        db.Save(orderItem);
-                        OrderItemIds.Add(orderItem.Id);
-                    }
-
-                    RecalculateSlotUses(db, thisSlot);
-
-                    return (ReserveOrderItemsResult.Success, OrderItemIds);
-                }
-                else
-                {
-                    return (ReserveOrderItemsResult.NotEnoughCapacity, null);
-                }
-            }
-            else
-            {
+            if (thisSlot == null || thisFacility == null)
                 return (ReserveOrderItemsResult.OpportunityNotFound, null);
+
+            if (sellerId.HasValue && thisFacility.SellerId != sellerId)
+                return (ReserveOrderItemsResult.SellerIdMismatch, null);
+
+            if (DateTime.Now < thisSlot.Start - thisSlot.ValidFromBeforeStartDate)
+                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null);
+
+            // Remove existing leases
+            // Note a real implementation would likely maintain existing leases instead of removing and recreating them
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == slotId);
+            RecalculateSlotUses(db, thisSlot);
+
+            // Only lease if all spaces requested are available
+            if (thisSlot.RemainingUses - thisSlot.LeasedUses < numberOfSpaces)
+                return (ReserveOrderItemsResult.NotEnoughCapacity, null);
+
+            var orderItemIds = new List<long>();
+            for (var i = 0; i < numberOfSpaces; i++)
+            {
+                var orderItem = new OrderItemsTable
+                {
+                    ClientId = clientId,
+                    Deleted = false,
+                    OrderId = uuid,
+                    Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
+                    SlotId = slotId,
+                    OpportunityJsonLdType = opportunityJsonLdType,
+                    OpportunityJsonLdId = opportunityJsonLdId,
+                    OfferJsonLdId = offerJsonLdId,
+                    // Include the price locked into the OrderItem as the opportunity price may change
+                    Price = thisSlot.Price.Value
+                };
+                
+                db.Save(orderItem);
+                orderItemIds.Add(orderItem.Id);
             }
+
+            RecalculateSlotUses(db, thisSlot);
+            return (ReserveOrderItemsResult.Success, orderItemIds);
+
         }
 
         public bool CancelOrderItems(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled)
@@ -590,7 +582,6 @@ namespace OpenActive.FakeDatabase.NET
                     // This makes the call idempotent
                     if (updatedOrderItems.Count > 0 || order.OrderMode != OrderMode.Booking)
                     {
-                        var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
                         order.OrderMode = OrderMode.Booking;
                         order.VisibleInFeed = true;
                         order.Modified = DateTimeOffset.Now.UtcTicks;
@@ -624,7 +615,6 @@ namespace OpenActive.FakeDatabase.NET
                     // Update the status and modified date of the OrderProposal to update the feed, if something has changed
                     if (order.ProposalStatus != ProposalStatus.CustomerRejected && order.ProposalStatus != ProposalStatus.SellerRejected)
                     {
-                        var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
                         order.ProposalStatus = customerRejected ? ProposalStatus.CustomerRejected : ProposalStatus.SellerRejected;
                         order.VisibleInFeed = true;
                         order.Modified = DateTimeOffset.Now.UtcTicks;
@@ -716,34 +706,35 @@ namespace OpenActive.FakeDatabase.NET
         private static void CreateFakeFacilitiesAndSlots(IDbConnection db)
         {
             var slots = Enumerable.Range(10, OpportunityCount * 10)
-            .Select(n => new {
-                Id = n,
-                StartDate = faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
-                TotalUses = faker.Random.Int(0, 8)
-            })
-            .Select(x => new SlotTable
-            {
-                FacilityUseId = Decimal.ToInt32(x.Id / 10),
-                Id = x.Id,
-                Deleted = false,
-                Start = x.StartDate,
-                End = x.StartDate + TimeSpan.FromMinutes(faker.Random.Int(30, 360)),
-                MaximumUses = x.TotalUses,
-                RemainingUses = x.TotalUses,
-                Price = Decimal.Parse(faker.Random.Bool() ? "0.00" : faker.Commerce.Price(0, 20)),
-                RequiresApproval = faker.Random.Bool(),
-            })
-            .ToList();
+                .Select(n => new {
+                    Id = n,
+                    StartDate = Faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
+                    TotalUses = Faker.Random.Int(0, 8)
+                })
+                .Select(x => new SlotTable
+                {
+                    FacilityUseId = decimal.ToInt32(x.Id / 10M),
+                    Id = x.Id,
+                    Deleted = false,
+                    Start = x.StartDate,
+                    End = x.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                    MaximumUses = x.TotalUses,
+                    RemainingUses = x.TotalUses,
+                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                    RequiresApproval = Faker.Random.Bool(),
+                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(Faker.Random)
+                })
+                .ToList();
 
             var facilities = Enumerable.Range(1, OpportunityCount)
-            .Select(id => new FacilityUseTable
-            {
-                Id = id,
-                Deleted = false,
-                Name = faker.Commerce.ProductMaterial() + " " + faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall"),
-                SellerId = faker.Random.Bool() ? 1 : 3
-            })
-            .ToList();
+                .Select(id => new FacilityUseTable
+                {
+                    Id = id,
+                    Deleted = false,
+                    Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
+                    SellerId = Faker.Random.Bool() ? 1 : 3
+                })
+                .ToList();
 
             db.InsertAll(facilities);
             db.InsertAll(slots);
@@ -754,16 +745,16 @@ namespace OpenActive.FakeDatabase.NET
             var occurrences = Enumerable.Range(10, OpportunityCount * 10)
             .Select(n => new {
                 Id = n,
-                StartDate = faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
-                TotalSpaces = faker.Random.Bool() ? faker.Random.Int(0, 50) : faker.Random.Int(0, 3)
+                StartDate = Faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
+                TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
             })
             .Select(x => new OccurrenceTable
             {
-                ClassId = Decimal.ToInt32(x.Id / 10),
+                ClassId = decimal.ToInt32(x.Id / 10M),
                 Id = x.Id,
                 Deleted = false,
                 Start = x.StartDate,
-                End = x.StartDate + TimeSpan.FromMinutes(faker.Random.Int(30, 360)),
+                End = x.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
                 TotalSpaces = x.TotalSpaces,
                 RemainingSpaces = x.TotalSpaces
             })
@@ -774,10 +765,11 @@ namespace OpenActive.FakeDatabase.NET
             {
                 Id = id,
                 Deleted = false,
-                Title = faker.Commerce.ProductMaterial() + " " + faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping"),
-                Price = Decimal.Parse(faker.Random.Bool() ? "0.00" : faker.Commerce.Price(0, 20)),
-                RequiresApproval = faker.Random.Bool(),
-                SellerId = faker.Random.Long(1, 3)
+                Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
+                Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                RequiresApproval = Faker.Random.Bool(),
+                SellerId = Faker.Random.Long(1, 3),
+                ValidFromBeforeStartDate = ValidFromBeforeStartDate(Faker.Random)
             })
             .ToList();
 
@@ -796,8 +788,20 @@ namespace OpenActive.FakeDatabase.NET
             db.InsertAll(sellers);
         }
 
-        public (int, int) AddClass(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces, bool requiresApproval)
+        public (int, int) AddClass(
+            string testDatasetIdentifier,
+            long seller,
+            string title,
+            decimal? price,
+            long totalSpaces,
+            DateTimeOffset? startTime = null,
+            DateTimeOffset? endTime = null,
+            bool requiresApproval = false,
+            bool? validFromStartDate = null)
         {
+            startTime = startTime ?? DateTimeOffset.Now.AddDays(1);
+            endTime = endTime ?? DateTimeOffset.Now.AddDays(1).AddHours(1);
+
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
@@ -808,7 +812,8 @@ namespace OpenActive.FakeDatabase.NET
                     Title = title,
                     Price = price,
                     SellerId = seller,
-                    RequiresApproval = requiresApproval
+                    RequiresApproval = requiresApproval,
+                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(validFromStartDate, startTime.Value.DateTime)
                 };
                 db.Save(@class);
 
@@ -817,8 +822,8 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     ClassId = @class.Id,
-                    Start = startTime.DateTime,
-                    End = endTime.DateTime,
+                    Start = startTime.Value.DateTime,
+                    End = endTime.Value.DateTime,
                     TotalSpaces = totalSpaces,
                     RemainingSpaces = totalSpaces
                 };
@@ -830,8 +835,20 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (int, int) AddFacility(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalUses, bool requiresApproval)
+        public (int, int) AddFacility(
+            string testDatasetIdentifier,
+            long seller,
+            string title,
+            decimal? price,
+            long totalUses,
+            DateTimeOffset? startTime = null,
+            DateTimeOffset? endTime = null,
+            bool requiresApproval = false,
+            bool? validFromStartDate = null)
         {
+            startTime = startTime ?? DateTimeOffset.Now.AddDays(1);
+            endTime = endTime ?? DateTimeOffset.Now.AddDays(1).AddHours(1);
+
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
@@ -849,12 +866,13 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     FacilityUseId = facility.Id,
-                    Start = startTime.DateTime,
-                    End = endTime.DateTime,
+                    Start = startTime.Value.DateTime,
+                    End = endTime.Value.DateTime,
                     MaximumUses = totalUses,
                     RemainingUses = totalUses,
                     Price = price,
-                    RequiresApproval = requiresApproval
+                    RequiresApproval = requiresApproval,
+                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(validFromStartDate, startTime.Value.DateTime)
                 };
                 db.Save(slot);
 
@@ -886,6 +904,30 @@ namespace OpenActive.FakeDatabase.NET
                 db.UpdateOnly(() => new SlotTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
+        }
+
+        private static TimeSpan? ValidFromBeforeStartDate(Randomizer random)
+        {
+            return random.Int(1, 5) == 1 ? TimeSpan.FromDays(random.Int(1, 5)) : default(TimeSpan?); // set on 20% of opportunities
+        }
+
+        private static TimeSpan? ValidFromBeforeStartDate(bool? validFromBeforeStartDate, DateTime startDate)
+        {
+            if (!validFromBeforeStartDate.HasValue)
+                return null;
+
+            var now = DateTime.Now;
+            switch (validFromBeforeStartDate)
+            {
+                case true:
+                    return startDate - now + TimeSpan.FromDays(1);
+                case false when startDate.Date == now.Date:
+                    return TimeSpan.Zero;
+                case false:
+                    return startDate - now - TimeSpan.FromDays(1);
+            }
+
+            throw new NotSupportedException();
         }
     }
 }

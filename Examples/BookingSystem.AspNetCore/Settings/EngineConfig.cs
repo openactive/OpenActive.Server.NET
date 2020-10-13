@@ -53,7 +53,7 @@ namespace BookingSystem
                                 OpportunityType = OpportunityType.FacilityUse,
                                 AssignedFeed = OpportunityType.FacilityUse,
                                 OpportunityIdTemplate = "{+BaseUrl}facility-uses/{FacilityUseId}"
-                            })/*,,
+                            })/*,
 
                         new BookablePairIdTemplate<ScheduledSessionOpportunity>(
                             // Opportunity
@@ -124,19 +124,19 @@ namespace BookingSystem
                     HasSingleSeller = true,
                     */
 
-                    OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> {
+                    OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> {
                         {
-                            OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator()
+                            OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator()
                         },
                         {
-                            OpportunityType.SessionSeries, new AcmeSessionSeriesRPDEGenerator()
+                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator()
                         },
                         {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRPDEGenerator()
+                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator()
                         }
                         ,
                         {
-                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRPDEGenerator()
+                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
                         }
                     },
 
@@ -147,7 +147,7 @@ namespace BookingSystem
                         "{+BaseUrl}{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
                         ),
 
-                    OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator()
+                    OrderFeedGenerator = new AcmeOrdersFeedRpdeGenerator()
                 },
                 new DatasetSiteGeneratorSettings
                 {
