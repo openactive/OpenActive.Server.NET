@@ -10,11 +10,18 @@ using System.Linq;
 
 namespace BookingSystem
 {
-    public class AcmeFacilityUseRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<FacilityOpportunity, FacilityUse>
+    public class AcmeFacilityUseRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<FacilityOpportunity, FacilityUse>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        protected override List<RpdeItem<FacilityUse>> GetRPDEItems(long? afterTimestamp, long? afterId)
+        // Example constructor that can set state
+        private bool UseSingleSellerMode;
+        public AcmeFacilityUseRpdeGenerator(bool UseSingleSellerMode)
+        {
+            this.UseSingleSellerMode = UseSingleSellerMode;
+        }
+
+        protected override List<RpdeItem<FacilityUse>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
@@ -24,13 +31,13 @@ namespace BookingSystem
                 .ThenBy(x => x.Id)
                 .Where(x => !afterTimestamp.HasValue && !afterId.HasValue ||
                     x.Modified > afterTimestamp ||
-                    (x.Modified == afterTimestamp && x.Id > afterId) &&
+                    x.Modified == afterTimestamp && x.Id > afterId &&
                     x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
-                .Take(this.RPDEPageSize);
+                .Take(RpdePageSize);
 
                 var query = db
                     .SelectMulti<FacilityUseTable, SellerTable>(q)
-                    .Select((result) => new RpdeItem<FacilityUse>
+                    .Select(result => new RpdeItem<FacilityUse>
                     {
                         Kind = RpdeKind.FacilityUse,
                         Id = result.Item1.Id,
@@ -41,15 +48,20 @@ namespace BookingSystem
                             // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                             // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                             // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                            Id = this.RenderOpportunityId(new FacilityOpportunity
+                            Id = RenderOpportunityId(new FacilityOpportunity
                             {
                                 OpportunityType = OpportunityType.FacilityUse, // isIndividual??
                                 FacilityUseId = result.Item1.Id
                             }),
                             Name = result.Item1.Name,
-                            Provider = new Organization
+                            Provider = UseSingleSellerMode ? new Organization
                             {
-                                Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
+                                Id = RenderSingleSellerId(),
+                                Name = "Test Seller",
+                                TaxMode = TaxMode.TaxGross
+                            } : new Organization
+                            {
+                                Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
                                 TaxMode = TaxMode.TaxGross
                             },
@@ -83,15 +95,15 @@ namespace BookingSystem
                     });
 
                 return query.ToList();
-            };
+            }
         }
     }
 
-    public class AcmeFacilityUseSlotRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<FacilityOpportunity, Slot>
+    public class AcmeFacilityUseSlotRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<FacilityOpportunity, Slot>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        protected override List<RpdeItem<Slot>> GetRPDEItems(long? afterTimestamp, long? afterId)
+        protected override List<RpdeItem<Slot>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
@@ -100,9 +112,9 @@ namespace BookingSystem
                 .ThenBy(x => x.Id)
                 .Where(x => !afterTimestamp.HasValue && !afterId.HasValue ||
                     x.Modified > afterTimestamp ||
-                    (x.Modified == afterTimestamp && x.Id > afterId) &&
+                    x.Modified == afterTimestamp && x.Id > afterId &&
                     x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
-                .Take(this.RPDEPageSize)
+                .Take(RpdePageSize)
                 .Select(x => new RpdeItem<Slot>
                 {
                     Kind = RpdeKind.FacilityUseSlot,
@@ -114,13 +126,13 @@ namespace BookingSystem
                         // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                         // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                         // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                        Id = this.RenderOpportunityId(new FacilityOpportunity
+                        Id = RenderOpportunityId(new FacilityOpportunity
                         {
                             OpportunityType = OpportunityType.FacilityUseSlot,
                             FacilityUseId = x.FacilityUseId,
                             SlotId = x.Id
                         }),
-                        FacilityUse = this.RenderOpportunityId(new FacilityOpportunity
+                        FacilityUse = RenderOpportunityId(new FacilityOpportunity
                         {
                             OpportunityType = OpportunityType.FacilityUse,
                             FacilityUseId = x.FacilityUseId
@@ -133,7 +145,7 @@ namespace BookingSystem
                         MaximumUses = x.MaximumUses,
                         Offers = new List<Offer> { new Offer
                                 {
-                                    Id = this.RenderOfferId(new FacilityOpportunity
+                                    Id = RenderOfferId(new FacilityOpportunity
                                     {
                                         OfferId = 0,
                                         OpportunityType = OpportunityType.FacilityUseSlot,
@@ -149,6 +161,7 @@ namespace BookingSystem
                                     OpenBookingFlowRequirement = x.RequiresApproval
                                         ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
                                         : null,
+                                    ValidFromBeforeStartDate = x.ValidFromBeforeStartDate
                                 }
                             },
                     }

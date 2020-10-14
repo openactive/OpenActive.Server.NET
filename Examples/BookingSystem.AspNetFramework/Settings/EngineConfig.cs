@@ -9,7 +9,7 @@ namespace BookingSystem
 {
     public static class EngineConfig
     {
-        public static StoreBookingEngine CreateStoreBookingEngine(string baseUrl)
+        public static StoreBookingEngine CreateStoreBookingEngine(string baseUrl, bool UseSingleSellerMode)
         {
             return new StoreBookingEngine(
                 new BookingEngineSettings
@@ -53,7 +53,7 @@ namespace BookingSystem
                                 OpportunityType = OpportunityType.FacilityUse,
                                 AssignedFeed = OpportunityType.FacilityUse,
                                 OpportunityIdTemplate = "{+BaseUrl}facility-uses/{FacilityUseId}"
-                            })/*,,
+                            })/*,
 
                         new BookablePairIdTemplate<ScheduledSessionOpportunity>(
                             // Opportunity
@@ -108,12 +108,13 @@ namespace BookingSystem
 
                     JsonLdIdBaseUrl = new Uri(baseUrl + "api/identifiers/"),
 
-
+                    /*
                     // Multiple Seller Mode
                     SellerStore = new AcmeSellerStore(),
                     SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
                         "{+BaseUrl}sellers/{SellerIdLong}"
                         ),
+                    */
 
                     /*
                     // Single Seller Mode
@@ -124,19 +125,30 @@ namespace BookingSystem
                     HasSingleSeller = true,
                     */
 
-                    OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> {
+                    // Reference implementation is configurable to allow both modes to be tested
+                    SellerStore = new AcmeSellerStore(UseSingleSellerMode),
+                    SellerIdTemplate = UseSingleSellerMode ?
+                        new SingleIdTemplate<SellerIdComponents>(
+                            "{+BaseUrl}seller"
+                        ) :
+                        new SingleIdTemplate<SellerIdComponents>(
+                            "{+BaseUrl}sellers/{SellerIdLong}"
+                        ),
+                    HasSingleSeller = UseSingleSellerMode,
+
+                    OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> {
                         {
-                            OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator()
+                            OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator()
                         },
                         {
-                            OpportunityType.SessionSeries, new AcmeSessionSeriesRPDEGenerator()
+                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(UseSingleSellerMode)
                         },
                         {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRPDEGenerator()
+                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(UseSingleSellerMode)
                         }
                         ,
                         {
-                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRPDEGenerator()
+                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
                         }
                     },
 
@@ -147,7 +159,7 @@ namespace BookingSystem
                         "{+BaseUrl}{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
                         ),
 
-                    OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator()
+                    OrderFeedGenerator = new AcmeOrdersFeedRpdeGenerator()
                 },
                 new DatasetSiteGeneratorSettings
                 {
@@ -182,7 +194,8 @@ namespace BookingSystem
                         Email = p.Email,
                         GivenName = p.GivenName,
                         FamilyName = p.FamilyName,
-                        Telephone = p.Telephone
+                        Telephone = p.Telephone,
+                        Identifier = p.Identifier
                     },
                     // A list of the supported fields that are accepted by your system for guest checkout bookings
                     // These are reflected back to the broker
@@ -229,10 +242,10 @@ namespace BookingSystem
                     // List of _bookable_ opportunity types and which store to route to for each
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
-                            new SessionStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                            new SessionStore(UseSingleSellerMode), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStore(), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
+                            new FacilityStore(UseSingleSellerMode), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
                         }
                     },
                     OrderStore = new AcmeOrderStore(),
