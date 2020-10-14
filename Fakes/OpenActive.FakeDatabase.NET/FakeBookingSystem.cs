@@ -133,7 +133,7 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
-                    SellerId = sellerId ?? default,
+                    SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
                     OrderMode = OrderMode.Lease,
                     LeaseExpires = leaseExpires.DateTime,
@@ -151,7 +151,7 @@ namespace OpenActive.FakeDatabase.NET
             {
                 existingOrder.BrokerRole = brokerRole;
                 existingOrder.BrokerName = brokerName;
-                existingOrder.SellerId = sellerId ?? default;
+                existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
                 existingOrder.OrderMode = OrderMode.Lease;
                 existingOrder.LeaseExpires = leaseExpires.DateTime;
@@ -196,7 +196,7 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
-                    SellerId = sellerId ?? default,
+                    SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
                     PaymentIdentifier = paymentIdentifier,
                     TotalOrderPrice = totalOrderPrice,
@@ -217,7 +217,7 @@ namespace OpenActive.FakeDatabase.NET
             {
                 existingOrder.BrokerRole = brokerRole;
                 existingOrder.BrokerName = brokerName;
-                existingOrder.SellerId = sellerId ?? default;
+                existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
                 existingOrder.PaymentIdentifier = paymentIdentifier;
                 existingOrder.TotalOrderPrice = totalOrderPrice;
@@ -788,7 +788,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public (int, int) AddClass(
             string testDatasetIdentifier,
-            long? seller,
+            long? sellerId,
             string title,
             decimal? price,
             long totalSpaces,
@@ -809,7 +809,7 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     Title = title,
                     Price = price,
-                    SellerId = seller,
+                    SellerId = sellerId ?? 1,
                     RequiresApproval = requiresApproval,
                     ValidFromBeforeStartDate = ValidFromBeforeStartDate(validFromStartDate, startTime.Value.DateTime)
                 };
@@ -835,7 +835,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public (int, int) AddFacility(
             string testDatasetIdentifier,
-            long? seller,
+            long? sellerId,
             string title,
             decimal? price,
             long totalUses,
@@ -855,7 +855,7 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     Name = title,
-                    SellerId = seller
+                    SellerId = sellerId ?? 1
                 };
                 db.Save(facility);
 
