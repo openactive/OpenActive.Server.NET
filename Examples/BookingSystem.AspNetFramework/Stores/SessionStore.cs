@@ -12,14 +12,23 @@ namespace BookingSystem
 {
     class SessionStore : OpportunityStore<SessionOpportunity, OrderTransaction, OrderStateContext>
     {
+        // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
+        private bool UseSingleSellerMode;
+        public SessionStore(bool UseSingleSellerMode)
+        {
+            this.UseSingleSellerMode = UseSingleSellerMode;
+        }
+
         protected override SessionOpportunity CreateOpportunityWithinTestDataset(
             string testDatasetIdentifier,
             OpportunityType opportunityType,
             TestOpportunityCriteriaEnumeration criteria,
             SellerIdComponents seller)
         {
-            if (!seller.SellerIdLong.HasValue)
-                throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID");
+            if (!UseSingleSellerMode && !seller.SellerIdLong.HasValue)
+                throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
+
+            long? sellerId = UseSingleSellerMode ? null : seller.SellerIdLong;
 
             switch (opportunityType)
             {
@@ -32,7 +41,7 @@ namespace BookingSystem
                         {
                             var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event",
                                 14.99M,
                                 10);
@@ -47,7 +56,7 @@ namespace BookingSystem
                         {
                             var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Within Window",
                                 14.99M,
                                 10,
@@ -63,7 +72,7 @@ namespace BookingSystem
                         {
                             var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event",
                                 0M,
                                 10);
@@ -78,7 +87,7 @@ namespace BookingSystem
                         {
                             var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event No Spaces",
                                 14.99M,
                                 0);
@@ -93,7 +102,7 @@ namespace BookingSystem
                         {
                             var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Five Spaces",
                                 14.99M,
                                 5);
@@ -108,7 +117,7 @@ namespace BookingSystem
                         {
                             var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Approval",
                                 14.99M,
                                 10,
@@ -231,7 +240,7 @@ namespace BookingSystem
                                                  x.OrderId != flowContext.OrderId.uuid)
                                      }
                                  },
-                                 SellerId = new SellerIdComponents { SellerIdLong = classes.SellerId },
+                                 SellerId = UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
                                  classes.RequiresApproval
                              }).ToArray();
 

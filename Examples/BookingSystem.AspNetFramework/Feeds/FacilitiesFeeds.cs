@@ -14,6 +14,13 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
+        // Example constructor that can set state
+        private bool UseSingleSellerMode;
+        public AcmeFacilityUseRpdeGenerator(bool UseSingleSellerMode)
+        {
+            this.UseSingleSellerMode = UseSingleSellerMode;
+        }
+
         protected override List<RpdeItem<FacilityUse>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
@@ -47,7 +54,12 @@ namespace BookingSystem
                                 FacilityUseId = result.Item1.Id
                             }),
                             Name = result.Item1.Name,
-                            Provider = new Organization
+                            Provider = UseSingleSellerMode ? new Organization
+                            {
+                                Id = RenderSingleSellerId(),
+                                Name = "Test Seller",
+                                TaxMode = TaxMode.TaxGross
+                            } : new Organization
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
