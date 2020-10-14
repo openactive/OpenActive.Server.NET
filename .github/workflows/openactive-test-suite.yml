@@ -54,7 +54,7 @@ jobs:
     - name: Setup Seller Config
       id: select-seller-mode
       run: |
-        if [${{ matrix.seller != 'multiple-sellers' }}]
+        if ${{ matrix.seller != 'multiple-sellers' }};
         then
             echo 'Single Seller Mode'
             echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } } }'
