@@ -295,7 +295,7 @@ namespace BookingSystem
                     var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForClassOccurrence(
                         databaseTransaction.FakeDatabaseTransaction,
                         flowContext.OrderId.ClientId,
-                        flowContext.SellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */,
+                        flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                         flowContext.OrderId.uuid,
                         ctxGroup.Key.ScheduledSessionId.Value,
                         ctxGroup.Count());
@@ -370,7 +370,7 @@ namespace BookingSystem
                 var (result, orderItemIds) = FakeDatabase.BookOrderItemsForClassOccurrence(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
-                    flowContext.SellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
                     ctxGroup.Key.ScheduledSessionId.Value,
                     RenderOpportunityJsonLdType(ctxGroup.Key),
@@ -420,7 +420,7 @@ namespace BookingSystem
                 var (result, _) = FakeDatabase.BookOrderItemsForClassOccurrence(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
-                    flowContext.SellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
                     ctxGroup.Key.ScheduledSessionId.Value,
                     RenderOpportunityJsonLdType(ctxGroup.Key),

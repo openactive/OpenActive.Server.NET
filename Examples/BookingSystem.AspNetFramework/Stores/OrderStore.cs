@@ -25,7 +25,7 @@ namespace BookingSystem
             //throw new OpenBookingException(new CancellationNotPermittedError());
             return FakeBookingSystem.Database.CancelOrderItems(
                 orderId.ClientId,
-                sellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */,
+                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid,
                 orderItemIds.Where(x => x.OrderItemIdLong.HasValue).Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
@@ -37,7 +37,7 @@ namespace BookingSystem
         /// <returns>True if OrderProposal found, False if OrderProposal not found</returns>
         public override bool CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
         {
-            return FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
+            return FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
         }
 
         public override void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents)
@@ -88,7 +88,7 @@ namespace BookingSystem
                     flowContext.OrderId.uuid,
                     flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                     flowContext.Broker.Name,
-                    flowContext.SellerId.SellerIdLong, // Small hack to allow use of FakeDatabase when in Single Seller mode
+                    flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                     flowContext.Customer.Email,
                     leaseExpires,
                     databaseTransaction.FakeDatabaseTransaction);
@@ -125,7 +125,7 @@ namespace BookingSystem
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
-                flowContext.SellerId.SellerIdLong, // Small hack to allow use of FakeDatabase when in Single Seller mode
+                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer.Email,
                 flowContext.Payment?.Identifier,
                 responseOrder.TotalPaymentDue.Price.Value,
@@ -147,7 +147,7 @@ namespace BookingSystem
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
-                flowContext.SellerId.SellerIdLong, // Small hack to allow use of FakeDatabase when in Single Seller mode
+                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer.Email,
                 flowContext.Payment?.Identifier,
                 responseOrderProposal.TotalPaymentDue.Price.Value,
@@ -166,7 +166,7 @@ namespace BookingSystem
             var result = FakeBookingSystem.Database.DeleteOrder(
                 orderId.ClientId,
                 orderId.uuid,
-                sellerId.SellerIdLong /* Small hack to allow use of FakeDatabase when in Single Seller mode */);
+                sellerId.SellerIdLong ?? null /* Small hack to allow use of FakeDatabase when in Single Seller mode */);
             switch (result)
             {
                 case FakeDatabaseDeleteOrderResult.OrderSuccessfullyDeleted:
@@ -204,7 +204,7 @@ namespace BookingSystem
 
             var result = FakeBookingSystem.Database.BookOrderProposal(
                 orderId.ClientId,
-                sellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */,
+                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid,
                 version);
             // TODO return enum to allow errors cases to be handled in the engine

@@ -297,7 +297,7 @@ namespace BookingSystem
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, ctxGroup.Count());
+                    var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, ctxGroup.Count());
 
                     switch (result)
                     {
@@ -369,7 +369,7 @@ namespace BookingSystem
                 var (result, orderItemIds) = FakeDatabase.BookOrderItemsForFacilitySlot(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
-                    flowContext.SellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
                     ctxGroup.Key.SlotId.Value,
                     RenderOpportunityJsonLdType(ctxGroup.Key),
@@ -419,7 +419,7 @@ namespace BookingSystem
                 var (result, _) = FakeDatabase.BookOrderItemsForFacilitySlot(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
-                    flowContext.SellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
                     ctxGroup.Key.SlotId.Value,
                     RenderOpportunityJsonLdType(ctxGroup.Key),

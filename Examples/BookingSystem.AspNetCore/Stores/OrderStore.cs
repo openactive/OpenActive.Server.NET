@@ -25,7 +25,7 @@ namespace BookingSystem
             //throw new OpenBookingException(new CancellationNotPermittedError());
             return FakeBookingSystem.Database.CancelOrderItems(
                 orderId.ClientId,
-                sellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */,
+                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid,
                 orderItemIds.Where(x => x.OrderItemIdLong.HasValue).Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
@@ -37,7 +37,7 @@ namespace BookingSystem
         /// <returns>True if OrderProposal found, False if OrderProposal not found</returns>
         public override bool CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
         {
-            return FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
+            return FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
         }
 
         public override void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents)
@@ -204,7 +204,7 @@ namespace BookingSystem
 
             var result = FakeBookingSystem.Database.BookOrderProposal(
                 orderId.ClientId,
-                sellerId.SellerIdLong /* Hack to allow this to work in Single Seller mode too */,
+                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid,
                 version);
             // TODO return enum to allow errors cases to be handled in the engine
