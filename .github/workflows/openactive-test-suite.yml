@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        single-seller: [true, false]
+        seller: ['single-seller', 'multiple-sellers']
 
     steps:
     - name: Checkout OpenActive.Server.NET
@@ -46,7 +46,7 @@ jobs:
       run: |
         dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
       env:
-        UseSingleSellerMode: ${{ matrix.single-seller }}
+        UseSingleSellerMode: ${{ matrix.seller != 'multiple-sellers' }}
         
     - name: Install OpenActive Test Suite
       run: npm install
@@ -56,7 +56,7 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          { "outputPath": "../../output/random/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } }, "useRandomOpportunities": true, "implementedFeatures": { "multiple-sellers": ${{ !matrix.single-seller }} }, "generateConformanceCertificate": false } }
+          { "outputPath": "../../output/random/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } }, "useRandomOpportunities": true, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": false }
         NODE_ENV: 
       working-directory: tests
     - name: Upload test output for Random Mode as artifact
@@ -74,7 +74,7 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          { "outputPath": "../../output/controlled/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } }, "useRandomOpportunities": false, "implementedFeatures": { "multiple-sellers": ${{ !matrix.single-seller }} }, "generateConformanceCertificate": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
+          { "outputPath": "../../output/controlled/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } }, "useRandomOpportunities": false, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
         NODE_ENV: 
       working-directory: tests
     - name: Upload test output for Controlled Mode as artifact
