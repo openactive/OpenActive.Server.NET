@@ -7,11 +7,18 @@ namespace BookingSystem
 {
     public class AcmeSellerStore : SellerStore
     {
+        // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
+        private bool UseSingleSellerMode;
+        public AcmeSellerStore(bool UseSingleSellerMode)
+        {
+            this.UseSingleSellerMode = UseSingleSellerMode;
+        }
+
         // If the Seller is not found, simply return null to generate the correct Open Booking error
         protected override ILegalEntity GetSeller(SellerIdComponents sellerIdComponents)
         {
-            // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required.
-            if (sellerIdComponents.SellerIdLong == null && sellerIdComponents.SellerIdString == null)
+            // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required for an actual implementation.
+            if (UseSingleSellerMode)
             {
                 // For Single Seller booking systems, no ID will be available from sellerIdComponents, and this data should instead come from your configuration table
                 return new Organization

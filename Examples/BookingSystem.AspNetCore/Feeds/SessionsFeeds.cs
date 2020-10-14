@@ -63,6 +63,13 @@ namespace BookingSystem
 
     public class AcmeSessionSeriesRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<SessionOpportunity, SessionSeries>
     {
+        // Example constructor that can set state from EngineConfig
+        private bool UseSingleSellerMode;
+        public AcmeSessionSeriesRpdeGenerator(bool UseSingleSellerMode)
+        {
+            this.UseSingleSellerMode = UseSingleSellerMode;
+        }
+
         protected override List<RpdeItem<SessionSeries>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
@@ -96,7 +103,12 @@ namespace BookingSystem
                                 SessionSeriesId = result.Item1.Id
                             }),
                             Name = result.Item1.Title,
-                            Organizer = result.Item2.IsIndividual ? (ILegalEntity)new Person
+                            Organizer = UseSingleSellerMode ? new Organization
+                            {
+                                Id = RenderSingleSellerId(),
+                                Name = "Test Seller",
+                                TaxMode = TaxMode.TaxGross
+                            } : result.Item2.IsIndividual ? (ILegalEntity)new Person
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,

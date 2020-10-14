@@ -9,7 +9,7 @@ namespace BookingSystem
 {
     public static class EngineConfig
     {
-        public static StoreBookingEngine CreateStoreBookingEngine(string baseUrl)
+        public static StoreBookingEngine CreateStoreBookingEngine(string baseUrl, bool UseSingleSellerMode)
         {
             return new StoreBookingEngine(
                 new BookingEngineSettings
@@ -108,12 +108,13 @@ namespace BookingSystem
 
                     JsonLdIdBaseUrl = new Uri(baseUrl + "api/identifiers/"),
 
-
+                    /*
                     // Multiple Seller Mode
                     SellerStore = new AcmeSellerStore(),
                     SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
                         "{+BaseUrl}sellers/{SellerIdLong}"
                         ),
+                    */
 
                     /*
                     // Single Seller Mode
@@ -124,15 +125,26 @@ namespace BookingSystem
                     HasSingleSeller = true,
                     */
 
+                    // Reference implementation is configurable to allow both modes to be tested
+                    SellerStore = new AcmeSellerStore(UseSingleSellerMode),
+                    SellerIdTemplate = UseSingleSellerMode ?
+                        new SingleIdTemplate<SellerIdComponents>(
+                            "{+BaseUrl}seller"
+                        ) :
+                        new SingleIdTemplate<SellerIdComponents>(
+                            "{+BaseUrl}sellers/{SellerIdLong}"
+                        ),
+                    HasSingleSeller = UseSingleSellerMode,
+
                     OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> {
                         {
                             OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator()
                         },
                         {
-                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator()
+                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(UseSingleSellerMode)
                         },
                         {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator()
+                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(UseSingleSellerMode)
                         }
                         ,
                         {
