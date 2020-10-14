@@ -12,6 +12,12 @@ namespace BookingSystem
 {
     class FacilityStore : OpportunityStore<FacilityOpportunity, OrderTransaction, OrderStateContext>
     {
+        // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
+        private bool UseSingleSellerMode;
+        public FacilityStore(bool UseSingleSellerMode)
+        {
+            this.UseSingleSellerMode = UseSingleSellerMode;
+        }
 
         protected override FacilityOpportunity CreateOpportunityWithinTestDataset(
             string testDatasetIdentifier,
@@ -19,8 +25,10 @@ namespace BookingSystem
             TestOpportunityCriteriaEnumeration criteria,
             SellerIdComponents seller)
         {
-            if (!seller.SellerIdLong.HasValue)
-                throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID");
+            if (!UseSingleSellerMode && !seller.SellerIdLong.HasValue)
+                throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
+
+            long? sellerId = UseSingleSellerMode ? null : seller.SellerIdLong;
 
             switch (opportunityType)
             {
@@ -33,7 +41,7 @@ namespace BookingSystem
                         {
                             var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
                                 14.99M,
                                 10);
@@ -48,7 +56,7 @@ namespace BookingSystem
                         {
                             var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility",
                                 0M,
                                 10);
@@ -63,7 +71,7 @@ namespace BookingSystem
                         {
                             var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
                                 14.99M,
                                 10,
@@ -79,7 +87,7 @@ namespace BookingSystem
                         {
                             var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility No Spaces",
                                 14.99M,
                                 0);
@@ -94,7 +102,7 @@ namespace BookingSystem
                         {
                             var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility Five Spaces",
                                 14.99M,
                                 5);
@@ -109,7 +117,7 @@ namespace BookingSystem
                         {
                             var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
-                                seller.SellerIdLong.Value,
+                                sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility With Approval",
                                 14.99M,
                                 10,
@@ -236,7 +244,7 @@ namespace BookingSystem
                                                  x.OrderId != flowContext.OrderId.uuid)
                                      }
                                  },
-                                 SellerId = new SellerIdComponents { SellerIdLong = facility.SellerId },
+                                 SellerId = UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
                                  slot.RequiresApproval
                              }).ToArray();
 

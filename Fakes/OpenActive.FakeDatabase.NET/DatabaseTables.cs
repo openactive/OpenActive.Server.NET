@@ -29,7 +29,7 @@ namespace OpenActive.FakeDatabase.NET
         [Reference]
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
-        public long SellerId { get; set; }
+        public long? SellerId { get; set; }
         public decimal? Price { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
@@ -131,7 +131,7 @@ namespace OpenActive.FakeDatabase.NET
         [Reference]
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
-        public long SellerId { get; set; } // Provider
+        public long? SellerId { get; set; } // Provider
     }
 
     public static class DatabaseCreator

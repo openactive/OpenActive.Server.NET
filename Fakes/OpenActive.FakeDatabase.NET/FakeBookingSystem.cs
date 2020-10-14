@@ -15,10 +15,8 @@ namespace OpenActive.FakeDatabase.NET
     {
         /// <summary>
         /// The Database is created as static, to simulate the persistence of a real database
-        /// 
-        /// TODO: Move this initialisation data into an embedded string to increase portability / ease of installation
         /// </summary>
-        public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase();// JsonConvert.DeserializeObject<FakeBookingSystem>(File.ReadAllText($"../../../../fakedata.json"));
+        public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase();
 
         public static DateTime Truncate(this DateTime dateTime, TimeSpan timeSpan)
         {
@@ -790,7 +788,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public (int, int) AddClass(
             string testDatasetIdentifier,
-            long seller,
+            long? seller,
             string title,
             decimal? price,
             long totalSpaces,
@@ -837,7 +835,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public (int, int) AddFacility(
             string testDatasetIdentifier,
-            long seller,
+            long? seller,
             string title,
             decimal? price,
             long totalUses,
