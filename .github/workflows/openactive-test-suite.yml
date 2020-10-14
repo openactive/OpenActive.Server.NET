@@ -94,7 +94,7 @@ jobs:
 
     - name: Copy certificate for deployment to GitHub Pages (master branch for multiple-sellers only)
       run: |
-        nmkdir -p ./publish/certification/
+        mkdir -p ./publish/certification/
         cp ./tests/output/controlled/certification/* ../publish/certification/
       if: ${{ github.ref == 'refs/heads/master' && matrix.seller == 'multiple-sellers' }}
     - name: Deploy certificate to GitHub Pages (master branch for multiple-sellers only)
