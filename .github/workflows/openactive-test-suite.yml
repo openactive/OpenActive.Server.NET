@@ -85,7 +85,7 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          { "outputPath": "../../output/controlled/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": false, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
+          { "outputPath": "../../output/controlled/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": false, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": ${{ matrix.seller == 'multiple-sellers' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
         NODE_ENV: 
       working-directory: tests
     - name: Upload test output for Controlled Mode as artifact
@@ -97,7 +97,7 @@ jobs:
 
     - name: Deploy certificate to GitHub Pages (master branch for multiple-sellers only)
       uses: peaceiris/actions-gh-pages@v3
-      if: ${{ github.ref == 'refs/heads/master' && !matrix.single-seller }}
+      if: ${{ github.ref == 'refs/heads/master' && matrix.seller == 'multiple-sellers' }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./publish
