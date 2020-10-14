@@ -1,8 +1,5 @@
 ﻿using OpenActive.DatasetSite.NET;
-using OpenActive.NET;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
@@ -13,8 +10,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         protected internal void SetConfiguration(BookablePairIdTemplate<TComponents> template, SingleIdTemplate<SellerIdComponents> sellerTemplate)
         {
-            this.IdTemplate = template;
-            this.SellerIdTemplate = sellerTemplate;
+            IdTemplate = template;
+            SellerIdTemplate = sellerTemplate;
         }
 
         protected Uri RenderSellerId(SellerIdComponents components)
@@ -68,7 +65,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         protected TComponents GetBookableOpportunityReference(OpportunityType opportunityType, Uri id)
         {
             var components = IdTemplate.GetOpportunityBookableIdComponents(id);
-            if (components.OpportunityType != opportunityType) throw new ArgumentOutOfRangeException("Provided opportunityType does not match provided id");
+            if (components.OpportunityType != opportunityType)
+                throw new ArgumentOutOfRangeException(nameof(id), "Provided opportunityType does not match provided id");
+
             return components;
         }
     }

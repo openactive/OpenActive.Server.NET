@@ -192,7 +192,7 @@ namespace BookingSystem.AspNetCore.Controllers
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
                 string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
-                return bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return bookingEngine.GetOrdersRpdePageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

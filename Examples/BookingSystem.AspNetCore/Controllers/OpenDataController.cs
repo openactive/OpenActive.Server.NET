@@ -22,7 +22,7 @@ namespace BookingSystem.AspNetCore.Controllers
             {
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
-                return bookingEngine.GetOpenDataRPDEPageForFeed(feedName, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return bookingEngine.GetOpenDataRpdePageForFeed(feedName, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

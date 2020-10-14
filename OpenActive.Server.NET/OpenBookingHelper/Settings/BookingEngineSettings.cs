@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using OpenActive.DatasetSite.NET;
-using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
@@ -24,9 +21,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public OrderIdTemplate OrderIdTemplate { get; set; }
         public SingleIdTemplate<SellerIdComponents> SellerIdTemplate { get; set; }
         public Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> OpenDataFeeds { get; set; }
-        public int RPDEPageSize { get; set; } = 500;
+        public int RpdePageSize { get; set; } = 500;
         public Uri JsonLdIdBaseUrl { get; set; }
-        public OrdersRPDEFeedGenerator OrderFeedGenerator { get; set; }
+        public OrdersRpdeFeedGenerator OrderFeedGenerator { get; set; }
         public SellerStore SellerStore { get; set; }
         public bool HasSingleSeller { get; set; }
     }

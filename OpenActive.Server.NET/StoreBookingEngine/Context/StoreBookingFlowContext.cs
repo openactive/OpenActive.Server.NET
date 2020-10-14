@@ -1,9 +1,6 @@
 ﻿using OpenActive.NET;
-using OpenActive.Server.NET.CustomBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OpenActive.Server.NET.StoreBooking
 {
@@ -13,13 +10,13 @@ namespace OpenActive.Server.NET.StoreBooking
         public StoreBookingFlowContext(BookingFlowContext bookingFlowContext)
         {
             if (bookingFlowContext == null) throw new ArgumentNullException(nameof(bookingFlowContext));
-            base.Stage = bookingFlowContext.Stage;
-            base.OrderIdTemplate = bookingFlowContext.OrderIdTemplate;
-            base.OrderId = bookingFlowContext.OrderId;
-            base.TaxPayeeRelationship = bookingFlowContext.TaxPayeeRelationship;
-            base.Payer = bookingFlowContext.Payer;
-            base.Seller = bookingFlowContext.Seller;
-            base.SellerId = bookingFlowContext.SellerId;
+            Stage = bookingFlowContext.Stage;
+            OrderIdTemplate = bookingFlowContext.OrderIdTemplate;
+            OrderId = bookingFlowContext.OrderId;
+            TaxPayeeRelationship = bookingFlowContext.TaxPayeeRelationship;
+            Payer = bookingFlowContext.Payer;
+            Seller = bookingFlowContext.Seller;
+            SellerId = bookingFlowContext.SellerId;
         }
 
         public ILegalEntity Customer { get; internal set; }

@@ -12,11 +12,12 @@ namespace BookingSystem
 {
     class FacilityStore : OpportunityStore<FacilityOpportunity, OrderTransaction, OrderStateContext>
     {
+        private readonly bool useSingleSellerMode;
+
         // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
-        private bool UseSingleSellerMode;
-        public FacilityStore(bool UseSingleSellerMode)
+        public FacilityStore(bool useSingleSellerMode)
         {
-            this.UseSingleSellerMode = UseSingleSellerMode;
+            this.useSingleSellerMode = useSingleSellerMode;
         }
 
         protected override FacilityOpportunity CreateOpportunityWithinTestDataset(
@@ -25,10 +26,10 @@ namespace BookingSystem
             TestOpportunityCriteriaEnumeration criteria,
             SellerIdComponents seller)
         {
-            if (!UseSingleSellerMode && !seller.SellerIdLong.HasValue)
+            if (!useSingleSellerMode && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
 
-            long? sellerId = UseSingleSellerMode ? null : seller.SellerIdLong;
+            long? sellerId = useSingleSellerMode ? null : seller.SellerIdLong;
 
             switch (opportunityType)
             {
@@ -68,14 +69,16 @@ namespace BookingSystem
                             };
                         }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
                         {
+                            var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
                             var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
+                                $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
                                 14.99M,
                                 10,
-                                validFromStartDate: true);
+                                validFromStartDate: isValid);
                             return new FacilityOpportunity
                             {
                                 OpportunityType = opportunityType,
@@ -244,7 +247,7 @@ namespace BookingSystem
                                                  x.OrderId != flowContext.OrderId.uuid)
                                      }
                                  },
-                                 SellerId = UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
+                                 SellerId = useSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
                                  slot.RequiresApproval
                              }).ToArray();
 

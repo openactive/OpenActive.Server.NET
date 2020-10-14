@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.CustomBooking;
 
@@ -24,20 +22,20 @@ namespace OpenActive.Server.NET.StoreBooking
     {
         private UnknownOrderItemContext(int index, OrderItem orderItem)
         {
-            this.Index = index;
-            this.RequestBookableOpportunityOfferId = null;
-            this.RequestOrderItem = orderItem;
-            this.SetResponseOrderItemAsSkeleton();
+            Index = index;
+            RequestBookableOpportunityOfferId = null;
+            RequestOrderItem = orderItem;
+            SetResponseOrderItemAsSkeleton();
         }
 
         public UnknownOrderItemContext(int index, OrderItem orderItem, OpenBookingError openBookingError) : this(index, orderItem)
         {
-            this.AddError(openBookingError);
+            AddError(openBookingError);
         }
 
         public UnknownOrderItemContext(int index, OrderItem orderItem, OpenBookingError openBookingError, string description) : this(index, orderItem)
         {
-            this.AddError(openBookingError, description);
+            AddError(openBookingError, description);
         }
     }
 
@@ -45,11 +43,11 @@ namespace OpenActive.Server.NET.StoreBooking
     {
         public int Index { get; set; }
         public TComponents RequestBookableOpportunityOfferId { get; set; }
-        IBookableIdComponents IOrderItemContext.RequestBookableOpportunityOfferId { get => this.RequestBookableOpportunityOfferId; set => this.RequestBookableOpportunityOfferId = (TComponents)value; }
+        IBookableIdComponents IOrderItemContext.RequestBookableOpportunityOfferId { get => RequestBookableOpportunityOfferId; set => RequestBookableOpportunityOfferId = (TComponents)value; }
         public OrderIdComponents ResponseOrderItemId { get; private set; }
         public OrderItem RequestOrderItem { get; set; }
         public OrderItem ResponseOrderItem { get; private set; }
-        public bool RequiresApproval { get; set; } = false;
+        public bool RequiresApproval { get; set; }
 
         public void AddError(OpenBookingError openBookingError)
         {
@@ -110,18 +108,18 @@ namespace OpenActive.Server.NET.StoreBooking
         public void SetResponseOrderItem(OrderItem item, SellerIdComponents sellerId, StoreBookingFlowContext flowContext)
         {
             if (item == null) throw new ArgumentNullException(nameof(item));
-            if (item?.OrderedItem?.Id != RequestOrderItem?.OrderedItem?.Id)
+            if (item.OrderedItem?.Id != RequestOrderItem?.OrderedItem?.Id)
             {
                 throw new ArgumentException("The Opportunity ID within the response OrderItem must match the request OrderItem");
             }
-            if (item?.AcceptedOffer?.Id != RequestOrderItem?.AcceptedOffer?.Id)
+            if (item.AcceptedOffer?.Id != RequestOrderItem?.AcceptedOffer?.Id)
             {
                 throw new ArgumentException("The Offer ID within the response OrderItem must match the request OrderItem");
             }
 
-            if (sellerId != flowContext.SellerId)
+            if (sellerId != flowContext?.SellerId)
             {
-                throw new OpenBookingException(new SellerMismatchError(), $"OrderItem at position {RequestOrderItem.Position} did not match the specified SellerId");
+                throw new OpenBookingException(new SellerMismatchError(), $"OrderItem at position {RequestOrderItem?.Position} did not match the specified SellerId");
             }
 
             item.Position = RequestOrderItem?.Position;
@@ -148,18 +146,18 @@ namespace OpenActive.Server.NET.StoreBooking
         /// Simple contructor
         /// </summary>
         /// <param name="settings">Settings are used exclusively by the AbstractBookingEngine</param>
-        /// <param name="store">Store used exclusively by the StoreBookingEngine</param>
+        /// <param name="datasetSettings"></param>
+        /// <param name="storeBookingEngineSettings">Settings are used exclusively by the StoreBookingEngine</param>
         public StoreBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings, StoreBookingEngineSettings storeBookingEngineSettings) : base(settings, datasetSettings)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));
             if (datasetSettings == null) throw new ArgumentNullException(nameof(datasetSettings));
             if (storeBookingEngineSettings == null) throw new ArgumentNullException(nameof(storeBookingEngineSettings));
 
-            this.stores = storeBookingEngineSettings.OpportunityStoreRouting.Keys.ToList();
             this.storeBookingEngineSettings = storeBookingEngineSettings;
 
             // TODO: Add test to ensure there are not two or more at FirstOrDefault step, in case of configuration error 
-            this.storeRouting = storeBookingEngineSettings.OpportunityStoreRouting.Select(t => t.Value.Select(y => new
+            storeRouting = storeBookingEngineSettings.OpportunityStoreRouting.Select(t => t.Value.Select(y => new
             {
                 store = t.Key,
                 opportunityType = y
@@ -167,7 +165,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // Setup each store with the relevant settings, including the relevant IdTemplate inferred from the config
             var storeConfig = storeBookingEngineSettings.OpportunityStoreRouting
-                .ToDictionary(k => k.Key, v => v.Value.Select(y => base.OpportunityTemplateLookup[y]).Distinct().Single());
+                .ToDictionary(k => k.Key, v => v.Value.Select(y => OpportunityTemplateLookup[y]).Distinct().Single());
             foreach (var store in storeConfig)
             {
                 store.Key.SetConfiguration(store.Value, settings.SellerIdTemplate);
@@ -175,7 +173,6 @@ namespace OpenActive.Server.NET.StoreBooking
             storeBookingEngineSettings.OrderStore.SetConfiguration(settings.OrderIdTemplate, settings.SellerIdTemplate);
         }
 
-        private readonly List<IOpportunityStore> stores;
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
         
@@ -197,46 +194,36 @@ namespace OpenActive.Server.NET.StoreBooking
 
         protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate)
         {
-            switch (simulateAction.Object.Value)
+            switch (simulateAction?.Object.Value)
             {
                 case Order order:
-                    var orderIdComponents = orderIdTemplate.GetOrderIdComponents(null, order.Id);
-
+                    var orderIdComponents = orderIdTemplate?.GetOrderIdComponents(null, order.Id);
                     if (orderIdComponents == null)
-                    {
                         throw new OpenBookingException(new UnknownOrderError(), $"Order ID is not the expected format for a '{order.Type}': '{order.Id}'");
-                    }
 
                     storeBookingEngineSettings.OrderStore.TriggerTestAction(simulateAction, orderIdComponents);
                     break;
 
                 case Event @event:
-                    var opportunityIdComponents = base.ResolveOpportunityID(@event.Type, @event.Id);
+                    var opportunityIdComponents = ResolveOpportunityId(@event.Type, @event.Id);
 
                     if (opportunityIdComponents == null)
-                    {
                         throw new OpenBookingException(new InvalidOpportunityOrOfferIdError(), $"Opportunity ID is not the expected format for a '{@event.Type}': '{@event.Id}'");
-                    }
 
                     if (opportunityIdComponents.OpportunityType == null)
-                    {
                         throw new EngineConfigurationException("OpportunityType must be configured for each IdComponent entry in the settings.");
-                    }
 
                     var store = storeRouting[opportunityIdComponents.OpportunityType.Value];
                     if (store == null)
-                    {
                         throw new EngineConfigurationException($"Store is not defined for {opportunityIdComponents.OpportunityType.Value}");
-                    }
 
                     store.TriggerTestAction(simulateAction, opportunityIdComponents);
                     break;
 
                 default:
-                    throw new OpenBookingException(new OpenBookingError(), $"Object was not supplied");
+                    throw new OpenBookingException(new OpenBookingError(), "Object was not supplied");
             }
         }
-
 
         public override void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
@@ -318,7 +305,7 @@ namespace OpenActive.Server.NET.StoreBooking
             var order = storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
 
             // Get flowContext from resulting Order, treating it like a request (which also validates it like a request)
-            var flowContext = AugmentContextFromOrder(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.OrderStatus, order), order);
+            var flowContext = AugmentContextFromOrder(ValidateFlowRequest(orderId, sellerIdComponents, seller, FlowStage.OrderStatus, order), order);
 
             // Expand OrderItems based on the flowContext
             var (orderItemContexts, _) = GetOrderItemContexts(order.OrderedItem, flowContext, null);
@@ -338,10 +325,9 @@ namespace OpenActive.Server.NET.StoreBooking
 
         public override Order ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
         {
-            if (!storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
-            {
+            if (!storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order?.OrderProposalVersion, order))
                 throw new OpenBookingException(new OrderProposalVersionOutdatedError());
-            }
+
             return ProcessGetOrderStatus(orderId, sellerId, seller);
         }
 
@@ -350,13 +336,13 @@ namespace OpenActive.Server.NET.StoreBooking
             // Create OrderItemContext for each OrderItem
             var orderItemContexts = sourceOrderItems.Select((orderItem, index) => {
                 // Error if this group of types is not recognised
-                if (!base.IsOpportunityTypeRecognised(orderItem.OrderedItem.Type))
+                if (!IsOpportunityTypeRecognised(orderItem.OrderedItem.Type))
                 {
                     return new UnknownOrderItemContext(index, orderItem,
                         new UnknownOpportunityError(), $"The type of opportunity specified is not recognised: '{orderItem.OrderedItem.Type}'.");
                 }
 
-                var idComponents = base.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
+                var idComponents = ResolveOpportunityId(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
                 if (idComponents == null)
                 {
                     return new UnknownOrderItemContext(index, orderItem,
@@ -525,7 +511,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         {
                             // Create the parent Order
                             var (version, orderProposalStatus) = storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
-                            responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id.ToString()}/versions/{version}");
+                            responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id}/versions/{version}");
                             responseOrderProposal.OrderProposalStatus = orderProposalStatus;
 
                             // Book the OrderItems
@@ -566,43 +552,40 @@ namespace OpenActive.Server.NET.StoreBooking
                         throw new OpenBookingException(new UnexpectedOrderTypeError());
 
                     // If "payment" has been supplied unnecessarily, simply do not return it
-                    if (responseOrderQuote.Payment != null && responseOrderQuote.TotalPaymentDue.Price.Value == 0)
-                    {
+                    if (responseOrderQuote.Payment != null && responseOrderQuote.TotalPaymentDue.Price == 0)
                         responseOrderQuote.Payment = null;
-                    }
 
                     // Note behaviour here is to lease those items that are available to be leased, and return errors for everything else
                     // Leasing is optimistic, booking is atomic
                     using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
                     {
-                            try
-                            {
-                                responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction);
+                        try
+                        {
+                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction);
 
-                                // Lease the OrderItems, if a lease exists
-                                if (responseOrderQuote.Lease != null)
+                            // Lease the OrderItems, if a lease exists
+                            if (responseOrderQuote.Lease != null)
+                            {
+                                foreach (var g in orderItemGroups)
                                 {
-                                    foreach (var g in orderItemGroups)
-                                    {
-                                        g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
-                                    }
+                                    g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
                                 }
-
-                                // Update this in case ResponseOrderItem was overwritten in Lease
-                                responseOrderQuote.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
-
-                                // Note OrderRequiresApproval is only required during C1 and C2
-                                responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
-
-                                storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction);
-
-                                if (dbTransaction != null) dbTransaction.Commit();
                             }
-                            catch
-                            {
-                                if (dbTransaction != null) dbTransaction.Rollback();
-                                throw;
-                            }
+
+                            // Update this in case ResponseOrderItem was overwritten in Lease
+                            responseOrderQuote.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
+
+                            // Note OrderRequiresApproval is only required during C1 and C2
+                            responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
+
+                            storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction);
+                            dbTransaction?.Commit();
+                        }
+                        catch
+                        {
+                            dbTransaction?.Rollback();
+                            throw;
+                        }
                     }
                     break;
 
@@ -657,9 +640,6 @@ namespace OpenActive.Server.NET.StoreBooking
                         }
                     }
                     break;
-
-                default:
-                    throw new OpenBookingException(new UnexpectedOrderTypeError());
             }
 
             return responseGenericOrder;

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace OpenActive.Server.NET.OpenBookingHelper
+﻿namespace OpenActive.Server.NET.OpenBookingHelper
 {
     public static class OpenActiveCustomClaimNames
     {

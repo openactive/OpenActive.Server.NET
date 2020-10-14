@@ -1,7 +1,6 @@
 ﻿using OpenActive.NET;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 
 namespace OpenActive.Server.NET.OpenBookingHelper

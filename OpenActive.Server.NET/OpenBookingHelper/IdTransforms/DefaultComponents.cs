@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.Serialization;
-using System.Text;
-using OpenActive.NET;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
@@ -16,9 +13,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public bool Equals(SellerIdComponents other)
         {
             if (ReferenceEquals(other, null)) return false;
-            if (other.SellerIdLong != null && this.SellerIdLong != null) return other.SellerIdLong == this.SellerIdLong;
-            if (other.SellerIdString != null && this.SellerIdString != null) return other.SellerIdString == this.SellerIdString;
-            if (other.SellerIdString == null && this.SellerIdString == null && other.SellerIdLong == null && this.SellerIdLong == null) return true;
+            if (other.SellerIdLong != null && SellerIdLong != null) return other.SellerIdLong == SellerIdLong;
+            if (other.SellerIdString != null && SellerIdString != null) return other.SellerIdString == SellerIdString;
+            if (other.SellerIdString == null && SellerIdString == null && other.SellerIdLong == null && SellerIdLong == null) return true;
             return false;                
         }
         
@@ -65,7 +62,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <returns>
         /// <c>true</c> if the specified <see cref="object" /> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
-        public override bool Equals(object obj) => this.Equals(obj as SellerIdComponents);
+        public override bool Equals(object obj) => Equals(obj as SellerIdComponents);
 
         /// <summary>
         /// Returns a hash code for this instance.
@@ -73,7 +70,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <returns>
         /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
         /// </returns>
-        public override int GetHashCode() => Schema.NET.HashCode.Of(this.SellerIdLong).And(this.SellerIdString);
+        public override int GetHashCode() => Schema.NET.HashCode.Of(SellerIdLong).And(SellerIdString);
     }
 
     public class OrderIdComponents

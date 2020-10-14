@@ -9,7 +9,7 @@ namespace BookingSystem
 {
     public static class EngineConfig
     {
-        public static StoreBookingEngine CreateStoreBookingEngine(string baseUrl, bool UseSingleSellerMode)
+        public static StoreBookingEngine CreateStoreBookingEngine(string baseUrl, bool useSingleSellerMode)
         {
             return new StoreBookingEngine(
                 new BookingEngineSettings
@@ -126,25 +126,25 @@ namespace BookingSystem
                     */
 
                     // Reference implementation is configurable to allow both modes to be tested
-                    SellerStore = new AcmeSellerStore(UseSingleSellerMode),
-                    SellerIdTemplate = UseSingleSellerMode ?
+                    SellerStore = new AcmeSellerStore(useSingleSellerMode),
+                    SellerIdTemplate = useSingleSellerMode ?
                         new SingleIdTemplate<SellerIdComponents>(
                             "{+BaseUrl}/seller"
                         ) :
                         new SingleIdTemplate<SellerIdComponents>(
                             "{+BaseUrl}/sellers/{SellerIdLong}"
                         ),
-                    HasSingleSeller = UseSingleSellerMode,
+                    HasSingleSeller = useSingleSellerMode,
 
                     OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> {
                         {
                             OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator()
                         },
                         {
-                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(UseSingleSellerMode)
+                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(useSingleSellerMode)
                         },
                         {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(UseSingleSellerMode)
+                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(useSingleSellerMode)
                         }
                         ,
                         {
@@ -242,10 +242,10 @@ namespace BookingSystem
                     // List of _bookable_ opportunity types and which store to route to for each
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
-                            new SessionStore(UseSingleSellerMode), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                            new SessionStore(useSingleSellerMode), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStore(UseSingleSellerMode), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
+                            new FacilityStore(useSingleSellerMode), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
                         }
                     },
                     OrderStore = new AcmeOrderStore(),

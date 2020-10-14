@@ -337,3 +337,5 @@ ASALocalRun/
 
 # Fake databases
 fakedatabase.db
+fakedatabase.db-shm
+fakedatabase.db-wal

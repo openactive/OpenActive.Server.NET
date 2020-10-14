@@ -12,13 +12,12 @@ namespace BookingSystem
 {
     public class AcmeFacilityUseRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<FacilityOpportunity, FacilityUse>
     {
-        //public override string FeedPath { get; protected set; } = "example path override";
+        private readonly bool useSingleSellerMode;
 
         // Example constructor that can set state
-        private bool UseSingleSellerMode;
-        public AcmeFacilityUseRpdeGenerator(bool UseSingleSellerMode)
+        public AcmeFacilityUseRpdeGenerator(bool useSingleSellerMode)
         {
-            this.UseSingleSellerMode = UseSingleSellerMode;
+            this.useSingleSellerMode = useSingleSellerMode;
         }
 
         protected override List<RpdeItem<FacilityUse>> GetRpdeItems(long? afterTimestamp, long? afterId)
@@ -54,7 +53,7 @@ namespace BookingSystem
                                 FacilityUseId = result.Item1.Id
                             }),
                             Name = result.Item1.Name,
-                            Provider = UseSingleSellerMode ? new Organization
+                            Provider = useSingleSellerMode ? new Organization
                             {
                                 Id = RenderSingleSellerId(),
                                 Name = "Test Seller",

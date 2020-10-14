@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 using Microsoft.Extensions.DependencyInjection;
 using System.Web.Http.Dependencies;
 
@@ -16,7 +14,7 @@ namespace BookingSystem.AspNetFramework.Utils
 
         internal DependencyResolver(IServiceScope scope)
         {
-            this.provider = scope.ServiceProvider;
+            provider = scope.ServiceProvider;
             this.scope = scope;
         }
 

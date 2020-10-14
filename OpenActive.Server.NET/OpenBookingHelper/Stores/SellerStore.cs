@@ -1,8 +1,5 @@
 ﻿using OpenActive.NET;
-using OpenActive.Server.NET.OpenBookingHelper;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 
 namespace OpenActive.Server.NET.OpenBookingHelper
@@ -13,17 +10,17 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         internal void SetConfiguration(SingleIdTemplate<SellerIdComponents> template)
         {
-            this.IdTemplate = template;
+            IdTemplate = template;
         }
 
         protected Uri RenderSellerId(SellerIdComponents sellerIdComponents)
         {
-            return this.IdTemplate.RenderId(sellerIdComponents);
+            return IdTemplate.RenderId(sellerIdComponents);
         }
 
         protected Uri RenderSingleSellerId()
         {
-            return this.IdTemplate.RenderId(new SellerIdComponents());
+            return IdTemplate.RenderId(new SellerIdComponents());
         }
 
         internal ILegalEntity GetSellerById(SellerIdComponents sellerIdComponents)

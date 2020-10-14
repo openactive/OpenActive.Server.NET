@@ -2,11 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using UriTemplate.Core;
 using OpenActive.NET;
 using OpenActive.DatasetSite.NET;
-using System.Collections;
 using System.Runtime.Serialization;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
@@ -117,23 +114,23 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
             // TODO: Make this check for this.OpportunityIdConfiguration.Bookable == true
 
-            return GetIdComponentsWithOpportunityTypeAndInheritanceExt(this.OpportunityIdConfiguration.OpportunityType, this.OpportunityIdConfiguration.OpportunityType, opportunityId, offerId, null, null)
-            ?? GetIdComponentsWithOpportunityTypeAndInheritanceExt(this.OpportunityIdConfiguration.OpportunityType, this.ParentIdConfiguration?.OpportunityType, opportunityId, null, null, offerId);
+            return GetIdComponentsWithOpportunityTypeAndInheritanceExt(OpportunityIdConfiguration.OpportunityType, OpportunityIdConfiguration.OpportunityType, opportunityId, offerId, null, null)
+            ?? GetIdComponentsWithOpportunityTypeAndInheritanceExt(OpportunityIdConfiguration.OpportunityType, ParentIdConfiguration?.OpportunityType, opportunityId, null, null, offerId);
         }
 
 
         // Note this method exists just for type conversion to work as this is not C# 8.0
         private IBookableIdComponents GetIdComponentsWithOpportunityTypeAndInheritanceExt(OpportunityType? opportunityType, OpportunityType? orderOpportunityType, params Uri[] ids)
         {
-            return this.GetIdComponentsWithOpportunityTypeAndInheritance(opportunityType, orderOpportunityType, ids);
+            return GetIdComponentsWithOpportunityTypeAndInheritance(opportunityType, orderOpportunityType, ids);
         }
 
         protected TBookableIdComponents GetIdComponentsWithOpportunityTypeAndInheritance(OpportunityType? opportunityType, OpportunityType? orderOpportunityType, params Uri[] ids)
         {
-            TBookableIdComponents components = base.GetIdComponentsWithOpportunityType(opportunityType, ids);
+            TBookableIdComponents components = GetIdComponentsWithOpportunityType(opportunityType, ids);
             if (components != null)
             {
-                if (!orderOpportunityType.HasValue) throw new ArgumentNullException("Unexpected match with invalid order OpportunityIdConfiguration.");
+                if (!orderOpportunityType.HasValue) throw new ArgumentNullException(nameof(orderOpportunityType), "Unexpected match with invalid order OpportunityIdConfiguration.");
                 components.OfferOpportunityType = orderOpportunityType.Value;
                 return components;
             }
@@ -185,15 +182,15 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             // in OpportunityTypes.Configuration. Throw an error if the user attempts to create something invalid.
             // Also check that anything that's set as Bookable = true, at least ahs Bookable = true in OpportunityTypes.Configuration
 
-            this.OpportunityIdConfiguration = opportunityIdConfiguration;
-            this.ParentIdConfiguration = parentIdConfiguration;
-            this.GrandparentIdConfiguration = grandparentIdConfiguration;
+            OpportunityIdConfiguration = opportunityIdConfiguration;
+            ParentIdConfiguration = parentIdConfiguration;
+            GrandparentIdConfiguration = grandparentIdConfiguration;
             
             // Create list to simplify access
-            var list = new List<OpportunityIdConfiguration> { this.OpportunityIdConfiguration };
-            if (this.ParentIdConfiguration.HasValue) list.Add(this.ParentIdConfiguration.Value);
-            if (this.GrandparentIdConfiguration.HasValue) list.Add(this.GrandparentIdConfiguration.Value);
-            this.IdConfigurations = list;
+            var list = new List<OpportunityIdConfiguration> { OpportunityIdConfiguration };
+            if (ParentIdConfiguration.HasValue) list.Add(ParentIdConfiguration.Value);
+            if (GrandparentIdConfiguration.HasValue) list.Add(GrandparentIdConfiguration.Value);
+            IdConfigurations = list;
         }
 
 
@@ -223,8 +220,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             // and has many edge cases
             // Note the grandparent is never bookable
 
-            return GetIdComponentsWithOpportunityTypeExt(this.OpportunityIdConfiguration.OpportunityType, opportunityId, offerId, null, null)
-                ?? GetIdComponentsWithOpportunityTypeExt(this.ParentIdConfiguration?.OpportunityType, null, null, opportunityId, offerId);
+            return GetIdComponentsWithOpportunityTypeExt(OpportunityIdConfiguration.OpportunityType, opportunityId, offerId, null, null)
+                ?? GetIdComponentsWithOpportunityTypeExt(ParentIdConfiguration?.OpportunityType, null, null, opportunityId, offerId);
         }
 
         /// <summary>
@@ -243,12 +240,12 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
             return 
                 (
-                this.OpportunityIdConfiguration.Bookable && OpportunityTypes.Configurations[this.OpportunityIdConfiguration.OpportunityType].Bookable ?
-                    GetIdComponentsWithOpportunityType(this.OpportunityIdConfiguration.OpportunityType, opportunityId, null, null, null) : null
+                OpportunityIdConfiguration.Bookable && OpportunityTypes.Configurations[OpportunityIdConfiguration.OpportunityType].Bookable ?
+                    GetIdComponentsWithOpportunityType(OpportunityIdConfiguration.OpportunityType, opportunityId, null, null, null) : null
                     )
                 ?? (
-                this.ParentIdConfiguration.HasValue && this.ParentIdConfiguration.Value.Bookable && OpportunityTypes.Configurations[this.ParentIdConfiguration.Value.OpportunityType].Bookable ?
-                    GetIdComponentsWithOpportunityType(this.ParentIdConfiguration?.OpportunityType, null, null, opportunityId, null) : null
+                ParentIdConfiguration.HasValue && ParentIdConfiguration.Value.Bookable && OpportunityTypes.Configurations[ParentIdConfiguration.Value.OpportunityType].Bookable ?
+                    GetIdComponentsWithOpportunityType(ParentIdConfiguration?.OpportunityType, null, null, opportunityId, null) : null
                     )
                 ;
         }
@@ -263,7 +260,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         // Note this method exists just for type conversion (from TBookableIdComponents to IBookableIdComponents) to work as this is not C# 8.0
         private IBookableIdComponents GetIdComponentsWithOpportunityTypeExt(OpportunityType? opportunityType, params Uri[] ids)
         {
-            return this.GetIdComponentsWithOpportunityType(opportunityType, ids);
+            return GetIdComponentsWithOpportunityType(opportunityType, ids);
         }
 
         protected TBookableIdComponents GetIdComponentsWithOpportunityType(OpportunityType? opportunityType, params Uri[] ids)
@@ -271,7 +268,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             var components = base.GetIdComponents((nameof(GetIdComponentsWithOpportunityType)), ids);
             if (components != null)
             {
-                if (!opportunityType.HasValue) throw new ArgumentNullException("Unexpected match with invalid OpportunityIdConfiguration.");
+                if (!opportunityType.HasValue) throw new ArgumentNullException(nameof(opportunityType), "Unexpected match with invalid OpportunityIdConfiguration.");
                 components.OpportunityType = opportunityType.Value;
                 return components;
             }
@@ -304,9 +301,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public Uri RenderOpportunityId(TBookableIdComponents components)
         {
-            if (components == null || !components.OpportunityType.HasValue)
+            if (components?.OpportunityType == null)
             {
-                throw new ArgumentNullException("OpportunityType must be set on IBookableIdComponents");
+                throw new ArgumentNullException(nameof(components), "OpportunityType must be set on IBookableIdComponents");
             }
             return RenderOpportunityId(components.OpportunityType.Value, components);
         }
@@ -327,9 +324,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public string RenderOpportunityJsonLdType(TBookableIdComponents components)
         {
-            if (components == null || !components.OpportunityType.HasValue)
+            if (components?.OpportunityType == null)
             {
-                throw new ArgumentNullException("OpportunityType must be set on IBookableIdComponents");
+                throw new ArgumentNullException(nameof(components), "OpportunityType must be set on IBookableIdComponents");
             }
             // TODO: Create an extra prop in DatasetSite lib so that we don't need to parse the URL here
             return OpportunityTypes.Configurations[components.OpportunityType.Value].SameAs.AbsolutePath.Trim('/');
@@ -341,14 +338,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             switch (components)
             {
                 case IBookableIdComponentsWithInheritance componentsWithInheritance:
-                    if (componentsWithInheritance == null || !componentsWithInheritance.OfferOpportunityType.HasValue)
+                    if (!componentsWithInheritance.OfferOpportunityType.HasValue)
                     {
                         throw new ArgumentNullException(nameof(components), "OfferOpportunityType must be set on IBookableIdComponents when using RenderOfferId with inheritance enabled");
                     }
                     return RenderOfferId(componentsWithInheritance.OfferOpportunityType.Value, components);
 
                 case IBookableIdComponents componentsWithoutInheritance:
-                    if (componentsWithoutInheritance == null || !componentsWithoutInheritance.OpportunityType.HasValue)
+                    if (!componentsWithoutInheritance.OpportunityType.HasValue)
                     {
                         throw new ArgumentNullException(nameof(components), "OpportunityType must be set on IBookableIdComponents");
                     }
@@ -396,13 +393,13 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public OrderIdComponents GetOrderIdComponents(string clientId, Uri id)
         {
-            var orderId = base.GetIdComponents(nameof(GetIdComponents), id, null);
+            var orderId = GetIdComponents(nameof(GetIdComponents), id, null);
             if (orderId != null) orderId.ClientId = clientId;
             return orderId;
         }
         public OrderIdComponents GetOrderItemIdComponents(string clientId, Uri id)
         {
-            var orderId = base.GetIdComponents(nameof(GetIdComponents), null, id);
+            var orderId = GetIdComponents(nameof(GetIdComponents), null, id);
             if (orderId != null) orderId.ClientId = clientId;
             return orderId;
         }
@@ -410,19 +407,19 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         // TODO: Later - check if RenderOrderId and RenderOrderItemId with multiple params can be moved back out to OrdersRPDEFeedGenerator?
         public Uri RenderOrderId(OrderType orderType, string uuid)
         {
-            return this.RenderOrderId(new OrderIdComponents { OrderType = orderType, uuid = uuid });
+            return RenderOrderId(new OrderIdComponents { OrderType = orderType, uuid = uuid });
         }
 
         //TODO reduce duplication of the strings / logic below
         public Uri RenderOrderItemId(OrderType orderType, string uuid, string orderItemId)
         {
             if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
-            return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdString = orderItemId });
+            return RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdString = orderItemId });
         }
         public Uri RenderOrderItemId(OrderType orderType, string uuid, long orderItemId)
         {
             if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
-            return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdLong = orderItemId });
+            return RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdLong = orderItemId });
         }
 
 
@@ -477,13 +474,12 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <summary>
         /// If the RequiredBaseUrl is set, an exception is thrown where the {BaseUrl} does not match this value.
         /// </summary>
-        public Uri RequiredBaseUrl { get; set; } = null;
+        public Uri RequiredBaseUrl { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="method"></param>
-        /// <param name="matchRequired">Defaults to bool[] { true, true, ... } if not set</param>
         /// <param name="ids"></param>
         /// <returns></returns>
         protected T GetIdComponents(string method, params Uri[] ids)
@@ -514,13 +510,13 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 foreach (var binding in match.Bindings)
                 {
                     
-                    if (binding.Key == BaseUrlPlaceholder && this.RequiredBaseUrl != null)
+                    if (binding.Key == BaseUrlPlaceholder && RequiredBaseUrl != null)
                     {
                         //Special behaviour for BaseUrl
                         var newValue = (binding.Value.Value as string).ParseUrlOrNull();
-                        if (newValue != this.RequiredBaseUrl)
+                        if (newValue != RequiredBaseUrl)
                         {
-                            throw new RequiredBaseUrlMismatchException($"Base Url ('{newValue}') of the supplied Ids does not match expected default ('{this.RequiredBaseUrl}')");
+                            throw new RequiredBaseUrlMismatchException($"Base Url ('{newValue}') of the supplied Ids does not match expected default ('{RequiredBaseUrl}')");
                         }
                     }
                     else if (componentsType.GetProperty(binding.Key) == null)
@@ -596,50 +592,52 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public object ToEnumStringIfEnum(PropertyInfo prop, object value)
         {
-            if (value == null) return null;
-            if (prop.PropertyType == typeof(OpportunityType)) return value; // To optimise render, ignore this particular enum
+            if (value == null || prop == null)
+                return null;
+
+            if (prop.PropertyType == typeof(OpportunityType))
+                return value; // To optimise render, ignore this particular enum
+
             var enumType = Nullable.GetUnderlyingType(prop.PropertyType);
-            if (enumType != null && enumType.IsEnum)
-            {
-                var name = Enum.GetName(enumType, value);
-                var enumMemberAttribute = ((EnumMemberAttribute[])enumType.GetField(name).GetCustomAttributes(typeof(EnumMemberAttribute), true)).SingleOrDefault();
-                return enumMemberAttribute?.Value ?? name;
-            }
-            else
-            {
+            if (enumType == null || !enumType.IsEnum)
                 return value;
-            }
+
+            var name = Enum.GetName(enumType, value);
+            var enumMemberAttribute = ((EnumMemberAttribute[])enumType.GetField(name).GetCustomAttributes(typeof(EnumMemberAttribute), true)).SingleOrDefault();
+            return enumMemberAttribute?.Value ?? name;
         }
 
         private static object ToEnum(Type nullableEnumType, string str)
         {
-            Type enumType = Nullable.GetUnderlyingType(nullableEnumType);
-            foreach (var name in Enum.GetNames(enumType))
-            {
-                var enumMemberAttribute = ((EnumMemberAttribute[])enumType.GetField(name).GetCustomAttributes(typeof(EnumMemberAttribute), true)).Single();
-                if (enumMemberAttribute.Value == str) return Enum.Parse(enumType, name);
-            }
+            var enumType = Nullable.GetUnderlyingType(nullableEnumType);
+            if (enumType == null)
+                return null;
+
+            return (
+                from name in Enum.GetNames(enumType)
+                let enumMemberAttribute = ((EnumMemberAttribute[]) enumType.GetField(name).GetCustomAttributes(typeof(EnumMemberAttribute), true)).Single()
+                where enumMemberAttribute.Value == str
+                select Enum.Parse(enumType, name)).FirstOrDefault();
+
             //throw exception or whatever handling you want or
-            return null;
         }
 
         protected Uri RenderId(int index, T components, string method, string param)
         {
             if (uriTemplates.ElementAtOrDefault(index) == null)
-            {
                 throw new NotSupportedException($"{method} is not available as {param} was not specified when using the constructor for this class.");
-            }
 
-            if (components == null) throw new ArgumentNullException(nameof(components), $"{method} requires non-null components to be supplied");
+            if (components == null)
+                throw new ArgumentNullException(nameof(components), $"{method} requires non-null components to be supplied");
 
             var componentDictionary = components.GetType()
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public)
                      .ToDictionary(prop => prop.Name, prop => ToEnumStringIfEnum(prop, prop.GetValue(components, null)));
 
-            if (this.RequiredBaseUrl != null) componentDictionary[BaseUrlPlaceholder] = RequiredBaseUrl;
+            if (RequiredBaseUrl != null)
+                componentDictionary[BaseUrlPlaceholder] = RequiredBaseUrl;
 
             return uriTemplates[index].BindByName(componentDictionary);
         }
     }
-
 }

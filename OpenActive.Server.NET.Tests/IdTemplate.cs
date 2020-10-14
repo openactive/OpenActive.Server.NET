@@ -1,6 +1,5 @@
 using System;
 using Xunit;
-using OpenActive.Server.NET;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 

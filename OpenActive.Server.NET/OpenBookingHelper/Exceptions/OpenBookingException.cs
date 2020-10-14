@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.Serialization;
 using OpenActive.NET;
 using System.Net;
@@ -18,9 +16,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     {
         public OpenBookingError OpenBookingError { get; }
 
-        protected OpenBookingException()
-           : base()
-        { }
+        protected OpenBookingException() {}
 
         /// <summary>
         /// Create an OpenBookingError
@@ -29,9 +25,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// </summary>
         /// <param name="error">The appropriate OpenBookingError</param>
         public OpenBookingException(OpenBookingError error) :
-           base($"{error.Type}: {error.Name}: {error.Description}")
+           base($"{error?.Type}: {error?.Name}: {error?.Description}")
         {
-            this.OpenBookingError = error;
+            OpenBookingError = error;
         }
 
         /// <summary>
@@ -42,10 +38,11 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <param name="error">The appropriate OpenBookingError</param>
         /// <param name="message">A message that overwrites the the `Description` property of the supplied error</param>
         public OpenBookingException(OpenBookingError error, string message)
-           : base($"{error.Type}: {error.Name}: {message}")
+           : base($"{error?.Type}: {error?.Name}: {message}")
         {
+            if (error == null) return;
             error.Description = message;
-            this.OpenBookingError = error;
+            OpenBookingError = error;
         }
 
         /// <summary>
@@ -56,11 +53,12 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <param name="error">The appropriate OpenBookingError</param>
         /// <param name="message">A message that overwrites the the `Description` property of the supplied error</param>
         /// <param name="innerException">The source exception</param>
-        public OpenBookingException(OpenBookingError error, string message, Exception innerException) :
-           base($"{error.Type}: {error.Name}: {message}", innerException)
+        public OpenBookingException(OpenBookingError error, string message, Exception innerException)
+            : base($"{error?.Type}: {error?.Name}: {message}", innerException)
         {
+            if (error == null) return;
             error.Description = message;
-            this.OpenBookingError = error;
+            OpenBookingError = error;
         }
 
         /// <summary>
@@ -73,24 +71,18 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             get
             {
-                if (this.OpenBookingError == null)
+                if (OpenBookingError == null)
                 {
                     throw new NullReferenceException("An instance of OpenBookingException does not have an associated OpenBookingError");
                 }
                 else
                 {
-                    return OpenActiveSerializer.Serialize(this.OpenBookingError);
+                    return OpenActiveSerializer.Serialize(OpenBookingError);
                 }
             }
         }
 
-        public ResponseContent ErrorResponseContent
-        {
-            get
-            {
-                return ResponseContent.OpenBookingErrorResponse(this.ResponseJson, this.HttpStatusCode);
-            }
-        }
+        public ResponseContent ErrorResponseContent => ResponseContent.OpenBookingErrorResponse(ResponseJson, HttpStatusCode);
 
         /// <summary>
         /// Get the HTTP status code assocaited with this error
@@ -100,14 +92,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             get
             {
-                if (!this.OpenBookingError.StatusCode.HasValue)
+                if (!OpenBookingError.StatusCode.HasValue)
                 {
                     // Default to 500 if not defined
                     return HttpStatusCode.InternalServerError;
                 }
                 else
                 {
-                    return (HttpStatusCode)this.OpenBookingError.StatusCode.Value;
+                    return (HttpStatusCode)OpenBookingError.StatusCode.Value;
                 }
             }
         }

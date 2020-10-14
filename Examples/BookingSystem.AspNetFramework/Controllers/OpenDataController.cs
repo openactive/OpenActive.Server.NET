@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Net.Http;
-using System.Threading.Tasks;
 using System.Web.Http;
 using BookingSystem.AspNetFramework.Helpers;
-using BookingSystem.AspNetFramework.Helpers;
 using OpenActive.Server.NET;
-using OpenActive.Server.NET.OpenBookingHelper;
 
 namespace BookingSystem.AspNetFramework.Controllers
 {
     public class OpenDataController : ApiController
     {
-        private IBookingEngine _bookingEngine = null;
+        private IBookingEngine _bookingEngine;
 
         public OpenDataController(IBookingEngine bookingEngine)
         {
@@ -33,7 +28,7 @@ namespace BookingSystem.AspNetFramework.Controllers
             {
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
-                return _bookingEngine.GetOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return _bookingEngine.GetOpenDataRpdePageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
             catch (KeyNotFoundException kn)
             {

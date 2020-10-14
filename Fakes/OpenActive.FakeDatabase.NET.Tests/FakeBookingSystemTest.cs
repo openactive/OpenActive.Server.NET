@@ -1,10 +1,8 @@
 ﻿using Xunit;
 using System.Linq;
 using Xunit.Abstractions;
-using OpenActive.FakeDatabase.NET;
 using System;
 using ServiceStack.OrmLite;
-using System.Collections.Generic;
 using System.Data;
 
 namespace OpenActive.FakeDatabase.NET.Test

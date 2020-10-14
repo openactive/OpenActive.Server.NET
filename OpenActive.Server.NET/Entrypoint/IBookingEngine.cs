@@ -1,7 +1,4 @@
 ﻿using System;
-using Newtonsoft.Json.Linq;
-using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET.OpenBookingHelper;
 
 namespace OpenActive.Server.NET
@@ -18,8 +15,8 @@ namespace OpenActive.Server.NET
     {
         // These endpoints are fully open
         ResponseContent RenderDatasetSite();
-        ResponseContent GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber);
-        ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
+        ResponseContent GetOpenDataRpdePageForFeed(string feedName, long? afterTimestamp, string afterId, long? afterChangeNumber);
+        ResponseContent GetOpenDataRpdePageForFeed(string feedName, string afterTimestamp, string afterId, string afterChangeNumber);
 
         // These endpoints are authenticated by seller credentials (OAuth Authorization Code Grant)
         ResponseContent ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
@@ -35,8 +32,8 @@ namespace OpenActive.Server.NET
         ResponseContent InsertTestOpportunity(string testDatasetIdentifier, string eventJson);
         ResponseContent DeleteTestDataset(string testDatasetIdentifier);
         ResponseContent TriggerTestAction(string actionJson);
-        ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
-        ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
+        ResponseContent GetOrdersRpdePageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
+        ResponseContent GetOrdersRpdePageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
         ResponseContent GetOrderStatus(string clientId, Uri sellerId, string uuid);
     }
 }

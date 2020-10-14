@@ -4,7 +4,6 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace OpenActive.Server.NET.StoreBooking
 {
@@ -27,10 +26,8 @@ namespace OpenActive.Server.NET.StoreBooking
     {
         void IOpportunityStore.SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SellerIdComponents> sellerTemplate)
         {
-            if (template as BookablePairIdTemplate<TComponents> == null)
-            {
-                throw new NotSupportedException($"{template.GetType().ToString()} does not match {typeof(BookablePairIdTemplate<TComponents>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used for RPDEFeedGenerator<T> in settings.OpenDataFeeds.");
-            }
+            if (!(template is BookablePairIdTemplate<TComponents>))
+                throw new NotSupportedException($"{template.GetType()} does not match {typeof(BookablePairIdTemplate<TComponents>)}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used for RPDEFeedGenerator<T> in settings.OpenDataFeeds.");
 
             base.SetConfiguration((BookablePairIdTemplate<TComponents>)template, sellerTemplate);
         }
@@ -76,7 +73,7 @@ namespace OpenActive.Server.NET.StoreBooking
         {
             if (!(idComponents.GetType() == typeof(TComponents)))
             {
-                throw new NotSupportedException($"OpportunityIdComponents does not match {typeof(BookablePairIdTemplate<TComponents>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
+                throw new NotSupportedException($"OpportunityIdComponents does not match {typeof(BookablePairIdTemplate<TComponents>)}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
             }
 
             TriggerTestAction(simulateAction, (TComponents)idComponents);
@@ -89,10 +86,10 @@ namespace OpenActive.Server.NET.StoreBooking
 
             if (!(orderItemContexts.Select(x => x.RequestBookableOpportunityOfferId).ToList().TrueForAll(x => x.GetType() == typeof(TComponents))))
             {
-                throw new NotSupportedException($"OpportunityIdComponents does not match {typeof(BookablePairIdTemplate<TComponents>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
+                throw new NotSupportedException($"OpportunityIdComponents does not match {typeof(BookablePairIdTemplate<TComponents>)}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
             }
 
-            return orderItemContexts.ConvertAll<OrderItemContext<TComponents>>(x => (OrderItemContext<TComponents>)x);
+            return orderItemContexts.ConvertAll(x => (OrderItemContext<TComponents>)x);
         }
 
 

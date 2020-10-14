@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET.Rpde.Version1;
 
-
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
     public interface IOpportunityDataRpdeFeedGenerator : IRpdeFeedGenerator
@@ -21,14 +20,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public void SetConfiguration(OpportunityTypeConfiguration opportunityTypeConfiguration, Uri jsonLdIdBaseUrl, int rpdePageSize, IBookablePairIdTemplate bookablePairIdTemplate, SingleIdTemplate<SellerIdComponents> sellerTemplate, Uri openDataFeedBaseUrl)
         {
             if (!(bookablePairIdTemplate is BookablePairIdTemplate<TComponents>))
-            {
-                throw new EngineConfigurationException($"{bookablePairIdTemplate.GetType()} does not match {typeof(BookablePairIdTemplate<TComponents>)}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used for RPDEFeedGenerator<T> in settings.OpenDataFeeds.");
-            }
+                throw new EngineConfigurationException($"{bookablePairIdTemplate?.GetType()} does not match {typeof(BookablePairIdTemplate<TComponents>)}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used for RPDEFeedGenerator<T> in settings.OpenDataFeeds.");
 
-            if (opportunityTypeConfiguration.SameAs.AbsolutePath.Trim('/') != typeof(TClass).Name)
-            {
-                throw new EngineConfigurationException($"'{GetType()}' does not have this expected OpenActive model type as generic parameter: '{opportunityTypeConfiguration.SameAs.AbsolutePath.Trim('/')}'");
-            }
+            if (opportunityTypeConfiguration?.SameAs.AbsolutePath.Trim('/') != typeof(TClass).Name)
+                throw new EngineConfigurationException($"'{GetType()}' does not have this expected OpenActive model type as generic parameter: '{opportunityTypeConfiguration?.SameAs.AbsolutePath.Trim('/')}'");
 
             base.SetConfiguration((BookablePairIdTemplate<TComponents>)bookablePairIdTemplate, sellerTemplate);
 
@@ -61,15 +56,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public RpdePage GetRpdePage(long? afterTimestamp, long? afterId)
         {
-            if (!afterTimestamp.HasValue && afterId.HasValue ||
-                afterTimestamp.HasValue && !afterId.HasValue)
-            {
+            if (!afterTimestamp.HasValue && afterId.HasValue || afterTimestamp.HasValue && !afterId.HasValue)
                 throw new ArgumentException("afterTimestamp and afterId must both be supplied, or neither supplied");
-            }
-            else
-            {
-                return new RpdePage(FeedUrl, afterTimestamp, afterId, GetRpdeItems(afterTimestamp, afterId).ConvertAll(x => (RpdeItem)x));
-            }
+
+            return new RpdePage(FeedUrl, afterTimestamp, afterId, GetRpdeItems(afterTimestamp, afterId).ConvertAll(x => (RpdeItem)x));
         }
     }
 
@@ -79,16 +69,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public RpdePage GetRpdePage(long? afterTimestamp, string afterId)
         {
-            if ((!afterTimestamp.HasValue && !string.IsNullOrWhiteSpace(afterId)) ||
-                (afterTimestamp.HasValue && string.IsNullOrWhiteSpace(afterId)))
-            {
+            if (!afterTimestamp.HasValue && !string.IsNullOrWhiteSpace(afterId) || afterTimestamp.HasValue && string.IsNullOrWhiteSpace(afterId))
                 throw new ArgumentException("afterTimestamp and afterId must both be supplied, or neither supplied");
-            }
-            else
-            {
-                return new RpdePage(FeedUrl, afterTimestamp, afterId, GetRpdeItems(afterTimestamp, afterId).ConvertAll(x => (RpdeItem)x));
-            }
+
+            return new RpdePage(FeedUrl, afterTimestamp, afterId, GetRpdeItems(afterTimestamp, afterId).ConvertAll(x => (RpdeItem)x));
         }
     }
-
 }

@@ -2,11 +2,7 @@
 using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace BookingSystem.AspNetFramework.Controllers
@@ -14,7 +10,7 @@ namespace BookingSystem.AspNetFramework.Controllers
     [RoutePrefix("api/openbooking")]
     public class OpenBookingController : ApiController
     {
-        private IBookingEngine _bookingEngine = null;
+        private IBookingEngine _bookingEngine;
 
         public OpenBookingController(IBookingEngine bookingEngine)
         {
@@ -147,7 +143,7 @@ namespace BookingSystem.AspNetFramework.Controllers
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
                 string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
-                return _bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return _bookingEngine.GetOrdersRpdePageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

@@ -1,10 +1,7 @@
 ﻿// using Microsoft.AspNetFramework.Mvc.Formatters;
 using OpenActive.NET;
-using OpenActive.Server.NET.OpenBookingHelper;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
@@ -16,7 +13,7 @@ namespace BookingSystem.AspNetFramework.Helpers
     {
         public OpenBookingInputFormatter()
         {
-            this.SupportedMediaTypes.Add(MediaTypeHeaderValue.Parse(OpenActiveMediaTypes.OpenBooking.Version1));
+            SupportedMediaTypes.Add(MediaTypeHeaderValue.Parse(OpenActiveMediaTypes.OpenBooking.Version1));
         }
 
         public override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)

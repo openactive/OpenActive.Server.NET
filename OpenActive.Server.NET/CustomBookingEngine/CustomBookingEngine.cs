@@ -42,14 +42,14 @@ namespace OpenActive.Server.NET.CustomBooking
         /// In order to generate open data RPDE pages, OpenDataFeedBaseUrl must be provided
         /// </summary>
         /// <param name="settings"></param>
-        /// <param name="openBookingAPIBaseUrl"></param>
+        /// <param name="openBookingApiBaseUrl"></param>
         /// <param name="openDataFeedBaseUrl"></param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "Exception relates to specific settings property being null")]
-        public CustomBookingEngine(BookingEngineSettings settings, Uri openBookingAPIBaseUrl, Uri openDataFeedBaseUrl) : this (settings, openBookingAPIBaseUrl)
+        public CustomBookingEngine(BookingEngineSettings settings, Uri openBookingApiBaseUrl, Uri openDataFeedBaseUrl) : this (settings, openBookingApiBaseUrl)
         {
             // Check constructor configuration is correct
             if (openDataFeedBaseUrl == null) throw new ArgumentNullException(nameof(openDataFeedBaseUrl));
-            if (settings.OpenDataFeeds == null) throw new ArgumentNullException("settings.OpenDataFeeds");
+            if (settings.OpenDataFeeds == null) throw new ArgumentNullException(nameof(settings.OpenDataFeeds));
 
 
             // Check Seller configuration is provided
@@ -63,13 +63,13 @@ namespace OpenActive.Server.NET.CustomBooking
             foreach (var idConfiguration in settings.IdConfiguration) {
                 idConfiguration.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
             }
-            settings.OrderIdTemplate.RequiredBaseUrl = openBookingAPIBaseUrl;
+            settings.OrderIdTemplate.RequiredBaseUrl = openBookingApiBaseUrl;
             settings.SellerIdTemplate.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
 
             // Create a lookup of each IdTemplate to pass into the appropriate RpdeGenerator
             // TODO: Output better error if there is a feed assigned across two templates
             // (there should never be, as each template represents everyting you need in one feed)
-            this.feedAssignedTemplates = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
+            feedAssignedTemplates = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
             {
                 assignedFeed = x.AssignedFeed,
                 bookablePairIdTemplate = t
@@ -77,7 +77,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // Create a lookup for the purposes of finding arbitary IdConfigurations, for use in the store
             // TODO: Pull this and the above into a function?
-            this.OpportunityTemplateLookup = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
+            OpportunityTemplateLookup = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
             {
                 opportunityType = x.OpportunityType,
                 bookablePairIdTemplate = t
@@ -86,20 +86,19 @@ namespace OpenActive.Server.NET.CustomBooking
             // Setup each RPDEFeedGenerator with the relevant settings, including the relevant IdTemplate inferred from the config
             foreach (var kv in settings.OpenDataFeeds)
             {
-                kv.Value.SetConfiguration(OpportunityTypes.Configurations[kv.Key], settings.JsonLdIdBaseUrl, settings.RPDEPageSize, this.feedAssignedTemplates[kv.Key], settings.SellerIdTemplate, openDataFeedBaseUrl);
+                kv.Value.SetConfiguration(OpportunityTypes.Configurations[kv.Key], settings.JsonLdIdBaseUrl, settings.RpdePageSize, feedAssignedTemplates[kv.Key], settings.SellerIdTemplate, openDataFeedBaseUrl);
             }
 
             // Note that this library does not currently support custom Orders Feed URLs
-            var ordersFeedUrl = new Uri(openBookingAPIBaseUrl.ToString() + "/orders-rpde");
-            settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, ordersFeedUrl);
-
+            var ordersFeedUrl = new Uri(openBookingApiBaseUrl.ToString() + "/orders-rpde");
+            settings.OrderFeedGenerator.SetConfiguration(settings.RpdePageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, ordersFeedUrl);
             settings.SellerStore.SetConfiguration(settings.SellerIdTemplate);
 
             // Create a dictionary of RPDEFeedGenerator indexed by FeedPath
-            this.feedLookup = settings.OpenDataFeeds.Values.ToDictionary(x => x.FeedPath.TrimStart('/'));
+            feedLookup = settings.OpenDataFeeds.Values.ToDictionary(x => x.FeedPath.TrimStart('/'));
 
             // Set supportedFeeds locally for use by dataset site
-            this.supportedFeeds = settings.OpenDataFeeds.Keys.ToList();
+            supportedFeeds = settings.OpenDataFeeds.Keys.ToList();
 
             // Check that OpenDataFeeds match IdConfiguration
             if (supportedFeeds.Except(feedAssignedTemplates.Keys).Any() || feedAssignedTemplates.Keys.Except(supportedFeeds).Any())
@@ -108,7 +107,7 @@ namespace OpenActive.Server.NET.CustomBooking
             }
 
             // Setup array of types for lookup of OrderItem, based on the type string that will be supplied with the opportunity
-            this.idConfigurationLookup = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
+            idConfigurationLookup = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
             {
                 // TODO: Create an extra prop in DatasetSite lib so that we don't need to parse the URL here
                 opportunityTypeName = OpportunityTypes.Configurations[x.OpportunityType].SameAs.AbsolutePath.Trim('/'),
@@ -119,12 +118,12 @@ namespace OpenActive.Server.NET.CustomBooking
 
         }
 
-        private DatasetSiteGeneratorSettings datasetSettings = null;
+        private DatasetSiteGeneratorSettings datasetSettings;
         private readonly BookingEngineSettings settings;
         private Dictionary<string, IOpportunityDataRpdeFeedGenerator> feedLookup;
         private List<OpportunityType> supportedFeeds;
         private Uri openDataFeedBaseUrl;
-        private Uri openBookingAPIBaseUrl;
+        private Uri openBookingApiBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
 
@@ -134,11 +133,11 @@ namespace OpenActive.Server.NET.CustomBooking
         /// In this mode, the Booking Engine does not handle open data feeds or dataset site rendering, and these must both be handled manually
         /// </summary>
         /// <param name="settings"></param>
-        /// <param name="openBookingAPIBaseUrl"></param>
-        public CustomBookingEngine(BookingEngineSettings settings, Uri openBookingAPIBaseUrl)
+        /// <param name="openBookingApiBaseUrl"></param>
+        public CustomBookingEngine(BookingEngineSettings settings, Uri openBookingApiBaseUrl)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));
-            if (openBookingAPIBaseUrl == null) throw new ArgumentNullException(nameof(openBookingAPIBaseUrl));
+            if (openBookingApiBaseUrl == null) throw new ArgumentNullException(nameof(openBookingApiBaseUrl));
 
             this.settings = settings;
         }
@@ -159,16 +158,16 @@ namespace OpenActive.Server.NET.CustomBooking
         /// Designed to be used on a single controller method with a "feedname" parameter,
         /// for uses in situations where the framework does not automatically validate numeric values
         /// </summary>
-        /// <param name="feedname">The final component of the path of the feed, i.e. https://example.com/feeds/{feedname} </param>
+        /// <param name="feedName">The final component of the path of the feed, i.e. https://example.com/feeds/{feedname} </param>
         /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber)
+        public ResponseContent GetOpenDataRpdePageForFeed(string feedName, string afterTimestamp, string afterId, string afterChangeNumber)
         {
             return ResponseContent.RpdeResponse(
-                RouteOpenDataRPDEPageForFeed(
-                    feedname,
+                RouteOpenDataRpdePageForFeed(
+                    feedName,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),
                     afterId,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterChangeNumber, nameof(afterChangeNumber))
@@ -181,14 +180,14 @@ namespace OpenActive.Server.NET.CustomBooking
         /// Designed to be used on a single controller method with a "feedname" parameter,
         /// for uses in situations where the framework does not automatically validate numeric values
         /// </summary>
-        /// <param name="feedname">The final component of the path of the feed, i.e. https://example.com/feeds/{feedname} </param>
+        /// <param name="feedName">The final component of the path of the feed, i.e. https://example.com/feeds/{feedname} </param>
         /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public ResponseContent GetOpenDataRpdePageForFeed(string feedName, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse(RouteOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).ToString());
+            return ResponseContent.RpdeResponse(RouteOpenDataRpdePageForFeed(feedName, afterTimestamp, afterId, afterChangeNumber).ToString());
         }
 
 
@@ -203,7 +202,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        private RpdePage RouteOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        private RpdePage RouteOpenDataRpdePageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             if (openDataFeedBaseUrl == null) throw new NotSupportedException("GetOpenDataRPDEPageForFeed is only supported if an OpenDataFeedBaseUrl and BookingEngineSettings.OpenDataFeed is supplied to the IBookingEngine");
 
@@ -226,10 +225,10 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber)
+        public ResponseContent GetOrdersRpdePageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber)
         {
             return ResponseContent.RpdeResponse(
-                RenderOrdersRPDEPageForFeed(
+                RenderOrdersRpdePageForFeed(
                     clientId,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),
                     afterId,
@@ -246,9 +245,9 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public ResponseContent GetOrdersRpdePageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse(RenderOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).ToString());
+            return ResponseContent.RpdeResponse(RenderOrdersRpdePageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).ToString());
         }
 
         /// <summary>
@@ -259,7 +258,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        private RpdePage RenderOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        private RpdePage RenderOrdersRpdePageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             if (settings.OrderFeedGenerator != null)
             {
@@ -291,26 +290,26 @@ namespace OpenActive.Server.NET.CustomBooking
 
         protected bool IsOpportunityTypeRecognised(string opportunityTypeString)
         {
-            return this.idConfigurationLookup.ContainsKey(opportunityTypeString);
+            return idConfigurationLookup.ContainsKey(opportunityTypeString);
         }
 
         // Note this is not a helper as it relies on engine settings state
-        protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId, Uri offerId)
+        protected IBookableIdComponents ResolveOpportunityId(string opportunityTypeString, Uri opportunityId, Uri offerId)
         {
             // Return the first matching ID combination for the opportunityId and offerId provided.
             // TODO: Make this more efficient?
-            return this.idConfigurationLookup[opportunityTypeString]
+            return idConfigurationLookup[opportunityTypeString]
                 .Select(x => x.GetOpportunityReference(opportunityId, offerId))
                 .Where(x => x != null)
                 .FirstOrDefault();
         }
 
         // Note this is not a helper as it relies on engine settings state
-        protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId)
+        protected IBookableIdComponents ResolveOpportunityId(string opportunityTypeString, Uri opportunityId)
         {
             // Return the first matching ID combination for the opportunityId and offerId provided.
             // TODO: Make this more efficient?
-            return this.idConfigurationLookup[opportunityTypeString]
+            return idConfigurationLookup[opportunityTypeString]
                 .Select(x => x.GetOpportunityBookableIdComponents(opportunityId))
                 .Where(x => x != null)
                 .FirstOrDefault();
@@ -332,7 +331,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, orderType);
-            var orderResponse = ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
+            var orderResponse = ProcessFlowRequest(ValidateFlowRequest(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
             // Return a 409 status code if any OrderItem level errors exist
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
                 orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
@@ -349,7 +348,7 @@ namespace OpenActive.Server.NET.CustomBooking
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
             var response = order.OrderProposalVersion != null ?
                  ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
-                 ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
+                 ProcessFlowRequest(ValidateFlowRequest(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.OK);
         }
 
@@ -363,13 +362,13 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
             }
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.OrderProposal);
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
+            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(ProcessFlowRequest(ValidateFlowRequest(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
         }
 
         private SellerIdComponents GetSellerIdComponentsFromApiKey(Uri sellerId)
         {
             // Return empty SellerIdComponents in Single Seller mode, as it is not required in the API Key
-            if (settings.HasSingleSeller == true) return new SellerIdComponents();
+            if (settings.HasSingleSeller) return new SellerIdComponents();
 
             var sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(sellerId);
             if (sellerIdComponents == null) throw new OpenBookingException(new InvalidAPITokenError());
@@ -415,7 +414,7 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 OrderedItem = order.OrderedItem.Select(x => new OrderItem { Id = x.Id, OrderItemStatus = x.OrderItemStatus }).ToList()
             };
-            if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties)) {
+            if (OpenActiveSerializer.Serialize(order) != OpenActiveSerializer.Serialize(orderWithOnlyAllowedProperties)) {
                 throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
             }
 
@@ -463,7 +462,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 OrderProposalStatus = orderProposal.OrderProposalStatus,
                 OrderCustomerNote = orderProposal.OrderCustomerNote
             };
-            if (OpenActiveSerializer.Serialize<OrderProposal>(orderProposal) != OpenActiveSerializer.Serialize<OrderProposal>(orderProposalWithOnlyAllowedProperties))
+            if (OpenActiveSerializer.Serialize(orderProposal) != OpenActiveSerializer.Serialize(orderProposalWithOnlyAllowedProperties))
             {
                 throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
             }
@@ -487,8 +486,8 @@ namespace OpenActive.Server.NET.CustomBooking
             Event genericEvent = OpenActiveSerializer.Deserialize<Event>(eventJson);
 
             // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-            OpportunityType? opportunityType = null;
-            ILegalEntity seller = null;
+            OpportunityType? opportunityType;
+            ILegalEntity seller;
 
             switch (genericEvent) {
                 case ScheduledSession scheduledSession:
@@ -578,7 +577,7 @@ namespace OpenActive.Server.NET.CustomBooking
             if (sellerIdComponents == null) throw new OpenBookingException(new SellerMismatchError(), "Seller ID format was invalid");
 
             // Returns a matching Event subclass that will only include "@type" and "@id" properties
-            var createdEvent = this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, sellerIdComponents);
+            var createdEvent = InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, sellerIdComponents);
 
             if (createdEvent.Type != genericEvent.Type)
             {
@@ -592,7 +591,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         ResponseContent IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
         {
-            this.DeleteTestDataset(testDatasetIdentifier);
+            DeleteTestDataset(testDatasetIdentifier);
             
             return ResponseContent.OpenBookingNoContentResponse();
         }
@@ -601,20 +600,15 @@ namespace OpenActive.Server.NET.CustomBooking
 
         ResponseContent IBookingEngine.TriggerTestAction(string actionJson)
         {
-            OpenBookingSimulateAction action = OpenActiveSerializer.Deserialize<OpenBookingSimulateAction>(actionJson);
+            var action = OpenActiveSerializer.Deserialize<OpenBookingSimulateAction>(actionJson);
 
             if (action == null)
-            {
                 throw new OpenBookingException(new OpenBookingError(), "Invalid type specified. Type must subclass OpenBookingSimulateAction.");
-            }
 
             if (!action.Object.HasValue || ((Schema.NET.JsonLdObject)action.Object.Value).Id == null)
-            {
                 throw new OpenBookingException(new OpenBookingError(), "Invalid OpenBookingSimulateAction object specified.");
-            }
 
-            this.TriggerTestAction(action, settings.OrderIdTemplate);
-
+            TriggerTestAction(action, settings.OrderIdTemplate);
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
@@ -644,9 +638,9 @@ namespace OpenActive.Server.NET.CustomBooking
         }
 
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
-        protected BookingFlowContext ValidateFlowRequest<O>(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller, FlowStage stage, O order) where O : Order, new()
+        protected BookingFlowContext ValidateFlowRequest<TO>(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller, FlowStage stage, TO order) where TO : Order, new()
         {
-            if (order?.Seller?.Id != null && seller?.Id != order?.Seller?.Id)
+            if (order?.Seller?.Id != null && seller?.Id != order.Seller?.Id)
             {
                 throw new OpenBookingException(new SellerMismatchError());
             }
@@ -658,16 +652,14 @@ namespace OpenActive.Server.NET.CustomBooking
             }
 
             // Default to BusinessToConsumer if no customer provided
-            TaxPayeeRelationship taxPayeeRelationship =
-                order.Customer == null ? 
+            var taxPayeeRelationship =
+                order?.Customer == null ? 
                     TaxPayeeRelationship.BusinessToConsumer :
                     order.BrokerRole == BrokerType.ResellerBroker || order.Customer.IsOrganization
                         ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
 
-            if (order.BrokerRole == null)
-            {
+            if (order?.BrokerRole == null)
                 throw new OpenBookingException(new IncompleteBrokerDetailsError());
-            }
 
             var payer = order.BrokerRole == BrokerType.ResellerBroker ? order.Broker : order.Customer;
 

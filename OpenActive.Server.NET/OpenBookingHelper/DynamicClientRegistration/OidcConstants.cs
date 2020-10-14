@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace OpenActive.Server.NET.OpenBookingHelper
+﻿namespace OpenActive.Server.NET.OpenBookingHelper
 {
     public static class OidcConstants
     {
@@ -339,25 +335,24 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
             public static class Symmetric
             {
-                public const string HS256 = "HS256";
-                public const string HS384 = "HS284";
-                public const string HS512 = "HS512";
+                public const string Hs256 = "HS256";
+                public const string Hs384 = "HS284";
+                public const string Hs512 = "HS512";
             }
 
             public static class Asymmetric
             {
-                public const string RS256 = "RS256";
-                public const string RS384 = "RS384";
-                public const string RS512 = "RS512";
+                public const string Rs256 = "RS256";
+                public const string Rs384 = "RS384";
+                public const string Rs512 = "RS512";
 
-                public const string ES256 = "ES256";
-                public const string ES384 = "ES384";
-                public const string ES512 = "ES512";
+                public const string Es256 = "ES256";
+                public const string Es384 = "ES384";
+                public const string Es512 = "ES512";
 
-                public const string PS256 = "PS256";
-                public const string PS384 = "PS384";
-                public const string PS512 = "PS512";
-
+                public const string Ps256 = "PS256";
+                public const string Ps384 = "PS384";
+                public const string Ps512 = "PS512";
             }
         }
 
@@ -412,7 +407,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             public const string RequireRequestUriRegistration = "require_request_uri_registration";
             public const string ServiceDocumentation = "service_documentation";
             public const string TokenEndpointAuthSigningAlgorithmsSupported = "token_endpoint_auth_signing_alg_values_supported";
-            public const string UILocalesSupported = "ui_locales_supported";
+            public const string UiLocalesSupported = "ui_locales_supported";
             public const string UserInfoEncryptionAlgorithmsSupported = "userinfo_encryption_alg_values_supported";
             public const string UserInfoEncryptionEncValuesSupported = "userinfo_encryption_enc_values_supported";
             public const string UserInfoSigningAlgorithmsSupported = "userinfo_signing_alg_values_supported";

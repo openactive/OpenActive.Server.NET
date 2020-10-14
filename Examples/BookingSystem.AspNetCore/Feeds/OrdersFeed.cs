@@ -9,11 +9,11 @@ using ServiceStack.OrmLite;
 
 namespace BookingSystem
 {
-    public class AcmeOrdersFeedRpdeGenerator : OrdersRPDEFeedModifiedTimestampAndID
+    public class AcmeOrdersFeedRpdeGenerator : OrdersRpdeFeedModifiedTimestampAndId
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        protected override List<RpdeItem> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
+        protected override List<RpdeItem> GetRpdeItems(string clientId, long? afterTimestamp, string afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
@@ -29,7 +29,7 @@ namespace BookingSystem
                         x.Modified == afterTimestamp &&
                         string.Compare(afterId, x.OrderId, StringComparison.InvariantCulture) > 0) &&
                     x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
-                .Take(RPDEPageSize);
+                .Take(RpdePageSize);
 
                 var query = db
                     .SelectMulti<OrderTable, SellerTable, OrderItemsTable>(q)
