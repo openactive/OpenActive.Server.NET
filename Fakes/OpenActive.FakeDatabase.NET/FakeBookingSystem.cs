@@ -481,7 +481,17 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid && !x.Deleted);
+                OrderTable order = null;
+                if (customerCancelled)
+                {
+                    order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid && !x.Deleted);
+                }
+                else
+                {
+                    // When seller cancels only uuid is sent.
+                    order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+                }
+
                 if (order != null)
                 {
                     if (sellerId.HasValue && order.SellerId != sellerId)
@@ -489,12 +499,27 @@ namespace OpenActive.FakeDatabase.NET
                         throw new ArgumentException("SellerId does not match Order");
                     }
                     List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
-                    foreach (OrderItemsTable orderItem in db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && orderItemIds.Contains(x.Id)))
+                    List<OrderItemsTable> orderItems = null;
+
+                    if (customerCancelled)
+                    {
+                        orderItems = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && orderItemIds.Contains(x.Id));
+                    }
+                    else
+                    {
+                        orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+                    }
+
+                    foreach (OrderItemsTable orderItem in orderItems)
                     {
                         if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Attended)
                         {
                             updatedOrderItems.Add(orderItem);
                             orderItem.Status = customerCancelled ? BookingStatus.CustomerCancelled : BookingStatus.SellerCancelled;
+                            if (orderItem.Status == BookingStatus.SellerCancelled)
+                            {
+                                orderItem.CancellationMessage = "Order canceled by seller";
+                            }
                             db.Save(orderItem);
                         }
                     }

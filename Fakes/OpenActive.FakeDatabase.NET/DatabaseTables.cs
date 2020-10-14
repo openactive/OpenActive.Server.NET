@@ -70,6 +70,7 @@ namespace OpenActive.FakeDatabase.NET
         public long? SlotId { get; set; }
 
         public BookingStatus Status { get; set; }
+        public string CancellationMessage { get; set; }
         public decimal Price { get; set; }
     }
 
