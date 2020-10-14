@@ -5,6 +5,7 @@ using OpenActive.FakeDatabase.NET;
 using System;
 using ServiceStack.OrmLite;
 using System.Collections.Generic;
+using System.Data;
 
 namespace OpenActive.FakeDatabase.NET.Test
 {
@@ -56,11 +57,10 @@ namespace OpenActive.FakeDatabase.NET.Test
 
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
-                using (var transaction = db.OpenTransaction())
+                using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
                 {
                     db.Insert(testSeller);
-                    //transaction.Complete();
-                    transaction.Dispose();
+                    // Note transaction.Commit(); not called
                 }
 
                 var count = db.Select<SellerTable>().Where(x => x.Id == testSeller.Id).Count();
@@ -82,7 +82,7 @@ namespace OpenActive.FakeDatabase.NET.Test
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
                 var now = DateTime.Now; // Note date must be stored as local time, not UTC
-                var testOccurrence = new OccurrenceTable() { Start = now };
+                var testOccurrence = new OccurrenceTable() { Start = now, ClassId = 1 };
 
                 var testOccurrenceId = db.Insert(testOccurrence, true);
 
@@ -113,12 +113,13 @@ namespace OpenActive.FakeDatabase.NET.Test
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
+                var uuid = "8265ab72-d458-40aa-a460-a9619e13192c";
                 decimal price = 1.3M;
-                var testOrder = new OrderTable() { OrderId = "8265ab72-d458-40aa-a460-a9619e13192c", TotalOrderPrice = price };
+                var testOrder = new OrderTable() { OrderId = uuid, SellerId = 1, TotalOrderPrice = price };
 
-                var testOrderId = db.Insert(testOrder, true);
+                db.Insert(testOrder, true);
 
-                OrderTable order = db.SingleById<OrderTable>(testOrderId);
+                OrderTable order = db.SingleById<OrderTable>(uuid);
 
                 Assert.Equal(price, order.TotalOrderPrice);
             }

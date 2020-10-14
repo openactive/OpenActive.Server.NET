@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>OpenActive.FakeDatabase.NET</AssemblyName>
     <RootNamespace>OpenActive.FakeDatabase.NET</RootNamespace>
     <PackageId>OpenActive.FakeDatabase.NET</PackageId>
@@ -31,9 +31,17 @@
   <ItemGroup>
     <PackageReference Include="Bogus" Version="28.4.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="ServiceStack.OrmLite.Sqlite" Version="5.9.2" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.113.1" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Data">
+      <Version>5.9.2</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <NoWarn>1701;1702;1591</NoWarn>
+  </PropertyGroup>
 
 </Project>
