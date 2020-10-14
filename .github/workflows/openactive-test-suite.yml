@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        seller: ['single-seller', 'multiple-sellers']
+        seller: ['multiple-sellers', 'single-seller']
 
     steps:
     - name: Checkout OpenActive.Server.NET
@@ -74,7 +74,7 @@ jobs:
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
       with:
-        name: test-output-random
+        name: test-output-random-${{ matrix.seller }}
         path: ./tests/output/random/
 
     - name: Run OpenActive Integration Tests in Controlled Mode
@@ -92,7 +92,7 @@ jobs:
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
       with:
-        name: test-output-controlled
+        name: test-output-controlled-${{ matrix.seller }}
         path: ./tests/output/controlled/
 
     - name: Deploy certificate to GitHub Pages (master branch for multiple-sellers only)
