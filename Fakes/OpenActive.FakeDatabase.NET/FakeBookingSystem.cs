@@ -695,34 +695,39 @@ namespace OpenActive.FakeDatabase.NET
 
         private static void CreateFakeFacilitiesAndSlots(IDbConnection db)
         {
+            var now = DateTime.Now;
+
+            DateTime? GetStartDateIfAfter10Minutes(DateTime startDate) =>
+                startDate - now > TimeSpan.FromMinutes(10) ? startDate : (DateTime?)null;
+
             var slots = Enumerable.Range(10, OpportunityCount * 10)
-                .Select(id => new
+                .Select(slotId => new
                 {
-                    Id = id,
+                    Id = slotId,
                     StartDate = Faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
                     TotalUses = Faker.Random.Int(0, 8)
                 })
-                .Select(t => new SlotTable
+                .Select(slot => new SlotTable
                 {
-                    FacilityUseId = decimal.ToInt32(t.Id / 10M),
-                    Id = t.Id,
+                    FacilityUseId = decimal.ToInt32(slot.Id / 10M),
+                    Id = slot.Id,
                     Deleted = false,
-                    Start = t.StartDate,
-                    End = t.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                    MaximumUses = t.TotalUses,
-                    RemainingUses = t.TotalUses,
+                    Start = slot.StartDate,
+                    End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                    MaximumUses = slot.TotalUses,
+                    RemainingUses = slot.TotalUses,
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     RequiresApproval = Faker.Random.Bool(),
-                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(
-                        Faker.Random.Bool() ? Faker.Random.Bool() : (bool?)null,
-                        t.StartDate)
+                    ValidFromBeforeStartDate = GenerateValidFromBeforeStartDate(
+                        GenerateRandomValueForIsWithinBookingRange(),
+                        GetStartDateIfAfter10Minutes(slot.StartDate))
                 })
                 .ToList();
 
             var facilities = Enumerable.Range(1, OpportunityCount)
-                .Select(id => new FacilityUseTable
+                .Select(facilityId => new FacilityUseTable
                 {
-                    Id = id,
+                    Id = facilityId,
                     Deleted = false,
                     Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
                     SellerId = Faker.Random.Bool() ? 1 : 3
@@ -735,44 +740,48 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateFakeClasses(IDbConnection db)
         {
-            var now = DateTime.Now;
-            var occurrencesMap = Enumerable.Range(10, OpportunityCount * 10)
-                .Select(id => new
+            var occurrencesByClass = Enumerable.Range(10, OpportunityCount * 10)
+                .Select(occurrenceId => new
                 {
-                    Id = id,
-                    StartDate = Faker.Date.Between(now.AddMinutes(10), now.AddDays(10)).Truncate(TimeSpan.FromSeconds(1)),
+                    Id = occurrenceId,
+                    StartDate = Faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
                     TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
                 })
-                .Select(t => new OccurrenceTable
+                .Select(occurrence => new OccurrenceTable
                 {
-                    ClassId = decimal.ToInt32(t.Id / 10M),
-                    Id = t.Id,
+                    ClassId = decimal.ToInt32(occurrence.Id / 10M),
+                    Id = occurrence.Id,
                     Deleted = false,
-                    Start = t.StartDate,
-                    End = t.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                    TotalSpaces = t.TotalSpaces,
-                    RemainingSpaces = t.TotalSpaces
+                    Start = occurrence.StartDate,
+                    End = occurrence.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                    TotalSpaces = occurrence.TotalSpaces,
+                    RemainingSpaces = occurrence.TotalSpaces
                 })
-                .ToDictionary(o => o.Id, o => o);
-            var occurrences = occurrencesMap.Values.ToList();
+                .GroupBy(t => t.ClassId).ToArray();
+
+            var now = DateTime.Now;
+            DateTime? GetStartDateOfFirstOccurrenceAfter10Minutes(int classId) => occurrencesByClass
+                .Single(grouping => grouping.Key == classId)
+                .FirstOrDefault(occurrence => occurrence.Start - now > TimeSpan.FromMinutes(10))?
+                .Start;
 
             var classes = Enumerable.Range(1, OpportunityCount)
-                .Select(id => new ClassTable
+                .Select(classId => new ClassTable
                 {
-                    Id = id,
+                    Id = classId,
                     Deleted = false,
                     Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     RequiresApproval = Faker.Random.Bool(),
                     SellerId = Faker.Random.Long(1, 3),
-                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(
-                        Faker.Random.Bool() ? Faker.Random.Bool() : (bool?)null,
-                        occurrencesMap[id * 10].Start /* the start date from the corresponding occurrence */)
+                    ValidFromBeforeStartDate = GenerateValidFromBeforeStartDate(
+                        GenerateRandomValueForIsWithinBookingRange(),
+                        GetStartDateOfFirstOccurrenceAfter10Minutes(classId))
                 })
                 .ToList();
 
             db.InsertAll(classes);
-            db.InsertAll(occurrences);
+            db.InsertAll(occurrencesByClass.SelectMany(grouping => grouping));
         }
 
         public static void CreateSellers(IDbConnection db)
@@ -792,13 +801,11 @@ namespace OpenActive.FakeDatabase.NET
             string title,
             decimal? price,
             long totalSpaces,
-            DateTimeOffset? startTime = null,
-            DateTimeOffset? endTime = null,
             bool requiresApproval = false,
             bool? validFromStartDate = null)
         {
-            startTime = startTime ?? DateTimeOffset.Now.AddDays(1);
-            endTime = endTime ?? DateTimeOffset.Now.AddDays(1).AddHours(1);
+            var startTime = DateTimeOffset.Now.AddDays(1);
+            var endTime = DateTimeOffset.Now.AddDays(1).AddHours(1);
 
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
@@ -811,7 +818,7 @@ namespace OpenActive.FakeDatabase.NET
                     Price = price,
                     SellerId = sellerId ?? 1,
                     RequiresApproval = requiresApproval,
-                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(validFromStartDate, startTime.Value.DateTime)
+                    ValidFromBeforeStartDate = GenerateValidFromBeforeStartDate(validFromStartDate, startTime.DateTime)
                 };
                 db.Save(@class);
 
@@ -820,8 +827,8 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     ClassId = @class.Id,
-                    Start = startTime.Value.DateTime,
-                    End = endTime.Value.DateTime,
+                    Start = startTime.DateTime,
+                    End = endTime.DateTime,
                     TotalSpaces = totalSpaces,
                     RemainingSpaces = totalSpaces
                 };
@@ -839,13 +846,11 @@ namespace OpenActive.FakeDatabase.NET
             string title,
             decimal? price,
             long totalUses,
-            DateTimeOffset? startTime = null,
-            DateTimeOffset? endTime = null,
             bool requiresApproval = false,
             bool? validFromStartDate = null)
         {
-            startTime = startTime ?? DateTimeOffset.Now.AddDays(1);
-            endTime = endTime ?? DateTimeOffset.Now.AddDays(1).AddHours(1);
+            var startTime = DateTimeOffset.Now.AddDays(1);
+            var endTime = DateTimeOffset.Now.AddDays(1).AddHours(1);
 
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
@@ -864,13 +869,13 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     FacilityUseId = facility.Id,
-                    Start = startTime.Value.DateTime,
-                    End = endTime.Value.DateTime,
+                    Start = startTime.DateTime,
+                    End = endTime.DateTime,
                     MaximumUses = totalUses,
                     RemainingUses = totalUses,
                     Price = price,
                     RequiresApproval = requiresApproval,
-                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(validFromStartDate, startTime.Value.DateTime)
+                    ValidFromBeforeStartDate = GenerateValidFromBeforeStartDate(validFromStartDate, startTime.DateTime)
                 };
                 db.Save(slot);
 
@@ -903,23 +908,34 @@ namespace OpenActive.FakeDatabase.NET
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
         }
-        private static TimeSpan? ValidFromBeforeStartDate(bool? validFromBeforeStartDate, DateTime startDate)
+
+        /// <returns>True, false or null. (Null means we won't set IsWithinBookingRange.)</returns>
+        private static bool? GenerateRandomValueForIsWithinBookingRange()
         {
-            if (!validFromBeforeStartDate.HasValue)
+            return Faker.Random.Bool() ? Faker.Random.Bool() : (bool?)null;
+        }
+
+        /// <returns>
+        /// Null if either of the parameters is not set (meaning we won't set IsWithinBookingRange),
+        /// otherwise a TimeSpan before or after now.
+        /// </returns>
+        private static TimeSpan? GenerateValidFromBeforeStartDate(bool? isWithinBookingRange, DateTime? startDate)
+        {
+            if (!isWithinBookingRange.HasValue || !startDate.HasValue)
                 return null;
 
             var now = DateTime.Now;
-            switch (validFromBeforeStartDate)
+            switch (isWithinBookingRange)
             {
                 case true:
-                    // validFromBeforeStartDate is yesterday (inside range)
-                    return startDate - now + TimeSpan.FromDays(1);
-                case false when startDate.Date == now.Date:
-                    // validFromBeforeStartDate is in 10 minutes (outside range) - offer must be at least 10 minutes in the future (see CreateFakeClasses)
-                    return startDate - now - TimeSpan.FromMinutes(5);
+                    // inside range: validFromBeforeStartDate is yesterday
+                    return startDate.Value - now + TimeSpan.FromDays(1);
+                case false when startDate.Value.Date == now.Date:
+                    // outside range: validFromBeforeStartDate is in 5 minutes (offer must be at least 10 minutes in the future - see CreateFakeClasses)
+                    return startDate.Value - now - TimeSpan.FromMinutes(5);
                 case false:
-                    // validFromBeforeStartDate is tomorrow (outside range)
-                    return startDate - now - TimeSpan.FromDays(1);
+                    // outside range: validFromBeforeStartDate is tomorrow
+                    return startDate.Value - now - TimeSpan.FromDays(1);
             }
 
             throw new NotSupportedException();
