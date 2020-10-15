@@ -386,6 +386,17 @@ namespace BookingSystem
                         foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
                         {
                             ctx.SetOrderItemId(flowContext, id);
+
+                            // Setting the access code after booking.
+                            ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
+                            {
+                                new PropertyValue()
+                                {
+                                    Name = "Pin Code",
+                                    Description = "1234",
+                                    Value = "defaultValue" // needed to pass validation check.
+                                }
+                            };
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

@@ -71,6 +71,12 @@ namespace OpenActive.FakeDatabase.NET
 
         public BookingStatus Status { get; set; }
         public decimal Price { get; set; }
+        public AccessCode AccessCode {get; set;}
+    }
+
+    public class AccessCode {
+        public string Name { get; set; }
+        public string Description { get; set; }
     }
 
     [CompositeIndex(nameof(Modified), nameof(OrderId))]
