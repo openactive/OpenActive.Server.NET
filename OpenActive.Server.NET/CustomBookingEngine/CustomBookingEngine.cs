@@ -90,13 +90,13 @@ namespace OpenActive.Server.NET.CustomBooking
             }
 
             // Note that this library does not currently support custom Orders Feed URLs
-            var ordersFeedUrl = new Uri(openBookingAPIBaseUrl.ToString() + "orders-rpde");
+            var ordersFeedUrl = new Uri(openBookingAPIBaseUrl.ToString() + "/orders-rpde");
             settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, ordersFeedUrl);
 
             settings.SellerStore.SetConfiguration(settings.SellerIdTemplate);
 
             // Create a dictionary of RPDEFeedGenerator indexed by FeedPath
-            this.feedLookup = settings.OpenDataFeeds.Values.ToDictionary(x => x.FeedPath);
+            this.feedLookup = settings.OpenDataFeeds.Values.ToDictionary(x => x.FeedPath.TrimStart('/'));
 
             // Set supportedFeeds locally for use by dataset site
             this.supportedFeeds = settings.OpenDataFeeds.Keys.ToList();
@@ -121,7 +121,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         private DatasetSiteGeneratorSettings datasetSettings = null;
         private readonly BookingEngineSettings settings;
-        private Dictionary<string, IOpportunityDataRPDEFeedGenerator> feedLookup;
+        private Dictionary<string, IOpportunityDataRpdeFeedGenerator> feedLookup;
         private List<OpportunityType> supportedFeeds;
         private Uri openDataFeedBaseUrl;
         private Uri openBookingAPIBaseUrl;
@@ -207,9 +207,9 @@ namespace OpenActive.Server.NET.CustomBooking
         {
             if (openDataFeedBaseUrl == null) throw new NotSupportedException("GetOpenDataRPDEPageForFeed is only supported if an OpenDataFeedBaseUrl and BookingEngineSettings.OpenDataFeed is supplied to the IBookingEngine");
 
-            if (feedLookup.TryGetValue(feedname, out IOpportunityDataRPDEFeedGenerator generator))
+            if (feedLookup.TryGetValue(feedname, out IOpportunityDataRpdeFeedGenerator generator))
             {
-                return generator.GetRPDEPage(feedname, afterTimestamp, afterId, afterChangeNumber);
+                return generator.GetRpdePage(feedname, afterTimestamp, afterId, afterChangeNumber);
             } else
             {
                 throw new OpenBookingException(new NotFoundError(), $"OpportunityTypeConfiguration for '{feedname}' not found.");
@@ -264,7 +264,7 @@ namespace OpenActive.Server.NET.CustomBooking
             if (settings.OrderFeedGenerator != null)
             {
                 // Add lookup against clientId and pass this into generator?
-                return settings.OrderFeedGenerator.GetRPDEPage(clientId, afterTimestamp, afterId, afterChangeNumber);
+                return settings.OrderFeedGenerator.GetRpdePage(clientId, afterTimestamp, afterId, afterChangeNumber);
             }
             else
             {

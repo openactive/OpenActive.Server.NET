@@ -7,7 +7,7 @@ using OpenActive.NET.Rpde.Version1;
 // TODO: Consolidate this logic with RpdeBase.cs to remove duplication (using generics?)
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
-    public abstract class OrdersRPDEFeedGenerator : OrdersModelSupport, IRPDEFeedGenerator
+    public abstract class OrdersRPDEFeedGenerator : OrdersModelSupport, IRpdeFeedGenerator
     {
         public int RPDEPageSize { get; private set; }
 
@@ -29,21 +29,21 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         internal OrdersRPDEFeedGenerator() { }
     }
 
-    public abstract class OrdersRPDEFeedIncrementingUniqueChangeNumber : OrdersRPDEFeedGenerator, IRPDEOrdersFeedIncrementingUniqueChangeNumber
+    public abstract class OrdersRPDEFeedIncrementingUniqueChangeNumber : OrdersRPDEFeedGenerator, IRpdeOrdersFeedIncrementingUniqueChangeNumber
     {
         protected abstract List<RpdeItem> GetRPDEItems(string clientId, long? afterChangeNumber);
 
-        public RpdePage GetOrdersRPDEPage(string clientId, long? afterChangeNumber)
+        public RpdePage GetOrdersRpdePage(string clientId, long? afterChangeNumber)
         {
             return new RpdePage(this.FeedUrl, afterChangeNumber, GetRPDEItems(clientId, afterChangeNumber));
         }
     }
 
-    public abstract class OrdersRPDEFeedModifiedTimestampAndID : OrdersRPDEFeedGenerator, IRPDEOrdersFeedModifiedTimestampAndIDString
+    public abstract class OrdersRPDEFeedModifiedTimestampAndID : OrdersRPDEFeedGenerator, IRpdeOrdersFeedModifiedTimestampAndIdString
     {
         protected abstract List<RpdeItem> GetRPDEItems(string clientId, long? afterTimestamp, string afterId);
 
-        public RpdePage GetOrdersRPDEPage(string clientId, long? afterTimestamp, string afterId)
+        public RpdePage GetOrdersRpdePage(string clientId, long? afterTimestamp, string afterId)
         {
             if ((!afterTimestamp.HasValue && !string.IsNullOrWhiteSpace(afterId)) ||
                 (afterTimestamp.HasValue && string.IsNullOrWhiteSpace(afterId)))
