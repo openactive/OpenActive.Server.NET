@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Bogus;
+using OpenActive.FakeDatabase.NET.Helpers;
 using ServiceStack.OrmLite;
 
 namespace OpenActive.FakeDatabase.NET
@@ -695,19 +696,16 @@ namespace OpenActive.FakeDatabase.NET
 
         private static void CreateFakeFacilitiesAndSlots(IDbConnection db)
         {
-            var now = DateTime.Now;
-
-            DateTime? GetStartDateIfAfter10Minutes(DateTime startDate) =>
-                startDate - now > TimeSpan.FromMinutes(10) ? startDate : (DateTime?)null;
+            var eventStarts = GenerateStartDetails(OpportunityCount * 10);
 
             var slots = Enumerable.Range(10, OpportunityCount * 10)
-                .Select(slotId => new
+                .Select((slotId, i) => new
                 {
                     Id = slotId,
-                    StartDate = Faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
+                    eventStarts[i].StartDate,
                     TotalUses = Faker.Random.Int(0, 8)
                 })
-                .Select(slot => new SlotTable
+                .Select((slot, i) => new SlotTable
                 {
                     FacilityUseId = decimal.ToInt32(slot.Id / 10M),
                     Id = slot.Id,
@@ -718,9 +716,7 @@ namespace OpenActive.FakeDatabase.NET
                     RemainingUses = slot.TotalUses,
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     RequiresApproval = Faker.Random.Bool(),
-                    ValidFromBeforeStartDate = GenerateValidFromBeforeStartDate(
-                        GenerateRandomValueForIsWithinBookingRange(),
-                        GetStartDateIfAfter10Minutes(slot.StartDate))
+                    ValidFromBeforeStartDate = eventStarts[i].ValidFromBeforeStartDate
                 })
                 .ToList();
 
@@ -740,30 +736,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateFakeClasses(IDbConnection db)
         {
-            var occurrencesByClass = Enumerable.Range(10, OpportunityCount * 10)
-                .Select(occurrenceId => new
-                {
-                    Id = occurrenceId,
-                    StartDate = Faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
-                    TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
-                })
-                .Select(occurrence => new OccurrenceTable
-                {
-                    ClassId = decimal.ToInt32(occurrence.Id / 10M),
-                    Id = occurrence.Id,
-                    Deleted = false,
-                    Start = occurrence.StartDate,
-                    End = occurrence.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                    TotalSpaces = occurrence.TotalSpaces,
-                    RemainingSpaces = occurrence.TotalSpaces
-                })
-                .GroupBy(t => t.ClassId).ToArray();
-
-            var now = DateTime.Now;
-            DateTime? GetStartDateOfFirstOccurrenceAfter10Minutes(int classId) => occurrencesByClass
-                .Single(grouping => grouping.Key == classId)
-                .FirstOrDefault(occurrence => occurrence.Start - now > TimeSpan.FromMinutes(10))?
-                .Start;
+            var eventStarts = GenerateStartDetails(OpportunityCount);
 
             var classes = Enumerable.Range(1, OpportunityCount)
                 .Select(classId => new ClassTable
@@ -774,14 +747,30 @@ namespace OpenActive.FakeDatabase.NET
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     RequiresApproval = Faker.Random.Bool(),
                     SellerId = Faker.Random.Long(1, 3),
-                    ValidFromBeforeStartDate = GenerateValidFromBeforeStartDate(
-                        GenerateRandomValueForIsWithinBookingRange(),
-                        GetStartDateOfFirstOccurrenceAfter10Minutes(classId))
+                    ValidFromBeforeStartDate = eventStarts[classId - 1].ValidFromBeforeStartDate
                 })
                 .ToList();
 
+            var occurrences = Enumerable.Range(10, OpportunityCount * 10)
+                .Select(occurrenceId => new
+                {
+                    Id = occurrenceId,
+                    ClassId = decimal.ToInt32(occurrenceId / 10M),
+                    TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
+                })
+                .Select(occurrence => new OccurrenceTable
+                {
+                    ClassId = occurrence.ClassId,
+                    Id = occurrence.Id,
+                    Deleted = false,
+                    Start = eventStarts[occurrence.ClassId - 1].StartDate,
+                    End = eventStarts[occurrence.ClassId - 1].StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                    TotalSpaces = occurrence.TotalSpaces,
+                    RemainingSpaces = occurrence.TotalSpaces
+                });
+
             db.InsertAll(classes);
-            db.InsertAll(occurrencesByClass.SelectMany(grouping => grouping));
+            db.InsertAll(occurrences);
         }
 
         public static void CreateSellers(IDbConnection db)
@@ -909,19 +898,19 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        /// <returns>True, false or null. (Null means we won't set IsWithinBookingRange.)</returns>
-        private static bool? GenerateRandomValueForIsWithinBookingRange()
-        {
-            return Faker.Random.Bool() ? Faker.Random.Bool() : (bool?)null;
-        }
-
+        /// <summary>
+        /// Used to generate deterministic (non-random) data.
+        /// </summary>
         /// <returns>
-        /// Null if either of the parameters is not set (meaning we won't set IsWithinBookingRange),
+        /// Null if isWithinBookingRange is not set (meaning we won't set ValidFromBeforeStartDate),
         /// otherwise a TimeSpan before or after now.
         /// </returns>
-        private static TimeSpan? GenerateValidFromBeforeStartDate(bool? isWithinBookingRange, DateTime? startDate)
+        private static TimeSpan? GenerateValidFromBeforeStartDate(bool? isWithinBookingRange, DateTime startDate)
         {
-            if (!isWithinBookingRange.HasValue || !startDate.HasValue)
+            if (startDate < DateTime.Now)
+                throw new ArgumentException("startDate must be in the past");
+
+            if (!isWithinBookingRange.HasValue)
                 return null;
 
             var now = DateTime.Now;
@@ -929,16 +918,75 @@ namespace OpenActive.FakeDatabase.NET
             {
                 case true:
                     // inside range: validFromBeforeStartDate is yesterday
-                    return startDate.Value - now + TimeSpan.FromDays(1);
-                case false when startDate.Value.Date == now.Date:
+                    return startDate - now + TimeSpan.FromDays(1);
+                case false when startDate.Date == now.Date:
                     // outside range: validFromBeforeStartDate is in 5 minutes (offer must be at least 10 minutes in the future - see CreateFakeClasses)
-                    return startDate.Value - now - TimeSpan.FromMinutes(5);
+                    return startDate - now - TimeSpan.FromMinutes(5);
                 case false:
                     // outside range: validFromBeforeStartDate is tomorrow
-                    return startDate.Value - now - TimeSpan.FromDays(1);
+                    return startDate - now - TimeSpan.FromDays(1);
             }
 
             throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Used to generate random data.
+        /// </summary>
+        private static List<StartDetails> GenerateStartDetails(int count)
+        {
+            Bounds[] bucketDefinitions =
+            {
+                // in next 0-10 days, no validFromBeforeStartDate
+                new Bounds(0, 10),
+                new Bounds(0, 10),
+                // in next 0-10 days, validFromBeforeStartDate between 10-15 days (all bookable)
+                new Bounds(0, 10),
+                new Bounds(0, 10),
+                // in next -2-+6 days, validFromBeforeStartDate 0-4 days (over half likely bookable, some likely bookable but in the past)
+                new Bounds(-2, 6),
+                // in next 5-10 days, validFromBeforeStartDate between 0-4 days (none bookable)
+                new Bounds(5, 10)
+            };
+
+            var buckets = Faker.GenerateIntegerDistribution(count, bucketDefinitions);
+            var eventStarts = new List<StartDetails>();
+
+            var bucket1 = buckets.Take(2).SelectMany(x => x).ToArray();
+            eventStarts.AddRange(
+                bucket1.Select(offset => new StartDetails(offset, null)));
+
+            var bucket2 = buckets.Skip(2).Take(2).SelectMany(x => x).ToArray();
+            eventStarts.AddRange(
+                bucket2.Select(offset => new StartDetails(offset, Faker.Random.Int(0, 10))));
+
+            var bucket3 = buckets.Skip(4).First();
+            eventStarts.AddRange(
+                bucket3.Select(offset => new StartDetails(offset, Faker.Random.Int(0, 4))));
+
+            var bucket4 = buckets.Skip(5).First();
+            eventStarts.AddRange(
+                bucket4.Select(offset => new StartDetails(offset, Faker.Random.Int(0, 4))));
+
+            return eventStarts;
+        }
+
+        private readonly struct StartDetails
+        {
+            private readonly int? validFromBeforeStartDateOffset;
+            private readonly int startDateOffset;
+
+            public StartDetails(int startDateOffset, int? validFromBeforeStartDateOffset)
+            {
+                this.startDateOffset = startDateOffset;
+                this.validFromBeforeStartDateOffset = validFromBeforeStartDateOffset;
+            }
+
+            public DateTime StartDate => DateTime.Now.AddDays(startDateOffset);
+
+            public TimeSpan? ValidFromBeforeStartDate => validFromBeforeStartDateOffset.HasValue
+                ? TimeSpan.FromDays(validFromBeforeStartDateOffset.Value)
+                : (TimeSpan?)null;
         }
     }
 }
