@@ -736,7 +736,9 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateFakeClasses(IDbConnection db)
         {
-            var eventStarts = GenerateStartDetails(OpportunityCount);
+            var eventStarts = Enumerable.Range(1, OpportunityCount).ToDictionary(classId =>
+                (long)classId,
+                classId => GenerateStartOffsets(10).SelectMany(x => x).ToArray());
 
             var classes = Enumerable.Range(1, OpportunityCount)
                 .Select(classId => new ClassTable
@@ -747,27 +749,27 @@ namespace OpenActive.FakeDatabase.NET
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     RequiresApproval = Faker.Random.Bool(),
                     SellerId = Faker.Random.Long(1, 3),
-                    ValidFromBeforeStartDate = eventStarts[classId - 1].ValidFromBeforeStartDate
+                    ValidFromBeforeStartDate = Faker.Random.Bool(2f/3) ? TimeSpan.FromDays(eventStarts[classId].Average()) : (TimeSpan?)null
                 })
                 .ToList();
 
-            var occurrences = Enumerable.Range(10, OpportunityCount * 10)
-                .Select(occurrenceId => new
-                {
-                    Id = occurrenceId,
-                    ClassId = decimal.ToInt32(occurrenceId / 10M),
-                    TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
-                })
-                .Select(occurrence => new OccurrenceTable
-                {
-                    ClassId = occurrence.ClassId,
-                    Id = occurrence.Id,
-                    Deleted = false,
-                    Start = eventStarts[occurrence.ClassId - 1].StartDate,
-                    End = eventStarts[occurrence.ClassId - 1].StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                    TotalSpaces = occurrence.TotalSpaces,
-                    RemainingSpaces = occurrence.TotalSpaces
-                });
+            var occurrences = classes.Select((@class, occurrenceId) =>
+                Enumerable.Range(0, 10).Select(occurrenceIndex =>
+                    new
+                    {
+                        Start = DateTime.Now.AddDays(eventStarts[@class.Id][occurrenceIndex]),
+                        TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
+                    })
+                    .Select(occurrence => new OccurrenceTable
+                    {
+                        Id = occurrenceId++,
+                        ClassId = @class.Id,
+                        Deleted = false,
+                        Start = occurrence.Start,
+                        End = occurrence.Start + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                        TotalSpaces = occurrence.TotalSpaces,
+                        RemainingSpaces = occurrence.TotalSpaces
+                    })).SelectMany(os => os);
 
             db.InsertAll(classes);
             db.InsertAll(occurrences);
@@ -930,10 +932,7 @@ namespace OpenActive.FakeDatabase.NET
             throw new NotSupportedException();
         }
 
-        /// <summary>
-        /// Used to generate random data.
-        /// </summary>
-        private static List<StartDetails> GenerateStartDetails(int count)
+        private static IReadOnlyList<IReadOnlyList<int>> GenerateStartOffsets(int count)
         {
             Bounds[] bucketDefinitions =
             {
@@ -949,7 +948,15 @@ namespace OpenActive.FakeDatabase.NET
                 new Bounds(5, 10)
             };
 
-            var buckets = Faker.GenerateIntegerDistribution(count, bucketDefinitions);
+            return Faker.GenerateIntegerDistribution(count, bucketDefinitions);
+        }
+
+        /// <summary>
+        /// Used to generate random data.
+        /// </summary>
+        private static List<StartDetails> GenerateStartDetails(int count)
+        {
+            var buckets = GenerateStartOffsets(count);
             var eventStarts = new List<StartDetails>();
 
             var bucket1 = buckets.Take(2).SelectMany(x => x).ToArray();
