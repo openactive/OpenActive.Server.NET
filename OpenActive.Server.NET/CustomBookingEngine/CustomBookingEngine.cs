@@ -90,13 +90,13 @@ namespace OpenActive.Server.NET.CustomBooking
             }
 
             // Note that this library does not currently support custom Orders Feed URLs
-            var ordersFeedUrl = new Uri(openBookingAPIBaseUrl.ToString() + "orders-rpde");
+            var ordersFeedUrl = new Uri(openBookingAPIBaseUrl.ToString() + "/orders-rpde");
             settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, ordersFeedUrl);
 
             settings.SellerStore.SetConfiguration(settings.SellerIdTemplate);
 
             // Create a dictionary of RPDEFeedGenerator indexed by FeedPath
-            this.feedLookup = settings.OpenDataFeeds.Values.ToDictionary(x => x.FeedPath);
+            this.feedLookup = settings.OpenDataFeeds.Values.ToDictionary(x => x.FeedPath.TrimStart('/'));
 
             // Set supportedFeeds locally for use by dataset site
             this.supportedFeeds = settings.OpenDataFeeds.Keys.ToList();
