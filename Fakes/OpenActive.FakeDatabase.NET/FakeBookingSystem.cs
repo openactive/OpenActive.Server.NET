@@ -735,11 +735,12 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateFakeClasses(IDbConnection db)
         {
+            var now = DateTime.Now;
             var occurrencesMap = Enumerable.Range(10, OpportunityCount * 10)
                 .Select(id => new
                 {
                     Id = id,
-                    StartDate = Faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
+                    StartDate = Faker.Date.Between(now.AddMinutes(10), now.AddDays(10)).Truncate(TimeSpan.FromSeconds(1)),
                     TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
                 })
                 .Select(t => new OccurrenceTable
@@ -911,13 +912,13 @@ namespace OpenActive.FakeDatabase.NET
             switch (validFromBeforeStartDate)
             {
                 case true:
-                    // validFromBeforeStartDate is yesterday (so we're inside the range)
+                    // validFromBeforeStartDate is yesterday (inside range)
                     return startDate - now + TimeSpan.FromDays(1);
                 case false when startDate.Date == now.Date:
-                    // validFromBeforeStartDate is in one hour (so we're outside the range) - offer must be at least two hours in the future
-                    return startDate - now - TimeSpan.FromHours(1);
+                    // validFromBeforeStartDate is in 10 minutes (outside range) - offer must be at least 10 minutes in the future (see CreateFakeClasses)
+                    return startDate - now - TimeSpan.FromMinutes(5);
                 case false:
-                    // validFromBeforeStartDate is tomorrow (so we're outside the range)
+                    // validFromBeforeStartDate is tomorrow (outside range)
                     return startDate - now - TimeSpan.FromDays(1);
             }
 
