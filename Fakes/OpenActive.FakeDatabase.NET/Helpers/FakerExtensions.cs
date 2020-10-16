@@ -9,7 +9,7 @@ namespace OpenActive.FakeDatabase.NET.Helpers
             this Faker faker, int size, IReadOnlyList<Bounds> bucketDefinitions)
         {
             var itemsPerBucket = size / bucketDefinitions.Count;
-            var remainder = size - itemsPerBucket * bucketDefinitions.Count;
+            var remainder = size % bucketDefinitions.Count;
 
             var buckets = new List<List<int>>();
             for (var i = 0; i < bucketDefinitions.Count; i++)
