@@ -477,7 +477,7 @@ namespace OpenActive.FakeDatabase.NET
 
         }
 
-        public bool CancelOrderItems(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled)
+        public bool CancelOrderItems(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled, bool includeCancellationMessage = false)
         {
             using (var db = Mem.Database.Open())
             {
@@ -516,7 +516,7 @@ namespace OpenActive.FakeDatabase.NET
                         {
                             updatedOrderItems.Add(orderItem);
                             orderItem.Status = customerCancelled ? BookingStatus.CustomerCancelled : BookingStatus.SellerCancelled;
-                            if (orderItem.Status == BookingStatus.SellerCancelled)
+                            if (includeCancellationMessage)
                             {
                                 orderItem.CancellationMessage = "Order canceled by seller";
                             }
