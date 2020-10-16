@@ -366,7 +366,7 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, orderItemIds) = FakeDatabase.BookOrderItemsForFacilitySlot(
+                var (result, orderItemIds, pinCodes) = FakeDatabase.BookOrderItemsForFacilitySlot(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -381,10 +381,12 @@ namespace BookingSystem
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
-                        // Set OrderItemId for each orderItemContext
-                        foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
+                        var orderItemIdsAndPinCodes = orderItemIds.Zip(pinCodes, (id, pinCode) => (id, pinCode));
+                        
+                        // Set OrderItemId for each orderItemContext and set access codes for response order item.
+                        foreach (var (ctx, idPinCodePair) in ctxGroup.Zip(orderItemIdsAndPinCodes, (ctx, idPinCodePair) => (ctx, idPinCodePair)))
                         {
-                            ctx.SetOrderItemId(flowContext, id);
+                            ctx.SetOrderItemId(flowContext, idPinCodePair.id);
 
                             // Setting the access code after booking.
                             ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
@@ -392,7 +394,7 @@ namespace BookingSystem
                                 new PropertyValue()
                                 {
                                     Name = "Pin Code",
-                                    Description = "1234",
+                                    Description = idPinCodePair.pinCode,
                                     Value = "defaultValue"
                                 }
                             };
@@ -427,7 +429,7 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, _) = FakeDatabase.BookOrderItemsForFacilitySlot(
+                var (result, _, _) = FakeDatabase.BookOrderItemsForFacilitySlot(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
