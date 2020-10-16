@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using ServiceStack.DataAnnotations;
 using ServiceStack.OrmLite;
 
 namespace OpenActive.FakeDatabase.NET
 {
-
     public enum BrokerRole { AgentBroker, ResellerBroker, NoBroker }
 
     public enum BookingStatus { None, CustomerCancelled, SellerCancelled, Confirmed, Attended, Proposed }
@@ -17,14 +12,13 @@ namespace OpenActive.FakeDatabase.NET
 
     public enum OrderMode { Lease, Proposal, Booking }
 
-
     [CompositeIndex(nameof(Modified), nameof(Id))]
     public abstract class Table
     {
         [PrimaryKey]
         [AutoIncrement]
         public long Id { get; set; }
-        public bool Deleted { get; set; } = false;
+        public bool Deleted { get; set; }
         public long Modified { get; set; } = DateTimeOffset.Now.UtcTicks;
     }
 
@@ -38,9 +32,8 @@ namespace OpenActive.FakeDatabase.NET
         public long SellerId { get; set; }
         public decimal? Price { get; set; }
         public bool RequiresApproval { get; set; }
+        public TimeSpan? ValidFromBeforeStartDate { get; set; }
     }
-
-
 
     public class OccurrenceTable : Table
     {
@@ -86,7 +79,7 @@ namespace OpenActive.FakeDatabase.NET
         [PrimaryKey]
         public string OrderId { get; set; }
 
-        public bool Deleted { get; set; } = false;
+        public bool Deleted { get; set; }
         public long Modified { get; set; } = DateTimeOffset.Now.UtcTicks;
         public string ClientId { get; set; }
 
@@ -127,6 +120,7 @@ namespace OpenActive.FakeDatabase.NET
         public long RemainingUses { get; set; }
         public decimal? Price { get; set; }
         public bool RequiresApproval { get; set; }
+        public TimeSpan? ValidFromBeforeStartDate { get; set; }
     }
 
     public class FacilityUseTable : Table

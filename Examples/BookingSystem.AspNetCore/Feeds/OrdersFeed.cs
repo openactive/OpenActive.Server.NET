@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenActive.Server.NET.OpenBookingHelper;
-using System.Threading.Tasks;
 using OpenActive.NET.Rpde.Version1;
 using OpenActive.NET;
 using OpenActive.FakeDatabase.NET;
@@ -10,7 +9,7 @@ using ServiceStack.OrmLite;
 
 namespace BookingSystem
 {
-    public class AcmeOrdersFeedRPDEGenerator : OrdersRPDEFeedModifiedTimestampAndID
+    public class AcmeOrdersFeedRpdeGenerator : OrdersRPDEFeedModifiedTimestampAndID
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
@@ -23,30 +22,35 @@ namespace BookingSystem
                 .Join<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
                 .OrderBy(x => x.Modified)
                 .ThenBy(x => x.OrderId)
-                .Where(x => x.VisibleInFeed && x.ClientId == clientId && (!afterTimestamp.HasValue || x.Modified > afterTimestamp ||
-                        (x.Modified == afterTimestamp && string.Compare(afterId, x.OrderId) > 0)) && x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
-                .Take(this.RPDEPageSize);
+                .Where(x =>
+                    x.VisibleInFeed && x.ClientId == clientId && (
+                        !afterTimestamp.HasValue ||
+                        x.Modified > afterTimestamp ||
+                        x.Modified == afterTimestamp &&
+                        string.Compare(afterId, x.OrderId, StringComparison.InvariantCulture) > 0) &&
+                    x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
+                .Take(RPDEPageSize);
 
                 var query = db
                     .SelectMulti<OrderTable, SellerTable, OrderItemsTable>(q)
                     .GroupBy(x => new { x.Item1.OrderId })
-                    .Select((result) => new
+                    .Select(result => new
                     {
-                        OrderTable = result.Select(item => new { item.Item1 }).FirstOrDefault().Item1,
-                        Seller = result.Select(item => new { item.Item2 }).FirstOrDefault().Item2,
+                        OrderTable = result.Select(item => new { item.Item1 }).FirstOrDefault()?.Item1,
+                        Seller = result.Select(item => new { item.Item2 }).FirstOrDefault()?.Item2,
                         OrderItemsTable = result.Select(item => new { item.Item3 }).ToList().Select(orderItem => orderItem.Item3).ToList()
                     })
-                    .Select((result) => new RpdeItem
+                    .Select(result => new RpdeItem
                     {
                         Kind = RpdeKind.Order,
                         Id = result.OrderTable.OrderId,
                         Modified = result.OrderTable.Modified,
                         State = result.OrderTable.Deleted ? RpdeState.Deleted : RpdeState.Updated,
                         Data = result.OrderTable.Deleted ? null :
-                            AcmeOrderStore.RenderOrderFromDatabaseResult(this.RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
-                                result.OrderItemsTable.Select((orderItem) => new OrderItem
+                            AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
+                                result.OrderItemsTable.Select(orderItem => new OrderItem
                                 {
-                                    Id = result.OrderTable.OrderMode == OrderMode.Booking ? this.RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id) : null,
+                                    Id = result.OrderTable.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id) : null,
                                     AcceptedOffer = new Offer
                                     {
                                         Id = new Uri(orderItem.OfferJsonLdId),
