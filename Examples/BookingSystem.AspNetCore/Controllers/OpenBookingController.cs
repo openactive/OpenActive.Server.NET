@@ -243,33 +243,29 @@ namespace BookingSystem.AspNetCore.Controllers
             }
         }
 
-        /// <summary>
-        /// Catch-all endpoint for requests to non-existent endpoints.
-        /// This method catches requests with JSON bodies (e.g. PUT requests).
-        ///
-        /// There needs to be a method for with and without JSON bodies,
-        /// otherwise ASP.NET will return a 415 Unsupported Media Type for a
-        /// non-matching request.
-        /// </summary>
-        [Route("{*url}")]
-        public IActionResult UnknownEndpointWithBody([FromServices] IBookingEngine bookingEngine, [FromBody] string json)
+        [Route("error/{code:int}")]
+        public IActionResult Error(int code)
         {
-            var error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
-            return error.ErrorResponseContent.GetContentResult();
-        }
+            OpenBookingException error;
+            switch (code)
+            {
+                case 404:
+                    error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
+                    break;
+                case 405:
+                    error = new OpenBookingException(new MethodNotAllowedError());
+                    break;
+                case 429:
+                    error = new OpenBookingException(new TooManyRequestsError());
+                    break;
+                case 403:
+                    error = new OpenBookingException(new UnauthenticatedError());
+                    break;
+                default:
+                    error = new OpenBookingException(new OpenBookingError()); // InternalApplicationError
+                    break;
+            }
 
-        /// <summary>
-        /// Catch-all endpoint for requests to non-existent endpoints.
-        /// This method catches requests without JSON bodies (e.g. GET requests).
-        ///
-        /// There needs to be a method for with and without JSON bodies,
-        /// otherwise ASP.NET will return a 415 Unsupported Media Type for a
-        /// non-matching request.
-        /// </summary>
-        [Route("{*url}")]
-        public IActionResult UnknownEndpointWithoutBody([FromServices] IBookingEngine bookingEngine)
-        {
-            var error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
             return error.ErrorResponseContent.GetContentResult();
         }
     }
