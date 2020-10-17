@@ -264,7 +264,7 @@ namespace BookingSystem.AspNetCore.Controllers
                     error = new OpenBookingException(new UnauthenticatedError());
                     break;
                 default:
-                    error = new OpenBookingException(new InternalApplicationError());
+                    error = new InternalOpenBookingException(new InternalApplicationError());
                     break;
             }
 
