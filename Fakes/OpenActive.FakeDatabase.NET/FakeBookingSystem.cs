@@ -806,8 +806,8 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresApproval = false,
             bool? validFromStartDate = null)
         {
-            var startTime = DateTimeOffset.Now.AddDays(1);
-            var endTime = DateTimeOffset.Now.AddDays(1).AddHours(1);
+            var startTime = DateTime.Now.AddDays(1);
+            var endTime = DateTime.Now.AddDays(1).AddHours(1);
 
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
@@ -820,7 +820,9 @@ namespace OpenActive.FakeDatabase.NET
                     Price = price,
                     SellerId = sellerId ?? 1,
                     RequiresApproval = requiresApproval,
-                    ValidFromBeforeStartDate = GenerateValidFromBeforeStartDate(validFromStartDate, startTime.DateTime)
+                    ValidFromBeforeStartDate = validFromStartDate.HasValue
+                        ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
+                        : (TimeSpan?)null
                 };
                 db.Save(@class);
 
@@ -829,8 +831,8 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     ClassId = @class.Id,
-                    Start = startTime.DateTime,
-                    End = endTime.DateTime,
+                    Start = startTime,
+                    End = endTime,
                     TotalSpaces = totalSpaces,
                     RemainingSpaces = totalSpaces
                 };
@@ -851,8 +853,8 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresApproval = false,
             bool? validFromStartDate = null)
         {
-            var startTime = DateTimeOffset.Now.AddDays(1);
-            var endTime = DateTimeOffset.Now.AddDays(1).AddHours(1);
+            var startTime = DateTime.Now.AddDays(1);
+            var endTime = DateTime.Now.AddDays(1).AddHours(1);
 
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
@@ -871,13 +873,15 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     FacilityUseId = facility.Id,
-                    Start = startTime.DateTime,
-                    End = endTime.DateTime,
+                    Start = startTime,
+                    End = endTime,
                     MaximumUses = totalUses,
                     RemainingUses = totalUses,
                     Price = price,
                     RequiresApproval = requiresApproval,
-                    ValidFromBeforeStartDate = GenerateValidFromBeforeStartDate(validFromStartDate, startTime.DateTime)
+                    ValidFromBeforeStartDate =  validFromStartDate.HasValue
+                        ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
+                        : (TimeSpan?)null
                 };
                 db.Save(slot);
 
@@ -909,38 +913,6 @@ namespace OpenActive.FakeDatabase.NET
                 db.UpdateOnly(() => new SlotTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
-        }
-
-        /// <summary>
-        /// Used to generate deterministic (non-random) data.
-        /// </summary>
-        /// <returns>
-        /// Null if isWithinBookingRange is not set (meaning we won't set ValidFromBeforeStartDate),
-        /// otherwise a TimeSpan before or after now.
-        /// </returns>
-        private static TimeSpan? GenerateValidFromBeforeStartDate(bool? isWithinBookingRange, DateTime startDate)
-        {
-            if (startDate < DateTime.Now)
-                throw new ArgumentException("startDate must be in the past");
-
-            if (!isWithinBookingRange.HasValue)
-                return null;
-
-            var now = DateTime.Now;
-            switch (isWithinBookingRange)
-            {
-                case true:
-                    // inside range: validFromBeforeStartDate is yesterday
-                    return startDate - now + TimeSpan.FromDays(1);
-                case false when startDate.Date == now.Date:
-                    // outside range: validFromBeforeStartDate is in 5 minutes (offer must be at least 10 minutes in the future - see CreateFakeClasses)
-                    return startDate - now - TimeSpan.FromMinutes(5);
-                case false:
-                    // outside range: validFromBeforeStartDate is tomorrow
-                    return startDate - now - TimeSpan.FromDays(1);
-            }
-
-            throw new NotSupportedException();
         }
 
         private static readonly Bounds[] BucketDefinitions =
