@@ -246,6 +246,8 @@ namespace BookingSystem.AspNetCore.Controllers
         [Route("error/{code:int}")]
         public IActionResult Error(int code)
         {
+            // ToDo: port this to .NET Framework implementation (https://stackoverflow.com/a/12019203/3645045)
+
             OpenBookingException error;
             switch (code)
             {
