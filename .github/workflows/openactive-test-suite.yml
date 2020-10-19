@@ -38,10 +38,14 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
+        
+    - name: Setup MSBuild.exe
+      uses: warrenbuckley/Setup-MSBuild@v1
+      if: ${{ matrix.os == 'windows-latest' }}
 
-    - name: Install OpenActive.Server.NET dependencies
+    - name: Install OpenActive.Server.NET dependencies	
       run: dotnet restore ./server/
-      
+      if: ${{ matrix.os == 'ubuntu-latest' }}
     - name: Build OpenActive.Server.NET Reference Implementation
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
       if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -52,12 +56,15 @@ jobs:
         UseSingleSellerMode: ${{ matrix.seller != 'multiple-sellers' }}
       if: ${{ matrix.os == 'ubuntu-latest' }}
         
+    - name: Install OpenActive.Server.NET dependencies	
+      run: msbuild ./server/Examples/BookingSystem.AspNetCore/ /t:restore
+      if: ${{ matrix.os == 'windows-latest' }}
     - name: Build OpenActive.Server.NET Reference Implementation
-      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetFramework.csproj --configuration Release --no-restore
+      run: dotnet build ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release -p:VSToolsPath=''
       if: ${{ matrix.os == 'windows-latest' }}
     - name: Start OpenActive.Server.NET Reference Implementation
       run: |
-        dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetFramework.csproj --configuration Release --no-build &
+        dotnet run --project ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release --no-build &
       env:
         UseSingleSellerMode: ${{ matrix.seller != 'multiple-sellers' }}
       if: ${{ matrix.os == 'windows-latest' }}
@@ -71,17 +78,17 @@ jobs:
         if ${{ matrix.seller != 'multiple-sellers' }};
         then
             echo 'Single Seller Mode'
-            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "http://localhost:5000/api/identifiers/seller", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/seller" } } }'
+            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/seller", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/seller" } } }'
         else
             echo 'Multiple Seller Mode'
-            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "http://localhost:5000/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "http://localhost:5000/api/identifiers/sellers/3" } }'
+            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } }'
         fi
     - name: Run OpenActive Integration Tests in Random Mode
       run: npm start
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          { "outputPath": "../../output/random/", "datasetSiteUrl": "http://localhost:5000/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": true, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": false }
+          { "outputPath": "../../output/random/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": true, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": false }
         NODE_ENV: 
       working-directory: tests
     - name: Upload test output for Random Mode as artifact
