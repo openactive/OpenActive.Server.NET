@@ -21,13 +21,13 @@ namespace BookingSystem.AspNetFramework
         {
             config.Formatters.Add(new OpenBookingInputFormatter());
 
-            const string BaseUrl = "https://localhost:44349/";
+            const string baseUrl = "http://localhost:5000/";
 
             var services = new ServiceCollection();
             services.AddTransient<DatasetSiteController>();
             services.AddTransient<OpenDataController>();
             services.AddTransient<OpenBookingController>();
-            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(BaseUrl));
+            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(baseUrl, false));
 
             var resolver = new DependencyResolver(services.BuildServiceProvider(true));
             config.DependencyResolver = resolver;
