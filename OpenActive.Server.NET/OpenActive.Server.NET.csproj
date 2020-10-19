@@ -32,12 +32,7 @@
     </PackageReference>
     <PackageReference Include="OpenActive.DatasetSite.NET" Version="4.0.1" />
     <PackageReference Include="OpenActive.NET" Version="12.5.3" />
-    <PackageReference Include="ServiceStack.OrmLite" Version="5.9.2" />
     <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="ServiceStack.OrmLite.Core" Version="5.9.2" />
   </ItemGroup>
 
   <PropertyGroup>
