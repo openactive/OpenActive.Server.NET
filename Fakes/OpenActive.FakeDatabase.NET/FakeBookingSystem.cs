@@ -33,7 +33,6 @@ namespace OpenActive.FakeDatabase.NET
 
         public InMemorySQLite()
         {
-            NativeLibraryHack.DoHack();
             // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
             const string connectionString = @"C:\Users\Luke\git\openactive\OpenActive.Server.NET\fakedatabase.db";
             Database = new OrmLiteConnectionFactory(connectionString, SqliteDialect.Provider);
