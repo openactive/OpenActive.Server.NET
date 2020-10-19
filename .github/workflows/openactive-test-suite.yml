@@ -56,7 +56,7 @@ jobs:
       run: msbuild /t:restore ./server/
       if: ${{ matrix.os == 'windows-latest' }}
     - name: Build OpenActive.Server.NET Reference Implementation
-      run: dotnet build ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release
+      run: dotnet build ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release --no-restore
       if: ${{ matrix.os == 'windows-latest' }}
     - name: Start OpenActive.Server.NET Reference Implementation
       run: |
