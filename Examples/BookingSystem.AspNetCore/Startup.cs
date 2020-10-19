@@ -47,7 +47,7 @@ namespace BookingSystem.AspNetCore
 
             //QUESTION: Should all these be configured here? Are we using the pattern correctly?
             //https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/dependency-injection?view=aspnetcore-3.0
-            string BaseUrl = Configuration["ApplicationHostBaseUrl"] ?? "http://localhost:5000";
+            string BaseUrl = Configuration["ApplicationHostBaseUrl"] ?? "https://localhost:5001";
             // Configuration for the reference implementation to be used in either mode, for testing purposes.
             // Note that both modes do not need to be supported by in an actual implmentation.
             bool UseSingleSellerMode = Configuration["UseSingleSellerMode"] == "true";
