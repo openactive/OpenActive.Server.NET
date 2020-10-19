@@ -57,7 +57,7 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-latest' }}
         
     - name: Install OpenActive.Server.NET dependencies	
-      run: msbuild ./server/Examples/BookingSystem.AspNetCore/ /t:restore
+      run: msbuild ./server/Examples/BookingSystem.AspNetCore/ /t:restore /p:RestoreUseSkipNonexistentTargets=true
       if: ${{ matrix.os == 'windows-latest' }}
     - name: Build OpenActive.Server.NET Reference Implementation
       run: dotnet build ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release --no-restore
