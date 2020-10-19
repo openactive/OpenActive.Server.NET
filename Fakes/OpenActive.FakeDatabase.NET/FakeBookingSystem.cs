@@ -357,8 +357,14 @@ namespace OpenActive.FakeDatabase.NET
 
         }
 
+        public struct BookedOrderItemInfo
+        {
+            public long OrderItemId{ get; set; }
+            public string PinCode { get; set; }
+        }
+
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
-        public static (ReserveOrderItemsResult, List<long>, List<string>) BookOrderItemsForClassOccurrence(
+        public static (ReserveOrderItemsResult, List<BookedOrderItemInfo>) BookOrderItemsForClassOccurrence(
             FakeDatabaseTransaction transaction,
             string clientId,
             long? sellerId,
@@ -375,13 +381,13 @@ namespace OpenActive.FakeDatabase.NET
             var thisClass = db.Single<ClassTable>(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
 
             if (thisOccurrence == null || thisClass == null)
-                return (ReserveOrderItemsResult.OpportunityNotFound, null, null);
+                return (ReserveOrderItemsResult.OpportunityNotFound, null);
 
             if (sellerId.HasValue && thisClass.SellerId != sellerId)
-                return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
+                return (ReserveOrderItemsResult.SellerIdMismatch, null);
 
             if (DateTime.Now < thisOccurrence.Start - thisClass.ValidFromBeforeStartDate)
-                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null, null);
+                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null);
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
@@ -390,10 +396,9 @@ namespace OpenActive.FakeDatabase.NET
 
             // Only lease if all spaces requested are available
             if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces < numberOfSpaces)
-                return (ReserveOrderItemsResult.NotEnoughCapacity, null, null);
+                return (ReserveOrderItemsResult.NotEnoughCapacity, null);
 
-            var orderItemIds = new List<long>();
-            var pinCodes = new List<string>();
+            var bookedOrderItemInfos = new List<BookedOrderItemInfo>();
             for (var i = 0; i < numberOfSpaces; i++)
             {
                 var orderItem = new OrderItemsTable
@@ -411,16 +416,19 @@ namespace OpenActive.FakeDatabase.NET
                     PinCode = Faker.Random.String(6, minChar: '0', maxChar:'9')
                 };
                 db.Save(orderItem);
-                orderItemIds.Add(orderItem.Id);
-                pinCodes.Add(orderItem.PinCode);
+                bookedOrderItemInfos.Add(new BookedOrderItemInfo
+                {
+                    OrderItemId = orderItem.Id,
+                    PinCode = orderItem.PinCode
+                });
             }
 
             RecalculateSpaces(db, thisOccurrence);
-            return (ReserveOrderItemsResult.Success, orderItemIds, pinCodes);
+            return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
         }
 
         // TODO this should reuse code of LeaseOrderItemsForFacilityOccurrence
-        public static (ReserveOrderItemsResult, List<long>, List<string>) BookOrderItemsForFacilitySlot(
+        public static (ReserveOrderItemsResult, List<BookedOrderItemInfo>) BookOrderItemsForFacilitySlot(
             FakeDatabaseTransaction transaction,
             string clientId,
             long? sellerId,
@@ -437,13 +445,13 @@ namespace OpenActive.FakeDatabase.NET
             var thisFacility = db.Single<FacilityUseTable>(x => x.Id == thisSlot.FacilityUseId && !x.Deleted);
 
             if (thisSlot == null || thisFacility == null)
-                return (ReserveOrderItemsResult.OpportunityNotFound, null, null);
+                return (ReserveOrderItemsResult.OpportunityNotFound, null);
 
             if (sellerId.HasValue && thisFacility.SellerId != sellerId)
-                return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
+                return (ReserveOrderItemsResult.SellerIdMismatch, null);
 
             if (DateTime.Now < thisSlot.Start - thisSlot.ValidFromBeforeStartDate)
-                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null, null);
+                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null);
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
@@ -452,10 +460,9 @@ namespace OpenActive.FakeDatabase.NET
 
             // Only lease if all spaces requested are available
             if (thisSlot.RemainingUses - thisSlot.LeasedUses < numberOfSpaces)
-                return (ReserveOrderItemsResult.NotEnoughCapacity, null, null);
+                return (ReserveOrderItemsResult.NotEnoughCapacity, null);
 
-            var orderItemIds = new List<long>();
-            var pinCodes = new List<string>();
+            var bookedOrderItemInfos = new List<BookedOrderItemInfo>();
             for (var i = 0; i < numberOfSpaces; i++)
             {
                 var orderItem = new OrderItemsTable
@@ -473,12 +480,15 @@ namespace OpenActive.FakeDatabase.NET
                     PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9')
                 };
                 db.Save(orderItem);
-                orderItemIds.Add(orderItem.Id);
-                pinCodes.Add(orderItem.PinCode);
+                bookedOrderItemInfos.Add(new BookedOrderItemInfo
+                {
+                    OrderItemId = orderItem.Id,
+                    PinCode = orderItem.PinCode
+                });
             }
 
             RecalculateSlotUses(db, thisSlot);
-            return (ReserveOrderItemsResult.Success, orderItemIds, pinCodes);
+            return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
 
         }
 
