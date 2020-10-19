@@ -71,17 +71,17 @@ jobs:
         if ${{ matrix.seller != 'multiple-sellers' }};
         then
             echo 'Single Seller Mode'
-            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "http://localhost:5000/api/identifiers/seller", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/seller" } } }'
+            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/seller", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/seller" } } }'
         else
             echo 'Multiple Seller Mode'
-            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "http://localhost:5000/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "http://localhost:5000/api/identifiers/sellers/3" } }'
+            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } }'
         fi
     - name: Run OpenActive Integration Tests in Random Mode
       run: npm start
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          { "outputPath": "../../output/random/", "datasetSiteUrl": "http://localhost:5000/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": true, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": false }
+          { "outputPath": "../../output/random/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": true, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": false }
         NODE_ENV: 
       working-directory: tests
     - name: Upload test output for Random Mode as artifact
