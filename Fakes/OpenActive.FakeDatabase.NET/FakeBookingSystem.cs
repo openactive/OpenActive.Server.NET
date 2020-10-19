@@ -406,7 +406,8 @@ namespace OpenActive.FakeDatabase.NET
                     OpportunityJsonLdId = opportunityJsonLdId,
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
-                    Price = thisClass.Price.Value
+                    Price = thisClass.Price.Value,
+                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25)
                 };
                 db.Save(orderItem);
                 orderItemIds.Add(orderItem.Id);
@@ -465,7 +466,8 @@ namespace OpenActive.FakeDatabase.NET
                     OpportunityJsonLdId = opportunityJsonLdId,
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
-                    Price = thisSlot.Price.Value
+                    Price = thisSlot.Price.Value,
+                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25)
                 };
                 
                 db.Save(orderItem);

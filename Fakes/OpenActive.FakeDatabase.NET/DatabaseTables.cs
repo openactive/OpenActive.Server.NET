@@ -71,6 +71,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public BookingStatus Status { get; set; }
         public decimal Price { get; set; }
+        public string ImageUrl { get; set; }
     }
 
     [CompositeIndex(nameof(Modified), nameof(OrderId))]
