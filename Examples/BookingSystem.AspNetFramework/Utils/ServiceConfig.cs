@@ -21,7 +21,7 @@ namespace BookingSystem.AspNetFramework
         {
             config.Formatters.Add(new OpenBookingInputFormatter());
 
-            const string baseUrl = "http://localhost:5000/";
+            const string baseUrl = "http://localhost:5000";
 
             var services = new ServiceCollection();
             services.AddTransient<DatasetSiteController>();
