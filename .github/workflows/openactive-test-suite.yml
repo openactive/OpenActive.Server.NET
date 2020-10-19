@@ -39,11 +39,8 @@ jobs:
       with:
         node-version: 12.x
 
-    - name: Install OpenActive.Server.NET dependencies
-      run: dotnet restore ./server/
-      
     - name: Build OpenActive.Server.NET Reference Implementation
-      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release
       if: ${{ matrix.os == 'ubuntu-latest' }}
     - name: Start OpenActive.Server.NET Reference Implementation
       run: |
@@ -53,7 +50,7 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-latest' }}
         
     - name: Build OpenActive.Server.NET Reference Implementation
-      run: dotnet build ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release --no-restore
+      run: dotnet build ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release
       if: ${{ matrix.os == 'windows-latest' }}
     - name: Start OpenActive.Server.NET Reference Implementation
       run: |
