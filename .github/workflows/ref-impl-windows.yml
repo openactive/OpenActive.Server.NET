@@ -1,0 +1,99 @@
+name: OpenActive Reference Implementation (.NET Framework)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  openactive-test-suite:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout OpenActive.Server.NET
+      uses: actions/checkout@v2
+      with:
+        path: server
+    - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
+      if: ${{ startsWith(github.head_ref, 'coverage/') }}
+      run: echo "::set-env name=mirror_ref::${{ github.head_ref }}"
+    - name: Checkout OpenActive Test Suite ${{ env.mirror_ref }}
+      uses: actions/checkout@v2
+      with:
+        repository: openactive/openactive-test-suite
+        ref: ${{ env.mirror_ref }}
+        path: tests
+
+    - name: Setup .NET Core 2.1.808
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.1.808
+    - name: Setup Node.js 12.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+        
+    - name: Setup MSBuild path
+      uses: microsoft/setup-msbuild@v1.0.1
+      with:
+        vs-version: "[16.4,16.9)"
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.2
+    
+    - name: Restore NuGet packages
+      run: nuget restore .\server\
+
+    - name: Build
+      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release
+
+    - name: Start OpenActive.Server.NET Reference Implementation
+      run: |
+        dotnet run --project ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release --no-build &
+      env:
+        UseSingleSellerMode: false
+
+    - name: Install OpenActive Test Suite
+      run: npm install
+      working-directory: tests
+    - name: Setup Seller Config
+      id: select-seller-mode
+      run: |
+        if ${{ matrix.seller != 'multiple-sellers' }};
+        then
+            echo 'Single Seller Mode'
+            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/seller", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/seller" } } }'
+        else
+            echo 'Multiple Seller Mode'
+            echo '::set-output name=config::'
+        fi
+    - name: Run OpenActive Integration Tests in Random Mode
+      run: npm start
+      env:
+        FORCE_COLOR: 1
+        NODE_CONFIG: |
+          { "outputPath": "../../output/random/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": true, "implementedFeatures": { "multiple-sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } } }, "generateConformanceCertificate": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
+        NODE_ENV: 
+      working-directory: tests
+    - name: Upload test output for Random Mode as artifact
+      uses: actions/upload-artifact@v2
+      if: ${{ success() || failure() }}
+      with:
+        name: test-output-framework-random
+        path: ./tests/output/random/
+
+    - name: Run OpenActive Integration Tests in Controlled Mode
+      run: npm start
+      env:
+        FORCE_COLOR: 1
+        NODE_CONFIG: |
+          { "outputPath": "../../output/controlled/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": false, "implementedFeatures": { "multiple-sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } } }, "generateConformanceCertificate": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
+        NODE_ENV: 
+      working-directory: tests
+    - name: Upload test output for Controlled Mode as artifact
+      uses: actions/upload-artifact@v2
+      if: ${{ success() || failure() }}
+      with:
+        name: test-output-framework-controlled
+        path: ./tests/output/controlled/
