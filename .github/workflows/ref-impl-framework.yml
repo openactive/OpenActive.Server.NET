@@ -56,12 +56,9 @@ jobs:
       with:
         name: framework-webapp
         path: .\deploy\
-
-    - name: Start OpenActive.Server.NET Reference Implementation
-      run: |
-        dotnet run --project .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj --configuration Release --no-build
-      env:
-        UseSingleSellerMode: false
+        
+    - name: Run
+      run: iisexpress /path:.\deploy\ /port:5000
 
     - name: Install OpenActive Test Suite
       run: npm install
