@@ -2,19 +2,16 @@
 using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Threading.Tasks;
 using System.Web.Http;
+using OpenActive.NET;
 
 namespace BookingSystem.AspNetFramework.Controllers
 {
     [RoutePrefix("api/openbooking")]
     public class OpenBookingController : ApiController
     {
-        private IBookingEngine _bookingEngine = null;
+        private readonly IBookingEngine _bookingEngine;
 
         public OpenBookingController(IBookingEngine bookingEngine)
         {
@@ -52,6 +49,25 @@ namespace BookingSystem.AspNetFramework.Controllers
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
                 return _bookingEngine.ProcessCheckpoint2(clientId, sellerId, uuid, orderQuote).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+
+        /// <summary>
+        /// OrderProposal Creation P
+        /// GET api/openbooking/order-proposals/ABCD1234
+        /// </summary>
+        [HttpPut()]
+        [Route("order-proposals/{uuid}")]
+        public HttpResponseMessage OrderProposalCreationP(string uuid, [FromBody] string orderProposal)
+        {
+            try
+            {
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.ProcessOrderProposalCreationP(clientId, sellerId, uuid, orderProposal).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -136,6 +152,25 @@ namespace BookingSystem.AspNetFramework.Controllers
             }
         }
 
+        /// <summary>
+        /// OrderProposal Update
+        /// PATCH api/openbooking/order-proposals/ABCD1234
+        /// </summary>
+        [HttpPatch()]
+        [Route("order-proposals/{uuid}")]
+        public HttpResponseMessage OrderProposalUpdate(string uuid, [FromBody] string order)
+        {
+            try
+            {
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+
         // GET api/openbooking/orders-rpde
         [HttpGet]
         [Route("orders-rpde")]
@@ -199,6 +234,33 @@ namespace BookingSystem.AspNetFramework.Controllers
             {
                 return obe.ErrorResponseContent.GetContentResult();
             }
+        }
+
+        [HttpGet]
+        [Route("error/{code}")]
+        public HttpResponseMessage Error(int code)
+        {
+            OpenBookingException error;
+            switch (code)
+            {
+                case 404:
+                    error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
+                    break;
+                case 405:
+                    error = new OpenBookingException(new MethodNotAllowedError());
+                    break;
+                case 429:
+                    error = new OpenBookingException(new TooManyRequestsError());
+                    break;
+                case 403:
+                    error = new OpenBookingException(new UnauthenticatedError());
+                    break;
+                default:
+                    error = new InternalOpenBookingException(new InternalApplicationError());
+                    break;
+            }
+
+            return error.ErrorResponseContent.GetContentResult();
         }
     }
 }

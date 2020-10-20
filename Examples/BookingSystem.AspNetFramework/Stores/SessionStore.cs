@@ -367,7 +367,7 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, orderItemIds) = FakeDatabase.BookOrderItemsForClassOccurrence(
+                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForClassOccurrence(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -378,14 +378,24 @@ namespace BookingSystem
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
                     false);
-                
+
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
                         // Set OrderItemId for each orderItemContext
-                        foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
+                        foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
-                            ctx.SetOrderItemId(flowContext, id);
+                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+                            // Setting the access code after booking.
+                            ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
+                            {
+                                new PropertyValue()
+                                {
+                                    Name = "Pin Code",
+                                    Description = bookedOrderItemInfo.PinCode,
+                                    Value = "defaultValue"
+                                }
+                            };
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
