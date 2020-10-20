@@ -387,7 +387,7 @@ namespace BookingSystem
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
                             
-                            // Setting the access code after booking.
+                            // Setting the access code and access pass after booking.
                             ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                             {
                                 new PropertyValue()
@@ -395,6 +395,14 @@ namespace BookingSystem
                                     Name = "Pin Code",
                                     Description = bookedOrderItemInfo.PinCode,
                                     Value = "defaultValue"
+                                }
+                            };
+
+                            ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
+                            {
+                                new ImageObject()
+                                {
+                                    Url = new Uri(bookedOrderItemInfo.ImageUrl)
                                 }
                             };
                         }
