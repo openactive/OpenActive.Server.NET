@@ -361,6 +361,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             public long OrderItemId{ get; set; }
             public string PinCode { get; set; }
+            public string ImageUrl { get; set; }
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
@@ -413,14 +414,15 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisClass.Price.Value,
-                    PinCode = Faker.Random.String(6, minChar: '0', maxChar:'9')
+                    PinCode = Faker.Random.String(6, minChar: '0', maxChar:'9'),
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25)
                 };
                 db.Save(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
                     OrderItemId = orderItem.Id,
-                    PinCode = orderItem.PinCode
+                    PinCode = orderItem.PinCode,
+                    ImageUrl = orderItem.ImageUrl
                 });
             }
 
@@ -478,14 +480,15 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisSlot.Price.Value,
-                    PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9')
+                    PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9'),
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25)
                 };
                 db.Save(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
                     OrderItemId = orderItem.Id,
-                    PinCode = orderItem.PinCode
+                    PinCode = orderItem.PinCode,
+                    ImageUrl = orderItem.ImageUrl
                 });
             }
 
