@@ -49,16 +49,16 @@ jobs:
       run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release
 
     - name: Publish to folder
-      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release /p:DeployOnBuild=true /t:WebPublish /p:WebPublishMethod=FileSystem /p:publishUrl=.\deploy\ /p:PackageAsSingleFile=false
+      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release /p:DeployOnBuild=true /t:WebPublish /p:WebPublishMethod=FileSystem /p:publishUrl=${{ runner.temp }}\deploy\ /p:PackageAsSingleFile=false
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v1.0.0
       with:
         name: framework-webapp
-        path: .\deploy\
+        path: ${{ runner.temp }}\deploy\
         
     - name: Run
-      run: iisexpress /path:.\deploy\ /port:5000
+      run: iisexpress /path:${{ runner.temp }}\deploy\ /port:5000
 
     - name: Install OpenActive Test Suite
       run: npm install
