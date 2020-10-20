@@ -49,7 +49,13 @@ jobs:
       run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release
 
     - name: Publish to folder
-      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release /p:DeployOnBuild=true /t:WebPublish /p:WebPublishMethod=FileSystem /p:publishUrl=.\deploy /p:PackageAsSingleFile=false
+      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release /p:DeployOnBuild=true /t:WebPublish /p:WebPublishMethod=FileSystem /p:publishUrl=.\deploy\ /p:PackageAsSingleFile=false
+
+    - name: Publish artifacts
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: framework-webapp
+        path: .\deploy\
 
     - name: Start OpenActive.Server.NET Reference Implementation
       run: |
