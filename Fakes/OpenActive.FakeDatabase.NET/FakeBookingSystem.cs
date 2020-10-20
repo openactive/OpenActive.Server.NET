@@ -4,6 +4,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using Bogus;
+using OpenActive.FakeDatabase.NET.Helpers;
 using ServiceStack.OrmLite;
 
 namespace OpenActive.FakeDatabase.NET
@@ -278,7 +279,7 @@ namespace OpenActive.FakeDatabase.NET
             if (sellerId.HasValue && thisClass.SellerId != sellerId)
                 return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
 
-            if (DateTime.Now < thisOccurrence.Start - thisClass.ValidFromBeforeStartDate)
+            if (thisClass.ValidFromBeforeStartDate.HasValue && DateTime.Now < thisOccurrence.Start - thisClass.ValidFromBeforeStartDate)
                 return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null, null);
 
             // Remove existing leases
@@ -324,7 +325,7 @@ namespace OpenActive.FakeDatabase.NET
             if (sellerId.HasValue && thisFacility.SellerId != sellerId)
                 return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
 
-            if (DateTime.Now < thisSlot.Start - thisSlot.ValidFromBeforeStartDate)
+            if (thisSlot.ValidFromBeforeStartDate.HasValue && DateTime.Now < thisSlot.Start - thisSlot.ValidFromBeforeStartDate)
                 return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null, null);
 
             // Remove existing leases
@@ -356,7 +357,6 @@ namespace OpenActive.FakeDatabase.NET
             // Update number of spaces remaining for the opportunity
             RecalculateSlotUses(db, thisSlot);
             return (ReserveOrderItemsResult.Success, null, null);
-
         }
 
         public struct BookedOrderItemInfo
@@ -389,7 +389,7 @@ namespace OpenActive.FakeDatabase.NET
             if (sellerId.HasValue && thisClass.SellerId != sellerId)
                 return (ReserveOrderItemsResult.SellerIdMismatch, null);
 
-            if (DateTime.Now < thisOccurrence.Start - thisClass.ValidFromBeforeStartDate)
+            if (thisClass.ValidFromBeforeStartDate.HasValue && DateTime.Now < thisOccurrence.Start - thisClass.ValidFromBeforeStartDate)
                 return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null);
 
             // Remove existing leases
@@ -455,7 +455,7 @@ namespace OpenActive.FakeDatabase.NET
             if (sellerId.HasValue && thisFacility.SellerId != sellerId)
                 return (ReserveOrderItemsResult.SellerIdMismatch, null);
 
-            if (DateTime.Now < thisSlot.Start - thisSlot.ValidFromBeforeStartDate)
+            if (thisSlot.ValidFromBeforeStartDate.HasValue && DateTime.Now < thisSlot.Start - thisSlot.ValidFromBeforeStartDate)
                 return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null);
 
             // Remove existing leases
@@ -496,7 +496,6 @@ namespace OpenActive.FakeDatabase.NET
 
             RecalculateSlotUses(db, thisSlot);
             return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
-
         }
 
         public bool CancelOrderItems(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled)
@@ -678,21 +677,21 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void RecalculateSlotUses(IDbConnection db, SlotTable slot)
         {
-            if (slot != null)
-            {
-                // Update number of leased spaces remaining for the opportunity
-                var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.SlotId == slot.Id).Count();
-                slot.LeasedUses = leasedUses;
+            if (slot == null)
+                return;
 
-                // Update number of actual spaces remaining for the opportunity
-                var totalUsesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
-                slot.RemainingUses = slot.MaximumUses - totalUsesTaken;
+            // Update number of leased spaces remaining for the opportunity
+            var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.SlotId == slot.Id).Count();
+            slot.LeasedUses = leasedUses;
 
-                // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) 
-                // TODO: Document this!
-                slot.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(slot);
-            }
+            // Update number of actual spaces remaining for the opportunity
+            var totalUsesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+            slot.RemainingUses = slot.MaximumUses - totalUsesTaken;
+
+            // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition)
+            // TODO: Document this!
+            slot.Modified = DateTimeOffset.Now.UtcTicks;
+            db.Update(slot);
         }
 
         public static void RecalculateSlotUses(IDbConnection db, IEnumerable<long> slotIds)
@@ -706,20 +705,20 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void RecalculateSpaces(IDbConnection db, OccurrenceTable occurrence)
         {
-            if (occurrence != null)
-            {
-                // Update number of leased spaces remaining for the opportunity
-                var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurrence.Id).Count();
-                occurrence.LeasedSpaces = leasedSpaces;
+            if (occurrence == null)
+                return;
 
-                // Update number of actual spaces remaining for the opportunity
-                var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
-                occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
+            // Update number of leased spaces remaining for the opportunity
+            var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurrence.Id).Count();
+            occurrence.LeasedSpaces = leasedSpaces;
 
-                // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
-                occurrence.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(occurrence);
-            }
+            // Update number of actual spaces remaining for the opportunity
+            var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+            occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
+
+            // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
+            occurrence.Modified = DateTimeOffset.Now.UtcTicks;
+            db.Update(occurrence);
         }
 
         public static void RecalculateSpaces(IDbConnection db, IEnumerable<long> occurrenceIds)
@@ -747,31 +746,34 @@ namespace OpenActive.FakeDatabase.NET
 
         private static void CreateFakeFacilitiesAndSlots(IDbConnection db)
         {
+            var eventStarts = GenerateSlotStartDetails(OpportunityCount * 10);
+
             var slots = Enumerable.Range(10, OpportunityCount * 10)
-                .Select(n => new {
-                    Id = n,
-                    StartDate = Faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
+                .Select((slotId, i) => new
+                {
+                    Id = slotId,
+                    eventStarts[i].StartDate,
                     TotalUses = Faker.Random.Int(0, 8)
                 })
-                .Select(x => new SlotTable
+                .Select((slot, i) => new SlotTable
                 {
-                    FacilityUseId = decimal.ToInt32(x.Id / 10M),
-                    Id = x.Id,
+                    FacilityUseId = decimal.ToInt32(slot.Id / 10M),
+                    Id = slot.Id,
                     Deleted = false,
-                    Start = x.StartDate,
-                    End = x.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                    MaximumUses = x.TotalUses,
-                    RemainingUses = x.TotalUses,
+                    Start = slot.StartDate,
+                    End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                    MaximumUses = slot.TotalUses,
+                    RemainingUses = slot.TotalUses,
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     RequiresApproval = Faker.Random.Bool(),
-                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(Faker.Random)
+                    ValidFromBeforeStartDate = eventStarts[i].ValidFromBeforeStartDate
                 })
                 .ToList();
 
             var facilities = Enumerable.Range(1, OpportunityCount)
-                .Select(id => new FacilityUseTable
+                .Select(facilityId => new FacilityUseTable
                 {
-                    Id = id,
+                    Id = facilityId,
                     Deleted = false,
                     Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
                     SellerId = Faker.Random.Bool() ? 1 : 3
@@ -784,36 +786,52 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateFakeClasses(IDbConnection db)
         {
-            var occurrences = Enumerable.Range(10, OpportunityCount * 10)
-            .Select(n => new {
-                Id = n,
-                StartDate = Faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
-                TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
-            })
-            .Select(x => new OccurrenceTable
-            {
-                ClassId = decimal.ToInt32(x.Id / 10M),
-                Id = x.Id,
-                Deleted = false,
-                Start = x.StartDate,
-                End = x.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                TotalSpaces = x.TotalSpaces,
-                RemainingSpaces = x.TotalSpaces
-            })
-            .ToList();
+            var eventStarts = GenerateOccurrenceStartDetails(OpportunityCount).ToArray();
 
             var classes = Enumerable.Range(1, OpportunityCount)
-            .Select(id => new ClassTable
-            {
-                Id = id,
-                Deleted = false,
-                Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
-                Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
-                RequiresApproval = Faker.Random.Bool(),
-                SellerId = Faker.Random.Long(1, 3),
-                ValidFromBeforeStartDate = ValidFromBeforeStartDate(Faker.Random)
-            })
-            .ToList();
+                .Select(classId => new
+                {
+                    Id = classId,
+                    StartDetails = eventStarts[classId - 1]
+                })
+                .Select(@class => new ClassTable
+                {
+                    Id = @class.Id,
+                    Deleted = false,
+                    Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
+                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                    RequiresApproval = Faker.Random.Bool(),
+                    SellerId = Faker.Random.Long(1, 3),
+                    ValidFromBeforeStartDate = @class.StartDetails.HasValidFromBeforeStartDateOffset
+                        ? TimeSpan.FromDays(Faker.Random.Int(
+                            @class.StartDetails.ValidFromBeforeStartDateOffsetMin,
+                            @class.StartDetails.ValidFromBeforeStartDateOffsetMax))
+                        : (TimeSpan?)null
+                })
+                .ToList();
+
+            var occurrences = classes.Select((@class, i) =>
+                Enumerable.Range(0, 10).Select(_ => new
+                    {
+                        StartDetails = eventStarts[@class.Id - 1]
+                    })
+                    .Select(occurrence => new
+                    {
+                        Start = DateTime.Now.AddDays(Faker.Random.Int(
+                            occurrence.StartDetails.StartDateMin,
+                            occurrence.StartDetails.StartDateMax)),
+                        TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
+                    })
+                    .Select(occurrence => new OccurrenceTable
+                    {
+                        Id = i + 1,
+                        ClassId = @class.Id,
+                        Deleted = false,
+                        Start = occurrence.Start,
+                        End = occurrence.Start + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                        TotalSpaces = occurrence.TotalSpaces,
+                        RemainingSpaces = occurrence.TotalSpaces
+                    })).SelectMany(os => os);
 
             db.InsertAll(classes);
             db.InsertAll(occurrences);
@@ -836,13 +854,11 @@ namespace OpenActive.FakeDatabase.NET
             string title,
             decimal? price,
             long totalSpaces,
-            DateTimeOffset? startTime = null,
-            DateTimeOffset? endTime = null,
             bool requiresApproval = false,
             bool? validFromStartDate = null)
         {
-            startTime = startTime ?? DateTimeOffset.Now.AddDays(1);
-            endTime = endTime ?? DateTimeOffset.Now.AddDays(1).AddHours(1);
+            var startTime = DateTime.Now.AddDays(1);
+            var endTime = DateTime.Now.AddDays(1).AddHours(1);
 
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
@@ -855,7 +871,9 @@ namespace OpenActive.FakeDatabase.NET
                     Price = price,
                     SellerId = sellerId ?? 1,
                     RequiresApproval = requiresApproval,
-                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(validFromStartDate, startTime.Value.DateTime)
+                    ValidFromBeforeStartDate = validFromStartDate.HasValue
+                        ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
+                        : (TimeSpan?)null
                 };
                 db.Save(@class);
 
@@ -864,8 +882,8 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     ClassId = @class.Id,
-                    Start = startTime.Value.DateTime,
-                    End = endTime.Value.DateTime,
+                    Start = startTime,
+                    End = endTime,
                     TotalSpaces = totalSpaces,
                     RemainingSpaces = totalSpaces
                 };
@@ -883,13 +901,11 @@ namespace OpenActive.FakeDatabase.NET
             string title,
             decimal? price,
             long totalUses,
-            DateTimeOffset? startTime = null,
-            DateTimeOffset? endTime = null,
             bool requiresApproval = false,
             bool? validFromStartDate = null)
         {
-            startTime = startTime ?? DateTimeOffset.Now.AddDays(1);
-            endTime = endTime ?? DateTimeOffset.Now.AddDays(1).AddHours(1);
+            var startTime = DateTime.Now.AddDays(1);
+            var endTime = DateTime.Now.AddDays(1).AddHours(1);
 
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
@@ -908,13 +924,15 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     FacilityUseId = facility.Id,
-                    Start = startTime.Value.DateTime,
-                    End = endTime.Value.DateTime,
+                    Start = startTime,
+                    End = endTime,
                     MaximumUses = totalUses,
                     RemainingUses = totalUses,
                     Price = price,
                     RequiresApproval = requiresApproval,
-                    ValidFromBeforeStartDate = ValidFromBeforeStartDate(validFromStartDate, startTime.Value.DateTime)
+                    ValidFromBeforeStartDate =  validFromStartDate.HasValue
+                        ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
+                        : (TimeSpan?)null
                 };
                 db.Save(slot);
 
@@ -947,29 +965,121 @@ namespace OpenActive.FakeDatabase.NET
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
         }
-
-        private static TimeSpan? ValidFromBeforeStartDate(Randomizer random)
+        private static readonly Bounds[] BucketDefinitions =
         {
-            return random.Int(1, 5) == 1 ? TimeSpan.FromDays(random.Int(1, 5)) : default(TimeSpan?); // set on 20% of opportunities
+            // in next 0-10 days, no validFromBeforeStartDate
+            new Bounds(0, 10),
+            new Bounds(0, 10),
+            // in next 0-10 days, validFromBeforeStartDate between 10-15 days (all bookable)
+            new Bounds(0, 10),
+            new Bounds(0, 10),
+            // in next -2-+6 days, validFromBeforeStartDate 0-4 days (over half likely bookable, some likely bookable but in the past)
+            new Bounds(-2, 6),
+            // in next 5-10 days, validFromBeforeStartDate between 0-4 days (none bookable)
+            new Bounds(5, 10)
+        };
+
+        /// <summary>
+        /// Used to generate random data.
+        /// </summary>
+        private static List<SlotStartDetails> GenerateSlotStartDetails(int count)
+        {
+            var buckets = Faker.GenerateIntegerDistribution(count, BucketDefinitions);
+            var eventStarts = new List<SlotStartDetails>();
+
+            var bucket1 = buckets.Take(2).SelectMany(x => x).ToArray();
+            eventStarts.AddRange(
+                bucket1.Select(offset => new SlotStartDetails(offset, null)));
+
+            var bucket2 = buckets.Skip(2).Take(2).SelectMany(x => x).ToArray();
+            eventStarts.AddRange(
+                bucket2.Select(offset => new SlotStartDetails(offset, Faker.Random.Int(0, 10))));
+
+            var bucket3 = buckets.Skip(4).First();
+            eventStarts.AddRange(
+                bucket3.Select(offset => new SlotStartDetails(offset, Faker.Random.Int(0, 4))));
+
+            var bucket4 = buckets.Skip(5).First();
+            eventStarts.AddRange(
+                bucket4.Select(offset => new SlotStartDetails(offset, Faker.Random.Int(0, 4))));
+
+            return eventStarts;
         }
 
-        private static TimeSpan? ValidFromBeforeStartDate(bool? validFromBeforeStartDate, DateTime startDate)
+        private readonly struct SlotStartDetails
         {
-            if (!validFromBeforeStartDate.HasValue)
-                return null;
+            private readonly int? validFromBeforeStartDateOffset;
+            private readonly int startDateOffset;
 
-            var now = DateTime.Now;
-            switch (validFromBeforeStartDate)
+            public SlotStartDetails(int startDateOffset, int? validFromBeforeStartDateOffset)
             {
-                case true:
-                    return startDate - now + TimeSpan.FromDays(1);
-                case false when startDate.Date == now.Date:
-                    return TimeSpan.Zero;
-                case false:
-                    return startDate - now - TimeSpan.FromDays(1);
+                this.startDateOffset = startDateOffset;
+                this.validFromBeforeStartDateOffset = validFromBeforeStartDateOffset;
             }
 
-            throw new NotSupportedException();
+            public DateTime StartDate => DateTime.Now.AddDays(startDateOffset);
+
+            public TimeSpan? ValidFromBeforeStartDate => validFromBeforeStartDateOffset.HasValue
+                ? TimeSpan.FromDays(validFromBeforeStartDateOffset.Value)
+                : (TimeSpan?)null;
+        }
+
+        private static List<OccurrenceStartDetails> GenerateOccurrenceStartDetails(int count)
+        {
+            var size = count / BucketDefinitions.Length;
+            var remainder = count % BucketDefinitions.Length;
+
+            var eventStarts = new List<OccurrenceStartDetails>();
+
+            var bounds = BucketDefinitions[0];
+            eventStarts.AddRange(Enumerable.Range(0, size * 2).Select(_ => new OccurrenceStartDetails(bounds.Lower, bounds.Upper)));
+
+            bounds = BucketDefinitions[2];
+            eventStarts.AddRange(Enumerable.Range(0, size * 2).Select(_ => new OccurrenceStartDetails(bounds.Lower, bounds.Upper, 10, 15)));
+
+            bounds = BucketDefinitions[4];
+            eventStarts.AddRange(Enumerable.Range(0, size).Select(_ => new OccurrenceStartDetails(bounds.Lower, bounds.Upper, 0, 4)));
+
+            bounds = BucketDefinitions[5];
+            eventStarts.AddRange(Enumerable.Range(0, size + remainder).Select(_ => new OccurrenceStartDetails(bounds.Lower, bounds.Upper, 0, 4)));
+
+            return eventStarts;
+        }
+
+        private readonly struct OccurrenceStartDetails
+        {
+            private readonly int? validFromBeforeStartDateOffsetMin;
+            private readonly int? validFromBeforeStartDateOffsetMax;
+
+            public OccurrenceStartDetails(int startDateMin, int startDateMax)
+                : this(startDateMin, startDateMax, null, null)
+            {
+            }
+
+            public OccurrenceStartDetails(int startDateMin, int startDateMax, int validFromBeforeStartDateOffsetMin, int validFromBeforeStartDateOffsetMax)
+            {
+                StartDateMin = startDateMin;
+                StartDateMax = startDateMax;
+                this.validFromBeforeStartDateOffsetMin = validFromBeforeStartDateOffsetMin;
+                this.validFromBeforeStartDateOffsetMax = validFromBeforeStartDateOffsetMax;
+            }
+
+            private OccurrenceStartDetails(int startDateMin, int startDateMax, int? validFromBeforeStartDateOffsetMin, int? validFromBeforeStartDateOffsetMax)
+            {
+                StartDateMin = startDateMin;
+                StartDateMax = startDateMax;
+                this.validFromBeforeStartDateOffsetMin = validFromBeforeStartDateOffsetMin;
+                this.validFromBeforeStartDateOffsetMax = validFromBeforeStartDateOffsetMax;
+            }
+
+            public int StartDateMin { get; }
+            public int StartDateMax { get; }
+
+            public int ValidFromBeforeStartDateOffsetMin => validFromBeforeStartDateOffsetMin ?? throw new InvalidOperationException();
+
+            public int ValidFromBeforeStartDateOffsetMax => validFromBeforeStartDateOffsetMax ?? throw new InvalidOperationException();
+
+            public bool HasValidFromBeforeStartDateOffset => validFromBeforeStartDateOffsetMin.HasValue && validFromBeforeStartDateOffsetMax.HasValue;
         }
     }
 }
