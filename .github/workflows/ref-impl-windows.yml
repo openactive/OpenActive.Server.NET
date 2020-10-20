@@ -50,7 +50,7 @@ jobs:
 
     - name: Start OpenActive.Server.NET Reference Implementation
       run: |
-        dotnet run --project ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release --no-build &
+        dotnet run --project ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release --no-build
       env:
         UseSingleSellerMode: false
 
