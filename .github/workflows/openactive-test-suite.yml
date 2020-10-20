@@ -50,7 +50,7 @@ jobs:
       if: ${{ matrix.os == 'windows-latest' }}
     
     - name: Restore NuGet packages
-      run: nuget restore .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj
+      run: nuget restore .\server\Examples\BookingSystem.AspNetFramework\
       if: ${{ matrix.os == 'windows-latest' }}
 
     - name: Build
