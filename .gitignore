@@ -336,4 +336,4 @@ ASALocalRun/
 .DS_Store
 
 # Fake databases
-fakedatabase.db
+fakedatabase.db*
