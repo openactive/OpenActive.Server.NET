@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using Bogus;
 using ServiceStack.OrmLite;
@@ -34,7 +35,8 @@ namespace OpenActive.FakeDatabase.NET
         public InMemorySQLite()
         {
             // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
-            const string connectionString = "fakedatabase.db";
+            // There are issues with transactions when using full in-memory SQLite. To workaround this, we create a temporary file and use this to hold the SQLite database.
+            string connectionString = Path.GetTempPath() + "fakedatabase.db";
             Database = new OrmLiteConnectionFactory(connectionString, SqliteDialect.Provider);
 
             using (var connection = Database.Open())

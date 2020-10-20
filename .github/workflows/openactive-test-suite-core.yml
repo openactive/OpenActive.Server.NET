@@ -1,4 +1,4 @@
-name: OpenActive Reference Implementation
+name: OpenActive Reference Implementation (.NET Core)
 
 on:
   push:
