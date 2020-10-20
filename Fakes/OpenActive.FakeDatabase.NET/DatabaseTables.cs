@@ -68,10 +68,10 @@ namespace OpenActive.FakeDatabase.NET
         public SlotTable SlotTable { get; set; }
         [ForeignKey(typeof(SlotTable), OnDelete = "CASCADE")]
         public long? SlotId { get; set; }
-
         public BookingStatus Status { get; set; }
         public string CancellationMessage { get; set; }
         public decimal Price { get; set; }
+        public string PinCode {get; set;}
     }
 
     [CompositeIndex(nameof(Modified), nameof(OrderId))]
