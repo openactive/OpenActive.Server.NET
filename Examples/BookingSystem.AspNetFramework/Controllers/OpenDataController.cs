@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using BookingSystem.AspNetFramework.Helpers;
 using BookingSystem.AspNetFramework.Helpers;
+using OpenActive.NET;
 using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 
@@ -35,11 +36,10 @@ namespace BookingSystem.AspNetFramework.Controllers
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 return _bookingEngine.GetOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
-            catch (KeyNotFoundException kn)
+            catch (OpenBookingException obe)
             {
-                return Request.CreateResponse(System.Net.HttpStatusCode.NotFound);
+                return obe.ErrorResponseContent.GetContentResult();
             }
         }
-
     }
 }
