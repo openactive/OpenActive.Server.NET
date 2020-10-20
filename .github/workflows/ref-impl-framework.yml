@@ -55,7 +55,7 @@ jobs:
         
     - name: Run IIS Express
       run: |
-        ${{ env.ProgramFiles }}\IIS Express\iisexpress /path:${{ runner.temp }}\deploy\ /port:5000
+        Start-Process -FilePath "$Env:Programfiles\IIS Express\iisexpress.exe" -ArgumentList "/path:${{ runner.temp }}\deploy\ /port:5000"
 
     - name: Install OpenActive Test Suite
       run: npm install
