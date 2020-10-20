@@ -2,19 +2,16 @@
 using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Threading.Tasks;
 using System.Web.Http;
+using OpenActive.NET;
 
 namespace BookingSystem.AspNetFramework.Controllers
 {
     [RoutePrefix("api/openbooking")]
     public class OpenBookingController : ApiController
     {
-        private IBookingEngine _bookingEngine = null;
+        private readonly IBookingEngine _bookingEngine;
 
         public OpenBookingController(IBookingEngine bookingEngine)
         {
@@ -237,6 +234,33 @@ namespace BookingSystem.AspNetFramework.Controllers
             {
                 return obe.ErrorResponseContent.GetContentResult();
             }
+        }
+
+        [HttpGet]
+        [Route("error/{code}")]
+        public HttpResponseMessage Error(int code)
+        {
+            OpenBookingException error;
+            switch (code)
+            {
+                case 404:
+                    error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
+                    break;
+                case 405:
+                    error = new OpenBookingException(new MethodNotAllowedError());
+                    break;
+                case 429:
+                    error = new OpenBookingException(new TooManyRequestsError());
+                    break;
+                case 403:
+                    error = new OpenBookingException(new UnauthenticatedError());
+                    break;
+                default:
+                    error = new InternalOpenBookingException(new InternalApplicationError());
+                    break;
+            }
+
+            return error.ErrorResponseContent.GetContentResult();
         }
     }
 }
