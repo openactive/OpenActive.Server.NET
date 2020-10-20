@@ -60,6 +60,25 @@ namespace BookingSystem.AspNetFramework.Controllers
         }
 
         /// <summary>
+        /// OrderProposal Creation P
+        /// GET api/openbooking/order-proposals/ABCD1234
+        /// </summary>
+        [HttpPut()]
+        [Route("order-proposals/{uuid}")]
+        public HttpResponseMessage OrderProposalCreationP(string uuid, [FromBody] string orderProposal)
+        {
+            try
+            {
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.ProcessOrderProposalCreationP(clientId, sellerId, uuid, orderProposal).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+
+        /// <summary>
         /// OrderQuote Deletion
         /// DELETE api/openbooking/orders-quotes/ABCD1234
         /// </summary>
@@ -129,6 +148,25 @@ namespace BookingSystem.AspNetFramework.Controllers
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
                 return _bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+
+        /// <summary>
+        /// OrderProposal Update
+        /// PATCH api/openbooking/order-proposals/ABCD1234
+        /// </summary>
+        [HttpPatch()]
+        [Route("order-proposals/{uuid}")]
+        public HttpResponseMessage OrderProposalUpdate(string uuid, [FromBody] string order)
+        {
+            try
+            {
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
