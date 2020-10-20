@@ -1,0 +1,31 @@
+name: OpenActive Reference Implementation (.NET Framework)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  openactive-test-suite:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout OpenActive.Server.NET
+      uses: actions/checkout@v2
+      with:
+        path: server
+        
+    - name: Setup MSBuild path
+      uses: microsoft/setup-msbuild@v1.0.1
+      with:
+        vs-version: "[16.4,16.9)"
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.2
+    
+    - name: Restore NuGet packages
+      run: nuget restore .\server\
+
+    - name: Build
+      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release
