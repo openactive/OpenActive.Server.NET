@@ -264,6 +264,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         }
 
         // Catch-all route necessary to return custom 404s
+        [HttpGet]
+        [HttpPatch]
+        [HttpPost]
+        [HttpPut]
+        [HttpDelete]
         [Route("{*url}", Order = 999)]
         public HttpResponseMessage CatchAll()
         {
