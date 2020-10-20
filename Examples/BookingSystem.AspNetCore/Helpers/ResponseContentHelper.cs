@@ -1,10 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace BookingSystem.AspNetCore.Helpers
+﻿namespace BookingSystem.AspNetCore.Helpers
 {
     public static class ResponseContentHelper
     {

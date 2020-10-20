@@ -9,7 +9,7 @@ namespace BookingSystem
 {
     public static class EngineConfig
     {
-        public static StoreBookingEngine CreateStoreBookingEngine(string baseUrl)
+        public static StoreBookingEngine CreateStoreBookingEngine(string baseUrl, bool UseSingleSellerMode)
         {
             return new StoreBookingEngine(
                 new BookingEngineSettings
@@ -23,8 +23,8 @@ namespace BookingSystem
                             {
                                 OpportunityType = OpportunityType.ScheduledSession,
                                 AssignedFeed = OpportunityType.ScheduledSession,
-                                OpportunityIdTemplate = "{+BaseUrl}scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}",
-                                OfferIdTemplate =       "{+BaseUrl}scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
+                                OpportunityIdTemplate = "{+BaseUrl}/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}",
+                                OfferIdTemplate =       "{+BaseUrl}/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
                                 Bookable = true
                             },
                             // Parent
@@ -32,8 +32,8 @@ namespace BookingSystem
                             {
                                 OpportunityType = OpportunityType.SessionSeries,
                                 AssignedFeed = OpportunityType.SessionSeries,
-                                OpportunityIdTemplate = "{+BaseUrl}session-series/{SessionSeriesId}",
-                                OfferIdTemplate =       "{+BaseUrl}session-series/{SessionSeriesId}#/offers/{OfferId}",
+                                OpportunityIdTemplate = "{+BaseUrl}/session-series/{SessionSeriesId}",
+                                OfferIdTemplate =       "{+BaseUrl}/session-series/{SessionSeriesId}#/offers/{OfferId}",
                                 Bookable = false
                             }),
 
@@ -43,8 +43,8 @@ namespace BookingSystem
                             {
                                 OpportunityType = OpportunityType.FacilityUseSlot,
                                 AssignedFeed = OpportunityType.FacilityUseSlot,
-                                OpportunityIdTemplate = "{+BaseUrl}facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}",
-                                OfferIdTemplate =       "{+BaseUrl}facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}#/offers/{OfferId}",
+                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}",
+                                OfferIdTemplate =       "{+BaseUrl}/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}#/offers/{OfferId}",
                                 Bookable = true
                             },
                             // Parent
@@ -52,8 +52,8 @@ namespace BookingSystem
                             {
                                 OpportunityType = OpportunityType.FacilityUse,
                                 AssignedFeed = OpportunityType.FacilityUse,
-                                OpportunityIdTemplate = "{+BaseUrl}facility-uses/{FacilityUseId}"
-                            })/*,,
+                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}"
+                            })/*,
 
                         new BookablePairIdTemplate<ScheduledSessionOpportunity>(
                             // Opportunity
@@ -61,8 +61,8 @@ namespace BookingSystem
                             {
                                 OpportunityType = OpportunityType.HeadlineEventSubEvent,
                                 AssignedFeed = OpportunityType.HeadlineEvent,
-                                OpportunityUriTemplate = "{+BaseUrl}headline-events/{HeadlineEventId}/events/{EventId}",
-                                OfferUriTemplate =       "{+BaseUrl}headline-events/{HeadlineEventId}/events/{EventId}#/offers/{OfferId}",
+                                OpportunityUriTemplate = "{+BaseUrl}/headline-events/{HeadlineEventId}/events/{EventId}",
+                                OfferUriTemplate =       "{+BaseUrl}/headline-events/{HeadlineEventId}/events/{EventId}#/offers/{OfferId}",
                                 Bookable = true
                             },
                             // Parent
@@ -70,8 +70,8 @@ namespace BookingSystem
                             {
                                 OpportunityType = OpportunityType.HeadlineEvent,
                                 AssignedFeed = OpportunityType.HeadlineEvent,
-                                OpportunityUriTemplate = "{+BaseUrl}headline-events/{HeadlineEventId}",
-                                OfferUriTemplate =       "{+BaseUrl}headline-events/{HeadlineEventId}#/offers/{OfferId}"
+                                OpportunityUriTemplate = "{+BaseUrl}/headline-events/{HeadlineEventId}",
+                                OfferUriTemplate =       "{+BaseUrl}/headline-events/{HeadlineEventId}#/offers/{OfferId}"
                             }),
 
                             new BookablePairIdTemplate<ScheduledSessionOpportunity>(
@@ -80,16 +80,16 @@ namespace BookingSystem
                             {
                                 OpportunityType = OpportunityType.CourseInstanceSubEvent,
                                 AssignedFeed = OpportunityType.CourseInstance,
-                                OpportunityUriTemplate = "{+BaseUrl}courses/{CourseId}/events/{EventId}",
-                                OfferUriTemplate =       "{+BaseUrl}courses/{CourseId}/events/{EventId}#/offers/{OfferId}"
+                                OpportunityUriTemplate = "{+BaseUrl}/courses/{CourseId}/events/{EventId}",
+                                OfferUriTemplate =       "{+BaseUrl}/courses/{CourseId}/events/{EventId}#/offers/{OfferId}"
                             },
                             // Parent
                             new OpportunityIdConfiguration
                             {
                                 OpportunityType = OpportunityType.CourseInstance,
                                 AssignedFeed = OpportunityType.CourseInstance,
-                                OpportunityUriTemplate = "{+BaseUrl}courses/{CourseId}",
-                                OfferUriTemplate =       "{+BaseUrl}courses/{CourseId}#/offers/{OfferId}",
+                                OpportunityUriTemplate = "{+BaseUrl}/courses/{CourseId}",
+                                OfferUriTemplate =       "{+BaseUrl}/courses/{CourseId}#/offers/{OfferId}",
                                 Bookable = true
                             }),
 
@@ -99,61 +99,73 @@ namespace BookingSystem
                             {
                                 OpportunityType = OpportunityType.Event,
                                 AssignedFeed = OpportunityType.Event,
-                                OpportunityUriTemplate = "{+BaseUrl}events/{EventId}",
-                                OfferUriTemplate =       "{+BaseUrl}events/{EventId}#/offers/{OfferId}",
+                                OpportunityUriTemplate = "{+BaseUrl}/events/{EventId}",
+                                OfferUriTemplate =       "{+BaseUrl}/events/{EventId}#/offers/{OfferId}",
                                 Bookable = true
                             })*/
                     
                     },
 
-                    JsonLdIdBaseUrl = new Uri(baseUrl + "api/identifiers/"),
+                    JsonLdIdBaseUrl = new Uri(baseUrl + "/api/identifiers"),
 
-
+                    /*
                     // Multiple Seller Mode
                     SellerStore = new AcmeSellerStore(),
                     SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
-                        "{+BaseUrl}sellers/{SellerIdLong}"
+                        "{+BaseUrl}/sellers/{SellerIdLong}"
                         ),
+                    */
 
                     /*
                     // Single Seller Mode
                     SellerStore = new AcmeSellerStore(),
                     SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
-                        "{+BaseUrl}seller"
+                        "{+BaseUrl}/seller"
                         ),
                     HasSingleSeller = true,
                     */
 
-                    OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> {
+                    // Reference implementation is configurable to allow both modes to be tested
+                    SellerStore = new AcmeSellerStore(UseSingleSellerMode),
+                    SellerIdTemplate = UseSingleSellerMode ?
+                        new SingleIdTemplate<SellerIdComponents>(
+                            "{+BaseUrl}/seller"
+                        ) :
+                        new SingleIdTemplate<SellerIdComponents>(
+                            "{+BaseUrl}/sellers/{SellerIdLong}"
+                        ),
+                    HasSingleSeller = UseSingleSellerMode,
+
+                    OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> {
                         {
-                            OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator()
+                            OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator()
                         },
                         {
-                            OpportunityType.SessionSeries, new AcmeSessionSeriesRPDEGenerator()
+                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(UseSingleSellerMode)
                         },
                         {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRPDEGenerator()
+                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(UseSingleSellerMode)
                         }
                         ,
                         {
-                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRPDEGenerator()
+                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
                         }
                     },
 
                     // Note unlike other IDs this one needs to be resolvable
                     // and must match the controller configuration
                     OrderIdTemplate = new OrderIdTemplate(
-                        "{+BaseUrl}{OrderType}/{uuid}",
-                        "{+BaseUrl}{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
+                        "{+BaseUrl}/{OrderType}/{uuid}",
+                        "{+BaseUrl}/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
                         ),
 
-                    OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator()
+                    OrderFeedGenerator = new AcmeOrdersFeedRpdeGenerator()
                 },
                 new DatasetSiteGeneratorSettings
                 {
                     // QUESTION: Do the Base URLs need to come from config, or should they be detected from the request?
-                    OpenDataFeedBaseUrl = (baseUrl + "feeds/").ParseUrlOrNull(),
-                    DatasetSiteUrl = (baseUrl + "openactive/").ParseUrlOrNull(),
+                    OpenDataFeedBaseUrl = (baseUrl + "/feeds").ParseUrlOrNull(),
+                    DatasetSiteUrl = (baseUrl + "/openactive/").ParseUrlOrNull(),
                     DatasetDiscussionUrl = "https://github.com/openactive/OpenActive.Server.NET/issues".ParseUrlOrNull(),
                     DatasetDocumentationUrl = "https://developer.openactive.io/".ParseUrlOrNull(),
                     DatasetLanguages = new List<string> { "en-GB" },
@@ -168,7 +180,7 @@ namespace BookingSystem
                     PlatformVersion = "1.0",
                     BackgroundImageUrl = "https://images.unsplash.com/photo-1594899756066-46964fff3add?fit=crop&w=1500&q=80".ParseUrlOrNull(),
                     DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
-                    OpenBookingAPIBaseUrl = (baseUrl + "api/openbooking/").ParseUrlOrNull(),
+                    OpenBookingAPIBaseUrl = (baseUrl + "/api/openbooking").ParseUrlOrNull(),
                     OpenBookingAPIRegistrationUrl = new Uri("https://example.com/api-landing-page"),
                     OpenBookingAPITermsOfServiceUrl = new Uri("https://example.com/api-terms-page")
                 },
@@ -230,10 +242,10 @@ namespace BookingSystem
                     // List of _bookable_ opportunity types and which store to route to for each
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
-                            new SessionStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                            new SessionStore(UseSingleSellerMode), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStore(), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
+                            new FacilityStore(UseSingleSellerMode), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
                         }
                     },
                     OrderStore = new AcmeOrderStore(),

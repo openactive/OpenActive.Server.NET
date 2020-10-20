@@ -47,13 +47,18 @@ namespace BookingSystem.AspNetCore
 
             //QUESTION: Should all these be configured here? Are we using the pattern correctly?
             //https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/dependency-injection?view=aspnetcore-3.0
-            string BaseUrl = Configuration["ApplicationHostBaseUrl"] ?? "https://localhost:5001/";
-            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(BaseUrl));
+            string BaseUrl = Configuration["ApplicationHostBaseUrl"] ?? "https://localhost:5001";
+            // Configuration for the reference implementation to be used in either mode, for testing purposes.
+            // Note that both modes do not need to be supported by in an actual implmentation.
+            bool UseSingleSellerMode = Configuration["UseSingleSellerMode"] == "true";
+            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(BaseUrl, UseSingleSellerMode));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            app.UseStatusCodePagesWithReExecute("/api/openbooking/error/{0}");
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

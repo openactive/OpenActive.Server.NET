@@ -12,9 +12,24 @@ namespace BookingSystem
 {
     class FacilityStore : OpportunityStore<FacilityOpportunity, OrderTransaction, OrderStateContext>
     {
-
-        protected override FacilityOpportunity CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
+        // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
+        private bool UseSingleSellerMode;
+        public FacilityStore(bool UseSingleSellerMode)
         {
+            this.UseSingleSellerMode = UseSingleSellerMode;
+        }
+
+        protected override FacilityOpportunity CreateOpportunityWithinTestDataset(
+            string testDatasetIdentifier,
+            OpportunityType opportunityType,
+            TestOpportunityCriteriaEnumeration criteria,
+            SellerIdComponents seller)
+        {
+            if (!UseSingleSellerMode && !seller.SellerIdLong.HasValue)
+                throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
+
+            long? sellerId = UseSingleSellerMode ? null : seller.SellerIdLong;
+
             switch (opportunityType)
             {
                 case OpportunityType.FacilityUseSlot:
@@ -23,45 +38,97 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaid:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
-                            var (facilityId1, slotId1) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false);
-                            return new FacilityOpportunity
                             {
-                                OpportunityType = opportunityType,
-                                FacilityUseId = facilityId1,
-                                SlotId = slotId1
-                            };
+                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
+                                    14.99M,
+                                    10);
+                                return new FacilityOpportunity
+                                {
+                                    OpportunityType = opportunityType,
+                                    FacilityUseId = facilityId,
+                                    SlotId = slotId
+                                };
+                            }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                            var (facilityId2, slotId2) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility", 0M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, false);
-                            return new FacilityOpportunity
                             {
-                                OpportunityType = opportunityType,
-                                FacilityUseId = facilityId2,
-                                SlotId = slotId2
-                            };
+                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility",
+                                    0M,
+                                    10);
+                                return new FacilityOpportunity
+                                {
+                                    OpportunityType = opportunityType,
+                                    FacilityUseId = facilityId,
+                                    SlotId = slotId
+                                };
+                            }
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
+                            {
+                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
+                                    14.99M,
+                                    10,
+                                    validFromStartDate: true);
+                                return new FacilityOpportunity
+                                {
+                                    OpportunityType = opportunityType,
+                                    FacilityUseId = facilityId,
+                                    SlotId = slotId
+                                };
+                            }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
-                            var (facilityId3, slotId3) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility No Spaces", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 0, false);
-                            return new FacilityOpportunity
                             {
-                                OpportunityType = opportunityType,
-                                FacilityUseId = facilityId3,
-                                SlotId = slotId3
-                            };
+                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility No Spaces",
+                                    14.99M,
+                                    0);
+                                return new FacilityOpportunity
+                                {
+                                    OpportunityType = opportunityType,
+                                    FacilityUseId = facilityId,
+                                    SlotId = slotId
+                                };
+                            }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
-                            var (facilityId4, slotId4) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility Five Spaces", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 5, false);
-                            return new FacilityOpportunity
                             {
-                                OpportunityType = opportunityType,
-                                FacilityUseId = facilityId4,
-                                SlotId = slotId4
-                            };
+                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility Five Spaces",
+                                    14.99M,
+                                    5);
+                                return new FacilityOpportunity
+                                {
+                                    OpportunityType = opportunityType,
+                                    FacilityUseId = facilityId,
+                                    SlotId = slotId
+                                };
+                            }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
-                            var (facilityId5, slotId5) = FakeBookingSystem.Database.AddFacility(testDatasetIdentifier, seller.SellerIdLong.Value, "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility With Approval", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10, true);
-                            return new FacilityOpportunity
                             {
-                                OpportunityType = opportunityType,
-                                FacilityUseId = facilityId5,
-                                SlotId = slotId5
-                            };
+                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility With Approval",
+                                    14.99M,
+                                    10,
+                                    requiresApproval: true);
+                                return new FacilityOpportunity
+                                {
+                                    OpportunityType = opportunityType,
+                                    FacilityUseId = facilityId,
+                                    SlotId = slotId
+                                };
+                            }
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -96,7 +163,6 @@ namespace BookingSystem
             List<FacilityUseTable> facilityTable;
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
-                var q = db.From<OrderItemsTable>().Join<OrderTable, OrderItemsTable>((items, orders) => items.OrderId == orders.OrderId);
 
                 slotTable = db.Select<SlotTable>();
                 facilityTable = db.Select<FacilityUseTable>();
@@ -105,7 +171,8 @@ namespace BookingSystem
                              join slot in slotTable on orderItemContext.RequestBookableOpportunityOfferId.SlotId equals slot.Id
                              join facility in facilityTable on slot.FacilityUseId equals facility.Id
                              // and offers.id = opportunityOfferId.OfferId
-                             select slot == null ? null : new {
+                             select slot == null ? null : new
+                             {
                                  OrderItem = new OrderItem
                                  {
                                      AllowCustomerCancellationFullRefund = true,
@@ -124,14 +191,15 @@ namespace BookingSystem
                                      AcceptedOffer = new Offer
                                      {
                                          // Note this should always use RenderOfferId with the supplied SessioFacilityOpportunitynOpportunity, to take into account inheritance and OfferType
-                                         Id = this.RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
+                                         Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = slot.Price,
-                                         PriceCurrency = "GBP"
+                                         PriceCurrency = "GBP",
+                                         ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate
                                      },
                                      OrderedItem = new Slot
                                      {
                                          // Note this should always be driven from the database, with new FacilityOpportunity's instantiated
-                                         Id = this.RenderOpportunityId(new FacilityOpportunity
+                                         Id = RenderOpportunityId(new FacilityOpportunity
                                          {
                                              OpportunityType = OpportunityType.FacilityUseSlot,
                                              FacilityUseId = slot.FacilityUseId,
@@ -139,7 +207,7 @@ namespace BookingSystem
                                          }),
                                          FacilityUse = new FacilityUse
                                          {
-                                             Id = this.RenderOpportunityId(new FacilityOpportunity
+                                             Id = RenderOpportunityId(new FacilityOpportunity
                                              {
                                                  OpportunityType = OpportunityType.FacilityUse,
                                                  FacilityUseId = slot.FacilityUseId
@@ -177,8 +245,8 @@ namespace BookingSystem
                                                  x.OrderId != flowContext.OrderId.uuid)
                                      }
                                  },
-                                 SellerId = new SellerIdComponents { SellerIdLong = facility.SellerId },
-                                 RequiresApproval = slot.RequiresApproval
+                                 SellerId = UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
+                                 slot.RequiresApproval
                              }).ToArray();
 
                 // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
@@ -249,6 +317,12 @@ namespace BookingSystem
                                 ctx.AddError(new UnableToProcessOrderItemError(), "Opportunity not found");
                             }
                             break;
+                        case ReserveOrderItemsResult.OpportunityOfferPairNotBookable:
+                            foreach (var ctx in ctxGroup)
+                            {
+                                ctx.AddError(new OpportunityOfferPairNotBookableError(), "Opportunity not bookable");
+                            }
+                            break;
                         case ReserveOrderItemsResult.NotEnoughCapacity:
                             var contexts = ctxGroup.ToArray();
                             for (var i = contexts.Length - 1; i >= 0; i--)
@@ -293,15 +367,36 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, orderItemIds) = FakeDatabase.BookOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count(), false);
+                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForFacilitySlot(
+                    databaseTransaction.FakeDatabaseTransaction,
+                    flowContext.OrderId.ClientId,
+                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.OrderId.uuid,
+                    ctxGroup.Key.SlotId.Value,
+                    RenderOpportunityJsonLdType(ctxGroup.Key),
+                    RenderOpportunityId(ctxGroup.Key).ToString(),
+                    RenderOfferId(ctxGroup.Key).ToString(),
+                    ctxGroup.Count(),
+                    false);
 
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
                         // Set OrderItemId for each orderItemContext
-                        foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
+                        foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
-                            ctx.SetOrderItemId(flowContext, id);
+                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+                            
+                            // Setting the access code after booking.
+                            ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
+                            {
+                                new PropertyValue()
+                                {
+                                    Name = "Pin Code",
+                                    Description = bookedOrderItemInfo.PinCode,
+                                    Value = "defaultValue"
+                                }
+                            };
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
@@ -310,12 +405,13 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity not found");
                     case ReserveOrderItemsResult.NotEnoughCapacity:
                         throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
+                    case ReserveOrderItemsResult.OpportunityOfferPairNotBookable:
+                        throw new OpenBookingException(new OpportunityOfferPairNotBookableError());
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
             }
         }
-
 
         // TODO check logic here, it's just been copied from BookOrderItems. Possibly could remove duplication here.
         protected override void ProposeOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -332,7 +428,17 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, orderItemIds) = FakeDatabase.BookOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count(), true);
+                var (result, _) = FakeDatabase.BookOrderItemsForFacilitySlot(
+                    databaseTransaction.FakeDatabaseTransaction,
+                    flowContext.OrderId.ClientId,
+                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.OrderId.uuid,
+                    ctxGroup.Key.SlotId.Value,
+                    RenderOpportunityJsonLdType(ctxGroup.Key),
+                    RenderOpportunityId(ctxGroup.Key).ToString(),
+                    RenderOfferId(ctxGroup.Key).ToString(),
+                    ctxGroup.Count(),
+                    true);
 
                 switch (result)
                 {
@@ -345,6 +451,8 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity not found");
                     case ReserveOrderItemsResult.NotEnoughCapacity:
                         throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
+                    case ReserveOrderItemsResult.OpportunityOfferPairNotBookable:
+                        throw new OpenBookingException(new OpportunityOfferPairNotBookableError());
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }

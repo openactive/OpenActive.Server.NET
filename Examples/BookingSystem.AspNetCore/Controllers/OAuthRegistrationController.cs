@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mime;
-using System.Threading.Tasks;
+﻿using System.Net.Mime;
 using BookingSystem.AspNetCore.Helpers;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
-using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
-using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 
 namespace BookingSystem.AspNetCore.Controllers

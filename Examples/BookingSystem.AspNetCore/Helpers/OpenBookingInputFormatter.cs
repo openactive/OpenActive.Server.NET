@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Formatters;
 using OpenActive.NET;
-using OpenActive.Server.NET.OpenBookingHelper;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace BookingSystem.AspNetCore.Helpers
@@ -13,7 +10,7 @@ namespace BookingSystem.AspNetCore.Helpers
     {
         public OpenBookingInputFormatter()
         {
-            this.SupportedMediaTypes.Add(OpenActiveMediaTypes.OpenBooking.Version1);
+            SupportedMediaTypes.Add(OpenActiveMediaTypes.OpenBooking.Version1);
         }
 
         public override async Task<InputFormatterResult> ReadRequestBodyAsync(InputFormatterContext context)

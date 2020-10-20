@@ -36,11 +36,13 @@ namespace BookingSystem
         {
             unchecked
             {
+                // ReSharper disable NonReadonlyMemberInGetHashCode
                 var hashCode = OpportunityType.GetHashCode();
                 hashCode = (hashCode * 397) ^ OfferOpportunityType.GetHashCode();
                 hashCode = (hashCode * 397) ^ SessionSeriesId.GetHashCode();
                 hashCode = (hashCode * 397) ^ ScheduledSessionId.GetHashCode();
                 hashCode = (hashCode * 397) ^ OfferId.GetHashCode();
+                // ReSharper enable NonReadonlyMemberInGetHashCode
                 return hashCode;
             }
         }

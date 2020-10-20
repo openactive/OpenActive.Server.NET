@@ -1,4 +1,4 @@
-name: OpenActive Reference Implementation
+name: OpenActive Reference Implementation (.NET Core)
 
 on:
   push:
@@ -9,6 +9,10 @@ on:
 jobs:
   openactive-test-suite:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        seller: ['multiple-sellers', 'single-seller']
 
     steps:
     - name: Checkout OpenActive.Server.NET
@@ -41,46 +45,61 @@ jobs:
     - name: Start OpenActive.Server.NET Reference Implementation
       run: |
         dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
+      env:
+        UseSingleSellerMode: ${{ matrix.seller != 'multiple-sellers' }}
         
     - name: Install OpenActive Test Suite
       run: npm install
       working-directory: tests
+    - name: Setup Seller Config
+      id: select-seller-mode
+      run: |
+        if ${{ matrix.seller != 'multiple-sellers' }};
+        then
+            echo 'Single Seller Mode'
+            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/seller", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/seller" } } }'
+        else
+            echo 'Multiple Seller Mode'
+            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } }'
+        fi
     - name: Run OpenActive Integration Tests in Random Mode
       run: npm start
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          { "outputPath": "../../output/random/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } }, "useRandomOpportunities": true, "generateConformanceCertificate": false }
+          { "outputPath": "../../output/random/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": true, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": false }
         NODE_ENV: 
       working-directory: tests
     - name: Upload test output for Random Mode as artifact
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
       with:
-        name: test-output-random
+        name: test-output-random-${{ matrix.seller }}
         path: ./tests/output/random/
 
     - name: Run OpenActive Integration Tests in Controlled Mode
-      run: |
-        npm start
-        mkdir -p ../publish/certification/
-        cp ./output/controlled/certification/* ../publish/certification/
+      run: npm start
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          { "outputPath": "../../output/controlled/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": { "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/sellers/1" } }, "secondary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/sellers/3" } }, "useRandomOpportunities": false, "generateConformanceCertificate": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
+          { "outputPath": "../../output/controlled/", "datasetSiteUrl": "https://localhost:5001/openactive", "sellers": ${{ steps.select-seller-mode.outputs.config }}, "useRandomOpportunities": false, "implementedFeatures": { "multiple-sellers": ${{ matrix.seller == 'multiple-sellers' }} }, "generateConformanceCertificate": ${{ matrix.seller == 'multiple-sellers' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
         NODE_ENV: 
       working-directory: tests
     - name: Upload test output for Controlled Mode as artifact
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
       with:
-        name: test-output-controlled
+        name: test-output-controlled-${{ matrix.seller }}
         path: ./tests/output/controlled/
 
-    - name: Deploy certificate to GitHub Pages (master branch only)
+    - name: Copy certificate for deployment to GitHub Pages (master branch for multiple-sellers only)
+      run: |
+        mkdir -p ./publish/certification/
+        cp ./tests/output/controlled/certification/* ./publish/certification/
+      if: ${{ github.ref == 'refs/heads/master' && matrix.seller == 'multiple-sellers' }}
+    - name: Deploy certificate to GitHub Pages (master branch for multiple-sellers only)
       uses: peaceiris/actions-gh-pages@v3
-      if: ${{ github.ref == 'refs/heads/master' }}
+      if: ${{ github.ref == 'refs/heads/master' && matrix.seller == 'multiple-sellers' }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./publish

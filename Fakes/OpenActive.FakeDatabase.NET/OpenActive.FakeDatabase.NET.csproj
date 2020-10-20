@@ -5,7 +5,7 @@
     <AssemblyName>OpenActive.FakeDatabase.NET</AssemblyName>
     <RootNamespace>OpenActive.FakeDatabase.NET</RootNamespace>
     <PackageId>OpenActive.FakeDatabase.NET</PackageId>
-    <Version>0.8.0</Version>
+    <Version>0.9.0</Version>
     <Authors>OpenActive Community</Authors>
     <Company>OpenActive</Company>
     <Description>NOTICE: This library is not designed for production use.
@@ -31,13 +31,8 @@
   <ItemGroup>
     <PackageReference Include="Bogus" Version="28.4.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Core" Version="5.9.2" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Data">
-      <Version>5.9.2</Version>
-    </PackageReference>
   </ItemGroup>
 
   <PropertyGroup>

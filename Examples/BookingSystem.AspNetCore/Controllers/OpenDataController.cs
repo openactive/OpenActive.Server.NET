@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using BookingSystem.AspNetCore.Helpers;
-using Microsoft.AspNetCore.Authorization;
+﻿using BookingSystem.AspNetCore.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using OpenActive.NET;
-using OpenActive.NET.Rpde;
-using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 
@@ -23,13 +16,13 @@ namespace BookingSystem.AspNetCore.Controllers
         /// </summary>
         [HttpGet("{feedname}")]
         [Consumes(OpenActiveMediaTypes.RealtimePagedDataExchange.Version1, System.Net.Mime.MediaTypeNames.Application.Json)] 
-        public IActionResult GetOpenDataFeed([FromServices] IBookingEngine bookingEngine, string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public IActionResult GetOpenDataFeed([FromServices] IBookingEngine bookingEngine, string feedName, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             try
             {
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
-                return bookingEngine.GetOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return bookingEngine.GetOpenDataRPDEPageForFeed(feedName, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

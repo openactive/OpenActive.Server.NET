@@ -23,7 +23,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public List<IBookablePairIdTemplate> IdConfiguration { get; set;  }
         public OrderIdTemplate OrderIdTemplate { get; set; }
         public SingleIdTemplate<SellerIdComponents> SellerIdTemplate { get; set; }
-        public Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> OpenDataFeeds { get; set; }
+        public Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> OpenDataFeeds { get; set; }
         public int RPDEPageSize { get; set; } = 500;
         public Uri JsonLdIdBaseUrl { get; set; }
         public OrdersRPDEFeedGenerator OrderFeedGenerator { get; set; }

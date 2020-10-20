@@ -2,23 +2,28 @@
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using ServiceStack.OrmLite;
-using System.Linq;
 
 namespace BookingSystem
 {
     public class AcmeSellerStore : SellerStore
     {
+        // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
+        private bool UseSingleSellerMode;
+        public AcmeSellerStore(bool UseSingleSellerMode)
+        {
+            this.UseSingleSellerMode = UseSingleSellerMode;
+        }
+
         // If the Seller is not found, simply return null to generate the correct Open Booking error
         protected override ILegalEntity GetSeller(SellerIdComponents sellerIdComponents)
         {
-            // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required.
-            if (sellerIdComponents.SellerIdLong == null && sellerIdComponents.SellerIdString == null)
+            // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required for an actual implementation.
+            if (UseSingleSellerMode)
             {
-
                 // For Single Seller booking systems, no ID will be available from sellerIdComponents, and this data should instead come from your configuration table
                 return new Organization
                 {
-                    Id = this.RenderSingleSellerId(),
+                    Id = RenderSingleSellerId(),
                     Name = "Test Seller",
                     TaxMode = TaxMode.TaxGross,
                     LegalName = "Test Seller Ltd",
@@ -31,7 +36,6 @@ namespace BookingSystem
                         AddressCountry = "GB"
                     }
                 };
-
             }
             else
             {
@@ -42,9 +46,9 @@ namespace BookingSystem
                     var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
                     if (seller != null)
                     {
-                        return seller.IsIndividual ? (ILegalEntity)new Person
+                        return seller.IsIndividual ? new Person
                         {
-                            Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                            Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
                             Name = seller.Name,
                             TaxMode = TaxMode.TaxGross,
                             LegalName = seller.Name,
@@ -58,7 +62,7 @@ namespace BookingSystem
                             }
                         } : (ILegalEntity)new Organization
                         {
-                            Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                            Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
                             Name = seller.Name,
                             TaxMode = TaxMode.TaxGross,
                             LegalName = seller.Name,

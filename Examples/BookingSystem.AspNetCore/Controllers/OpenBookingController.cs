@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using BookingSystem.AspNetCore.Helpers;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 
@@ -249,5 +243,30 @@ namespace BookingSystem.AspNetCore.Controllers
             }
         }
 
+        [Route("error/{code:int}")]
+        public IActionResult Error(int code)
+        {
+            OpenBookingException error;
+            switch (code)
+            {
+                case 404:
+                    error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
+                    break;
+                case 405:
+                    error = new OpenBookingException(new MethodNotAllowedError());
+                    break;
+                case 429:
+                    error = new OpenBookingException(new TooManyRequestsError());
+                    break;
+                case 403:
+                    error = new OpenBookingException(new UnauthenticatedError());
+                    break;
+                default:
+                    error = new InternalOpenBookingException(new InternalApplicationError());
+                    break;
+            }
+
+            return error.ErrorResponseContent.GetContentResult();
+        }
     }
 }
