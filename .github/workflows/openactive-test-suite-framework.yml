@@ -38,22 +38,22 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.2
     
-    - name: Restore NuGet packages
+    - name: Install OpenActive.Server.NET dependencies
       run: nuget restore .\server\
 
-    - name: Build
+    - name: Build .NET Framework Reference Implementation
       run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release
 
-    - name: Publish to folder
+    - name: Publish .NET Framework Reference Implementation to folder
       run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release /p:DeployOnBuild=true /t:WebPublish /p:WebPublishMethod=FileSystem /p:publishUrl=${{ runner.temp }}\deploy\ /p:PackageAsSingleFile=false
 
-    - name: Upload package as artifact
-      uses: actions/upload-artifact@v1.0.0
+    - name: Upload .NET Framework Reference Implementation package as artifact
+      uses: actions/upload-artifact@v2
       with:
         name: framework-webapp
         path: ${{ runner.temp }}\deploy\
         
-    - name: Run IIS Express
+    - name: Start .NET Framework Reference Implementation
       run: |
         Start-Process -FilePath "$Env:Programfiles\IIS Express\iisexpress.exe" -ArgumentList "/path:${{ runner.temp }}\deploy\ /port:5000"
 
