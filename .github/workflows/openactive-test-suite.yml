@@ -39,8 +39,29 @@ jobs:
       with:
         node-version: 12.x
         
-    - name: Setup MSBuild.exe
-      uses: warrenbuckley/Setup-MSBuild@v1
+    - name: Setup MSBuild path
+      uses: microsoft/setup-msbuild@v1.0.1
+      with:
+        vs-version: "[16.4,16.9)"
+      if: ${{ matrix.os == 'windows-latest' }}
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.2
+      if: ${{ matrix.os == 'windows-latest' }}
+    
+    - name: Restore NuGet packages
+      run: nuget restore .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj
+      if: ${{ matrix.os == 'windows-latest' }}
+
+    - name: Build
+      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release
+      if: ${{ matrix.os == 'windows-latest' }}
+
+    - name: Start OpenActive.Server.NET Reference Implementation
+      run: |
+        dotnet run --project ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release --no-build &
+      env:
+        UseSingleSellerMode: ${{ matrix.seller != 'multiple-sellers' }}
       if: ${{ matrix.os == 'windows-latest' }}
 
     - name: Install OpenActive.Server.NET dependencies	
@@ -56,18 +77,6 @@ jobs:
         UseSingleSellerMode: ${{ matrix.seller != 'multiple-sellers' }}
       if: ${{ matrix.os == 'ubuntu-latest' }}
         
-    - name: Install OpenActive.Server.NET dependencies	
-      run: msbuild ./server/Examples/BookingSystem.AspNetCore/ /t:restore
-      if: ${{ matrix.os == 'windows-latest' }}
-    - name: Build OpenActive.Server.NET Reference Implementation
-      run: dotnet build ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release
-      if: ${{ matrix.os == 'windows-latest' }}
-    - name: Start OpenActive.Server.NET Reference Implementation
-      run: |
-        dotnet run --project ./server/Examples/BookingSystem.AspNetFramework/BookingSystem.AspNetFramework.csproj --configuration Release --no-build &
-      env:
-        UseSingleSellerMode: ${{ matrix.seller != 'multiple-sellers' }}
-      if: ${{ matrix.os == 'windows-latest' }}
 
     - name: Install OpenActive Test Suite
       run: npm install
