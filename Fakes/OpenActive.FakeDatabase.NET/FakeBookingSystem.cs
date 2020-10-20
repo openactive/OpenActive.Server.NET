@@ -357,8 +357,14 @@ namespace OpenActive.FakeDatabase.NET
 
         }
 
+        public struct BookedOrderItemInfo
+        {
+            public long OrderItemId{ get; set; }
+            public string PinCode { get; set; }
+        }
+
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
-        public static (ReserveOrderItemsResult, List<long>) BookOrderItemsForClassOccurrence(
+        public static (ReserveOrderItemsResult, List<BookedOrderItemInfo>) BookOrderItemsForClassOccurrence(
             FakeDatabaseTransaction transaction,
             string clientId,
             long? sellerId,
@@ -392,7 +398,7 @@ namespace OpenActive.FakeDatabase.NET
             if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces < numberOfSpaces)
                 return (ReserveOrderItemsResult.NotEnoughCapacity, null);
 
-            var orderItemIds = new List<long>();
+            var bookedOrderItemInfos = new List<BookedOrderItemInfo>();
             for (var i = 0; i < numberOfSpaces; i++)
             {
                 var orderItem = new OrderItemsTable
@@ -407,18 +413,23 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisClass.Price.Value,
+                    PinCode = Faker.Random.String(6, minChar: '0', maxChar:'9')
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25)
                 };
                 db.Save(orderItem);
-                orderItemIds.Add(orderItem.Id);
+                bookedOrderItemInfos.Add(new BookedOrderItemInfo
+                {
+                    OrderItemId = orderItem.Id,
+                    PinCode = orderItem.PinCode
+                });
             }
 
             RecalculateSpaces(db, thisOccurrence);
-            return (ReserveOrderItemsResult.Success, orderItemIds);
+            return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
         }
 
         // TODO this should reuse code of LeaseOrderItemsForFacilityOccurrence
-        public static (ReserveOrderItemsResult, List<long>) BookOrderItemsForFacilitySlot(
+        public static (ReserveOrderItemsResult, List<BookedOrderItemInfo>) BookOrderItemsForFacilitySlot(
             FakeDatabaseTransaction transaction,
             string clientId,
             long? sellerId,
@@ -452,7 +463,7 @@ namespace OpenActive.FakeDatabase.NET
             if (thisSlot.RemainingUses - thisSlot.LeasedUses < numberOfSpaces)
                 return (ReserveOrderItemsResult.NotEnoughCapacity, null);
 
-            var orderItemIds = new List<long>();
+            var bookedOrderItemInfos = new List<BookedOrderItemInfo>();
             for (var i = 0; i < numberOfSpaces; i++)
             {
                 var orderItem = new OrderItemsTable
@@ -467,15 +478,19 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisSlot.Price.Value,
+                    PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9')
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25)
                 };
-                
                 db.Save(orderItem);
-                orderItemIds.Add(orderItem.Id);
+                bookedOrderItemInfos.Add(new BookedOrderItemInfo
+                {
+                    OrderItemId = orderItem.Id,
+                    PinCode = orderItem.PinCode
+                });
             }
 
             RecalculateSlotUses(db, thisSlot);
-            return (ReserveOrderItemsResult.Success, orderItemIds);
+            return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
 
         }
 
