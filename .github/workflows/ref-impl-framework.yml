@@ -58,7 +58,8 @@ jobs:
         path: ${{ runner.temp }}\deploy\
         
     - name: Run
-      run: iisexpress /path:${{ runner.temp }}\deploy\ /port:5000
+      run: |
+        %ProgramFiles%\IIS Express\iisexpress /path:${{ runner.temp }}\deploy\ /port:5000
 
     - name: Install OpenActive Test Suite
       run: npm install
