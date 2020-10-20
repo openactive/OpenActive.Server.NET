@@ -25,10 +25,6 @@ jobs:
         ref: ${{ env.mirror_ref }}
         path: tests
 
-    - name: Setup .NET Core 2.1.808
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 2.1.808
     - name: Setup Node.js 12.x
       uses: actions/setup-node@v1
       with:
@@ -51,13 +47,13 @@ jobs:
     - name: Publish to folder
       run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release /p:DeployOnBuild=true /t:WebPublish /p:WebPublishMethod=FileSystem /p:publishUrl=${{ runner.temp }}\deploy\ /p:PackageAsSingleFile=false
 
-    - name: Publish artifacts
+    - name: Upload package as artifact
       uses: actions/upload-artifact@v1.0.0
       with:
         name: framework-webapp
         path: ${{ runner.temp }}\deploy\
         
-    - name: Run
+    - name: Run IIS Express
       run: |
         ${{ env.ProgramFiles }}\IIS Express\iisexpress /path:${{ runner.temp }}\deploy\ /port:5000
 
