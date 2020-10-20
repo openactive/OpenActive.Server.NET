@@ -44,16 +44,10 @@ jobs:
     - name: Build .NET Framework Reference Implementation
       run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release
 
-    - name: Publish .NET Framework Reference Implementation to folder
+    - name: Deploy .NET Framework Reference Implementation to folder
       run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release /p:DeployOnBuild=true /t:WebPublish /p:WebPublishMethod=FileSystem /p:publishUrl=${{ runner.temp }}\deploy\ /p:PackageAsSingleFile=false
 
-    - name: Upload .NET Framework Reference Implementation package as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: framework-webapp
-        path: ${{ runner.temp }}\deploy\
-        
-    - name: Start .NET Framework Reference Implementation
+    - name: Start .NET Framework Reference Implementation from folder (using IIS Express)
       run: |
         Start-Process -FilePath "$Env:Programfiles\IIS Express\iisexpress.exe" -ArgumentList "/path:${{ runner.temp }}\deploy\ /port:5000"
 
