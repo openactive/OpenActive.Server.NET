@@ -57,17 +57,7 @@ jobs:
     - name: Install OpenActive Test Suite
       run: npm install
       working-directory: tests
-    - name: Setup Seller Config
-      id: select-seller-mode
-      run: |
-        if ${{ matrix.seller != 'multiple-sellers' }};
-        then
-            echo 'Single Seller Mode'
-            echo '::set-output name=config::{ "primary": { "@type": "Organization", "@id": "https://localhost:5001/api/identifiers/seller", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "https://localhost:5001/api/identifiers/seller" } } }'
-        else
-            echo 'Multiple Seller Mode'
-            echo '::set-output name=config::'
-        fi
+
     - name: Run OpenActive Integration Tests in Random Mode
       run: npm start
       env:
