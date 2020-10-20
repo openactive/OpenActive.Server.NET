@@ -38,7 +38,7 @@ jobs:
       with:
         node-version: 12.x
 
-    - name: Install OpenActive.Server.NET dependencies	
+    - name: Install OpenActive.Server.NET dependencies
       run: dotnet restore ./server/
     - name: Build OpenActive.Server.NET Reference Implementation
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
