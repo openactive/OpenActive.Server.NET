@@ -48,6 +48,9 @@ jobs:
     - name: Build
       run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release
 
+    - name: Publish to folder
+      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release /p:DeployOnBuild=true /t:WebPublish /p:WebPublishMethod=FileSystem /p:publishUrl=.\deploy /p:PackageAsSingleFile=false
+
     - name: Start OpenActive.Server.NET Reference Implementation
       run: |
         dotnet run --project .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj --configuration Release --no-build
