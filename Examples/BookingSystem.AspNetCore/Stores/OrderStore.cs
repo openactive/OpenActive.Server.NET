@@ -97,34 +97,33 @@ namespace BookingSystem
         public override Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Note if no lease support, simply return null always here instead
-
-            // In this example leasing is only supported at C2
-            if (flowContext.Stage == FlowStage.C2)
-            {
-                // TODO: Make the lease duration configurable
-                var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
-
-                var result = FakeDatabase.AddLease(
-                    flowContext.OrderId.ClientId,
-                    flowContext.OrderId.uuid,
-                    flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
-                    flowContext.Broker.Name,
-                    flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                    flowContext.Customer.Email,
-                    leaseExpires,
-                    databaseTransaction.FakeDatabaseTransaction);
-
-                if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
-
-                return new Lease
-                {
-                    LeaseExpires = leaseExpires
-                };
-            }
-            else
-            {
+            if (flowContext.Stage != FlowStage.C1 && flowContext.Stage != FlowStage.C2)
                 return null;
-            }
+
+            // TODO: Make the lease duration configurable
+            var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
+
+            var result = FakeDatabase.AddLease(
+                flowContext.OrderId.ClientId,
+                flowContext.OrderId.uuid,
+                flowContext.BrokerRole == BrokerType.AgentBroker
+                    ? BrokerRole.AgentBroker
+                    : flowContext.BrokerRole == BrokerType.ResellerBroker
+                        ? BrokerRole.ResellerBroker
+                        : BrokerRole.NoBroker,
+                flowContext.Broker.Name,
+                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
+                flowContext.Customer?.Email,
+                leaseExpires,
+                databaseTransaction.FakeDatabaseTransaction);
+
+            if (!result)
+                throw new OpenBookingException(new OrderAlreadyExistsError());
+
+            return new Lease
+            {
+                LeaseExpires = leaseExpires
+            };
         }
 
         public override void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
@@ -324,14 +323,7 @@ namespace BookingSystem
 
         protected override OrderTransaction BeginOrderTransaction(FlowStage stage)
         {
-            if (stage != FlowStage.C1)
-            {
-                return new OrderTransaction();
-            }
-            else
-            {
-                return null;
-            }
+            return new OrderTransaction();
         }
     }
 }

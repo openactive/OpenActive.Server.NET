@@ -72,6 +72,7 @@ namespace OpenActive.FakeDatabase.NET
         public string CancellationMessage { get; set; }
         public decimal Price { get; set; }
         public string PinCode {get; set;}
+        public string ImageUrl { get; set; }
     }
 
     [CompositeIndex(nameof(Modified), nameof(OrderId))]

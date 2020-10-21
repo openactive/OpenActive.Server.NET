@@ -68,14 +68,16 @@ namespace BookingSystem
                                 };
                             }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
                             {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
                                 var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                     testDatasetIdentifier,
                                     sellerId,
-                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
                                     14.99M,
                                     10,
-                                    validFromStartDate: true);
+                                    validFromStartDate: isValid);
                                 return new FacilityOpportunity
                                 {
                                     OpportunityType = opportunityType,
@@ -387,7 +389,7 @@ namespace BookingSystem
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
                             
-                            // Setting the access code after booking.
+                            // Setting the access code and access pass after booking.
                             ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                             {
                                 new PropertyValue()
@@ -395,6 +397,14 @@ namespace BookingSystem
                                     Name = "Pin Code",
                                     Description = bookedOrderItemInfo.PinCode,
                                     Value = "defaultValue"
+                                }
+                            };
+
+                            ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
+                            {
+                                new ImageObject()
+                                {
+                                    Url = new Uri(bookedOrderItemInfo.ImageUrl)
                                 }
                             };
                         }
