@@ -363,6 +363,7 @@ namespace OpenActive.FakeDatabase.NET
             public long OrderItemId{ get; set; }
             public string PinCode { get; set; }
             public string ImageUrl { get; set; }
+            public string BarCodeText { get; set; }
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
@@ -415,15 +416,17 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisClass.Price.Value,
-                    PinCode = Faker.Random.String(6, minChar: '0', maxChar:'9'),
-                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25)
+                    PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar:'9'),
+                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
+                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
                 db.Save(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
                     OrderItemId = orderItem.Id,
                     PinCode = orderItem.PinCode,
-                    ImageUrl = orderItem.ImageUrl
+                    ImageUrl = orderItem.ImageUrl,
+                    BarCodeText = orderItem.BarCodeText
                 });
             }
 
@@ -482,14 +485,16 @@ namespace OpenActive.FakeDatabase.NET
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisSlot.Price.Value,
                     PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9'),
-                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25)
+                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
+                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
                 db.Save(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
                     OrderItemId = orderItem.Id,
                     PinCode = orderItem.PinCode,
-                    ImageUrl = orderItem.ImageUrl
+                    ImageUrl = orderItem.ImageUrl,
+                    BarCodeText = orderItem.BarCodeText
                 });
             }
 

@@ -73,6 +73,7 @@ namespace OpenActive.FakeDatabase.NET
         public decimal Price { get; set; }
         public string PinCode {get; set;}
         public string ImageUrl { get; set; }
+        public string BarCodeText { get; set; }
     }
 
     [CompositeIndex(nameof(Modified), nameof(OrderId))]
