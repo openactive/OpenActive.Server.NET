@@ -29,6 +29,5 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             return _bookingEngine.RenderDatasetSite().GetContentResult();
         }
-
     }
 }

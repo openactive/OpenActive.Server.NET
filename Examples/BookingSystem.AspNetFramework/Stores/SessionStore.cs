@@ -53,14 +53,16 @@ namespace BookingSystem
                             };
                         }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
                         {
+                            var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
                             var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Within Window",
+                                $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Window",
                                 14.99M,
                                 10,
-                                validFromStartDate: true);
+                                validFromStartDate: isValid);
                             return new SessionOpportunity
                             {
                                 OpportunityType = opportunityType,
@@ -367,7 +369,7 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, orderItemIds) = FakeDatabase.BookOrderItemsForClassOccurrence(
+                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForClassOccurrence(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -378,14 +380,33 @@ namespace BookingSystem
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
                     false);
-                
+
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
                         // Set OrderItemId for each orderItemContext
-                        foreach (var (ctx, id) in ctxGroup.Zip(orderItemIds, (ctx, id) => (ctx, id)))
+                        foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
-                            ctx.SetOrderItemId(flowContext, id);
+                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+                            
+                            // Setting the access code and access pass after booking.
+                            ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
+                            {
+                                new PropertyValue()
+                                {
+                                    Name = "Pin Code",
+                                    Description = bookedOrderItemInfo.PinCode,
+                                    Value = "defaultValue"
+                                }
+                            };
+
+                            ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
+                            {
+                                new ImageObject()
+                                {
+                                    Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                                }
+                            };
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

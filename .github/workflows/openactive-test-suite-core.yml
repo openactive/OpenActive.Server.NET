@@ -1,4 +1,4 @@
-name: OpenActive Reference Implementation
+name: OpenActive Reference Implementation (.NET Core)
 
 on:
   push:
@@ -40,9 +40,9 @@ jobs:
 
     - name: Install OpenActive.Server.NET dependencies
       run: dotnet restore ./server/
-    - name: Build OpenActive.Server.NET Reference Implementation
+    - name: Build .NET Core Reference Implementation
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
-    - name: Start OpenActive.Server.NET Reference Implementation
+    - name: Start .NET Core Reference Implementation
       run: |
         dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
       env:
@@ -95,7 +95,7 @@ jobs:
     - name: Copy certificate for deployment to GitHub Pages (master branch for multiple-sellers only)
       run: |
         mkdir -p ./publish/certification/
-        cp ./tests/output/controlled/certification/* ../publish/certification/
+        cp ./tests/output/controlled/certification/* ./publish/certification/
       if: ${{ github.ref == 'refs/heads/master' && matrix.seller == 'multiple-sellers' }}
     - name: Deploy certificate to GitHub Pages (master branch for multiple-sellers only)
       uses: peaceiris/actions-gh-pages@v3
