@@ -68,14 +68,16 @@ namespace BookingSystem
                                 };
                             }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
                             {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
                                 var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                     testDatasetIdentifier,
                                     sellerId,
-                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
                                     14.99M,
                                     10,
-                                    validFromStartDate: true);
+                                    validFromStartDate: isValid);
                                 return new FacilityOpportunity
                                 {
                                     OpportunityType = opportunityType,

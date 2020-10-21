@@ -40,9 +40,9 @@ jobs:
 
     - name: Install OpenActive.Server.NET dependencies
       run: dotnet restore ./server/
-    - name: Build OpenActive.Server.NET Reference Implementation
+    - name: Build .NET Core Reference Implementation
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
-    - name: Start OpenActive.Server.NET Reference Implementation
+    - name: Start .NET Core Reference Implementation
       run: |
         dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
       env:
