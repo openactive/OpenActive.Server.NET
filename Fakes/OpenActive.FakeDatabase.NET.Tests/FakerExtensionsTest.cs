@@ -17,16 +17,12 @@ namespace OpenActive.FakeDatabase.NET.Test
                 new Bounds(11, 15)
             };
 
-            var distribution = new Faker().GenerateIntegerDistribution(11, bucketDefinitions);
+            var distribution = new Faker().GenerateIntegerDistribution(11, bucketDefinitions, (Faker faker, int index, Bounds bounds) => faker.Random.Int(bounds));
 
-            Assert.Equal(3, distribution[0].Count);
-            Assert.True(distribution[0].All(x => x >= 1 && x <= 5));
-
-            Assert.Equal(3, distribution[1].Count);
-            Assert.True(distribution[1].All(x => x >= 6 && x <= 10));
-
-            Assert.Equal(5, distribution[2].Count);
-            Assert.True(distribution[2].All(x => x >= 11 && x <= 15));
+            Assert.Equal(11, distribution.Count);
+            Assert.True(distribution.Take(3).All(x => x >= 1 && x <= 5));
+            Assert.True(distribution.Skip(3).Take(3).All(x => x >= 6 && x <= 10));
+            Assert.True(distribution.Skip(6).Take(5).All(x => x >= 11 && x <= 15));
         }
     }
 }

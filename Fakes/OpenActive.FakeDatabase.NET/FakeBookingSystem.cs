@@ -746,39 +746,39 @@ namespace OpenActive.FakeDatabase.NET
 
         private static void CreateFakeFacilitiesAndSlots(IDbConnection db)
         {
-            var eventStarts = GenerateSlotStartDetails(OpportunityCount * 10);
+            var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
 
-            var slots = Enumerable.Range(10, OpportunityCount * 10)
-                .Select((slotId, i) => new
+            var facilities = opportunitySeeds
+                .Select(seed => new FacilityUseTable
                 {
-                    Id = slotId,
-                    eventStarts[i].StartDate,
-                    TotalUses = Faker.Random.Int(0, 8)
-                })
-                .Select((slot, i) => new SlotTable
-                {
-                    FacilityUseId = decimal.ToInt32(slot.Id / 10M),
-                    Id = slot.Id,
-                    Deleted = false,
-                    Start = slot.StartDate,
-                    End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                    MaximumUses = slot.TotalUses,
-                    RemainingUses = slot.TotalUses,
-                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
-                    RequiresApproval = Faker.Random.Bool(),
-                    ValidFromBeforeStartDate = eventStarts[i].ValidFromBeforeStartDate
-                })
-                .ToList();
-
-            var facilities = Enumerable.Range(1, OpportunityCount)
-                .Select(facilityId => new FacilityUseTable
-                {
-                    Id = facilityId,
+                    Id = seed.Id,
                     Deleted = false,
                     Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
                     SellerId = Faker.Random.Bool() ? 1 : 3
                 })
                 .ToList();
+
+            int slotId = 0;
+            var slots = opportunitySeeds.Select(seed =>
+                Enumerable.Range(0, 10)
+                    .Select(_ => new
+                    {
+                        StartDate = seed.RandomStartDate(),
+                        TotalUses = Faker.Random.Int(0, 8)
+                    })
+                    .Select(slot => new SlotTable
+                    {
+                        FacilityUseId = seed.Id,
+                        Id = slotId++,
+                        Deleted = false,
+                        Start = slot.StartDate,
+                        End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                        MaximumUses = slot.TotalUses,
+                        RemainingUses = slot.TotalUses,
+                        Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                        RequiresApproval = Faker.Random.Bool(),
+                        ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
+                    })).SelectMany(os => os);
 
             db.InsertAll(facilities);
             db.InsertAll(slots);
@@ -786,46 +786,33 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateFakeClasses(IDbConnection db)
         {
-            var eventStarts = GenerateOccurrenceStartDetails(OpportunityCount).ToArray();
+            var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
 
-            var classes = Enumerable.Range(1, OpportunityCount)
-                .Select(classId => new
+            var classes = opportunitySeeds
+                .Select(seed => new ClassTable
                 {
-                    Id = classId,
-                    StartDetails = eventStarts[classId - 1]
-                })
-                .Select(@class => new ClassTable
-                {
-                    Id = @class.Id,
+                    Id = seed.Id,
                     Deleted = false,
                     Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     RequiresApproval = Faker.Random.Bool(),
                     SellerId = Faker.Random.Long(1, 3),
-                    ValidFromBeforeStartDate = @class.StartDetails.HasValidFromBeforeStartDateOffset
-                        ? TimeSpan.FromDays(Faker.Random.Int(
-                            @class.StartDetails.ValidFromBeforeStartDateOffsetMin,
-                            @class.StartDetails.ValidFromBeforeStartDateOffsetMax))
-                        : (TimeSpan?)null
+                    ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate()
                 })
                 .ToList();
 
-            var occurrences = classes.Select((@class, i) =>
-                Enumerable.Range(0, 10).Select(_ => new
+            int occurrenceId = 0;
+            var occurrences = opportunitySeeds.Select(seed =>
+                Enumerable.Range(0, 10)
+                    .Select(_ => new
                     {
-                        StartDetails = eventStarts[@class.Id - 1]
-                    })
-                    .Select(occurrence => new
-                    {
-                        Start = DateTime.Now.AddDays(Faker.Random.Int(
-                            occurrence.StartDetails.StartDateMin,
-                            occurrence.StartDetails.StartDateMax)),
+                        Start = seed.RandomStartDate(),
                         TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
                     })
                     .Select(occurrence => new OccurrenceTable
                     {
-                        Id = i + 1,
-                        ClassId = @class.Id,
+                        Id = occurrenceId++,
+                        ClassId = seed.Id,
                         Deleted = false,
                         Start = occurrence.Start,
                         End = occurrence.Start + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
@@ -965,121 +952,57 @@ namespace OpenActive.FakeDatabase.NET
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
         }
-        private static readonly Bounds[] BucketDefinitions =
+        private static readonly (Bounds, Bounds?)[] BucketDefinitions =
         {
             // in next 0-10 days, no validFromBeforeStartDate
-            new Bounds(0, 10),
-            new Bounds(0, 10),
+            (new Bounds(0, 10), null),
+            (new Bounds(0, 10), null),
             // in next 0-10 days, validFromBeforeStartDate between 10-15 days (all bookable)
-            new Bounds(0, 10),
-            new Bounds(0, 10),
+            (new Bounds(0, 10), new Bounds(10, 15)),
+            (new Bounds(0, 10), new Bounds(10, 15)),
             // in next -2-+6 days, validFromBeforeStartDate 0-4 days (over half likely bookable, some likely bookable but in the past)
-            new Bounds(-2, 6),
+            (new Bounds(-2, 6), new Bounds(0, 4)),
             // in next 5-10 days, validFromBeforeStartDate between 0-4 days (none bookable)
-            new Bounds(5, 10)
+            (new Bounds(5, 10), new Bounds(0, 4)),
         };
+
+        private static OpportunitySeed GenerateRandomOpportunityData(Faker faker, int index, (Bounds startDateRange, Bounds? validFromBeforeStartDateRange) input)
+        {
+            return new OpportunitySeed
+            {
+                Faker = faker,
+                Id = index + 1,
+                StartDateBounds = BoundsDaysToMinutes(input.startDateRange).Value,
+                ValidFromBeforeStartDateBounds = !input.validFromBeforeStartDateRange.HasValue ? (Bounds?)null : BoundsDaysToMinutes(input.validFromBeforeStartDateRange).Value,
+            };
+        }
+
+        private static Bounds? BoundsDaysToMinutes(Bounds? bounds)
+        {
+            const int MINUTES_IN_DAY = 60 * 24;
+            return !bounds.HasValue ? (Bounds?)null : new Bounds(bounds.Value.Lower * MINUTES_IN_DAY, bounds.Value.Upper * MINUTES_IN_DAY);
+        }
 
         /// <summary>
         /// Used to generate random data.
         /// </summary>
-        private static List<SlotStartDetails> GenerateSlotStartDetails(int count)
+        private static List<OpportunitySeed> GenerateOpportunitySeedDistribution(int count)
         {
-            var buckets = Faker.GenerateIntegerDistribution(count, BucketDefinitions);
-            var eventStarts = new List<SlotStartDetails>();
-
-            var bucket1 = buckets.Take(2).SelectMany(x => x).ToArray();
-            eventStarts.AddRange(
-                bucket1.Select(offset => new SlotStartDetails(offset, null)));
-
-            var bucket2 = buckets.Skip(2).Take(2).SelectMany(x => x).ToArray();
-            eventStarts.AddRange(
-                bucket2.Select(offset => new SlotStartDetails(offset, Faker.Random.Int(0, 10))));
-
-            var bucket3 = buckets.Skip(4).First();
-            eventStarts.AddRange(
-                bucket3.Select(offset => new SlotStartDetails(offset, Faker.Random.Int(0, 4))));
-
-            var bucket4 = buckets.Skip(5).First();
-            eventStarts.AddRange(
-                bucket4.Select(offset => new SlotStartDetails(offset, Faker.Random.Int(0, 4))));
-
-            return eventStarts;
+            return Faker.GenerateIntegerDistribution(count, BucketDefinitions, GenerateRandomOpportunityData).ToList();
         }
 
-        private readonly struct SlotStartDetails
+        private struct OpportunitySeed
         {
-            private readonly int? validFromBeforeStartDateOffset;
-            private readonly int startDateOffset;
+            public Faker Faker { get; set; }
+            public int Id { get; set; }
+            public Bounds StartDateBounds { get; set;}
+            public Bounds? ValidFromBeforeStartDateBounds { get; set; }
 
-            public SlotStartDetails(int startDateOffset, int? validFromBeforeStartDateOffset)
-            {
-                this.startDateOffset = startDateOffset;
-                this.validFromBeforeStartDateOffset = validFromBeforeStartDateOffset;
-            }
+            public DateTime RandomStartDate() => DateTime.Now.AddMinutes(this.Faker.Random.Int(StartDateBounds));
 
-            public DateTime StartDate => DateTime.Now.AddDays(startDateOffset);
-
-            public TimeSpan? ValidFromBeforeStartDate => validFromBeforeStartDateOffset.HasValue
-                ? TimeSpan.FromDays(validFromBeforeStartDateOffset.Value)
+            public TimeSpan? RandomValidFromBeforeStartDate() => ValidFromBeforeStartDateBounds.HasValue
+                ? TimeSpan.FromMinutes(this.Faker.Random.Int(ValidFromBeforeStartDateBounds.Value))
                 : (TimeSpan?)null;
-        }
-
-        private static List<OccurrenceStartDetails> GenerateOccurrenceStartDetails(int count)
-        {
-            var size = count / BucketDefinitions.Length;
-            var remainder = count % BucketDefinitions.Length;
-
-            var eventStarts = new List<OccurrenceStartDetails>();
-
-            var bounds = BucketDefinitions[0];
-            eventStarts.AddRange(Enumerable.Range(0, size * 2).Select(_ => new OccurrenceStartDetails(bounds.Lower, bounds.Upper)));
-
-            bounds = BucketDefinitions[2];
-            eventStarts.AddRange(Enumerable.Range(0, size * 2).Select(_ => new OccurrenceStartDetails(bounds.Lower, bounds.Upper, 10, 15)));
-
-            bounds = BucketDefinitions[4];
-            eventStarts.AddRange(Enumerable.Range(0, size).Select(_ => new OccurrenceStartDetails(bounds.Lower, bounds.Upper, 0, 4)));
-
-            bounds = BucketDefinitions[5];
-            eventStarts.AddRange(Enumerable.Range(0, size + remainder).Select(_ => new OccurrenceStartDetails(bounds.Lower, bounds.Upper, 0, 4)));
-
-            return eventStarts;
-        }
-
-        private readonly struct OccurrenceStartDetails
-        {
-            private readonly int? validFromBeforeStartDateOffsetMin;
-            private readonly int? validFromBeforeStartDateOffsetMax;
-
-            public OccurrenceStartDetails(int startDateMin, int startDateMax)
-                : this(startDateMin, startDateMax, null, null)
-            {
-            }
-
-            public OccurrenceStartDetails(int startDateMin, int startDateMax, int validFromBeforeStartDateOffsetMin, int validFromBeforeStartDateOffsetMax)
-            {
-                StartDateMin = startDateMin;
-                StartDateMax = startDateMax;
-                this.validFromBeforeStartDateOffsetMin = validFromBeforeStartDateOffsetMin;
-                this.validFromBeforeStartDateOffsetMax = validFromBeforeStartDateOffsetMax;
-            }
-
-            private OccurrenceStartDetails(int startDateMin, int startDateMax, int? validFromBeforeStartDateOffsetMin, int? validFromBeforeStartDateOffsetMax)
-            {
-                StartDateMin = startDateMin;
-                StartDateMax = startDateMax;
-                this.validFromBeforeStartDateOffsetMin = validFromBeforeStartDateOffsetMin;
-                this.validFromBeforeStartDateOffsetMax = validFromBeforeStartDateOffsetMax;
-            }
-
-            public int StartDateMin { get; }
-            public int StartDateMax { get; }
-
-            public int ValidFromBeforeStartDateOffsetMin => validFromBeforeStartDateOffsetMin ?? throw new InvalidOperationException();
-
-            public int ValidFromBeforeStartDateOffsetMax => validFromBeforeStartDateOffsetMax ?? throw new InvalidOperationException();
-
-            public bool HasValidFromBeforeStartDateOffset => validFromBeforeStartDateOffsetMin.HasValue && validFromBeforeStartDateOffsetMax.HasValue;
         }
     }
 }
