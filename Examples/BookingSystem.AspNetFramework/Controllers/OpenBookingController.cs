@@ -262,5 +262,18 @@ namespace BookingSystem.AspNetFramework.Controllers
 
             return error.ErrorResponseContent.GetContentResult();
         }
+
+        // Catch-all route necessary to return custom 404s
+        [HttpGet]
+        [HttpPatch]
+        [HttpPost]
+        [HttpPut]
+        [HttpDelete]
+        [Route("{*url}", Order = 999)]
+        public HttpResponseMessage CatchAll()
+        {
+            var error = new OpenBookingException(new UnknownOrIncorrectEndpointError());
+            return error.ErrorResponseContent.GetContentResult();
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Web;
 
 namespace BookingSystem.AspNetFramework.Helpers
 {
@@ -13,6 +14,8 @@ namespace BookingSystem.AspNetFramework.Helpers
                 StatusCode = response.StatusCode
             };
             resp.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(response.ContentType);
+            // Ensure custom error messages do not override responses
+            HttpContext.Current.Response.TrySkipIisCustomErrors = true;
             return resp;
         }
     }
