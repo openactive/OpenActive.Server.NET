@@ -162,7 +162,6 @@ namespace OpenActive.FakeDatabase.NET
 
                 return true;
             }
-
         }
 
         public void DeleteLease(string clientId, string uuid, long? sellerId)
