@@ -77,7 +77,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             var totalPaymentTaxMap = new Dictionary<string, TaxChargeSpecification>();
 
             // Handle pre-payments
-            order.TotalPaymentDue.Prepayment = GetRequiredStatusType(order.OrderedItem);
+            if (order.TotalPaymentDue != null)
+                order.TotalPaymentDue.Prepayment = GetRequiredStatusType(order.OrderedItem);
 
             foreach (OrderItem orderedItem in order.OrderedItem) {
                 // Only items with no errors associated are included in the total price

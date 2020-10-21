@@ -812,6 +812,7 @@ namespace OpenActive.FakeDatabase.NET
                     Id = @class.Id,
                     Deleted = false,
                     Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
+                    Price = @class.Price,
                     Prepayment = @class.Price == 0
                         ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
                         : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
