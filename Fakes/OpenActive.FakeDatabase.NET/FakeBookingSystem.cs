@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Bogus;
 using OpenActive.FakeDatabase.NET.Helpers;
+using OpenActive.NET;
 using ServiceStack.OrmLite;
 
 namespace OpenActive.FakeDatabase.NET
@@ -771,7 +772,8 @@ namespace OpenActive.FakeDatabase.NET
                     .Select(_ => new
                     {
                         StartDate = seed.RandomStartDate(),
-                        TotalUses = Faker.Random.Int(0, 8)
+                        TotalUses = Faker.Random.Int(0, 8),
+                        Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     })
                     .Select(slot => new SlotTable
                     {
@@ -782,7 +784,10 @@ namespace OpenActive.FakeDatabase.NET
                         End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
                         MaximumUses = slot.TotalUses,
                         RemainingUses = slot.TotalUses,
-                        Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                        Price = slot.Price,
+                        Prepayment = slot.Price == 0
+                            ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
+                            : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
                         RequiresApproval = Faker.Random.Bool(),
                         ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                     })).SelectMany(os => os);
@@ -796,15 +801,23 @@ namespace OpenActive.FakeDatabase.NET
             var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
 
             var classes = opportunitySeeds
-                .Select(seed => new ClassTable
+                .Select(seed => new
                 {
-                    Id = seed.Id,
+                    seed.Id,
+                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                    ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate()
+                })
+                .Select(@class => new ClassTable
+                {
+                    Id = @class.Id,
                     Deleted = false,
                     Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
-                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                    Prepayment = @class.Price == 0
+                        ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
+                        : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
                     RequiresApproval = Faker.Random.Bool(),
                     SellerId = Faker.Random.Long(1, 3),
-                    ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate()
+                    ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate
                 })
                 .ToList();
 
@@ -842,14 +855,15 @@ namespace OpenActive.FakeDatabase.NET
             db.InsertAll(sellers);
         }
 
-        public (int, int) AddClass(
+        public (int, int) AddClass( // ToDo: update switch statement
             string testDatasetIdentifier,
             long? sellerId,
             string title,
             decimal? price,
             long totalSpaces,
             bool requiresApproval = false,
-            bool? validFromStartDate = null)
+            bool? validFromStartDate = null,
+            RequiredStatusType? prepayment = null)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -863,6 +877,7 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     Title = title,
                     Price = price,
+                    Prepayment = prepayment,
                     SellerId = sellerId ?? 1,
                     RequiresApproval = requiresApproval,
                     ValidFromBeforeStartDate = validFromStartDate.HasValue
@@ -889,14 +904,15 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (int, int) AddFacility(
+        public (int, int) AddFacility( // ToDo: update switch statement
             string testDatasetIdentifier,
             long? sellerId,
             string title,
             decimal? price,
             long totalUses,
             bool requiresApproval = false,
-            bool? validFromStartDate = null)
+            bool? validFromStartDate = null,
+            RequiredStatusType? prepayment = null)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -923,6 +939,7 @@ namespace OpenActive.FakeDatabase.NET
                     MaximumUses = totalUses,
                     RemainingUses = totalUses,
                     Price = price,
+                    Prepayment = prepayment,
                     RequiresApproval = requiresApproval,
                     ValidFromBeforeStartDate =  validFromStartDate.HasValue
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)

@@ -76,6 +76,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             string totalPaymentDueCurrency = null;
             var totalPaymentTaxMap = new Dictionary<string, TaxChargeSpecification>();
 
+            // Handle pre-payments
+            order.TotalPaymentDue.Prepayment = GetRequiredStatusType(order.OrderedItem);
+
             foreach (OrderItem orderedItem in order.OrderedItem) {
                 // Only items with no errors associated are included in the total price
                 if (!(orderedItem.Error?.Count > 0))
@@ -124,6 +127,25 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 Price = totalPaymentDuePrice,
                 PriceCurrency = totalPaymentDueCurrency
             };
+        }
+
+        private static RequiredStatusType? GetRequiredStatusType(IReadOnlyCollection<OrderItem> orderItems)
+        {
+            if (orderItems.Any(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Required ||
+                                             x.AcceptedOffer.Price != 0 && x.AcceptedOffer.Prepayment == null))
+                return RequiredStatusType.Required;
+
+            if (orderItems.Any(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Optional) &&
+                orderItems.All(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Optional ||
+                                             x.AcceptedOffer.Prepayment == RequiredStatusType.Unavailable ||
+                                             x.AcceptedOffer.Price == 0 && x.AcceptedOffer.Prepayment == null))
+                return RequiredStatusType.Optional;
+
+            if (orderItems.All(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Unavailable ||
+                                             x.AcceptedOffer.Price == 0))
+                return RequiredStatusType.Unavailable;
+
+            return null;
         }
     }
 }

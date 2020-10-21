@@ -310,6 +310,22 @@ namespace OpenActive.Server.NET.StoreBooking
             {
                 throw new OpenBookingException(new IncompletePaymentDetailsError(), "Payment must contain identifier for paid Order.");
             }
+
+            // If no payment provided by broker, prepayment must either be required, or not specified with a nonzero price
+            if (requestOrder.Payment == null &&
+                responseOrder.TotalPaymentDue?.Prepayment == RequiredStatusType.Required ||
+                responseOrder.TotalPaymentDue?.Price > 0 && responseOrder.TotalPaymentDue?.Prepayment == null)
+            {
+                throw new OpenBookingException(new MissingPaymentDetailsError(), "Orders with prepayment must have nonzero price.");
+            }
+
+            // If payment provided by broker, prepayment must not be required or price must be zero
+            if (requestOrder.Payment != null &&
+                responseOrder.TotalPaymentDue?.Prepayment == RequiredStatusType.Unavailable ||
+                responseOrder.TotalPaymentDue?.Price == 0)
+            {
+                throw new OpenBookingException(new UnnecessaryPaymentDetailsError(), "Orders without prepayment must have zero price.");
+            }
         }
 
         protected override Order ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
