@@ -855,7 +855,7 @@ namespace OpenActive.FakeDatabase.NET
             db.InsertAll(sellers);
         }
 
-        public (int, int) AddClass( // ToDo: update switch statement
+        public (int, int) AddClass(
             string testDatasetIdentifier,
             long? sellerId,
             string title,
