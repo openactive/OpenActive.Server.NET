@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using Bogus;
 using OpenActive.FakeDatabase.NET.Helpers;
-using OpenActive.NET;
 using ServiceStack.OrmLite;
 
 namespace OpenActive.FakeDatabase.NET

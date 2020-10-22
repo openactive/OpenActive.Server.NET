@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BookingSystem.AspNetFramework.Helpers;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
@@ -191,7 +192,7 @@ namespace BookingSystem
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = classes.Price,
                                          PriceCurrency = "GBP",
-                                         Prepayment = classes.Prepayment,
+                                         Prepayment = classes.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate
                                      },
                                      OrderedItem = new ScheduledSession
@@ -406,6 +407,12 @@ namespace BookingSystem
                                 new ImageObject()
                                 {
                                     Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                                },
+                                new Barcode()
+                                {
+                                    Url = new Uri(bookedOrderItemInfo.ImageUrl),
+                                    Text = bookedOrderItemInfo.BarCodeText,
+                                    CodeType = "code128"
                                 }
                             };
                         }

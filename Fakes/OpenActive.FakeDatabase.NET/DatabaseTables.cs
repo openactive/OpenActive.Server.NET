@@ -1,5 +1,4 @@
 ﻿using System;
-using OpenActive.NET;
 using ServiceStack.DataAnnotations;
 using ServiceStack.OrmLite;
 
@@ -12,6 +11,8 @@ namespace OpenActive.FakeDatabase.NET
     public enum ProposalStatus { AwaitingSellerConfirmation, SellerAccepted, SellerRejected, CustomerRejected }
 
     public enum OrderMode { Lease, Proposal, Booking }
+
+    public enum RequiredStatusType { Required, Optional, Unavailable }
 
     [CompositeIndex(nameof(Modified), nameof(Id))]
     public abstract class Table
@@ -32,7 +33,7 @@ namespace OpenActive.FakeDatabase.NET
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; }
         public decimal? Price { get; set; }
-        public RequiredStatusType? Prepayment { get; set; } // ToDo: should we reference OpenActive.NET, or mirror the enum in this project?
+        public RequiredStatusType? Prepayment { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
     }

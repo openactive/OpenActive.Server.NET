@@ -446,6 +446,7 @@
     </Compile>
     <Compile Include="Helpers\AuthenticationHelper.cs" />
     <Compile Include="Helpers\OpenBookingInputFormatter.cs" />
+    <Compile Include="Helpers\RequiredStatusTypeExtensions.cs" />
     <Compile Include="Helpers\ResponseContentHelper.cs" />
     <Compile Include="IdComponents\FacilityOpportunity.cs" />
     <Compile Include="IdComponents\SessionOpportunity.cs" />
