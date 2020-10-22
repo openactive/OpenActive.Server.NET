@@ -76,11 +76,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             string totalPaymentDueCurrency = null;
             var totalPaymentTaxMap = new Dictionary<string, TaxChargeSpecification>();
 
-            // Handle pre-payments
-            if (order.TotalPaymentDue != null)
-                order.TotalPaymentDue.Prepayment = GetRequiredStatusType(order.OrderedItem);
-
-            foreach (OrderItem orderedItem in order.OrderedItem) {
+            foreach (OrderItem orderedItem in order.OrderedItem)
+            {
                 // Only items with no errors associated are included in the total price
                 if (!(orderedItem.Error?.Count > 0))
                 {
@@ -126,7 +123,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             order.TotalPaymentDue = new PriceSpecification
             {
                 Price = totalPaymentDuePrice,
-                PriceCurrency = totalPaymentDueCurrency
+                PriceCurrency = totalPaymentDueCurrency,
+                Prepayment = GetRequiredStatusType(order.OrderedItem)
             };
         }
 
