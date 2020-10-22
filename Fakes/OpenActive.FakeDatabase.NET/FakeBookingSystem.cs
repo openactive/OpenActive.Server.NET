@@ -904,7 +904,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (int, int) AddFacility( // ToDo: update switch statement
+        public (int, int) AddFacility(
             string testDatasetIdentifier,
             long? sellerId,
             string title,
