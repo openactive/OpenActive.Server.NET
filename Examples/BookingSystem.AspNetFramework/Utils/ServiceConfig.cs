@@ -12,16 +12,22 @@ namespace BookingSystem.AspNetFramework
     {
         public static void Register(HttpConfiguration config)
         {
-            config.Formatters.Add(new OpenBookingInputFormatter());
+            var appSettings = new AppSettings
+            {
+                BaseUrl = ConfigurationManager.AppSettings["BaseUrl"],
+                UseSingleSellerMode = ConfigurationManager.AppSettings["UseSingleSellerMode"] == "true",
+                UsePaymentReconciliationDetailValidation = ConfigurationManager.AppSettings["UsePaymentReconciliationDetailValidation"] == "true",
+                AccountId = ConfigurationManager.AppSettings["AccountId"],
+                PaymentProviderId = ConfigurationManager.AppSettings["PaymentProviderId"]
+            };
 
-            var baseUrl = ConfigurationManager.AppSettings["ApplicationHostBaseUrl"] ?? "https://localhost:5001";
-            var useSingleSellerMode = ConfigurationManager.AppSettings["UseSingleSellerMode"] == "true";
+            config.Formatters.Add(new OpenBookingInputFormatter());
 
             var services = new ServiceCollection();
             services.AddTransient<DatasetSiteController>();
             services.AddTransient<OpenDataController>();
             services.AddTransient<OpenBookingController>();
-            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(baseUrl, useSingleSellerMode));
+            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(appSettings));
 
             var resolver = new DependencyResolver(services.BuildServiceProvider(true));
             config.DependencyResolver = resolver;
