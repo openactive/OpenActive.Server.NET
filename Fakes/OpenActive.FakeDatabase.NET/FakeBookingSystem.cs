@@ -164,6 +164,35 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public bool AddCustomerNotice(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+
+                if (order != null)
+                {
+                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
+                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+
+                    foreach (OrderItemsTable orderItem in orderItems)
+                    {
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        {
+                            updatedOrderItems.Add(orderItem);
+                            orderItem.CustomerNotice = $"customer notice message: {Faker.Random.String(10, minChar:'a', maxChar:'z')}";
+                            db.Save(orderItem);
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
         public void DeleteLease(string clientId, string uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())

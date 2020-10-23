@@ -84,6 +84,16 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
+                case CustomerNoticeSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.AddCustomerNotice(idComponents.uuid))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
             }
         }
 
