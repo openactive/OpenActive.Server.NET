@@ -164,8 +164,13 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool UpdateAccesCode(string uuid)
+        public bool UpdateAcces(string uuid, bool updateAccessPass = false, bool updateAccessCode = false)
         {
+            if (!updateAccessPass && !updateAccessCode)
+            {
+                return false;
+            }
+
             using (var db = Mem.Database.Open())
             {
                 OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
@@ -180,7 +185,17 @@ namespace OpenActive.FakeDatabase.NET
                         if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
                         {
                             updatedOrderItems.Add(orderItem);
-                            orderItem.PinCode = "updatedPinCode";
+
+                            if (updateAccessCode)
+                            {
+                                orderItem.PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar: '9');
+                            }
+
+                            if (updateAccessPass)
+                            {
+                                orderItem.ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25);
+                                orderItem.BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                            }
 
                             db.Save(orderItem);
                         }
