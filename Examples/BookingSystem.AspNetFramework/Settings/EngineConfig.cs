@@ -145,8 +145,7 @@ namespace BookingSystem
                         },
                         {
                             OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
-                        }
-                        ,
+                        },
                         {
                             OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
                         }
