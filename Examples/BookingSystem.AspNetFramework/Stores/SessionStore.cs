@@ -143,7 +143,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
                                 14.99M,
                                 10);
-                            break;
+                            break; 
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
