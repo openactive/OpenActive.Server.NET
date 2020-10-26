@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        profile: ['all-features', 'single-seller']
+        profile: ['all-features', 'single-seller', 'no-payment-reconciliation']
 
     steps:
     - name: Checkout OpenActive.Server.NET
