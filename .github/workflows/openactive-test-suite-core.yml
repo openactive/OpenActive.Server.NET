@@ -65,7 +65,7 @@ jobs:
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
       with:
-        name: test-output.random.${{ matrix.profile }}
+        name: test.random.${{ matrix.profile }}
         path: ./tests/output/random/
 
     - name: Run OpenActive Integration Tests in Controlled Mode
@@ -82,7 +82,7 @@ jobs:
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
       with:
-        name: test-output.controlled.${{ matrix.profile }}
+        name: test.controlled.${{ matrix.profile }}
         path: ./tests/output/controlled/
 
     - name: Copy certificate for deployment to GitHub Pages (master branch for 'all-features' profile only)
