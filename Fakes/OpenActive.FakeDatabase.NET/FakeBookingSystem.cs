@@ -172,14 +172,12 @@ namespace OpenActive.FakeDatabase.NET
 
                 if (order != null)
                 {
-                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
                     List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
 
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
                         if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
                         {
-                            updatedOrderItems.Add(orderItem);
                             orderItem.Status = BookingStatus.Attended;
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
                             db.Update(orderItem);
