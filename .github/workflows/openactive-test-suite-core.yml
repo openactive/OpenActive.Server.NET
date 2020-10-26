@@ -58,7 +58,7 @@ jobs:
         FORCE_COLOR: 1
         NODE_CONFIG: |
           { "outputPath": "../../output/random/", "useRandomOpportunities": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
-        NODE_ENV: ${{ matrix.profile }}.example
+        NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
       working-directory: tests
     - name: Upload test output for Random Mode as artifact
@@ -74,7 +74,7 @@ jobs:
         FORCE_COLOR: 1
         NODE_CONFIG: |
           { "outputPath": "../../output/random/", "useRandomOpportunities": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
-        NODE_ENV: ${{ matrix.profile }}.example
+        NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
 
       working-directory: tests
