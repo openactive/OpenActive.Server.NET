@@ -246,10 +246,10 @@ namespace BookingSystem
                     // List of _bookable_ opportunity types and which store to route to for each
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
-                            new SessionStore(appSettings.FeatureFlags.SingleSeller), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                            new SessionStore(appSettings), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStore(appSettings.FeatureFlags.SingleSeller), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
+                            new FacilityStore(appSettings), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
                         }
                     },
                     OrderStore = new AcmeOrderStore(appSettings),

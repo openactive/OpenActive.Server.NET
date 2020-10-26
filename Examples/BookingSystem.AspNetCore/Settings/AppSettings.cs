@@ -21,6 +21,8 @@ namespace BookingSystem
         public string BaseUrl { get; set; }
         public bool UseSingleSellerMode { get; set; }
         public bool UsePaymentReconciliationDetailValidation { get; set; }
+        public bool TaxCalculationB2B { get; set; }
+        public bool TaxCalculationB2C { get; set; }
         public string AccountId { get; set; }
         public string PaymentProviderId { get; set; }
     }
