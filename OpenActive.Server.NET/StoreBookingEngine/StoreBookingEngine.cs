@@ -507,8 +507,8 @@ namespace OpenActive.Server.NET.StoreBooking
             };
 
             // Add totals to the resulting Order
-            OrderCalculations.AugmentOrderWithTotals(responseGenericOrder);
-
+            OrderCalculations.AugmentOrderWithTotals(
+                responseGenericOrder, context, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation);
 
             switch (responseGenericOrder)
             {
