@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BookingSystem.AspNetCore.Helpers;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
@@ -128,6 +127,22 @@ namespace BookingSystem
                                 14.99M,
                                 10,
                                 requiresApproval: true);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                2,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Net",
+                                14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxGross:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
+                                14.99M,
+                                10);
                             break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
