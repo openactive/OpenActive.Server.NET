@@ -169,21 +169,23 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
-
                 if (order != null)
                 {
-                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
                     List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
-
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
                         if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
                         {
-                            updatedOrderItems.Add(orderItem);
                             orderItem.CustomerNotice = $"customer notice message: {Faker.Random.String(10, minChar:'a', maxChar:'z')}";
-                            db.Save(orderItem);
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Update(orderItem);
                         }
                     }
+
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
+                    db.Update(order);
+
                     return true;
                 }
                 else
