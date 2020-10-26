@@ -181,10 +181,15 @@ namespace OpenActive.FakeDatabase.NET
                         {
                             updatedOrderItems.Add(orderItem);
                             orderItem.Status = BookingStatus.Attended;
-
-                            db.Save(orderItem);
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Update(orderItem);
                         }
                     }
+
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
+                    db.Update(order);
+
                     return true;
                 }
                 else
