@@ -455,8 +455,9 @@ namespace OpenActive.Server.NET.StoreBooking
                 if (context.AuthenticatedCustomer.AccessToken == null)
                     throw new OpenBookingException(new OpenBookingError(), "beta:CustomerAuthTokenMissingError");
             }
+
             // Throw error on incomplete customer details if C2, P or B
-            else if (context.Stage != FlowStage.C1 && (context.Customer == null || string.IsNullOrWhiteSpace(context.Customer.Email)))
+            else if (context.Stage != FlowStage.C1 && (context.Customer == null || context.Customer.IsPerson && string.IsNullOrWhiteSpace(context.Customer.Email)))
             {
                 throw new OpenBookingException(new IncompleteCustomerDetailsError());
             }
