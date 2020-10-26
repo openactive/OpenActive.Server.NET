@@ -13,11 +13,12 @@ namespace BookingSystem
 {
     class SessionStore : OpportunityStore<SessionOpportunity, OrderTransaction, OrderStateContext>
     {
+        private readonly AppSettings _appSettings;
+
         // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
-        private bool UseSingleSellerMode;
-        public SessionStore(bool UseSingleSellerMode)
+        public SessionStore(AppSettings appSettings)
         {
-            this.UseSingleSellerMode = UseSingleSellerMode;
+            _appSettings = appSettings;
         }
 
         Random rnd = new Random();
@@ -28,10 +29,10 @@ namespace BookingSystem
             TestOpportunityCriteriaEnumeration criteria,
             SellerIdComponents seller)
         {
-            if (!UseSingleSellerMode && !seller.SellerIdLong.HasValue)
+            if (!_appSettings.UseSingleSellerMode && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
 
-            long? sellerId = UseSingleSellerMode ? null : seller.SellerIdLong;
+            long? sellerId = _appSettings.UseSingleSellerMode ? null : seller.SellerIdLong;
 
             switch (opportunityType)
             {
@@ -194,17 +195,7 @@ namespace BookingSystem
                                  {
                                      AllowCustomerCancellationFullRefund = true,
                                      // TODO: The static example below should come from the database (which doesn't currently support tax)
-                                     UnitTaxSpecification = flowContext.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
-                                         new List<TaxChargeSpecification>
-                                         {
-                                            new TaxChargeSpecification
-                                            {
-                                                Name = "VAT at 20%",
-                                                Price = classes.Price * (decimal?)0.2,
-                                                PriceCurrency = "GBP",
-                                                Rate = (decimal?)0.2
-                                            }
-                                         } : null,
+                                     UnitTaxSpecification = GetUnitTaxSpecification(flowContext, classes),
                                      AcceptedOffer = new Offer
                                      {
                                          // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
@@ -263,7 +254,7 @@ namespace BookingSystem
                                                  x.OrderId != flowContext.OrderId.uuid)
                                      }
                                  },
-                                 SellerId = UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
+                                 SellerId = _appSettings.UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
                                  classes.RequiresApproval
                              }).ToArray();
 
@@ -495,6 +486,29 @@ namespace BookingSystem
                 }
             }
         }
-    }
 
+        private List<TaxChargeSpecification> GetUnitTaxSpecification(BookingFlowContext flowContext, ClassTable classes)
+        {
+            switch (flowContext.TaxPayeeRelationship)
+            {
+                case TaxPayeeRelationship.BusinessToBusiness when _appSettings.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when _appSettings.TaxCalculationB2C:
+                    return new List<TaxChargeSpecification>
+                    {
+                        new TaxChargeSpecification
+                        {
+                            Name = "VAT at 20%",
+                            Price = classes.Price * (decimal?)0.2,
+                            PriceCurrency = "GBP",
+                            Rate = (decimal?)0.2
+                        }
+                    };
+                case TaxPayeeRelationship.BusinessToBusiness when !_appSettings.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when !_appSettings.TaxCalculationB2C:
+                    return null;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
 }
