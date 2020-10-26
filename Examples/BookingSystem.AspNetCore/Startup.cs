@@ -21,7 +21,7 @@ namespace BookingSystem.AspNetCore
         public void ConfigureServices(IServiceCollection services)
         {
             var appSettings = new AppSettings();
-            Configuration.GetSection("AppSettings").Bind(appSettings);
+            Configuration.Bind(appSettings);
 
             // TODO: Authentication disabled for now
             // services.AddAuthentication(AzureADB2CDefaults.BearerAuthenticationScheme)
