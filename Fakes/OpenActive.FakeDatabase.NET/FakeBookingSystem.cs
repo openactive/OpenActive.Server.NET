@@ -222,12 +222,7 @@ namespace OpenActive.FakeDatabase.NET
 
                             return true;
                         }
-
-                        //orderItem.Modified = DateTimeOffset.Now.UtcTicks;
-                        //db.Update(orderItem);
                     }
-                    //order.Modified = DateTimeOffset.Now.UtcTicks;
-                    //db.Update(order);
                 }
 
                 return false;
