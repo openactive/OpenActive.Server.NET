@@ -141,10 +141,10 @@ namespace BookingSystem
                             },
                             Location = new Place
                             {
-                                Name = "Fake Pond",
+                                Name = result.Item1.LocationName ?? "Fake Pond",
                                 Address = new PostalAddress
                                 {
-                                    StreetAddress = "1 Fake Park",
+                                    StreetAddress = result.Item1.LocationAddress ?? "1 Fake Park",
                                     AddressLocality = "Another town",
                                     AddressRegion = "Oxfordshire",
                                     PostalCode = "OX1 1AA",
@@ -152,8 +152,8 @@ namespace BookingSystem
                                 },
                                 Geo = new GeoCoordinates
                                 {
-                                    Latitude = 0.1m,
-                                    Longitude = 0.1m
+                                    Latitude = result.Item1.LocationGeoLat ?? 0.1m,
+                                    Longitude = result.Item1.LocationGeoLong ?? 0.1m
                                 }
                             },
                             Url = new Uri("https://www.example.com/a-session-age"),

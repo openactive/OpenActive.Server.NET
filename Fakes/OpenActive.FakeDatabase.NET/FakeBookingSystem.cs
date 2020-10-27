@@ -164,6 +164,76 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public bool UpdateOrderLogisticsData(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var order = db.Single<OrderTable>(x => x.OrderId == uuid);
+
+                if (order != null)
+                {
+                    var orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+                    foreach (var orderItem in orderItems)
+                    {
+                        if (orderItem.SlotId.HasValue)
+                        {
+                            var slotInstance = db.Single<SlotTable>(x => x.Id == orderItem.SlotId && !x.Deleted);
+                            var facilityInstance =  db.Single<FacilityUseTable>(x => x.Id == slotInstance.FacilityUseId && !x.Deleted);
+
+                            // Update logistics data for Facility/Slot
+                            facilityInstance.Name = "Updated Name: " + facilityInstance.Name;
+                            facilityInstance.LocationAddress = "Updated address";
+                            facilityInstance.LocationName = "Updated location name";
+                            facilityInstance.LocationGeoLat = Faker.Random.Decimal(min: -5.0m, max: 5.0m);
+                            facilityInstance.LocationGeoLong = Faker.Random.Decimal(min: -5.0m, max: 5.0m);
+
+                            // this will also change duration as duration is calculated based on start and end time.
+                            slotInstance.Start = slotInstance.Start.AddHours(1);
+                            slotInstance.End = slotInstance.End.AddHours(2);
+
+                            slotInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                            facilityInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Update(slotInstance);
+                            db.Update(facilityInstance);
+
+                            return true;
+                        }
+
+                        if (orderItem.OccurrenceId.HasValue)
+                        {
+                            var occurenceInstance = db.Single<OccurrenceTable>(x => x.Id == orderItem.OccurrenceId && !x.Deleted);
+                            var classInstance = db.Single<ClassTable>(x => x.Id == occurenceInstance.ClassId && !x.Deleted);
+
+                            // update logistcs data for Session/ScheduledSession.
+                            classInstance.Title = "Updated Name: " + classInstance.Title;
+                            classInstance.LocationAddress = "Updated address";
+                            classInstance.LocationName = "Updated location name";
+                            classInstance.LocationGeoLat = Faker.Random.Decimal(min: -5.0m, max: 5.0m);
+                            classInstance.LocationGeoLong = Faker.Random.Decimal(min: -5.0m, max: 5.0m);
+
+                            //this will also change duration as duration is calculated based on start and end time.
+                            occurenceInstance.Start = occurenceInstance.Start.AddHours(1);
+                            occurenceInstance.End = occurenceInstance.End.AddHours(2);
+
+                            occurenceInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                            classInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Update(occurenceInstance);
+                            db.Update(classInstance);
+
+                            return true;
+                        }
+
+                        //orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+                        //db.Update(orderItem);
+                    }
+                    //order.Modified = DateTimeOffset.Now.UtcTicks;
+                    //db.Update(order);
+                }
+
+                return false;
+            }
+        }
+
         public void DeleteLease(string clientId, string uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())
@@ -360,7 +430,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public struct BookedOrderItemInfo
         {
-            public long OrderItemId{ get; set; }
+            public long OrderItemId { get; set; }
             public string PinCode { get; set; }
             public string ImageUrl { get; set; }
             public string BarCodeText { get; set; }
@@ -416,7 +486,7 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisClass.Price.Value,
-                    PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar:'9'),
+                    PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar: '9'),
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
                     BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
@@ -924,7 +994,7 @@ namespace OpenActive.FakeDatabase.NET
                     RemainingUses = totalUses,
                     Price = price,
                     RequiresApproval = requiresApproval,
-                    ValidFromBeforeStartDate =  validFromStartDate.HasValue
+                    ValidFromBeforeStartDate = validFromStartDate.HasValue
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
                         : (TimeSpan?)null
                 };
@@ -1002,7 +1072,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             public Faker Faker { get; set; }
             public int Id { get; set; }
-            public Bounds StartDateBounds { get; set;}
+            public Bounds StartDateBounds { get; set; }
             public Bounds? ValidFromBeforeStartDateBounds { get; set; }
 
             public DateTime RandomStartDate() => DateTime.Now.AddMinutes(this.Faker.Random.Int(StartDateBounds));

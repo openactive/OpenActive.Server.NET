@@ -63,13 +63,33 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
+                case SellerRequestedCancellationWithMessageSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false, true))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                    
                 case SellerRequestedCancellationSimulateAction _:
                     if (idComponents.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-
-                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false ))
+                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                case ChangeOfLogisticsSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.UpdateOrderLogisticsData(idComponents.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
