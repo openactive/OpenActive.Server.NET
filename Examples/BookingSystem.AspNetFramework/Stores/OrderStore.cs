@@ -345,6 +345,7 @@ namespace BookingSystem
 
         private bool ReconciliationMismatch(StoreBookingFlowContext flowContext)
         {
+            // MissingPaymentDetailsError is handled by OpenActive.Server.NET, so ignoring empty payment details here allows the exception to be thrown by the booking engine.
             if (flowContext.Payment == null)
                 return false;
 
