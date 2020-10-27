@@ -14,11 +14,12 @@ namespace BookingSystem.AspNetFramework
         {
             var appSettings = new AppSettings
             {
-                BaseUrl = ConfigurationManager.AppSettings["BaseUrl"],
-                UseSingleSellerMode = ConfigurationManager.AppSettings["UseSingleSellerMode"] == "true",
-                UsePaymentReconciliationDetailValidation = ConfigurationManager.AppSettings["UsePaymentReconciliationDetailValidation"] == "true",
-                AccountId = ConfigurationManager.AppSettings["AccountId"],
-                PaymentProviderId = ConfigurationManager.AppSettings["PaymentProviderId"]
+                BaseUrl = ConfigurationManager.AppSettings["ApplicationHostBaseUrl"],
+                FeatureFlags = new FeatureSettings(), // use default values for all features
+                Payment = new PaymentSettings {
+                    AccountId = ConfigurationManager.AppSettings["AccountId"],
+                    PaymentProviderId = ConfigurationManager.AppSettings["PaymentProviderId"]
+                }
             };
 
             config.Formatters.Add(new OpenBookingInputFormatter());

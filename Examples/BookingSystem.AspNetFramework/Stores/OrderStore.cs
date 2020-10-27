@@ -80,7 +80,7 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
-
+                    
                 case SellerRequestedCancellationSimulateAction _:
                     if (idComponents.OrderType != OrderType.Order)
                     {
@@ -107,7 +107,7 @@ namespace BookingSystem
             OrderStateContext stateContext,
             OrderTransaction databaseTransaction)
         {
-            if (_appSettings.UsePaymentReconciliationDetailValidation && ReconciliationMismatch(flowContext))
+            if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
 
             // Note if no lease support, simply return null always here instead
@@ -151,7 +151,7 @@ namespace BookingSystem
 
         public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
-            if (_appSettings.UsePaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
+            if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
 
             if (!responseOrder.TotalPaymentDue.Price.HasValue)
@@ -348,7 +348,7 @@ namespace BookingSystem
             if (flowContext.Payment == null)
                 return false;
 
-            return flowContext.Payment.AccountId != _appSettings.AccountId || flowContext.Payment.PaymentProviderId != _appSettings.PaymentProviderId;
+            return flowContext.Payment.AccountId != _appSettings.Payment.AccountId || flowContext.Payment.PaymentProviderId != _appSettings.Payment.PaymentProviderId;
         }
     }
 }
