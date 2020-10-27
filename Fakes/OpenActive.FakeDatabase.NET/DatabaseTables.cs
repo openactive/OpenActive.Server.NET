@@ -33,6 +33,7 @@ namespace OpenActive.FakeDatabase.NET
         public decimal? Price { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
+        public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
     }
 
     public class OccurrenceTable : Table
@@ -124,6 +125,7 @@ namespace OpenActive.FakeDatabase.NET
         public decimal? Price { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
+        public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
     }
 
     public class FacilityUseTable : Table

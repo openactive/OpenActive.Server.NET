@@ -70,6 +70,24 @@ namespace BookingSystem
                                 ScheduledSessionId = occurrenceId
                             };
                         }
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableOutsideWindow:
+                        {
+                            var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow;
+                            var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Cancellation Window",
+                                14.99M,
+                                10,
+                                latestCancellationBeforeStartDate: isValid);
+                            return new SessionOpportunity
+                            {
+                                OpportunityType = opportunityType,
+                                SessionSeriesId = classId,
+                                ScheduledSessionId = occurrenceId
+                            };
+                        }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
                         {
                             var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -191,7 +209,8 @@ namespace BookingSystem
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = classes.Price,
                                          PriceCurrency = "GBP",
-                                         ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate
+                                         ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate,
+                                         LatestCancellationBeforeStartDate = classes.LatestCancellationBeforeStartDate
                                      },
                                      OrderedItem = new ScheduledSession
                                      {

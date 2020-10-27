@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using Bogus;
 using OpenActive.FakeDatabase.NET.Helpers;
 using ServiceStack.OrmLite;
@@ -505,69 +506,81 @@ namespace OpenActive.FakeDatabase.NET
         public bool CancelOrderItems(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled, bool includeCancellationMessage = false)
         {
             using (var db = Mem.Database.Open())
+            using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
-                OrderTable order = null;
-                if (customerCancelled)
-                {
-                    order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid && !x.Deleted);
-                }
-                else
-                {
-                    // When seller cancels only uuid is sent.
-                    order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
-                }
+                var order = customerCancelled
+                    ? db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid && !x.Deleted)
+                    : db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
 
-                if (order != null)
-                {
-                    if (sellerId.HasValue && order.SellerId != sellerId)
-                    {
-                        throw new ArgumentException("SellerId does not match Order");
-                    }
-                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
-                    List<OrderItemsTable> orderItems = null;
-
-                    if (customerCancelled)
-                    {
-                        orderItems = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && orderItemIds.Contains(x.Id));
-                    }
-                    else
-                    {
-                        orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
-                    }
-
-                    foreach (OrderItemsTable orderItem in orderItems)
-                    {
-                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Attended)
-                        {
-                            updatedOrderItems.Add(orderItem);
-                            orderItem.Status = customerCancelled ? BookingStatus.CustomerCancelled : BookingStatus.SellerCancelled;
-                            if (includeCancellationMessage)
-                            {
-                                orderItem.CancellationMessage = "Order canceled by seller";
-                            }
-                            db.Save(orderItem);
-                        }
-                    }
-                    // Update the total price and modified date on the Order to update the feed, if something has changed
-                    // This makes the call idempotent
-                    if (updatedOrderItems.Count > 0)
-                    {
-                        var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
-                        order.TotalOrderPrice = totalPrice;
-                        order.VisibleInFeed = true;
-                        order.Modified = DateTimeOffset.Now.UtcTicks;
-                        db.Update(order);
-                        // Note an actual implementation would need to handle different opportunity types here
-                        // Update the number of spaces available as a result of cancellation
-                        RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
-                        RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
-                    }
-                    return true;
-                }
-                else
-                {
+                if (order == null)
                     return false;
+
+                if (sellerId.HasValue && order.SellerId != sellerId)
+                    throw new ArgumentException("SellerId does not match Order");
+
+                var whereClause = customerCancelled
+                    ? x => x.ClientId == clientId && x.OrderId == order.OrderId && orderItemIds.Contains(x.Id)
+                    : (Expression<Func<OrderItemsTable, bool>>)(x => x.OrderId == order.OrderId);
+                var query = db.From<OrderItemsTable>()
+                              .LeftJoin<OrderItemsTable, SlotTable>()
+                              .LeftJoin<OrderItemsTable, OccurrenceTable>()
+                              .LeftJoin<OccurrenceTable, ClassTable>()
+                              .Where(whereClause);
+                var orderItems = db
+                    .SelectMulti<OrderItemsTable, SlotTable, OccurrenceTable, ClassTable>(query)
+                    .Where(t => t.Item1.Status == BookingStatus.Confirmed || t.Item1.Status == BookingStatus.Attended)
+                    .ToArray();
+
+                var updatedOrderItems = new List<OrderItemsTable>();
+                foreach (var (orderItem, slot, occurrence, @class) in orderItems)
+                {
+                    var now = DateTime.Now;
+
+                    if (slot?.LatestCancellationBeforeStartDate != null &&
+                        slot.Start - slot.LatestCancellationBeforeStartDate < now)
+                    {
+                        transaction.Rollback();
+                        throw new InvalidOperationException();
+                    }
+
+                    if (occurrence != null &&
+                        @class?.LatestCancellationBeforeStartDate != null &&
+                        occurrence.Start - @class.LatestCancellationBeforeStartDate < now)
+                    {
+                        transaction.Rollback();
+                        throw new InvalidOperationException();
+                    }
+
+                    updatedOrderItems.Add(orderItem);
+                    orderItem.Status = customerCancelled ? BookingStatus.CustomerCancelled : BookingStatus.SellerCancelled;
+
+                    if (includeCancellationMessage)
+                        orderItem.CancellationMessage = "Order canceled by seller";
+
+                    db.Save(orderItem);
                 }
+
+                // Update the total price and modified date on the Order to update the feed, if something has changed
+                // This makes the call idempotent
+                if (updatedOrderItems.Count > 0)
+                {
+                    var totalPrice = db.Select<OrderItemsTable>(x =>
+                        x.ClientId == clientId && x.OrderId == order.OrderId &&
+                        (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
+
+                    order.TotalOrderPrice = totalPrice;
+                    order.VisibleInFeed = true;
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    db.Update(order);
+
+                    // Note an actual implementation would need to handle different opportunity types here
+                    // Update the number of spaces available as a result of cancellation
+                    RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                    RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                }
+
+                transaction.Commit();
+                return true;
             }
         }
 
@@ -785,6 +798,7 @@ namespace OpenActive.FakeDatabase.NET
                         Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                         RequiresApproval = Faker.Random.Bool(),
                         ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
+                        LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate()
                     })).SelectMany(os => os);
 
             db.InsertAll(facilities);
@@ -804,7 +818,8 @@ namespace OpenActive.FakeDatabase.NET
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     RequiresApproval = Faker.Random.Bool(),
                     SellerId = Faker.Random.Long(1, 3),
-                    ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate()
+                    ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
+                    LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate()
                 })
                 .ToList();
 
@@ -849,7 +864,8 @@ namespace OpenActive.FakeDatabase.NET
             decimal? price,
             long totalSpaces,
             bool requiresApproval = false,
-            bool? validFromStartDate = null)
+            bool? validFromStartDate = null,
+            bool? latestCancellationBeforeStartDate = null)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -866,6 +882,9 @@ namespace OpenActive.FakeDatabase.NET
                     SellerId = sellerId ?? 1,
                     RequiresApproval = requiresApproval,
                     ValidFromBeforeStartDate = validFromStartDate.HasValue
+                        ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
+                        : (TimeSpan?)null,
+                    LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
                         : (TimeSpan?)null
                 };
@@ -896,7 +915,8 @@ namespace OpenActive.FakeDatabase.NET
             decimal? price,
             long totalUses,
             bool requiresApproval = false,
-            bool? validFromStartDate = null)
+            bool? validFromStartDate = null,
+            bool? latestCancellationBeforeStartDate = null)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -925,6 +945,9 @@ namespace OpenActive.FakeDatabase.NET
                     Price = price,
                     RequiresApproval = requiresApproval,
                     ValidFromBeforeStartDate =  validFromStartDate.HasValue
+                        ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
+                        : (TimeSpan?)null,
+                    LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
                         : (TimeSpan?)null
                 };
@@ -1010,6 +1033,14 @@ namespace OpenActive.FakeDatabase.NET
             public TimeSpan? RandomValidFromBeforeStartDate() => ValidFromBeforeStartDateBounds.HasValue
                 ? TimeSpan.FromMinutes(this.Faker.Random.Int(ValidFromBeforeStartDateBounds.Value))
                 : (TimeSpan?)null;
+        }
+
+        private static TimeSpan? RandomLatestCancellationBeforeStartDate()
+        {
+            if (Faker.Random.Bool(1f/3))
+                return null;
+
+            return Faker.Random.Bool() ? TimeSpan.FromDays(1) : TimeSpan.FromHours(40);
         }
     }
 }
