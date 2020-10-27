@@ -79,7 +79,6 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
-                    
                 case SellerRequestedCancellationSimulateAction _:
                     if (idComponents.OrderType != OrderType.Order)
                     {

@@ -136,7 +136,8 @@ namespace BookingSystem
                                     OpenBookingFlowRequirement = result.Item1.RequiresApproval 
                                         ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
                                         : null,
-                                    ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate
+                                    ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate,
+                                    LatestCancellationBeforeStartDate = result.Item1.LatestCancellationBeforeStartDate
                                 }
                             },
                             Location = new Place

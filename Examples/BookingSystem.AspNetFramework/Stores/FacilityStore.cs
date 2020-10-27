@@ -85,6 +85,24 @@ namespace BookingSystem
                                     SlotId = slotId
                                 };
                             }
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableOutsideWindow:
+                            {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow;
+                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Cancellation Window",
+                                    14.99M,
+                                    10,
+                                    latestCancellationBeforeStartDate: isValid);
+                                return new FacilityOpportunity
+                                {
+                                    OpportunityType = opportunityType,
+                                    FacilityUseId = facilityId,
+                                    SlotId = slotId
+                                };
+                            }
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
                             {
                                 var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
@@ -196,7 +214,8 @@ namespace BookingSystem
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = slot.Price,
                                          PriceCurrency = "GBP",
-                                         ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate
+                                         ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate,
+                                         LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate
                                      },
                                      OrderedItem = new Slot
                                      {
@@ -405,6 +424,12 @@ namespace BookingSystem
                                 new ImageObject()
                                 {
                                     Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                                },
+                                new Barcode()
+                                {
+                                    Url = new Uri(bookedOrderItemInfo.ImageUrl),
+                                    Text = bookedOrderItemInfo.BarCodeText,
+                                    CodeType = "code128"
                                 }
                             };
                         }
