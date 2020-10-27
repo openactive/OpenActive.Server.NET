@@ -14,7 +14,7 @@ namespace BookingSystem.AspNetFramework
         {
             var appSettings = new AppSettings
             {
-                BaseUrl = ConfigurationManager.AppSettings["ApplicationHostBaseUrl"],
+                ApplicationHostBaseUrl = ConfigurationManager.AppSettings["ApplicationHostBaseUrl"],
                 FeatureFlags = new FeatureSettings(), // use default values for all features
                 Payment = new PaymentSettings {
                     AccountId = ConfigurationManager.AppSettings["AccountId"],
