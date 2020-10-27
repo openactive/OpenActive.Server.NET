@@ -195,8 +195,6 @@ namespace OpenActive.FakeDatabase.NET
                             facilityInstance.Modified = DateTimeOffset.Now.UtcTicks;
                             db.Update(slotInstance);
                             db.Update(facilityInstance);
-
-                            return true;
                         }
 
                         if (orderItem.OccurrenceId.HasValue)
@@ -219,10 +217,10 @@ namespace OpenActive.FakeDatabase.NET
                             classInstance.Modified = DateTimeOffset.Now.UtcTicks;
                             db.Update(occurenceInstance);
                             db.Update(classInstance);
-
-                            return true;
                         }
                     }
+
+                    return true;
                 }
 
                 return false;
