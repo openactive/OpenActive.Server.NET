@@ -12,7 +12,7 @@ namespace BookingSystem
     */
     public class FeatureSettings
     {
-        public bool SingleSeller { get; set; } = true;
+        public bool SingleSeller { get; set; } = false;
         public bool PaymentReconciliationDetailValidation { get; set; } = true;
     }
 
