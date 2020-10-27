@@ -63,8 +63,8 @@ namespace BookingSystem
                                         orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
                                         orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
                                         orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended :
-                                        orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null,
-                                    CancellationMessage = orderItem.CancellationMessage 
+                                        orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
+                                    CancellationMessage = orderItem.CancellationMessage
                                 }).ToList()
                             )
                     });

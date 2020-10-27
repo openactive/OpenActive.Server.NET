@@ -571,6 +571,53 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public bool ReplaceOrderOpportunity(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OrderItemsTable>()
+                              .Join<OrderTable>()
+                              .Where<OrderItemsTable>(x => x.OrderId == uuid)
+                              .Where<OrderTable>(x => x.OrderMode != OrderMode.Proposal);
+                var orderItems = db.SelectMulti<OrderItemsTable, OrderTable>(query);
+                if (!orderItems.Any())
+                    return false;
+
+                // This makes the call idempotent
+                if (orderItems.First().Item2.ProposalStatus == ProposalStatus.SellerAccepted)
+                    return true;
+
+                var index = Faker.Random.Int(0, orderItems.Count - 1);
+                var orderItem = orderItems[index].Item1;
+
+                if (orderItem.SlotId.HasValue)
+                {
+                    var slotQuery = db.From<SlotTable>()
+                                      .Where(s => s.Id != orderItem.SlotId.Value && s.Price <= orderItem.Price)
+                                      .Take(1);
+                    var slot = db.Select(slotQuery).Single();
+                    orderItem.SlotId = slot.Id;
+                }
+                else if (orderItem.OccurrenceId.HasValue)
+                {
+                    var occurrenceQuery = db.From<OccurrenceTable>()
+                                            .Join<ClassTable>()
+                                            .Where<OccurrenceTable>(o => o.Id != orderItem.OccurrenceId.Value)
+                                            .Where<ClassTable>(c => c.Price <= orderItem.Price)
+                                            .Take(1);
+                    var occurrence = db.Select(occurrenceQuery).Single();
+                    orderItem.OccurrenceId = occurrence.Id;
+                }
+                else
+                {
+                    return false;
+                }
+
+                db.Update(orderItem);
+                return true;
+            }
+        }
+
         public bool AcceptOrderProposal(string uuid)
         {
             using (var db = Mem.Database.Open())

@@ -63,13 +63,32 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
+                case SellerRequestedCancellationWithMessageSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false, true))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
                 case SellerRequestedCancellationSimulateAction _:
                     if (idComponents.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-
-                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false ))
+                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                case ReplacementSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
+                    }
+                    if (!FakeBookingSystem.Database.ReplaceOrderOpportunity(idComponents.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -290,7 +309,6 @@ namespace BookingSystem
                             orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
                             orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended :
                             orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
-
                     }).ToList());
 
                 // These additional properties that are only available in the Order Status endpoint
