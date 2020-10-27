@@ -885,7 +885,7 @@ namespace OpenActive.FakeDatabase.NET
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
                         : (TimeSpan?)null,
                     LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
-                        ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
+                        ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
                         : (TimeSpan?)null
                 };
                 db.Save(@class);
@@ -948,7 +948,7 @@ namespace OpenActive.FakeDatabase.NET
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
                         : (TimeSpan?)null,
                     LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
-                        ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
+                        ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
                         : (TimeSpan?)null
                 };
                 db.Save(slot);
