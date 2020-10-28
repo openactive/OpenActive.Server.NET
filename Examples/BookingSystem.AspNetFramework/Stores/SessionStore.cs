@@ -405,6 +405,12 @@ namespace BookingSystem
                                 new ImageObject()
                                 {
                                     Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                                },
+                                new Barcode()
+                                {
+                                    Url = new Uri(bookedOrderItemInfo.ImageUrl),
+                                    Text = bookedOrderItemInfo.BarCodeText,
+                                    CodeType = "code128"
                                 }
                             };
                         }

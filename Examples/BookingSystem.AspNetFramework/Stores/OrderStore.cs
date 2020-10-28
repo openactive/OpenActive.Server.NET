@@ -15,6 +15,13 @@ namespace BookingSystem
 
     public class AcmeOrderStore : OrderStore<OrderTransaction, OrderStateContext>
     {
+        private readonly AppSettings _appSettings;
+
+        public AcmeOrderStore(AppSettings appSettings)
+        {
+            _appSettings = appSettings;
+        }
+
         /// <summary>
         /// Initiate customer cancellation for the specified OrderItems
         /// Note sellerId will always be null in Single Seller mode
@@ -63,13 +70,23 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
+                case SellerRequestedCancellationWithMessageSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false, true))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                    
                 case SellerRequestedCancellationSimulateAction _:
                     if (idComponents.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-
-                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false ))
+                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -84,8 +101,15 @@ namespace BookingSystem
             return new OrderStateContext();
         }
 
-        public override Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public override Lease CreateLease(
+            OrderQuote responseOrderQuote,
+            StoreBookingFlowContext flowContext,
+            OrderStateContext stateContext,
+            OrderTransaction databaseTransaction)
         {
+            if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && ReconciliationMismatch(flowContext))
+                throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
+
             // Note if no lease support, simply return null always here instead
             if (flowContext.Stage != FlowStage.C1 && flowContext.Stage != FlowStage.C2)
                 return null;
@@ -127,6 +151,9 @@ namespace BookingSystem
 
         public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
+            if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
+                throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
+
             if (!responseOrder.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
 
@@ -314,6 +341,15 @@ namespace BookingSystem
         protected override OrderTransaction BeginOrderTransaction(FlowStage stage)
         {
             return new OrderTransaction();
+        }
+
+        private bool ReconciliationMismatch(StoreBookingFlowContext flowContext)
+        {
+            // MissingPaymentDetailsError is handled by OpenActive.Server.NET, so ignoring empty payment details here allows the exception to be thrown by the booking engine.
+            if (flowContext.Payment == null)
+                return false;
+
+            return flowContext.Payment.AccountId != _appSettings.Payment.AccountId || flowContext.Payment.PaymentProviderId != _appSettings.Payment.PaymentProviderId;
         }
     }
 }
