@@ -1,7 +1,7 @@
 using System;
 using OpenActive.NET;
 
-namespace BookingSystem.AspNetCore.Helpers
+namespace BookingSystem
 {
     public static class RequiredStatusTypeExtensions
     {

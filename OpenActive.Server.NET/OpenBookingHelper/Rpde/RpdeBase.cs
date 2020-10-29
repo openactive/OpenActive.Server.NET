@@ -22,12 +22,12 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             if (!(bookablePairIdTemplate is BookablePairIdTemplate<TComponents>))
             {
-                throw new EngineConfigurationException($"{bookablePairIdTemplate.GetType()} does not match {typeof(BookablePairIdTemplate<TComponents>)}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used for RPDEFeedGenerator<T> in settings.OpenDataFeeds.");
+                throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), $"{bookablePairIdTemplate.GetType()} does not match {typeof(BookablePairIdTemplate<TComponents>)}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used for RPDEFeedGenerator<T> in settings.OpenDataFeeds.");
             }
 
             if (opportunityTypeConfiguration.SameAs.AbsolutePath.Trim('/') != typeof(TClass).Name)
             {
-                throw new EngineConfigurationException($"'{GetType()}' does not have this expected OpenActive model type as generic parameter: '{opportunityTypeConfiguration.SameAs.AbsolutePath.Trim('/')}'");
+                throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), $"'{GetType()}' does not have this expected OpenActive model type as generic parameter: '{opportunityTypeConfiguration.SameAs.AbsolutePath.Trim('/')}'");
             }
 
             base.SetConfiguration((BookablePairIdTemplate<TComponents>)bookablePairIdTemplate, sellerTemplate);

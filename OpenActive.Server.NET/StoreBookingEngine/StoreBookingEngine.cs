@@ -182,7 +182,7 @@ namespace OpenActive.Server.NET.StoreBooking
         protected override Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
         {
             if (!storeRouting.ContainsKey(opportunityType))
-                throw new EngineConfigurationException("Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
+                throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
 
             return storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
         }
@@ -220,13 +220,13 @@ namespace OpenActive.Server.NET.StoreBooking
 
                     if (opportunityIdComponents.OpportunityType == null)
                     {
-                        throw new EngineConfigurationException("OpportunityType must be configured for each IdComponent entry in the settings.");
+                        throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "OpportunityType must be configured for each IdComponent entry in the settings.");
                     }
 
                     var store = storeRouting[opportunityIdComponents.OpportunityType.Value];
                     if (store == null)
                     {
-                        throw new EngineConfigurationException($"Store is not defined for {opportunityIdComponents.OpportunityType.Value}");
+                        throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), $"Store is not defined for {opportunityIdComponents.OpportunityType.Value}");
                     }
 
                     store.TriggerTestAction(simulateAction, opportunityIdComponents);
@@ -381,7 +381,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
                 if (idComponents.OpportunityType == null)
                 {
-                    throw new EngineConfigurationException("OpportunityType must be configured for each IdComponent entry in the settings.");
+                    throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "OpportunityType must be configured for each IdComponent entry in the settings.");
                 }
 
                 // Create the relevant OrderItemContext using the specific type of the IdComponents returned
@@ -409,7 +409,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 var store = storeRouting[opportunityType];
                 if (store == null)
                 {
-                    throw new EngineConfigurationException($"Store is not defined for {opportunityType}");
+                    throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), $"Store is not defined for {opportunityType}");
                 }
 
                 // QUESTION: Should GetOrderItems occur within the transaction?
@@ -419,12 +419,12 @@ namespace OpenActive.Server.NET.StoreBooking
 
                 if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem != null))
                 {
-                    throw new EngineConfigurationException("Not all OrderItemContext have a ResponseOrderItem set. GetOrderItems must always call SetResponseOrderItem for each supplied OrderItemContext.");
+                    throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Not all OrderItemContext have a ResponseOrderItem set. GetOrderItems must always call SetResponseOrderItem for each supplied OrderItemContext.");
                 }
 
                 if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem?.Error != null || (x.ResponseOrderItem?.AcceptedOffer?.Price != null && x.ResponseOrderItem?.AcceptedOffer?.PriceCurrency != null)))
                 {
-                    throw new EngineConfigurationException("Not all OrderItemContext have a ResponseOrderItem set with an AcceptedOffer containing both Price and PriceCurrency.");
+                    throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Not all OrderItemContext have a ResponseOrderItem set with an AcceptedOffer containing both Price and PriceCurrency.");
                 }
 
                 // TODO: Implement error logic for all types of item errors based on the results of this
@@ -534,7 +534,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     {
                         if (dbTransaction == null)
                         {
-                            throw new EngineConfigurationException("A transaction is required for OrderProposal Creation at P, to ensure the integrity of the booking made.");
+                            throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "A transaction is required for OrderProposal Creation at P, to ensure the integrity of the booking made.");
                         }
 
                         try
@@ -633,7 +633,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     {
                         if (dbTransaction == null)
                         {
-                            throw new EngineConfigurationException("A transaction is required for booking at B, to ensure the integrity of the booking made.");
+                            throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "A transaction is required for booking at B, to ensure the integrity of the booking made.");
                         }
 
                         try

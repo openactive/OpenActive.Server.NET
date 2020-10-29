@@ -7,7 +7,7 @@ using ServiceStack.OrmLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BookingSystem.AspNetFramework.Helpers;
+using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem
 {

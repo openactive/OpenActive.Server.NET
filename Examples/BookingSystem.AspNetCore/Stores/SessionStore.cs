@@ -21,6 +21,8 @@ namespace BookingSystem
             this.UseSingleSellerMode = UseSingleSellerMode;
         }
 
+        Random rnd = new Random();
+
         protected override SessionOpportunity CreateOpportunityWithinTestDataset(
             string testDatasetIdentifier,
             OpportunityType opportunityType,
@@ -38,9 +40,17 @@ namespace BookingSystem
                     int classId, occurrenceId;
                     switch (criteria)
                     {
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaid:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event",
+                                rnd.Next(2) == 0 ? 0M : 14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFree:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableUsingPayment:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
@@ -59,16 +69,7 @@ namespace BookingSystem
                                 10,
                                 validFromStartDate: isValid);
                             break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFreePrepaymentOptional:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Prepayment Optional",
-                                0M,
-                                10,
-                                prepayment: RequiredStatusType.Optional);
-                            break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaidPrepaymentOptional:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
@@ -77,16 +78,7 @@ namespace BookingSystem
                                 10,
                                 prepayment: RequiredStatusType.Optional);
                             break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFreePrepaymentUnavailable:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Prepayment Unavailable",
-                                0M,
-                                10,
-                                prepayment: RequiredStatusType.Unavailable);
-                            break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaidPrepaymentUnavailable:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
@@ -95,16 +87,7 @@ namespace BookingSystem
                                 10,
                                 prepayment: RequiredStatusType.Unavailable);
                             break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFreePrepaymentRequired:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Prepayment Required",
-                                0M,
-                                10,
-                                prepayment: RequiredStatusType.Required);
-                            break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaidPrepaymentRequired:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
@@ -112,24 +95,6 @@ namespace BookingSystem
                                 10M,
                                 10,
                                 prepayment: RequiredStatusType.Required);
-                            break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFreePrepaymentUnspecified:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Prepayment Unspecified",
-                                0M,
-                                10,
-                                prepayment: null);
-                            break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaidPrepaymentUnspecified:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Unspecified",
-                                10M,
-                                10,
-                                prepayment: null);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(

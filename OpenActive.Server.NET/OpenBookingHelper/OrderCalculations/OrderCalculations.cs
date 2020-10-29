@@ -91,7 +91,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                     }
                     else if (totalPaymentDueCurrency != orderedItem.AcceptedOffer.PriceCurrency)
                     {
-                        throw new EngineConfigurationException("All currencies in an Order must match");
+                        throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "All currencies in an Order must match");
                     }
 
                     // Add the taxes to the map
