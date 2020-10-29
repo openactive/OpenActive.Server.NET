@@ -293,24 +293,6 @@ namespace OpenActive.Server.NET.StoreBooking
                 throw new OpenBookingException(new TotalPaymentDueMismatchError());
             }
 
-            // If "payment" has been supplied unnecessarily, throw an error
-            if (responseOrder.TotalPaymentDue?.Price == 0 && requestOrder.Payment != null)
-            {
-                throw new OpenBookingException(new UnnecessaryPaymentDetailsError(), "Payment details were erroneously supplied for a free Order.");
-            }
-
-            // If order is not free, payment details are required
-            if (responseOrder.TotalPaymentDue?.Price != 0 && requestOrder.Payment == null)
-            {
-                throw new OpenBookingException(new MissingPaymentDetailsError(), "Payment property must be supplied Order that are not free");
-            }
-
-            // If order is not free, payment identifier is required
-            if (responseOrder.TotalPaymentDue?.Price != 0 && requestOrder.Payment?.Identifier == null)
-            {
-                throw new OpenBookingException(new IncompletePaymentDetailsError(), "Payment must contain identifier for paid Order.");
-            }
-
             // If no payment provided by broker, prepayment must either be required, or not specified with a nonzero price
             if (requestOrder.Payment == null && (
                     responseOrder.TotalPaymentDue?.Prepayment == RequiredStatusType.Required ||
@@ -325,6 +307,12 @@ namespace OpenActive.Server.NET.StoreBooking
                     responseOrder.TotalPaymentDue?.Price == 0))
             {
                 throw new OpenBookingException(new UnnecessaryPaymentDetailsError(), "Orders without prepayment must have zero price.");
+            }
+
+            // If a payment is provided, and has not thrown a previous error, a payment identifier is required
+            if (requestOrder.Payment != null && requestOrder.Payment?.Identifier == null)
+            {
+                throw new OpenBookingException(new IncompletePaymentDetailsError(), "Payment must contain identifier for paid Order.");
             }
         }
 
