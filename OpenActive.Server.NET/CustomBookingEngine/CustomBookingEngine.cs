@@ -675,9 +675,19 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new IncompleteBrokerDetailsError());
             }
 
+            if (order.BrokerRole == BrokerType.NoBroker && order.Broker != null)
+            {
+                throw new OpenBookingException(new IncompleteBrokerDetailsError()); // TODO: Placeholder for https://github.com/openactive/open-booking-api/issues/167
+            }
+
+            // Throw error on incomplete customer details if C2, P or B
             if (stage != FlowStage.C1 && (order.Customer == null || string.IsNullOrWhiteSpace(order.Customer.Email)))
             {
-                throw new OpenBookingException(new IncompleteCustomerDetailsError());
+                // Don't throw exception if stage is B and ResellerBroker, else throw.
+                if (stage != FlowStage.B || order.BrokerRole != BrokerType.ResellerBroker)
+                {
+                    throw new OpenBookingException(new IncompleteCustomerDetailsError());
+                }
             }
 
             // Throw error on incomplete broker details

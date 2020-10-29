@@ -163,7 +163,7 @@ namespace BookingSystem
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer.Email,
+                flowContext.Customer?.Email,
                 flowContext.Payment?.Identifier,
                 responseOrder.TotalPaymentDue.Price.Value,
                 databaseTransaction.FakeDatabaseTransaction,
@@ -185,7 +185,7 @@ namespace BookingSystem
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer.Email,
+                flowContext.Customer?.Email,
                 flowContext.Payment?.Identifier,
                 responseOrderProposal.TotalPaymentDue.Price.Value,
                 databaseTransaction.FakeDatabaseTransaction,
