@@ -2,6 +2,8 @@
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using ServiceStack.OrmLite;
+using System;
+using System.Collections.Generic;
 
 namespace BookingSystem
 {
@@ -34,12 +36,20 @@ namespace BookingSystem
                         AddressRegion = "Oxfordshire",
                         PostalCode = "OX1 1AA",
                         AddressCountry = "GB"
+                    },
+                    TermsOfService = new List<Terms>
+                    {
+                        new PrivacyPolicy
+                        {
+                            Name = "Privacy Policy",
+                            Url = new Uri("https://example.com/privacy.html"),
+                            RequiresExplicitConsent = false
+                        }
                     }
                 };
             }
             else
             {
-
                 // Otherwise it may be looked up based on supplied sellerIdComponents which are extacted from the sellerId.
                 using (var db = FakeBookingSystem.Database.Mem.Database.Open())
                 {
@@ -73,6 +83,15 @@ namespace BookingSystem
                                 AddressRegion = "Oxfordshire",
                                 PostalCode = "OX1 1AA",
                                 AddressCountry = "GB"
+                            },
+                            TermsOfService = new List<Terms>
+                            {
+                                new PrivacyPolicy
+                                {
+                                    Name = "Privacy Policy",
+                                    Url = new Uri("https://example.com/privacy.html"),
+                                    RequiresExplicitConsent = false
+                                }
                             }
                         };
                     }
