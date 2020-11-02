@@ -2,11 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BookingSystem.AspNetCore.Helpers;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
 using ServiceStack.OrmLite;
+using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 
 namespace BookingSystem
 {
@@ -18,6 +20,8 @@ namespace BookingSystem
         {
             this.UseSingleSellerMode = UseSingleSellerMode;
         }
+
+        Random rnd = new Random();
 
         protected override FacilityOpportunity CreateOpportunityWithinTestDataset(
             string testDatasetIdentifier,
@@ -33,108 +37,108 @@ namespace BookingSystem
             switch (opportunityType)
             {
                 case OpportunityType.FacilityUseSlot:
+                    int facilityId, slotId;
                     switch (criteria)
                     {
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaid:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
-                            {
-                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                                    testDatasetIdentifier,
-                                    sellerId,
-                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
-                                    14.99M,
-                                    10);
-                                return new FacilityOpportunity
-                                {
-                                    OpportunityType = opportunityType,
-                                    FacilityUseId = facilityId,
-                                    SlotId = slotId
-                                };
-                            }
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Facility",
+                                 rnd.Next(2) == 0 ? 0M : 14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFree:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableUsingPayment:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                             testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
+                                14.99M,
+                                10);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                            {
-                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                                    testDatasetIdentifier,
-                                    sellerId,
-                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility",
-                                    0M,
-                                    10);
-                                return new FacilityOpportunity
-                                {
-                                    OpportunityType = opportunityType,
-                                    FacilityUseId = facilityId,
-                                    SlotId = slotId
-                                };
-                            }
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility",
+                                0M,
+                                10);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
-                            {
-                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
-                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                                    testDatasetIdentifier,
-                                    sellerId,
-                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
-                                    14.99M,
-                                    10,
-                                    validFromStartDate: isValid);
-                                return new FacilityOpportunity
-                                {
-                                    OpportunityType = opportunityType,
-                                    FacilityUseId = facilityId,
-                                    SlotId = slotId
-                                };
-                            }
+                            var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
+                                14.99M,
+                                10,
+                                validFromStartDate: isValid);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Optional",
+                                10M,
+                                10,
+                                prepayment: RequiredStatusType.Optional);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Unavailable",
+                                10M,
+                                10,
+                                prepayment: RequiredStatusType.Unavailable);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Required",
+                                10M,
+                                10,
+                                prepayment: RequiredStatusType.Required);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
-                            {
-                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                                    testDatasetIdentifier,
-                                    sellerId,
-                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility No Spaces",
-                                    14.99M,
-                                    0);
-                                return new FacilityOpportunity
-                                {
-                                    OpportunityType = opportunityType,
-                                    FacilityUseId = facilityId,
-                                    SlotId = slotId
-                                };
-                            }
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility No Spaces",
+                                14.99M,
+                                0);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
-                            {
-                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                                    testDatasetIdentifier,
-                                    sellerId,
-                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility Five Spaces",
-                                    14.99M,
-                                    5);
-                                return new FacilityOpportunity
-                                {
-                                    OpportunityType = opportunityType,
-                                    FacilityUseId = facilityId,
-                                    SlotId = slotId
-                                };
-                            }
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility Five Spaces",
+                                14.99M,
+                                5);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
-                            {
-                                var (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                                    testDatasetIdentifier,
-                                    sellerId,
-                                    "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility With Approval",
-                                    14.99M,
-                                    10,
-                                    requiresApproval: true);
-                                return new FacilityOpportunity
-                                {
-                                    OpportunityType = opportunityType,
-                                    FacilityUseId = facilityId,
-                                    SlotId = slotId
-                                };
-                            }
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility With Approval",
+                                14.99M,
+                                10,
+                                requiresApproval: true);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
 
+                    return new FacilityOpportunity
+                    {
+                        OpportunityType = opportunityType,
+                        FacilityUseId = facilityId,
+                        SlotId = slotId
+                    };
                 default:
                     throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
             }
@@ -196,6 +200,7 @@ namespace BookingSystem
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = slot.Price,
                                          PriceCurrency = "GBP",
+                                         Prepayment = slot.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate
                                      },
                                      OrderedItem = new Slot
@@ -405,6 +410,12 @@ namespace BookingSystem
                                 new ImageObject()
                                 {
                                     Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                                },
+                                new Barcode()
+                                {
+                                    Url = new Uri(bookedOrderItemInfo.ImageUrl),
+                                    Text = bookedOrderItemInfo.BarCodeText,
+                                    CodeType = "code128"
                                 }
                             };
                         }

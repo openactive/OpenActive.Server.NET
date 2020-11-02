@@ -5,4 +5,5 @@ copy .\BookingSystem.AspNetCore\IdComponents\*.* .\BookingSystem.AspNetFramework
 copy .\BookingSystem.AspNetCore\Stores\*.* .\BookingSystem.AspNetFramework\Stores\
 copy .\BookingSystem.AspNetCore\Feeds\*.* .\BookingSystem.AspNetFramework\Feeds\
 copy .\BookingSystem.AspNetCore\Settings\*.* .\BookingSystem.AspNetFramework\Settings\
+copy .\BookingSystem.AspNetCore\Extensions\*.* .\BookingSystem.AspNetFramework\Extensions\
 pause
