@@ -13,7 +13,7 @@ namespace IdentityServer
     {
         public Task<Client> FindClientByIdAsync(string clientId)
         {
-            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
+            var bookingPartner = FakeBookingSystem.Database.GetBookingPartner(clientId);
             return Task.FromResult(this.ConvertToIS4Client(bookingPartner));
         }
 

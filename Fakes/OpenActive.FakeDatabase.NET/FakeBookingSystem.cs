@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using Bogus;
 using OpenActive.FakeDatabase.NET.Helpers;
 using ServiceStack.OrmLite;
@@ -88,7 +89,14 @@ namespace OpenActive.FakeDatabase.NET
         OpportunityOfferPairNotBookable,
         NotEnoughCapacity
     }
-
+    public class BookingPartnerAdministratorTable
+    {
+        public string SubjectId { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public bool IsActive { get; set; } = true;
+        public List<Claim> Claims { get; set; }
+    }
 
     public class FakeDatabase
     {
@@ -859,7 +867,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateBookingPartners(IDbConnection db)
         {
-            BookingPartners.AddRange(new List<BookingPartnerTable>
+            var bookingPartners = new List<BookingPartnerTable>
             {
                 new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret", Email="acme@health.com", Registered = false, RegistrationKey = "12345xaq", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientJson = new ClientRegistrationModel {
@@ -891,10 +899,11 @@ namespace OpenActive.FakeDatabase.NET
                         LogoUri = "http://example.com/logo.jpg"
                     } 
                 }
-            });
-            Grants.AddRange(new List<Grant>() 
+            };
+            
+            var grants = new List<GrantTable>() 
             { 
-                new Grant()
+                new GrantTable()
                 {
                     Key = "8vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
                     Type = "user_consent",
@@ -903,7 +912,7 @@ namespace OpenActive.FakeDatabase.NET
                     CreationTime = DateTime.Now,
                     Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_123\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
                 },
-                new Grant()
+                new GrantTable()
                 {
                     Key = "7vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
                     Type = "user_consent",
@@ -912,7 +921,7 @@ namespace OpenActive.FakeDatabase.NET
                     CreationTime = DateTime.Now,
                     Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_456\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
                 },
-                new Grant()
+                new GrantTable()
                 {
                     Key = "9vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
                     Type = "user_consent",
@@ -921,69 +930,144 @@ namespace OpenActive.FakeDatabase.NET
                     CreationTime = DateTime.Now,
                     Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_789\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
                 },
-            });
-            BookingPartnerAdministrators.Add(new BookingPartnerAdministratorTable() { Username = "test", Password = "test", SubjectId = "TestSubjectId",
-                Claims =
+            };
+
+            db.InsertAll(bookingPartners);
+            db.InsertAll(grants);
+        }
+
+        public List<BookingPartnerAdministratorTable> GetBookingPartnerAdministrators()
+        {
+            return new List<BookingPartnerAdministratorTable> {
+                new BookingPartnerAdministratorTable
                 {
-                    new Claim("https://openactive.io/sellerName", "Example Seller"),
-                    new Claim("https://openactive.io/sellerId", "Example Seller Id_asdfiosjudg"),
-                    new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
-                    new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
-                    new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),
-                    new Claim("https://openactive.io/bookingServiceUrl", "http://abc.com/booking-service")
+                    Username = "test",
+                    Password = "test",
+                    SubjectId = "TestSubjectId",
+                    Claims = new List<Claim>
+                    {
+                        new Claim("https://openactive.io/sellerName", "Example Seller"),
+                        new Claim("https://openactive.io/sellerId", "Example Seller Id_asdfiosjudg"),
+                        new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
+                        new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
+                        new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),
+                        new Claim("https://openactive.io/bookingServiceUrl", "http://abc.com/booking-service")
+                    }
                 }
-            });
+            };
+        }
+
+        public List<BookingPartnerTable> GetBookingPartners()
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Select<BookingPartnerTable>().ToList();
+            }
+        }
+
+        public BookingPartnerTable GetBookingPartner(string clientId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
+            }
+        }
+
+        public void SaveBookingPartner(BookingPartnerTable bookingPartnerTable)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                db.Save(bookingPartnerTable);
+            }
+        }
+
+        public void SetBookingPartnerKey(string clientId, string key, string clientSecret)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.RegistrationKey = key;
+                bookingPartner.RegistrationKeyValidUntil = DateTime.Now.AddDays(2);
+                if (clientSecret != null) bookingPartner.ClientSecret = clientSecret;
+                db.Save(bookingPartner);
+            }
+        }
+
+        public void UpdateBookingPartnerScope(string clientId, string scope, bool bookingsSuspended)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.ClientJson.Scope = scope;
+                bookingPartner.BookingsSuspended = true;
+                db.Save(bookingPartner);
+            }
+        }
+
+
+        public void AddBookingPartner(BookingPartnerTable newBookingPartner)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                db.Save(newBookingPartner);
+            }
         }
 
         public GrantTable GetGrant(string key)
         {
-            var grant = Grants.SingleOrDefault(x => x.Key == key);
-            if (grant != null)
-                return grant;
-            return null;
+            using (var db = Mem.Database.Open())
+            {
+                return db.Single<GrantTable>(x => x.Key == key);
+            }
         }
         public IEnumerable<GrantTable> GetAllGrants(string subjectId)
         {
-            var grants = Grants.Where(x => x.SubjectId == subjectId);
-            if (grants != null)
-                return grants;
-            return null;
+            using (var db = Mem.Database.Open())
+            {
+                return db.Select<GrantTable>(x => x.SubjectId == subjectId).ToList();
+            }
         }
 
         public void AddGrant(string key, string type, string subjectId, string clientId, DateTime CreationTime, DateTime? Expiration, string data)
         {
-            var grant = new GrantTable()
+            using (var db = Mem.Database.Open())
             {
-                Key = key,
-                Type = type,
-                SubjectId = subjectId,
-                ClientId = clientId,
-                CreationTime = CreationTime,
-                Expiration = Expiration,
-                Data = data
-            };
-            Grants.Add(grant);
+                var grant = new GrantTable()
+                {
+                    Key = key,
+                    Type = type,
+                    SubjectId = subjectId,
+                    ClientId = clientId,
+                    CreationTime = CreationTime,
+                    Expiration = Expiration,
+                    Data = data
+                };
+                db.Save(grant);
+            }
         }
 
         public void RemoveGrant(string key)
         {
-            var grant = Grants.SingleOrDefault(x => x.Key == key);
-            if (grant != null)
-                Grants.Remove(grant);
+            using (var db = Mem.Database.Open())
+            {
+                db.Delete<GrantTable>(x => x.Key == key);
+            }
         }
 
         public void RemoveGrant(string subjectId, string clientId)
         {
-            var grant = Grants.SingleOrDefault(x => x.SubjectId == subjectId && x.ClientId == clientId);
-            if (grant != null)
-                Grants.Remove(grant);
+            using (var db = Mem.Database.Open())
+            {
+                db.Delete<GrantTable>(x => x.SubjectId == subjectId && x.ClientId == clientId);
+            }
         }
 
         public void RemoveGrant(string subjectId, string clientId, string type)
         {
-            var grant = Grants.SingleOrDefault(x => x.SubjectId == subjectId && x.ClientId == clientId && x.Type == type);
-            if (grant != null)
-                Grants.Remove(grant);
+            using (var db = Mem.Database.Open())
+            {
+                db.Delete<GrantTable>(x => x.SubjectId == subjectId && x.ClientId == clientId && x.Type == type);
+            }
         }
 
         public (int, int) AddClass(

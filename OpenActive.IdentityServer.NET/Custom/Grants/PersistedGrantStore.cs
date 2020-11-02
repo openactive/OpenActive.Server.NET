@@ -47,24 +47,24 @@ namespace IdentityServer
             });
         }
 
-        public Task RemoveAllAsync(string subjectId, string clientId)
+        public async Task RemoveAllAsync(string subjectId, string clientId)
         {
-            return FakeBookingSystem.Database.RemoveGrant(subjectId, clientId);
+            FakeBookingSystem.Database.RemoveGrant(subjectId, clientId);
         }
 
-        public Task RemoveAllAsync(string subjectId, string clientId, string type)
+        public async Task RemoveAllAsync(string subjectId, string clientId, string type)
         {
-            return FakeBookingSystem.Database.RemoveGrant(subjectId, clientId, type);
+            FakeBookingSystem.Database.RemoveGrant(subjectId, clientId, type);
         }
 
-        public Task RemoveAsync(string key)
+        public async Task RemoveAsync(string key)
         {
-            return FakeBookingSystem.Database.RemoveGrant(key);
+            FakeBookingSystem.Database.RemoveGrant(key);
         }
 
-        public Task StoreAsync(PersistedGrant grant)
+        public async Task StoreAsync(PersistedGrant grant)
         {
-            return FakeBookingSystem.Database.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.ClientId, grant.CreationTime, grant.Expiration, grant.Data);
+            FakeBookingSystem.Database.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.ClientId, grant.CreationTime, grant.Expiration, grant.Data);
         }
     }
 }

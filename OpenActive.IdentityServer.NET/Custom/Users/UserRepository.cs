@@ -13,7 +13,7 @@ namespace IdentityServer
         // since user data is being retrieved from an api, this store is built iteratively as authentication requests are made
         // it will contain only a subset of the MWS user store at any one time
         // if the server is restarted the store will be purged
-        private readonly List<BookingPartnerAdministratorTable> _users = FakeBookingSystem.Database.BookingPartnerAdministrators;
+        private readonly List<BookingPartnerAdministratorTable> _users = FakeBookingSystem.Database.GetBookingPartnerAdministrators();
 
         public bool ValidateCredentials(string username, string password)
         {

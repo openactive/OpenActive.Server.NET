@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using ServiceStack.DataAnnotations;
 using ServiceStack.OrmLite;
 
@@ -109,7 +110,8 @@ namespace OpenActive.FakeDatabase.NET
     public class SellerTable
     {
         [PrimaryKey]
-        public string SellerId { get; set; }
+        public long Id { get; set; }
+        //public string SellerId { get; set; }
         public string Name { get; set; }
         public bool IsIndividual { get; set; }
         public string Url { get; set; }
@@ -146,6 +148,7 @@ namespace OpenActive.FakeDatabase.NET
 
     public class BookingPartnerTable
     {
+        [PrimaryKey]
         public string ClientId { get; set; }
         public string SellerId { get; set; }
         public string ClientSecret { get; set; }
@@ -156,15 +159,6 @@ namespace OpenActive.FakeDatabase.NET
         public DateTime RegistrationKeyValidUntil { get; set; }
         public bool BookingsSuspended { get; set; }
         public string Email { get; set; }
-    }
-
-    public class BookingPartnerAdministratorTable
-    {
-        public string SubjectId { get; set; }
-        public string Username { get; set; }
-        public string Password { get; set; }
-        public bool IsActive { get; set; } = true;
-        public ICollection<Claim> Claims { get; set; }
     }
 
     public class GrantTable
@@ -188,9 +182,9 @@ namespace OpenActive.FakeDatabase.NET
 
         public string LogoUri { get; set; }
 
-        public IEnumerable<string> GrantTypes { get; set; }
+        public string[] GrantTypes { get; set; }
 
-        public IEnumerable<string> RedirectUris { get; set; } = new List<string>();
+        public string[] RedirectUris { get; set; } = new string[] {};
 
         public string Scope { get; set; } = "openid profile email";
     }
@@ -210,10 +204,8 @@ namespace OpenActive.FakeDatabase.NET
                 db.DropTable<SlotTable>();
                 db.DropTable<GrantTable>();
                 db.DropTable<BookingPartnerTable>();
-                db.DropTable<BookingPartnerAdministratorTable>();
                 db.CreateTable<GrantTable>();
                 db.CreateTable<BookingPartnerTable>();
-                db.CreateTable<BookingPartnerAdministratorTable>();
                 db.CreateTable<SellerTable>();
                 db.CreateTable<ClassTable>();
                 db.CreateTable<OrderTable>();

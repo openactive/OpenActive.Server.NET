@@ -104,7 +104,7 @@ namespace src
                 }
             };
 
-            FakeBookingSystem.Database.BookingPartners.Add(newBookingPartner);
+            FakeBookingSystem.Database.AddBookingPartner(newBookingPartner);
 
             return View("BookingPartnerEdit", await BuildBookingPartnerViewModelAsync(newBookingPartner.ClientId));
         }
@@ -133,9 +133,11 @@ namespace src
             client.AllowedScopes.Remove("openactive-openbooking");
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
-            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
-            bookingPartner.ClientJson.Scope = "openid profile openactive-ordersfeed oauth-dymamic-client-update openactive-identity";
-            bookingPartner.BookingsSuspended = true;
+            FakeBookingSystem.Database.UpdateBookingPartnerScope(
+                clientId,
+                "openid profile openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                true
+                );
 
             return RedirectToAction("Index");
         }
@@ -150,9 +152,7 @@ namespace src
             var hmac = new HMACSHA256();
             var key = Convert.ToBase64String(hmac.Key);
 
-            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
-            bookingPartner.RegistrationKey = key;
-            bookingPartner.RegistrationKeyValidUntil = DateTime.Now.AddDays(2);
+            FakeBookingSystem.Database.SetBookingPartnerKey(clientId, key, null);
 
             return View("BookingPartnerEdit", await BuildBookingPartnerViewModelAsync(clientId));
         }
@@ -170,10 +170,7 @@ namespace src
             var hmacSecret = new HMACSHA256();
             var clientSecret = Convert.ToBase64String(hmacSecret.Key);
 
-            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
-            bookingPartner.RegistrationKey = registrationKey;
-            bookingPartner.RegistrationKeyValidUntil = DateTime.Now.AddDays(2);
-            bookingPartner.ClientSecret = clientSecret;
+            FakeBookingSystem.Database.SetBookingPartnerKey(clientId, registrationKey, clientSecret);
 
             var client = await _clients.FindClientByIdAsync(clientId);
             client.ClientSecrets = new List<Secret>() { new Secret(clientSecret.Sha256()) };
@@ -184,7 +181,7 @@ namespace src
         private async Task<BookingPartnerModel> BuildBookingPartnerViewModelAsync(string clientId)
         {
             var client = await _clients.FindClientByIdAsync(clientId);
-            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
+            var bookingPartner = FakeBookingSystem.Database.GetBookingPartner(clientId);
 
             return new BookingPartnerModel()
             {
@@ -197,7 +194,7 @@ namespace src
         }
         private async Task<BookingPartnerViewModel> BuildViewModelAsync()
         {
-            var bookingPartners = FakeBookingSystem.Database.BookingPartners;
+            var bookingPartners = FakeBookingSystem.Database.GetBookingPartners();
             var list = new List<BookingPartnerModel>();
             foreach (var bookingPartner in bookingPartners)
             {

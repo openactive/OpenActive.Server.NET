@@ -72,7 +72,7 @@ namespace IdentityServer
             }
 
             // update the booking system
-            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == model.ClientId);
+            var bookingPartner = FakeBookingSystem.Database.GetBookingPartner(model.ClientId);
             if (bookingPartner == null)
                 return NotFound("Client was not found");
             if (bookingPartner.RegistrationKey != registrationKey || bookingPartner.RegistrationKeyValidUntil > DateTime.Now)
@@ -85,6 +85,7 @@ namespace IdentityServer
             bookingPartner.ClientJson.GrantTypes = model.GrantTypes;
             bookingPartner.ClientJson.Scope = model.Scope;
             bookingPartner.ClientSecret = key;
+            FakeBookingSystem.Database.SaveBookingPartner(bookingPartner);
 
             var client = await _clients.FindClientByIdAsync(model.ClientId);
             client.Enabled = true;
@@ -126,10 +127,10 @@ namespace IdentityServer
         public string LogoUri { get; set; }
 
         [JsonProperty(OidcConstants.ClientMetadata.GrantTypes)]
-        public IEnumerable<string> GrantTypes { get; set; }
+        public string[] GrantTypes { get; set; }
 
         [JsonProperty(OidcConstants.ClientMetadata.RedirectUris)]
-        public IEnumerable<string> RedirectUris { get; set; } = new List<string>();
+        public string[] RedirectUris { get; set; } = new string[] {};
 
         public string Scope { get; set; } = "openid profile email";
     }
