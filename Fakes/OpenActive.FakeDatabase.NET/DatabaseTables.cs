@@ -34,6 +34,7 @@ namespace OpenActive.FakeDatabase.NET
         public long SellerId { get; set; }
         public decimal? Price { get; set; }
         public RequiredStatusType? Prepayment { get; set; }
+        public bool RequiresAttendeeValidation { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
     }
@@ -126,6 +127,7 @@ namespace OpenActive.FakeDatabase.NET
         public long RemainingUses { get; set; }
         public decimal? Price { get; set; }
         public RequiredStatusType? Prepayment { get; set; }
+        public bool RequiresAttendeeValidation { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
     }

@@ -1,16 +1,42 @@
 ﻿using OpenActive.NET;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
     public static class OrderCalculations
     {
+        private static readonly IDictionary<string, PropertyInfo> PersonAttributes;
+
+        static OrderCalculations()
+        {
+            var attributes = from property in typeof(Person).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                             where property.DeclaringType == typeof(Person)
+                             let name = property.GetCustomAttributes<DataMemberAttribute>().SingleOrDefault()?.Name
+                             where name != null
+                             select new { name, property };
+            PersonAttributes = attributes.ToDictionary(t => t.name, t => t.property);
+        }
+
         public static void ValidateAttendeeDetails(OrderItem requestOrderItem, OrderItem responseOrderItem)
         {
-            // TODO: Add attendee errors
+            if (responseOrderItem?.AttendeeDetailsRequired == null)
+                return;
+
+            if (responseOrderItem.Attendee == null)
+                throw new OpenBookingException(new IncompleteAttendeeDetailsError());
+
+            var values = (from uri in responseOrderItem.AttendeeDetailsRequired
+                          let name = uri.ToString().Split('/').Last()
+                          let property = PersonAttributes[name]
+                          let value = property.GetValue(responseOrderItem.Attendee)
+                          select value).ToArray();
+
+            if (values.Length != responseOrderItem.AttendeeDetailsRequired.Count || values.Any(v => v == null))
+                throw new OpenBookingException(new IncompleteAttendeeDetailsError());
         }
 
         public static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)

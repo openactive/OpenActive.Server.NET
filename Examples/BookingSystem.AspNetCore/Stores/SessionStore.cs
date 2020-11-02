@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BookingSystem.AspNetCore.Helpers;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
@@ -14,11 +13,12 @@ namespace BookingSystem
 {
     class SessionStore : OpportunityStore<SessionOpportunity, OrderTransaction, OrderStateContext>
     {
+        private readonly bool _useSingleSellerMode;
+
         // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
-        private bool UseSingleSellerMode;
-        public SessionStore(bool UseSingleSellerMode)
+        public SessionStore(bool useSingleSellerMode)
         {
-            this.UseSingleSellerMode = UseSingleSellerMode;
+            _useSingleSellerMode = useSingleSellerMode;
         }
 
         Random rnd = new Random();
@@ -29,10 +29,10 @@ namespace BookingSystem
             TestOpportunityCriteriaEnumeration criteria,
             SellerIdComponents seller)
         {
-            if (!UseSingleSellerMode && !seller.SellerIdLong.HasValue)
+            if (!_useSingleSellerMode && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
 
-            long? sellerId = UseSingleSellerMode ? null : seller.SellerIdLong;
+            long? sellerId = _useSingleSellerMode ? null : seller.SellerIdLong;
 
             switch (opportunityType)
             {
@@ -246,9 +246,18 @@ namespace BookingSystem
                                                  x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
                                                  x.OccurrenceId == occurrences.Id &&
                                                  x.OrderId != flowContext.OrderId.uuid)
-                                     }
+                                     },
+                                     AttendeeDetailsRequired = classes.RequiresAttendeeValidation
+                                         ? new List<Uri>
+                                         {
+                                             new Uri("https://schema.org/givenName"),
+                                             new Uri("https://schema.org/familyName"),
+                                             new Uri("https://schema.org/email"),
+                                             new Uri("https://schema.org/telephone")
+                                         }
+                                         : null
                                  },
-                                 SellerId = UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
+                                 SellerId = _useSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
                                  classes.RequiresApproval
                              }).ToArray();
 
@@ -264,12 +273,11 @@ namespace BookingSystem
                     {
                         ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
-                        if (item.RequiresApproval) ctx.SetRequiresApproval();
+                        if (item.RequiresApproval)
+                            ctx.SetRequiresApproval();
 
                         if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
-                        {
                             ctx.AddError(new OpportunityIsFullError());
-                        }
                     }
                 }
             }

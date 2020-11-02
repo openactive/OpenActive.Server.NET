@@ -92,6 +92,8 @@ namespace OpenActive.FakeDatabase.NET
 
     public class FakeDatabase
     {
+        private const float ProportionWithRequiresAttendeeValidation = 1f/10;
+
         public readonly InMemorySQLite Mem = new InMemorySQLite();
 
         private static readonly Faker Faker = new Faker();
@@ -787,6 +789,7 @@ namespace OpenActive.FakeDatabase.NET
                         Prepayment = slot.Price == 0
                             ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
                             : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                        RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
                         RequiresApproval = Faker.Random.Bool(),
                         ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                     })).SelectMany(os => os);
@@ -815,6 +818,7 @@ namespace OpenActive.FakeDatabase.NET
                     Prepayment = @class.Price == 0
                         ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
                         : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                    RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
                     RequiresApproval = Faker.Random.Bool(),
                     SellerId = Faker.Random.Long(1, 3),
                     ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate
