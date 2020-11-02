@@ -743,9 +743,11 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = database.Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
+
                 CreateSellers(db);
                 CreateFakeClasses(db);
                 CreateFakeFacilitiesAndSlots(db);
+                CreateBookingPartners(db);
                 transaction.Commit();
             }
             return database;
@@ -853,6 +855,135 @@ namespace OpenActive.FakeDatabase.NET
             };
 
             db.InsertAll(sellers);
+        }
+
+        public static void CreateBookingPartners(IDbConnection db)
+        {
+            BookingPartners.AddRange(new List<BookingPartnerTable>
+            {
+                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret", Email="acme@health.com", Registered = false, RegistrationKey = "12345xaq", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientJson = new ClientRegistrationModel {
+                        ClientId = "clientid_123",
+                        ClientName = "Acme Health",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        GrantTypes = new[] { "client_credentials" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "http://example.com/logo.jpg"
+                    }
+                },
+                new BookingPartnerTable { ClientId = "clientid_456", SellerId = "abcd", ClientSecret = "secret", Email="sports@sportsengland.com", Registered = true, RegistrationKey = "12345", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = true,
+                    ClientJson = new ClientRegistrationModel {
+                        ClientId = "clientid_456",
+                        ClientName = "Sports England",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        GrantTypes = new[] { "client_credentials" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "http://example.com/logo.jpg"
+                    }
+                },
+                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98765", RegistrationKeyValidUntil = DateTime.Now.AddDays(-1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientJson = new ClientRegistrationModel {
+                        ClientId = "clientid_789",
+                        ClientName = "Garden Athletics",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        GrantTypes = new[] { "client_credentials" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "http://example.com/logo.jpg"
+                    } 
+                }
+            });
+            Grants.AddRange(new List<Grant>() 
+            { 
+                new Grant()
+                {
+                    Key = "8vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
+                    Type = "user_consent",
+                    SubjectId = "TestSubjectId",
+                    ClientId = "clientid_123",
+                    CreationTime = DateTime.Now,
+                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_123\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
+                },
+                new Grant()
+                {
+                    Key = "7vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
+                    Type = "user_consent",
+                    SubjectId = "TestSubjectId",
+                    ClientId = "clientid_456",
+                    CreationTime = DateTime.Now,
+                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_456\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
+                },
+                new Grant()
+                {
+                    Key = "9vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
+                    Type = "user_consent",
+                    SubjectId = "TestSubjectId",
+                    ClientId = "clientid_789",
+                    CreationTime = DateTime.Now,
+                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_789\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
+                },
+            });
+            BookingPartnerAdministrators.Add(new BookingPartnerAdministratorTable() { Username = "test", Password = "test", SubjectId = "TestSubjectId",
+                Claims =
+                {
+                    new Claim("https://openactive.io/sellerName", "Example Seller"),
+                    new Claim("https://openactive.io/sellerId", "Example Seller Id_asdfiosjudg"),
+                    new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
+                    new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
+                    new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),
+                    new Claim("https://openactive.io/bookingServiceUrl", "http://abc.com/booking-service")
+                }
+            });
+        }
+
+        public GrantTable GetGrant(string key)
+        {
+            var grant = Grants.SingleOrDefault(x => x.Key == key);
+            if (grant != null)
+                return grant;
+            return null;
+        }
+        public IEnumerable<GrantTable> GetAllGrants(string subjectId)
+        {
+            var grants = Grants.Where(x => x.SubjectId == subjectId);
+            if (grants != null)
+                return grants;
+            return null;
+        }
+
+        public void AddGrant(string key, string type, string subjectId, string clientId, DateTime CreationTime, DateTime? Expiration, string data)
+        {
+            var grant = new GrantTable()
+            {
+                Key = key,
+                Type = type,
+                SubjectId = subjectId,
+                ClientId = clientId,
+                CreationTime = CreationTime,
+                Expiration = Expiration,
+                Data = data
+            };
+            Grants.Add(grant);
+        }
+
+        public void RemoveGrant(string key)
+        {
+            var grant = Grants.SingleOrDefault(x => x.Key == key);
+            if (grant != null)
+                Grants.Remove(grant);
+        }
+
+        public void RemoveGrant(string subjectId, string clientId)
+        {
+            var grant = Grants.SingleOrDefault(x => x.SubjectId == subjectId && x.ClientId == clientId);
+            if (grant != null)
+                Grants.Remove(grant);
+        }
+
+        public void RemoveGrant(string subjectId, string clientId, string type)
+        {
+            var grant = Grants.SingleOrDefault(x => x.SubjectId == subjectId && x.ClientId == clientId && x.Type == type);
+            if (grant != null)
+                Grants.Remove(grant);
         }
 
         public (int, int) AddClass(

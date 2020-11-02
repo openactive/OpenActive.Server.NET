@@ -23,9 +23,13 @@ namespace BookingSystem.AspNetCore
             var appSettings = new AppSettings();
             Configuration.Bind(appSettings);
 
-            // TODO: Authentication disabled for now
-            // services.AddAuthentication(AzureADB2CDefaults.BearerAuthenticationScheme)
-            //     .AddAzureADB2CBearer(options => Configuration.Bind("AzureAdB2C", options));
+            services.AddAuthentication("Bearer")
+                .AddJwtBearer("Bearer", options =>
+                {
+                    options.Authority = "http://localhost:5000";
+                    options.RequireHttpsMetadata = false;
+                    options.Audience = "openbooking";
+                });
 
             services
                 .AddMvc()

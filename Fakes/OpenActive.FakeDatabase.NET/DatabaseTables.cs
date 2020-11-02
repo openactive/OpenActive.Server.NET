@@ -106,10 +106,13 @@ namespace OpenActive.FakeDatabase.NET
         public string ProposalVersionId { get; set; }
     }
 
-    public class SellerTable : Table
+    public class SellerTable
     {
+        [PrimaryKey]
+        public string SellerId { get; set; }
         public string Name { get; set; }
         public bool IsIndividual { get; set; }
+        public string Url { get; set; }
     }
 
     public class SlotTable : Table
@@ -141,6 +144,57 @@ namespace OpenActive.FakeDatabase.NET
         public long SellerId { get; set; } // Provider
     }
 
+    public class BookingPartnerTable
+    {
+        public string ClientId { get; set; }
+        public string SellerId { get; set; }
+        public string ClientSecret { get; set; }
+        public ClientRegistrationModel ClientJson { get; set; }
+        public bool Registered { get; set; } = false;
+        public DateTime CreatedDate { get; set; }
+        public string RegistrationKey { get; set; }
+        public DateTime RegistrationKeyValidUntil { get; set; }
+        public bool BookingsSuspended { get; set; }
+        public string Email { get; set; }
+    }
+
+    public class BookingPartnerAdministratorTable
+    {
+        public string SubjectId { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public bool IsActive { get; set; } = true;
+        public ICollection<Claim> Claims { get; set; }
+    }
+
+    public class GrantTable
+    {
+        public string Key { get; set; }
+        public string Type { get; set; }
+        public string SubjectId { get; set; }
+        public string ClientId { get; set; }
+        public DateTime CreationTime { get; set; }
+        public DateTime? Expiration { get; set; }
+        public string Data { get; set; }
+    }
+
+    public class ClientRegistrationModel
+    {
+        public string ClientId { get; set; }
+
+        public string ClientName { get; set; }
+
+        public string ClientUri { get; set; }
+
+        public string LogoUri { get; set; }
+
+        public IEnumerable<string> GrantTypes { get; set; }
+
+        public IEnumerable<string> RedirectUris { get; set; } = new List<string>();
+
+        public string Scope { get; set; } = "openid profile email";
+    }
+
     public static class DatabaseCreator
     {
         public static void CreateTables(OrmLiteConnectionFactory dbFactory)
@@ -154,6 +208,12 @@ namespace OpenActive.FakeDatabase.NET
                 db.DropTable<SellerTable>();
                 db.DropTable<FacilityUseTable>();
                 db.DropTable<SlotTable>();
+                db.DropTable<GrantTable>();
+                db.DropTable<BookingPartnerTable>();
+                db.DropTable<BookingPartnerAdministratorTable>();
+                db.CreateTable<GrantTable>();
+                db.CreateTable<BookingPartnerTable>();
+                db.CreateTable<BookingPartnerAdministratorTable>();
                 db.CreateTable<SellerTable>();
                 db.CreateTable<ClassTable>();
                 db.CreateTable<OrderTable>();
