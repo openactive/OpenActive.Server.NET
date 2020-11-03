@@ -398,6 +398,12 @@ namespace OpenActive.FakeDatabase.NET
             public string BarCodeText { get; set; }
         }
 
+        public struct RequestBarCode
+        {
+            public string Url { get; set; }
+            public string BarCodeText { get; set; }
+        }
+
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
         public static (ReserveOrderItemsResult, List<BookedOrderItemInfo>) BookOrderItemsForClassOccurrence(
             FakeDatabaseTransaction transaction,
@@ -409,7 +415,8 @@ namespace OpenActive.FakeDatabase.NET
             string opportunityJsonLdId,
             string offerJsonLdId,
             long numberOfSpaces,
-            bool proposal)
+            bool proposal,
+            IEnumerable<RequestBarCode> requestBarCodes)
         {
             var db = transaction.DatabaseConnection;
             var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
@@ -449,8 +456,8 @@ namespace OpenActive.FakeDatabase.NET
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisClass.Price.Value,
                     PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar:'9'),
-                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
-                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
+                    ImageUrl = requestBarCodes?.ElementAtOrDefault(i).Url ?? Faker.Image.PlaceholderUrl(width: 25, height: 25),
+                    BarCodeText = requestBarCodes?.ElementAtOrDefault(i).BarCodeText ?? Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
                 db.Save(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
@@ -477,7 +484,8 @@ namespace OpenActive.FakeDatabase.NET
             string opportunityJsonLdId,
             string offerJsonLdId,
             long numberOfSpaces,
-            bool proposal)
+            bool proposal,
+            IEnumerable<RequestBarCode> requestBarCodes)
         {
             var db = transaction.DatabaseConnection;
             var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
@@ -517,10 +525,12 @@ namespace OpenActive.FakeDatabase.NET
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisSlot.Price.Value,
                     PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9'),
-                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
-                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
+                    ImageUrl = requestBarCodes?.ElementAtOrDefault(i).Url ?? Faker.Image.PlaceholderUrl(width: 25, height: 25),
+                    BarCodeText = requestBarCodes?.ElementAtOrDefault(i).BarCodeText ?? Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
+
                 db.Save(orderItem);
+
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
                     OrderItemId = orderItem.Id,

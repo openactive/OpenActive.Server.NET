@@ -364,7 +364,6 @@ namespace BookingSystem
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
-
             foreach (var ctxGroup in orderItemContexts.GroupBy(x => x.RequestBookableOpportunityOfferId))
             {
                 // Check that the Opportunity ID and type are as expected for the store 
@@ -384,7 +383,13 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    false);
+                    false,
+                    ctxGroup.ToList().Select(ctx => new OpenActive.FakeDatabase.NET.FakeDatabase.RequestBarCode
+                    {
+                        Url = ctx.RequestOrderItem.AccessPass?.FirstOrDefault()?.Url?.ToString(),
+                        BarCodeText = ctx.RequestOrderItem.AccessPass?.FirstOrDefault()?.Text
+                    })
+                    );
 
                 switch (result)
                 {
@@ -459,7 +464,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    true);
+                    true,
+                    null);
 
                 switch (result)
                 {
