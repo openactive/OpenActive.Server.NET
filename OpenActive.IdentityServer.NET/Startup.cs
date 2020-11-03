@@ -24,10 +24,13 @@ namespace IdentityServer
         public void ConfigureServices(IServiceCollection services)
         {
             // uncomment, if you want to add an MVC-based UI
-            services.AddControllersWithViews();
+            services.AddMvc();
             services.AddTransient<IClientStore, ClientStore>();
 
-            var builder = services.AddIdentityServer()
+            var builder = services.AddIdentityServer(options =>
+                {
+                    options.Discovery.CustomEntries.Add("registration_endpoint", "https://localhost:44353/connect/register");
+                })
                 .AddInMemoryIdentityResources(Config.Ids)
                 .AddInMemoryApiResources(Config.Apis)
                 .AddClientStore<ClientStore>()

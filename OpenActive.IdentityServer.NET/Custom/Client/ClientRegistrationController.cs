@@ -6,12 +6,12 @@ using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
-using Newtonsoft.Json;
 using OpenActive.FakeDatabase.NET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace IdentityServer
@@ -34,7 +34,7 @@ namespace IdentityServer
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> PostAsync(ClientRegistrationModel model)
+        public async Task<IActionResult> PostAsync([FromBody] ClientRegistrationModel model)
         {
             if (!Request.IsHttps)
             {
@@ -114,22 +114,22 @@ namespace IdentityServer
 
     public class ClientRegistrationModel
     {
-        [JsonProperty(OidcConstants.RegistrationResponse.ClientId)]
+        [JsonPropertyName(OidcConstants.RegistrationResponse.ClientId)]
         public string ClientId { get; set; }
 
-        [JsonProperty(OidcConstants.ClientMetadata.ClientName)]
+        [JsonPropertyName(OidcConstants.ClientMetadata.ClientName)]
         public string ClientName { get; set; }
 
-        [JsonProperty(OidcConstants.ClientMetadata.ClientUri)]
+        [JsonPropertyName(OidcConstants.ClientMetadata.ClientUri)]
         public string ClientUri { get; set; }
 
-        [JsonProperty(OidcConstants.ClientMetadata.LogoUri)]
+        [JsonPropertyName(OidcConstants.ClientMetadata.LogoUri)]
         public string LogoUri { get; set; }
 
-        [JsonProperty(OidcConstants.ClientMetadata.GrantTypes)]
+        [JsonPropertyName(OidcConstants.ClientMetadata.GrantTypes)]
         public string[] GrantTypes { get; set; }
 
-        [JsonProperty(OidcConstants.ClientMetadata.RedirectUris)]
+        [JsonPropertyName(OidcConstants.ClientMetadata.RedirectUris)]
         public string[] RedirectUris { get; set; } = new string[] {};
 
         public string Scope { get; set; } = "openid profile email";
@@ -137,7 +137,7 @@ namespace IdentityServer
 
     public class ClientRegistrationResponse : ClientRegistrationModel
     {
-        [JsonProperty(OidcConstants.RegistrationResponse.ClientSecret)]
+        [JsonPropertyName(OidcConstants.RegistrationResponse.ClientSecret)]
         public string ClientSecret { get; set; }
     }
 }
