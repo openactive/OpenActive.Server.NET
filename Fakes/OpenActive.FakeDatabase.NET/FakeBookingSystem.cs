@@ -174,9 +174,12 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+
                 if (order != null)
                 {
+                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
                     List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
                         if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
@@ -194,12 +197,40 @@ namespace OpenActive.FakeDatabase.NET
                                 orderItem.BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
                             }
 
+                            db.Save(orderItem);
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool UpdateOpportunityAttendance(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+
+                if (order != null)
+                {
+                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+
+                    foreach (OrderItemsTable orderItem in orderItems)
+                    {
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        {
+                            orderItem.Status = BookingStatus.Attended;
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
                             db.Update(orderItem);
                         }
                     }
 
-                    order.VisibleInFeed = true;
                     order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
                     db.Update(order);
 
                     return true;
