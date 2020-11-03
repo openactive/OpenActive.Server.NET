@@ -2,11 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BookingSystem.AspNetCore.Helpers;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
 using ServiceStack.OrmLite;
+using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 
 namespace BookingSystem
 {
@@ -18,6 +20,8 @@ namespace BookingSystem
         {
             this.UseSingleSellerMode = UseSingleSellerMode;
         }
+
+        Random rnd = new Random();
 
         protected override SessionOpportunity CreateOpportunityWithinTestDataset(
             string testDatasetIdentifier,
@@ -33,107 +37,108 @@ namespace BookingSystem
             switch (opportunityType)
             {
                 case OpportunityType.ScheduledSession:
+                    int classId, occurrenceId;
                     switch (criteria)
                     {
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookablePaid:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
-                        {
-                            var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event",
+                                rnd.Next(2) == 0 ? 0M : 14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFree:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableUsingPayment:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event",
                                 14.99M,
                                 10);
-                            return new SessionOpportunity
-                            {
-                                OpportunityType = opportunityType,
-                                SessionSeriesId = classId,
-                                ScheduledSessionId = occurrenceId
-                            };
-                        }
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
-                        {
                             var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
-                            var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Window",
                                 14.99M,
                                 10,
                                 validFromStartDate: isValid);
-                            return new SessionOpportunity
-                            {
-                                OpportunityType = opportunityType,
-                                SessionSeriesId = classId,
-                                ScheduledSessionId = occurrenceId
-                            };
-                        }
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Optional",
+                                10M,
+                                10,
+                                prepayment: RequiredStatusType.Optional);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Unavailable",
+                                10M,
+                                10,
+                                prepayment: RequiredStatusType.Unavailable);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Required",
+                                10M,
+                                10,
+                                prepayment: RequiredStatusType.Required);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                        {
-                            var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event",
                                 0M,
                                 10);
-                            return new SessionOpportunity
-                            {
-                                OpportunityType = opportunityType,
-                                SessionSeriesId = classId,
-                                ScheduledSessionId = occurrenceId
-                            };
-                        }
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
-                        {
-                            var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event No Spaces",
                                 14.99M,
                                 0);
-                            return new SessionOpportunity
-                            {
-                                OpportunityType = opportunityType,
-                                SessionSeriesId = classId,
-                                ScheduledSessionId = occurrenceId
-                            };
-                        }
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
-                        {
-                            var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Five Spaces",
                                 14.99M,
                                 5);
-                            return new SessionOpportunity
-                            {
-                                OpportunityType = opportunityType,
-                                SessionSeriesId = classId,
-                                ScheduledSessionId = occurrenceId
-                            };
-                        }
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
-                        {
-                            var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Approval",
                                 14.99M,
                                 10,
                                 requiresApproval: true);
-                            return new SessionOpportunity
-                            {
-                                OpportunityType = opportunityType,
-                                SessionSeriesId = classId,
-                                ScheduledSessionId = occurrenceId
-                            };
-                        }
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
+
+                    return new SessionOpportunity
+                    {
+                        OpportunityType = opportunityType,
+                        SessionSeriesId = classId,
+                        ScheduledSessionId = occurrenceId
+                    };
 
                 default:
                     throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
@@ -191,6 +196,7 @@ namespace BookingSystem
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = classes.Price,
                                          PriceCurrency = "GBP",
+                                         Prepayment = classes.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate
                                      },
                                      OrderedItem = new ScheduledSession
@@ -405,6 +411,12 @@ namespace BookingSystem
                                 new ImageObject()
                                 {
                                     Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                                },
+                                new Barcode()
+                                {
+                                    Url = new Uri(bookedOrderItemInfo.ImageUrl),
+                                    Text = bookedOrderItemInfo.BarCodeText,
+                                    CodeType = "code128"
                                 }
                             };
                         }

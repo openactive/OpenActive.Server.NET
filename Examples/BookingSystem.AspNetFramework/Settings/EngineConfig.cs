@@ -9,7 +9,7 @@ namespace BookingSystem
 {
     public static class EngineConfig
     {
-        public static StoreBookingEngine CreateStoreBookingEngine(string baseUrl, bool UseSingleSellerMode)
+        public static StoreBookingEngine CreateStoreBookingEngine(AppSettings appSettings)
         {
             return new StoreBookingEngine(
                 new BookingEngineSettings
@@ -106,7 +106,7 @@ namespace BookingSystem
                     
                     },
 
-                    JsonLdIdBaseUrl = new Uri(baseUrl + "/api/identifiers"),
+                    JsonLdIdBaseUrl = new Uri($"{appSettings.ApplicationHostBaseUrl}/api/identifiers"),
 
                     /*
                     // Multiple Seller Mode
@@ -126,25 +126,25 @@ namespace BookingSystem
                     */
 
                     // Reference implementation is configurable to allow both modes to be tested
-                    SellerStore = new AcmeSellerStore(UseSingleSellerMode),
-                    SellerIdTemplate = UseSingleSellerMode ?
+                    SellerStore = new AcmeSellerStore(appSettings.FeatureFlags.SingleSeller),
+                    SellerIdTemplate = appSettings.FeatureFlags.SingleSeller ?
                         new SingleIdTemplate<SellerIdComponents>(
                             "{+BaseUrl}/seller"
                         ) :
                         new SingleIdTemplate<SellerIdComponents>(
                             "{+BaseUrl}/sellers/{SellerIdLong}"
                         ),
-                    HasSingleSeller = UseSingleSellerMode,
+                    HasSingleSeller = appSettings.FeatureFlags.SingleSeller,
 
                     OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> {
                         {
                             OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator()
                         },
                         {
-                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(UseSingleSellerMode)
+                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
                         },
                         {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(UseSingleSellerMode)
+                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
                         }
                         ,
                         {
@@ -156,16 +156,15 @@ namespace BookingSystem
                     // and must match the controller configuration
                     OrderIdTemplate = new OrderIdTemplate(
                         "{+BaseUrl}/{OrderType}/{uuid}",
-                        "{+BaseUrl}/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
-                        ),
+                        "{+BaseUrl}/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"),
 
                     OrderFeedGenerator = new AcmeOrdersFeedRpdeGenerator()
                 },
                 new DatasetSiteGeneratorSettings
                 {
                     // QUESTION: Do the Base URLs need to come from config, or should they be detected from the request?
-                    OpenDataFeedBaseUrl = (baseUrl + "/feeds").ParseUrlOrNull(),
-                    DatasetSiteUrl = (baseUrl + "/openactive/").ParseUrlOrNull(),
+                    OpenDataFeedBaseUrl = $"{appSettings.ApplicationHostBaseUrl}/feeds".ParseUrlOrNull(),
+                    DatasetSiteUrl = $"{appSettings.ApplicationHostBaseUrl}/openactive/".ParseUrlOrNull(),
                     DatasetDiscussionUrl = "https://github.com/openactive/OpenActive.Server.NET/issues".ParseUrlOrNull(),
                     DatasetDocumentationUrl = "https://developer.openactive.io/".ParseUrlOrNull(),
                     DatasetLanguages = new List<string> { "en-GB" },
@@ -180,7 +179,7 @@ namespace BookingSystem
                     PlatformVersion = "1.0",
                     BackgroundImageUrl = "https://images.unsplash.com/photo-1594899756066-46964fff3add?fit=crop&w=1500&q=80".ParseUrlOrNull(),
                     DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
-                    OpenBookingAPIBaseUrl = (baseUrl + "/api/openbooking").ParseUrlOrNull(),
+                    OpenBookingAPIBaseUrl = $"{appSettings.ApplicationHostBaseUrl}/api/openbooking".ParseUrlOrNull(),
                     OpenBookingAPIRegistrationUrl = new Uri("https://example.com/api-landing-page"),
                     OpenBookingAPITermsOfServiceUrl = new Uri("https://example.com/api-terms-page")
                 },
@@ -232,23 +231,29 @@ namespace BookingSystem
                     },
                     // A list of the supported fields that are accepted by your system for payment details
                     // These are reflected back to the broker
-                    PaymentSupportedFields = o => new Payment
-                    {
-                        Name = o.Name,
-                        Identifier = o.Identifier,
-                        AccountId = o.AccountId,
-                        PaymentProviderId = o.PaymentProviderId
-                    },
+                    PaymentSupportedFields = o =>
+                        appSettings.FeatureFlags.PaymentReconciliationDetailValidation ?
+                            new Payment
+                            {
+                                Name = o.Name,
+                                Identifier = o.Identifier,
+                                AccountId = o.AccountId,
+                                PaymentProviderId = o.PaymentProviderId
+                            } :
+                            new Payment
+                            {
+                                Identifier = o.Identifier
+                            },
                     // List of _bookable_ opportunity types and which store to route to for each
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
-                            new SessionStore(UseSingleSellerMode), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                            new SessionStore(appSettings.FeatureFlags.SingleSeller), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStore(UseSingleSellerMode), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
+                            new FacilityStore(appSettings.FeatureFlags.SingleSeller), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
                         }
                     },
-                    OrderStore = new AcmeOrderStore(),
+                    OrderStore = new AcmeOrderStore(appSettings),
                 });
         }
     }
