@@ -67,6 +67,15 @@ namespace BookingSystem
                                             Value = "defaultValue"
                                         }
                                     },
+                                    AccessPass = new List<ImageObject>
+                                    {
+                                        new Barcode()
+                                        {
+                                            Url = new Uri(orderItem.ImageUrl),
+                                            Text = orderItem.BarCodeText,
+                                            CodeType = "code128"
+                                        }
+                                    },
                                     OrderItemStatus =
                                         orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
                                         orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
