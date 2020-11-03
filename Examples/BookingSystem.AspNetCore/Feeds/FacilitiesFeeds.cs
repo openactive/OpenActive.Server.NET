@@ -7,6 +7,7 @@ using ServiceStack.OrmLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem
 {
@@ -161,7 +162,8 @@ namespace BookingSystem
                                     OpenBookingFlowRequirement = x.RequiresApproval
                                         ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
                                         : null,
-                                    ValidFromBeforeStartDate = x.ValidFromBeforeStartDate
+                                    ValidFromBeforeStartDate = x.ValidFromBeforeStartDate,
+                                    Prepayment = x.Prepayment.Convert()
                                 }
                             },
                     }
