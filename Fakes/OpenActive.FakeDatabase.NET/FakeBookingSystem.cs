@@ -874,7 +874,7 @@ namespace OpenActive.FakeDatabase.NET
                         ClientId = "clientid_123",
                         ClientName = "Acme Health",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        GrantTypes = new[] { "client_credentials" },
+                        GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
                         LogoUri = "http://example.com/logo.jpg"
                     }

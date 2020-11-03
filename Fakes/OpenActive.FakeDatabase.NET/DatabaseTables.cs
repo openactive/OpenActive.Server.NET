@@ -184,7 +184,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public string[] GrantTypes { get; set; }
 
-        public string[] RedirectUris { get; set; } = new string[] {};
+        public string[] RedirectUris { get; set; } = new string[] { "http://localhost:3000/cb" };
 
         public string Scope { get; set; } = "openid profile email";
     }
