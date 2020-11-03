@@ -90,6 +90,16 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
+                case AccessCodeUpdateSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.UpdateAccesCode(idComponents.uuid))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
             }
         }
 

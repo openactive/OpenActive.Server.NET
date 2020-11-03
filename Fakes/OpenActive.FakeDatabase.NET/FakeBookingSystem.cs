@@ -164,6 +164,38 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public bool UpdateAccesCode(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+                if (order != null)
+                {
+                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+                    foreach (OrderItemsTable orderItem in orderItems)
+                    {
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        {
+                            orderItem.PinCode = "updatedPinCode";
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+
+                            db.Update(orderItem);
+                        }
+                    }
+
+                    order.VisibleInFeed = true;
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    db.Update(order);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
         public void DeleteLease(string clientId, string uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())
