@@ -39,6 +39,40 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 throw new OpenBookingException(new IncompleteAttendeeDetailsError());
         }
 
+        public static void ValidateAdditionalDetails(OrderItem requestOrderItem, OrderItem responseOrderItem)
+        {
+            var properties = responseOrderItem?.OrderItemIntakeForm;
+            if (properties == null)
+                return;
+
+            var values = responseOrderItem.OrderItemIntakeFormResponse;
+            if (values == null)
+                throw new OpenBookingException(new IncompleteAttendeeDetailsError());
+
+            foreach (var property in properties)
+            {
+                var correspondingValues = values.Where(value => value.PropertyID == property.Id).ToArray();
+                if (correspondingValues.Length > 1)
+                    throw new OpenBookingException(new InvalidIntakeFormError());
+
+                var correspondingValue = correspondingValues.SingleOrDefault();
+                var required = string.Equals(property.ValueRequired, "true", StringComparison.OrdinalIgnoreCase);
+                if (required && correspondingValue == null)
+                    throw new OpenBookingException(new IncompleteAttendeeDetailsError());
+
+                if (!required && correspondingValue == null)
+                    continue;
+
+                switch (property.Type)
+                {
+                    case "DropdownFormFieldSpecification" when !((DropdownFormFieldSpecification)property).ValueOption.Contains(correspondingValue.Value.Value):
+                        throw new OpenBookingException(new InvalidIntakeFormError());
+                    case "BooleanFormFieldSpecification" when !bool.TryParse((string)correspondingValue.Value.Value, out _):
+                        throw new OpenBookingException(new InvalidIntakeFormError());
+                }
+            }
+        }
+
         public static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)
         {
             switch (jsonLdType)

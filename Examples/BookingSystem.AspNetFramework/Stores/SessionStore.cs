@@ -247,6 +247,7 @@ namespace BookingSystem
                                                  x.OccurrenceId == occurrences.Id &&
                                                  x.OrderId != flowContext.OrderId.uuid)
                                      },
+                                     Attendee = orderItemContext.RequestOrderItem.Attendee,
                                      AttendeeDetailsRequired = classes.RequiresAttendeeValidation
                                          ? new List<Uri>
                                          {
@@ -255,7 +256,9 @@ namespace BookingSystem
                                              new Uri("https://schema.org/email"),
                                              new Uri("https://schema.org/telephone")
                                          }
-                                         : null
+                                         : null,
+                                     OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
+                                     OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
                                  },
                                  SellerId = _useSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
                                  classes.RequiresApproval
@@ -283,11 +286,8 @@ namespace BookingSystem
             }
 
             // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
-            // and those provided in the requestOrderItem
-            orderItemContexts.ForEach(ctx => ctx.ValidateAttendeeDetails());
-
-            // Additional attendee detail validation logic goes here
-            // ...
+            // and those provided in the requestOrderItem, as well as the order intake form response (if specified)
+            orderItemContexts.ForEach(ctx => ctx.ValidateDetails());
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
