@@ -869,7 +869,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             var bookingPartners = new List<BookingPartnerTable>
             {
-                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret", Email="acme@health.com", Registered = false, RegistrationKey = "12345xaq", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret", Email="acme@health.com", Registered = false, RegistrationKey = "openactive_test_suite_client_12345xaq", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientJson = new ClientRegistrationModel {
                         ClientId = "clientid_123",
                         ClientName = "Acme Health",
@@ -962,6 +962,15 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 return db.Select<BookingPartnerTable>().ToList();
+            }
+        }
+
+        public BookingPartnerTable GetBookingPartnerByInitialAccessToken(string registrationKey)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var bookingPartner = db.Single<BookingPartnerTable>(x => x.RegistrationKey == registrationKey);
+                return bookingPartner?.RegistrationKeyValidUntil > DateTime.Now ? bookingPartner : null;
             }
         }
 

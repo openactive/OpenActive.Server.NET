@@ -32,7 +32,7 @@ namespace IdentityServer
 
         // POST: connect/register
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PostAsync([FromBody] ClientRegistrationModel model)
         {
@@ -68,17 +68,19 @@ namespace IdentityServer
 
             if (Request.Headers.TryGetValue("Authorization", out headerValues))
             {
-                registrationKey = headerValues.FirstOrDefault();
+                registrationKey = headerValues.FirstOrDefault().Substring("Bearer ".Length);
             }
 
             // update the booking system
-            var bookingPartner = FakeBookingSystem.Database.GetBookingPartner(model.ClientId);
+            var bookingPartner = FakeBookingSystem.Database.GetBookingPartnerByInitialAccessToken(registrationKey);
             if (bookingPartner == null)
-                return NotFound("Client was not found");
-            if (bookingPartner.RegistrationKey != registrationKey || bookingPartner.RegistrationKeyValidUntil > DateTime.Now)
-                return Unauthorized("Registration key is not valid, or is expired");
+                return Unauthorized("Initial Access Token is not valid, or is expired");
+
+            var clientId = Guid.NewGuid().ToString();
 
             bookingPartner.Registered = true;
+            bookingPartner.ClientId = clientId;
+            bookingPartner.ClientJson.ClientId = clientId;
             bookingPartner.ClientJson.ClientName = model.ClientName;
             bookingPartner.ClientJson.ClientUri = model.ClientUri;
             bookingPartner.ClientJson.LogoUri = model.LogoUri;
@@ -87,7 +89,7 @@ namespace IdentityServer
             bookingPartner.ClientSecret = key;
             FakeBookingSystem.Database.SaveBookingPartner(bookingPartner);
 
-            var client = await _clients.FindClientByIdAsync(model.ClientId);
+            var client = await _clients.FindClientByIdAsync(bookingPartner.ClientId);
             client.Enabled = true;
             client.ClientName = model.ClientName;
             client.ClientUri = model.ClientUri;
@@ -98,7 +100,7 @@ namespace IdentityServer
 
             var response = new ClientRegistrationResponse
             {
-                ClientId = bookingPartner.ClientId,
+                ClientId = client.ClientId,
                 ClientSecret = key,
                 ClientName = model.ClientName,
                 ClientUri = model.ClientUri,
@@ -108,15 +110,12 @@ namespace IdentityServer
                 Scope = model.Scope
             };
 
-            return Ok(response);
+            return CreatedAtAction("ClientRegistration", response);
         }
     }
 
     public class ClientRegistrationModel
     {
-        [JsonPropertyName(OidcConstants.RegistrationResponse.ClientId)]
-        public string ClientId { get; set; }
-
         [JsonPropertyName(OidcConstants.ClientMetadata.ClientName)]
         public string ClientName { get; set; }
 
@@ -137,6 +136,9 @@ namespace IdentityServer
 
     public class ClientRegistrationResponse : ClientRegistrationModel
     {
+        [JsonPropertyName(OidcConstants.RegistrationResponse.ClientId)]
+        public string ClientId { get; set; }
+
         [JsonPropertyName(OidcConstants.RegistrationResponse.ClientSecret)]
         public string ClientSecret { get; set; }
     }

@@ -149,6 +149,8 @@ namespace OpenActive.FakeDatabase.NET
     public class BookingPartnerTable
     {
         [PrimaryKey]
+        [AutoIncrement]
+        public long BookingPartnerId { get; set; }
         public string ClientId { get; set; }
         public string SellerId { get; set; }
         public string ClientSecret { get; set; }

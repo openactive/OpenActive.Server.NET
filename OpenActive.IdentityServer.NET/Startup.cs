@@ -24,7 +24,7 @@ namespace IdentityServer
         public void ConfigureServices(IServiceCollection services)
         {
             // uncomment, if you want to add an MVC-based UI
-            services.AddMvc();
+            services.AddControllersWithViews();
             services.AddTransient<IClientStore, ClientStore>();
 
             var builder = services.AddIdentityServer(options =>
