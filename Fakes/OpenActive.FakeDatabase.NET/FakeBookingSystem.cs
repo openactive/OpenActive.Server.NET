@@ -164,7 +164,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool UpdateAcces(string uuid, bool updateAccessPass = false, bool updateAccessCode = false)
+        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false)
         {
             if (!updateAccessPass && !updateAccessCode)
             {
@@ -177,15 +177,12 @@ namespace OpenActive.FakeDatabase.NET
 
                 if (order != null)
                 {
-                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
                     List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
 
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
                         if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
                         {
-                            updatedOrderItems.Add(orderItem);
-
                             if (updateAccessCode)
                             {
                                 orderItem.PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar: '9');
@@ -197,9 +194,15 @@ namespace OpenActive.FakeDatabase.NET
                                 orderItem.BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
                             }
 
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
                             db.Save(orderItem);
                         }
                     }
+
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
+                    db.Update(order);
+
                     return true;
                 }
                 else

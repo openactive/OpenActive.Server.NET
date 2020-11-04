@@ -95,7 +95,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateAcces(idComponents.uuid, updateAccessCode: true))
+                    if (!FakeBookingSystem.Database.UpdateAccess(idComponents.uuid, updateAccessCode: true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -105,7 +105,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateAcces(idComponents.uuid, updateAccessPass: true))
+                    if (!FakeBookingSystem.Database.UpdateAccess(idComponents.uuid, updateAccessPass: true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
