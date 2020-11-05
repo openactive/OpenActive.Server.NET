@@ -5,3 +5,4 @@ cp ./BookingSystem.AspNetCore/IdComponents/* ./BookingSystem.AspNetFramework/IdC
 cp ./BookingSystem.AspNetCore/Stores/* ./BookingSystem.AspNetFramework/Stores/
 cp ./BookingSystem.AspNetCore/Feeds/* ./BookingSystem.AspNetFramework/Feeds/
 cp ./BookingSystem.AspNetCore/Settings/* ./BookingSystem.AspNetFramework/Settings/
+cp ./BookingSystem.AspNetCore/Extensions/* ./BookingSystem.AspNetFramework/Extensions/

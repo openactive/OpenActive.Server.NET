@@ -55,7 +55,7 @@ namespace OpenActive.Server.NET.CustomBooking
             // Check Seller configuration is provided
             if (settings.SellerStore == null || settings.SellerIdTemplate == null)
             {
-                throw new EngineConfigurationException("SellerStore and SellerIdTemplate must be specified in BookingEngineSettings");
+                throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "SellerStore and SellerIdTemplate must be specified in BookingEngineSettings");
             }
 
             this.openDataFeedBaseUrl = openDataFeedBaseUrl;
@@ -650,7 +650,7 @@ namespace OpenActive.Server.NET.CustomBooking
         }
 
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
-        protected BookingFlowContext ValidateFlowRequest<O>(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller, FlowStage stage, O order) where O : Order, new()
+        protected BookingFlowContext ValidateFlowRequest<TOrder>(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller, FlowStage stage, TOrder order) where TOrder : Order, new()
         {
             if (order?.Seller?.Id != null && seller?.Id != order?.Seller?.Id)
             {
@@ -660,7 +660,7 @@ namespace OpenActive.Server.NET.CustomBooking
             // Check that taxMode is set in Seller
             if (!(seller?.TaxMode == TaxMode.TaxGross || seller?.TaxMode == TaxMode.TaxNet))
             {
-                throw new EngineConfigurationException("taxMode must always be set in the Seller");
+                throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "taxMode must always be set in the Seller");
             }
 
             // Default to BusinessToConsumer if no customer provided
