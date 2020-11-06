@@ -467,6 +467,12 @@ namespace OpenActive.Server.NET.StoreBooking
                 throw new OpenBookingException(new IncompleteBrokerDetailsError());
             }
 
+            // Throw error on Incomplete Order Item Error if OrderedItem or AcceptedOffer is null or their Urls don't match.
+            if ((context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2 || context.Stage == FlowStage.B) && order.OrderedItem.Any(orderItem => orderItem.OrderedItem == null || orderItem.AcceptedOffer == null || orderItem.OrderedItem.Url != orderItem.AcceptedOffer.Url))
+            {
+                throw new OpenBookingException(new IncompleteOrderItemError());
+            }
+
             // Reflect back only those broker fields that are supported
             context.Broker = storeBookingEngineSettings.BrokerSupportedFields(order.Broker);
 
@@ -507,7 +513,6 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // Add totals to the resulting Order
             OrderCalculations.AugmentOrderWithTotals(responseGenericOrder);
-
 
             switch (responseGenericOrder)
             {
