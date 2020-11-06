@@ -29,10 +29,10 @@ namespace BookingSystem
             TestOpportunityCriteriaEnumeration criteria,
             SellerIdComponents seller)
         {
-            if (!_appSettings.UseSingleSellerMode && !seller.SellerIdLong.HasValue)
+            if (!_appSettings.FeatureFlags.SingleSeller && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
 
-            long? sellerId = _appSettings.UseSingleSellerMode ? null : seller.SellerIdLong;
+            long? sellerId = _appSettings.FeatureFlags.SingleSeller ? null : seller.SellerIdLong;
 
             switch (opportunityType)
             {
@@ -78,29 +78,29 @@ namespace BookingSystem
                                 validFromStartDate: isValid);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Optional",
-                                10M,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Prepayment Optional",
+                                14.99M,
                                 10,
                                 prepayment: RequiredStatusType.Optional);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Unavailable",
-                                10M,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Prepayment Unavailable",
+                                14.99M,
                                 10,
                                 prepayment: RequiredStatusType.Unavailable);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Required",
-                                10M,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Prepayment Required",
+                                14.99M,
                                 10,
                                 prepayment: RequiredStatusType.Required);
                             break;
@@ -256,7 +256,7 @@ namespace BookingSystem
                                                  x.OrderId != flowContext.OrderId.uuid)
                                      }
                                  },
-                                 SellerId = _appSettings.UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
+                                 SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
                                  slot.RequiresApproval
                              }).ToArray();
 
@@ -487,8 +487,8 @@ namespace BookingSystem
         {
             switch (flowContext.TaxPayeeRelationship)
             {
-                case TaxPayeeRelationship.BusinessToBusiness when _appSettings.TaxCalculationB2B:
-                case TaxPayeeRelationship.BusinessToConsumer when _appSettings.TaxCalculationB2C:
+                case TaxPayeeRelationship.BusinessToBusiness when _appSettings.Payment.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when _appSettings.Payment.TaxCalculationB2C:
                     return new List<TaxChargeSpecification>
                     {
                         new TaxChargeSpecification
@@ -499,8 +499,8 @@ namespace BookingSystem
                             Rate = (decimal?) 0.2
                         }
                     };
-                case TaxPayeeRelationship.BusinessToBusiness when !_appSettings.TaxCalculationB2B:
-                case TaxPayeeRelationship.BusinessToConsumer when !_appSettings.TaxCalculationB2C:
+                case TaxPayeeRelationship.BusinessToBusiness when !_appSettings.Payment.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when !_appSettings.Payment.TaxCalculationB2C:
                     return null;
                 default:
                     throw new ArgumentOutOfRangeException();

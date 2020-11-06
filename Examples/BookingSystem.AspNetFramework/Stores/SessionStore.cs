@@ -29,10 +29,10 @@ namespace BookingSystem
             TestOpportunityCriteriaEnumeration criteria,
             SellerIdComponents seller)
         {
-            if (!_appSettings.UseSingleSellerMode && !seller.SellerIdLong.HasValue)
+            if (!_appSettings.FeatureFlags.SingleSeller && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
 
-            long? sellerId = _appSettings.UseSingleSellerMode ? null : seller.SellerIdLong;
+            long? sellerId = _appSettings.FeatureFlags.SingleSeller ? null : seller.SellerIdLong;
 
             switch (opportunityType)
             {
@@ -144,7 +144,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
                                 14.99M,
                                 10);
-                            break; 
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -254,7 +254,7 @@ namespace BookingSystem
                                                  x.OrderId != flowContext.OrderId.uuid)
                                      }
                                  },
-                                 SellerId = _appSettings.UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
+                                 SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
                                  classes.RequiresApproval
                              }).ToArray();
 
@@ -491,8 +491,8 @@ namespace BookingSystem
         {
             switch (flowContext.TaxPayeeRelationship)
             {
-                case TaxPayeeRelationship.BusinessToBusiness when _appSettings.TaxCalculationB2B:
-                case TaxPayeeRelationship.BusinessToConsumer when _appSettings.TaxCalculationB2C:
+                case TaxPayeeRelationship.BusinessToBusiness when _appSettings.Payment.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when _appSettings.Payment.TaxCalculationB2C:
                     return new List<TaxChargeSpecification>
                     {
                         new TaxChargeSpecification
@@ -503,8 +503,8 @@ namespace BookingSystem
                             Rate = (decimal?)0.2
                         }
                     };
-                case TaxPayeeRelationship.BusinessToBusiness when !_appSettings.TaxCalculationB2B:
-                case TaxPayeeRelationship.BusinessToConsumer when !_appSettings.TaxCalculationB2C:
+                case TaxPayeeRelationship.BusinessToBusiness when !_appSettings.Payment.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when !_appSettings.Payment.TaxCalculationB2C:
                     return null;
                 default:
                     throw new ArgumentOutOfRangeException();

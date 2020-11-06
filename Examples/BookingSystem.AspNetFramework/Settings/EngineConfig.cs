@@ -253,8 +253,8 @@ namespace BookingSystem
                         }
                     },
                     OrderStore = new AcmeOrderStore(appSettings),
-                    BusinessToBusinessTaxCalculation = appSettings.TaxCalculationB2B,
-                    BusinessToConsumerTaxCalculation = appSettings.TaxCalculationB2C,
+                    BusinessToBusinessTaxCalculation = appSettings.Payment.TaxCalculationB2B,
+                    BusinessToConsumerTaxCalculation = appSettings.Payment.TaxCalculationB2C,
                 });
         }
     }
