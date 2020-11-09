@@ -164,6 +164,7 @@ namespace BookingSystem
                 {
                     // QUESTION: Do the Base URLs need to come from config, or should they be detected from the request?
                     OpenDataFeedBaseUrl = $"{appSettings.ApplicationHostBaseUrl}/feeds".ParseUrlOrNull(),
+                    OpenBookingAPIAuthenticationAuthority = appSettings.OpenIdIssuerUrl.ParseUrlOrNull(),
                     DatasetSiteUrl = $"{appSettings.ApplicationHostBaseUrl}/openactive/".ParseUrlOrNull(),
                     DatasetDiscussionUrl = "https://github.com/openactive/OpenActive.Server.NET/issues".ParseUrlOrNull(),
                     DatasetDocumentationUrl = "https://developer.openactive.io/".ParseUrlOrNull(),

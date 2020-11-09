@@ -898,7 +898,19 @@ namespace OpenActive.FakeDatabase.NET
                         ClientUri = "http://example.com",
                         LogoUri = "http://example.com/logo.jpg"
                     } 
-                }
+                },
+                new BookingPartnerTable { ClientId = "clientid_800", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98765", RegistrationKeyValidUntil = DateTime.Now.AddDays(-1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientJson = new ClientRegistrationModel {
+                        ClientId = "clientid_789",
+                        ClientName = "Garden Athletics",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        GrantTypes = new[] { "client_credentials" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "http://example.com/logo.jpg"
+                    }
+                },
+                new BookingPartnerTable { RegistrationKey = "dynamic-primary-745ddf2d13019ce8b69c", RegistrationKeyValidUntil = DateTime.Now.AddDays(-1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { RegistrationKey = "dynamic-secondary-a21518cb57af7b6052df", RegistrationKeyValidUntil = DateTime.Now.AddDays(-1), CreatedDate = DateTime.Now }
             };
             
             var grants = new List<GrantTable>() 
