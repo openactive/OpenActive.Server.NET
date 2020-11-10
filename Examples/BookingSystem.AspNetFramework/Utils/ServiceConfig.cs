@@ -18,7 +18,9 @@ namespace BookingSystem.AspNetFramework
                 FeatureFlags = new FeatureSettings(), // use default values for all features
                 Payment = new PaymentSettings {
                     AccountId = ConfigurationManager.AppSettings["AccountId"],
-                    PaymentProviderId = ConfigurationManager.AppSettings["PaymentProviderId"]
+                    PaymentProviderId = ConfigurationManager.AppSettings["PaymentProviderId"],
+                    TaxCalculationB2B = ConfigurationManager.AppSettings["TaxCalculationB2B"] == "true",
+                    TaxCalculationB2C = ConfigurationManager.AppSettings["TaxCalculationB2C"] == "true",
                 }
             };
 
