@@ -43,6 +43,9 @@ jobs:
       with:
         node-version: 12.x
 
+    - name: Trust SSL Cert
+      run: dotnet dev-certs https --trust
+
     - name: Install OpenActive.Server.NET dependencies
       run: dotnet restore ./server/
 
