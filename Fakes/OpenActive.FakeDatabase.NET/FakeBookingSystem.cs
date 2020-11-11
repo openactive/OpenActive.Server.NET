@@ -884,33 +884,43 @@ namespace OpenActive.FakeDatabase.NET
                         ClientId = "clientid_456",
                         ClientName = "Sports England",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        GrantTypes = new[] { "client_credentials" },
+                        GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
                         LogoUri = "http://example.com/logo.jpg"
                     }
                 },
-                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98765", RegistrationKeyValidUntil = DateTime.Now.AddDays(-1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98765", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientJson = new ClientRegistrationModel {
                         ClientId = "clientid_789",
                         ClientName = "Garden Athletics",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        GrantTypes = new[] { "client_credentials" },
+                        GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
                         LogoUri = "http://example.com/logo.jpg"
                     } 
                 },
-                new BookingPartnerTable { ClientId = "clientid_800", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98765", RegistrationKeyValidUntil = DateTime.Now.AddDays(-1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { ClientId = "clientid_800", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98767", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientJson = new ClientRegistrationModel {
-                        ClientId = "clientid_789",
+                        ClientId = "clientid_800",
                         ClientName = "Garden Athletics",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        GrantTypes = new[] { "client_credentials" },
+                        GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
                         LogoUri = "http://example.com/logo.jpg"
                     }
                 },
-                new BookingPartnerTable { RegistrationKey = "dynamic-primary-745ddf2d13019ce8b69c", RegistrationKeyValidUntil = DateTime.Now.AddDays(-1), CreatedDate = DateTime.Now },
-                new BookingPartnerTable { RegistrationKey = "dynamic-secondary-a21518cb57af7b6052df", RegistrationKeyValidUntil = DateTime.Now.AddDays(-1), CreatedDate = DateTime.Now }
+                new BookingPartnerTable { ClientId = "clientid_801", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98768", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientJson = new ClientRegistrationModel {
+                        ClientId = "clientid_801",
+                        ClientName = "Garden Athletics",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        GrantTypes = new[] { "client_credentials", "authorization_code" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "http://example.com/logo.jpg"
+                    }
+                },
+                new BookingPartnerTable { RegistrationKey = "dynamic-primary-745ddf2d13019ce8b69c", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { RegistrationKey = "dynamic-secondary-a21518cb57af7b6052df", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
             };
             
             var grants = new List<GrantTable>() 
@@ -945,7 +955,7 @@ namespace OpenActive.FakeDatabase.NET
             };
 
             db.InsertAll(bookingPartners);
-            db.InsertAll(grants);
+            //db.InsertAll(grants);
         }
 
         public List<BookingPartnerAdministratorTable> GetBookingPartnerAdministrators()

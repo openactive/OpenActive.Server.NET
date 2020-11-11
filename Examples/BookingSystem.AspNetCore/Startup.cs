@@ -26,7 +26,7 @@ namespace BookingSystem.AspNetCore
             services.AddAuthentication("Bearer")
                 .AddJwtBearer("Bearer", options =>
                 {
-                    options.Authority = "http://localhost:5000";
+                    options.Authority = appSettings.OpenIdIssuerUrl;
                     options.RequireHttpsMetadata = false;
                     options.Audience = "openbooking";
                 });

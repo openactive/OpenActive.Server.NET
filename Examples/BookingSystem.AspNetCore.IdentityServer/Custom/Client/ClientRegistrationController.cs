@@ -36,11 +36,6 @@ namespace IdentityServer
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PostAsync([FromBody] ClientRegistrationModel model)
         {
-            if (!Request.IsHttps)
-            {
-                return BadRequest("HTTPS is required at this endpoint.");
-            }
-
             if (model.GrantTypes == null)
             {
                 model.GrantTypes = new[] { OidcConstants.GrantTypes.AuthorizationCode, OidcConstants.GrantTypes.RefreshToken };
@@ -80,12 +75,15 @@ namespace IdentityServer
 
             bookingPartner.Registered = true;
             bookingPartner.ClientId = clientId;
-            bookingPartner.ClientJson.ClientId = clientId;
-            bookingPartner.ClientJson.ClientName = model.ClientName;
-            bookingPartner.ClientJson.ClientUri = model.ClientUri;
-            bookingPartner.ClientJson.LogoUri = model.LogoUri;
-            bookingPartner.ClientJson.GrantTypes = model.GrantTypes;
-            bookingPartner.ClientJson.Scope = model.Scope;
+            bookingPartner.ClientJson = new OpenActive.FakeDatabase.NET.ClientRegistrationModel
+            {
+                ClientId = clientId,
+                ClientName = model.ClientName,
+                ClientUri = model.ClientUri,
+                LogoUri = model.LogoUri,
+                GrantTypes = model.GrantTypes,
+                Scope = model.Scope
+            };
             bookingPartner.ClientSecret = key;
             FakeBookingSystem.Database.SaveBookingPartner(bookingPartner);
 

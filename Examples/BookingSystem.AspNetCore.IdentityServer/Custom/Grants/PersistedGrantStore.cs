@@ -35,7 +35,7 @@ namespace IdentityServer
         {
             var grant = FakeBookingSystem.Database.GetGrant(key);
 
-            return Task.FromResult(new PersistedGrant()
+            return Task.FromResult(grant != null ? new PersistedGrant()
             {
                 Key = grant.Key,
                 Type = grant.Type,
@@ -44,7 +44,7 @@ namespace IdentityServer
                 CreationTime = grant.CreationTime,
                 Expiration = grant.Expiration,
                 Data = grant.Data
-            });
+            } : null);
         }
 
         public async Task RemoveAllAsync(string subjectId, string clientId)

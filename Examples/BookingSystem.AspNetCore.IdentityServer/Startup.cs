@@ -29,7 +29,7 @@ namespace IdentityServer
 
             var builder = services.AddIdentityServer(options =>
                 {
-                    options.Discovery.CustomEntries.Add("registration_endpoint", "https://localhost:44353/connect/register");
+                    options.Discovery.CustomEntries.Add("registration_endpoint", "~/connect/register");
                 })
                 .AddInMemoryIdentityResources(Config.Ids)
                 .AddInMemoryApiResources(Config.Apis)
@@ -49,13 +49,11 @@ namespace IdentityServer
                 app.UseDeveloperExceptionPage();
             }
 
-            //uncomment if you want to add MVC
             app.UseStaticFiles();
             app.UseRouting();
 
             app.UseIdentityServer();
 
-            // uncomment, if you want to add MVC
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
             {
