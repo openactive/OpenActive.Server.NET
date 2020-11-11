@@ -10,7 +10,7 @@ jobs:
   openactive-test-suite:
     # Note https://stackoverflow.com/questions/55485511/how-to-run-dotnet-dev-certs-https-trust
     # macos or windows is required to use `dotnet dev-certs https --trust`
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
@@ -44,9 +44,6 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
-
-    - name: Trust SSL Cert
-      run: dotnet dev-certs https --trust
 
     - name: Install OpenActive.Server.NET dependencies
       run: dotnet restore ./server/
