@@ -8,6 +8,8 @@ on:
 
 jobs:
   openactive-test-suite:
+    # Note https://stackoverflow.com/questions/55485511/how-to-run-dotnet-dev-certs-https-trust
+    # macos or windows is required to use `dotnet dev-certs https --trust`
     runs-on: macos-latest
 
     strategy:
