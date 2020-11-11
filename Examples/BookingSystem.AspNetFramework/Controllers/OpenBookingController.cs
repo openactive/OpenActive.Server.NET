@@ -77,10 +77,10 @@ namespace BookingSystem.AspNetFramework.Controllers
 
         /// <summary>
         /// OrderQuote Deletion
-        /// DELETE api/openbooking/orders-quotes/ABCD1234
+        /// DELETE api/openbooking/order-quotes/ABCD1234
         /// </summary>
         [HttpDelete]
-        [Route("orders-quotes/{uuid}")]
+        [Route("order-quotes/{uuid}")]
         public HttpResponseMessage OrderQuoteDeletion(string uuid)
         {
             try
