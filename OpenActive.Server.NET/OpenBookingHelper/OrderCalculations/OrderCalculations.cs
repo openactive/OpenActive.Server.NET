@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using OpenActive.Server.NET.StoreBooking;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
@@ -67,9 +68,12 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             };
         }
 
-        public static void AugmentOrderWithTotals<TOrder>(TOrder order) where TOrder : Order
+        public static void AugmentOrderWithTotals<TOrder>(
+            TOrder order, StoreBookingFlowContext context, bool businessToConsumerTaxCalculation, bool businessToBusinessTaxCalculation)
+            where TOrder : Order
         {
-            if (order == null) throw new ArgumentNullException(nameof(order));
+            if (order == null)
+                throw new ArgumentNullException(nameof(order));
 
             // Calculate total payment due
             decimal totalPaymentDuePrice = 0;
@@ -112,7 +116,21 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 }
             }
 
-            order.TotalPaymentTax = totalPaymentTaxMap.Values.ToListOrNullIfEmpty();
+            switch (context.TaxPayeeRelationship)
+            {
+                case TaxPayeeRelationship.BusinessToBusiness when businessToBusinessTaxCalculation:
+                case TaxPayeeRelationship.BusinessToConsumer when businessToConsumerTaxCalculation:
+                    order.TotalPaymentTax = totalPaymentTaxMap.Values.ToListOrNullIfEmpty();
+                    break;
+                case TaxPayeeRelationship.BusinessToBusiness:
+                case TaxPayeeRelationship.BusinessToConsumer:
+                    if (order.OrderedItem.Any(o => o.UnitTaxSpecification != null))
+                        throw new OpenBookingException(new InternalLibraryConfigurationError());
+
+                    order.TotalPaymentTax = null;
+                    order.TaxCalculationExcluded = true;
+                    break;
+            }
 
             // If we're in Net taxMode, tax must be added to get the total price
             if (order.Seller.TaxMode == TaxMode.TaxNet)

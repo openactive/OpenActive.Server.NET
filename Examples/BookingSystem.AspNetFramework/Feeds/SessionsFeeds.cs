@@ -112,12 +112,12 @@ namespace BookingSystem
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
-                                TaxMode = TaxMode.TaxGross
+                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet
                             } : (ILegalEntity)new Organization
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
-                                TaxMode = TaxMode.TaxGross
+                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet
                             },
                             Offers = new List<Offer> { new Offer
                                 {
