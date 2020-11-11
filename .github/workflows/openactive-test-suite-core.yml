@@ -60,8 +60,9 @@ jobs:
       env:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
 
-    - name: Ping IdentityServer to bring it up
-      run: wget https://localhost:5003/.well-known/openid-configuration
+    - name: Attempt to ping IdentityServer to bring it up
+      continue-on-error: true
+      run: curl --insecure https://localhost:5003/.well-known/openid-configuration
 
     - name: Install OpenActive Test Suite
       run: npm install
