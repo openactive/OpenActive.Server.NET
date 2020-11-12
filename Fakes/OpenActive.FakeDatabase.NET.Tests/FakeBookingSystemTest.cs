@@ -53,7 +53,7 @@ namespace OpenActive.FakeDatabase.NET.Test
         [Fact]
         public void Transaction_Effective()
         {
-            var testSeller = new SellerTable() { Modified = 2, Name = "Test" };
+            var testSeller = new SellerTable() { Name = "Test" };
 
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
