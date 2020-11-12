@@ -62,7 +62,7 @@ jobs:
 
     - name: Attempt to ping IdentityServer force it to initialise
       continue-on-error: true
-      run: curl --insecure --max-time 30 --no-progress-meter https://localhost:5003/.well-known/openid-configuration
+      run: curl --insecure --show-error --silent --max-time 30 https://localhost:5003/.well-known/openid-configuration
 
     - name: Install OpenActive Test Suite
       run: npm install
