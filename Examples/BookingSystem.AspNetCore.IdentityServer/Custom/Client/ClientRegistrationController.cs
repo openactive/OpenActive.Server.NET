@@ -10,7 +10,9 @@ using OpenActive.FakeDatabase.NET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
@@ -28,6 +30,29 @@ namespace IdentityServer
         public ClientResistrationController(IClientStore clients)
         {
             _clients = clients;
+        }
+
+        private static RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider();
+
+        static string ToBase62String(byte[] toConvert)
+        {
+            const string alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            BigInteger dividend = new BigInteger(toConvert);
+            var builder = new StringBuilder();
+            while (dividend != 0)
+            {
+                dividend = BigInteger.DivRem(dividend, alphabet.Length, out BigInteger remainder);
+                builder.Insert(0, alphabet[Math.Abs(((int)remainder))]);
+            }
+            return builder.ToString();
+        }
+
+        string CryptoRandomSecret(int length)
+        {
+            byte[] buffer = new byte[length];
+            rngCsp.GetBytes(buffer);
+            string uniq = ToBase62String(buffer);
+            return uniq;
         }
 
         // POST: connect/register
@@ -55,8 +80,7 @@ namespace IdentityServer
             }
 
             // generate a secret for the client
-            var hmac = new HMACSHA256();
-            var key = Convert.ToBase64String(hmac.Key);
+            var key = CryptoRandomSecret(32);
 
             StringValues headerValues;
             var registrationKey = string.Empty;
