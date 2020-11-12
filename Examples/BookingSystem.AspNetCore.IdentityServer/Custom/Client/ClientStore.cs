@@ -20,44 +20,26 @@ namespace IdentityServer
         private Client ConvertToIS4Client(BookingPartnerTable bookingPartner)
         {
             if (bookingPartner == null) return null;
-            if (bookingPartner.ClientJson.GrantTypes.Contains("authorization_code"))
+            return new Client()
             {
-                return new Client()
-                {
-                    ClientId = bookingPartner.ClientId,
-                    ClientName = bookingPartner.ClientJson.ClientName,
-                    AllowedGrantTypes = bookingPartner.ClientJson.GrantTypes.ToList(),
-                    ClientSecrets = { new Secret(bookingPartner.ClientSecret.Sha256()) },
-                    AllowedScopes = bookingPartner.ClientJson.Scope.Split(' ').ToList(),
-                    Claims = new List<System.Security.Claims.Claim>() { new System.Security.Claims.Claim("https://openactive.io/clientId", bookingPartner.ClientId) },
-                    ClientClaimsPrefix = "",
-                    AlwaysSendClientClaims = true,
-                    AlwaysIncludeUserClaimsInIdToken = true,
-                    AllowOfflineAccess = true,
-                    UpdateAccessTokenClaimsOnRefresh = true,
-                    RedirectUris = bookingPartner.ClientJson.RedirectUris.ToList(),
-                    RequireConsent = true,
-                    RequirePkce = true, 
-                };
-            } else
-            {
-                return new Client()
-                {
-                    Enabled = bookingPartner.Registered,
-                    ClientId = bookingPartner.ClientId,
-                    ClientName = bookingPartner.ClientJson.ClientName,
-                    AllowedGrantTypes = bookingPartner.ClientJson.GrantTypes.ToList(),
-                    ClientSecrets = { new Secret(bookingPartner.ClientSecret.Sha256()) },
-                    AllowedScopes = bookingPartner.ClientJson.Scope.Split(' ').ToList(),
-                    Claims = new List<System.Security.Claims.Claim>() { new System.Security.Claims.Claim("https://openactive.io/clientId", bookingPartner.ClientId) },
-                    ClientClaimsPrefix = "",
-                    AlwaysSendClientClaims = true,
-                    AlwaysIncludeUserClaimsInIdToken = true,
-                    AllowOfflineAccess = true,
-                    UpdateAccessTokenClaimsOnRefresh = true
-                };
-            }
-            
+                Enabled = bookingPartner.Registered,
+                ClientId = bookingPartner.ClientId,
+                ClientName = bookingPartner.ClientProperties.ClientName,
+                AllowedGrantTypes = bookingPartner.ClientProperties.GrantTypes.ToList(),
+                ClientSecrets = { new Secret(bookingPartner.ClientSecret) },
+                AllowedScopes = bookingPartner.ClientProperties.Scope.Split(' ').ToList(),
+                Claims = new List<System.Security.Claims.Claim>() { new System.Security.Claims.Claim("https://openactive.io/clientId", bookingPartner.ClientId) },
+                ClientClaimsPrefix = "",
+                AlwaysSendClientClaims = true,
+                AlwaysIncludeUserClaimsInIdToken = true,
+                AllowOfflineAccess = true,
+                UpdateAccessTokenClaimsOnRefresh = true,
+                RedirectUris = bookingPartner.ClientProperties.RedirectUris.ToList(),
+                RequireConsent = true,
+                RequirePkce = true,
+                LogoUri = bookingPartner.ClientProperties.LogoUri,
+                ClientUri = bookingPartner.ClientProperties.ClientUri
+            };
         }
     }
 }

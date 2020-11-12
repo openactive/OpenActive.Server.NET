@@ -71,41 +71,33 @@ namespace IdentityServer
             if (bookingPartner == null)
                 return Unauthorized("Initial Access Token is not valid, or is expired");
 
-            var clientId = Guid.NewGuid().ToString();
+            if (bookingPartner.ClientId == null) bookingPartner.ClientId = Guid.NewGuid().ToString();
 
             bookingPartner.Registered = true;
-            bookingPartner.ClientId = clientId;
-            bookingPartner.ClientJson = new OpenActive.FakeDatabase.NET.ClientRegistrationModel
+            bookingPartner.ClientSecret = key.Sha256();
+            bookingPartner.ClientProperties = new OpenActive.FakeDatabase.NET.ClientModel
             {
-                ClientId = clientId,
-                ClientName = model.ClientName,
-                ClientUri = model.ClientUri,
-                LogoUri = model.LogoUri,
-                GrantTypes = model.GrantTypes,
-                Scope = model.Scope
-            };
-            bookingPartner.ClientSecret = key;
-            FakeBookingSystem.Database.SaveBookingPartner(bookingPartner);
-
-            var client = await _clients.FindClientByIdAsync(bookingPartner.ClientId);
-            client.Enabled = true;
-            client.ClientName = model.ClientName;
-            client.ClientUri = model.ClientUri;
-            client.LogoUri = model.LogoUri;
-            client.AllowedGrantTypes = model.GrantTypes.ToList();
-            client.AllowedScopes = model.Scope.Split(' ').ToList();
-            client.ClientSecrets = new List<Secret>() { new Secret(key.Sha256()) };
-
-            var response = new ClientRegistrationResponse
-            {
-                ClientId = client.ClientId,
-                ClientSecret = key,
                 ClientName = model.ClientName,
                 ClientUri = model.ClientUri,
                 LogoUri = model.LogoUri,
                 GrantTypes = model.GrantTypes,
                 RedirectUris = model.RedirectUris,
-                Scope = model.Scope
+                Scope = model.Scope,
+            };
+            FakeBookingSystem.Database.SaveBookingPartner(bookingPartner);
+
+            // Read the updated client from the database and reflect back in the request
+            var client = await _clients.FindClientByIdAsync(bookingPartner.ClientId);
+            var response = new ClientRegistrationResponse
+            {
+                ClientId = client.ClientId,
+                ClientSecret = key,
+                ClientName = client.ClientName,
+                ClientUri = client.ClientUri,
+                LogoUri = client.LogoUri,
+                GrantTypes = client.AllowedGrantTypes.ToArray(),
+                RedirectUris = client.RedirectUris.ToArray(),
+                Scope = string.Join(' ', client.AllowedScopes)
             };
 
             return CreatedAtAction("ClientRegistration", response);

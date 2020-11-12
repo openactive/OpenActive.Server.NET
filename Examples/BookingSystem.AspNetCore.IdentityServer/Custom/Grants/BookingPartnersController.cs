@@ -15,6 +15,7 @@ using OpenActive.FakeDatabase.NET;
 using System.Security.Cryptography;
 using System;
 using IdentityServer4.Models;
+using System.Text.RegularExpressions;
 
 namespace src
 {
@@ -78,29 +79,23 @@ namespace src
             var hmac = new HMACSHA256();
             var key = Convert.ToBase64String(hmac.Key);
 
-            var hmacClientId = new HMACSHA256();
-            var clientId = Convert.ToBase64String(hmacClientId.Key);
-
-            var hmacSecret = new HMACSHA256();
-            var clientSecret = Convert.ToBase64String(hmacSecret.Key);
+            Regex rgx = new Regex("[^a-z0-9 ]");
+            var humanKey = rgx.Replace(bookingPartnerName.ToLowerInvariant(), "").Replace(' ', '_') + "_" + key;
 
             var newBookingPartner = new BookingPartnerTable()
             {
-                ClientId = clientId,
+                ClientId = null,
                 SellerId = "http://thissellerid", //TODO
-                ClientSecret = clientSecret,
+                ClientSecret = null,
                 Email = email,
                 Registered = false,
-                RegistrationKey = key,
+                RegistrationKey = humanKey,
                 RegistrationKeyValidUntil = DateTime.Now.AddDays(2),
                 CreatedDate = DateTime.Now,
                 BookingsSuspended = false,
-                ClientJson = new ClientRegistrationModel
+                ClientProperties = new ClientModel
                 {
-                    ClientId = clientId,
-                    ClientName = bookingPartnerName,
-                    Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                    GrantTypes = new[] { "client_credentials" }
+                    ClientName = bookingPartnerName
                 }
             };
 
@@ -187,8 +182,8 @@ namespace src
             {
                 ClientId = client.ClientId,
                 ClientName = client.ClientName ?? client.ClientId,
-                ClientLogoUrl = bookingPartner.ClientJson.LogoUri,
-                ClientUrl = bookingPartner.ClientJson.ClientUri,
+                ClientLogoUrl = bookingPartner.ClientProperties?.LogoUri,
+                ClientUrl = bookingPartner.ClientProperties?.ClientUri,
                 BookingPartner = bookingPartner
             };
         }
@@ -201,9 +196,9 @@ namespace src
                 var item = new BookingPartnerModel()
                 {
                     ClientId = bookingPartner.ClientId,
-                    ClientName = bookingPartner.ClientJson.ClientName ?? bookingPartner.ClientJson.ClientId,
-                    ClientLogoUrl = bookingPartner.ClientJson.LogoUri,
-                    ClientUrl = bookingPartner.ClientJson.ClientUri,
+                    ClientName = bookingPartner.ClientProperties?.ClientName ?? bookingPartner.ClientId,
+                    ClientLogoUrl = bookingPartner.ClientProperties?.LogoUri,
+                    ClientUrl = bookingPartner.ClientProperties?.ClientUri,
                     BookingPartner = bookingPartner
                 };
 

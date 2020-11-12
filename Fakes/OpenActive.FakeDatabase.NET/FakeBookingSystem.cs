@@ -7,6 +7,8 @@ using System.Security.Claims;
 using Bogus;
 using OpenActive.FakeDatabase.NET.Helpers;
 using ServiceStack.OrmLite;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -29,8 +31,32 @@ namespace OpenActive.FakeDatabase.NET
         }
     }
 
-    // ReSharper disable once InconsistentNaming
-    public class InMemorySQLite
+    /// <summary>
+    /// Extension methods for hashing strings and byte arrays
+    /// </summary>
+    internal static class HashExtensions
+    {
+        /// <summary>
+        /// Creates a SHA256 hash of the specified input.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <returns>A hash</returns>
+        public static string Sha256(this string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+
+            using (var sha = SHA256.Create())
+            {
+                var bytes = Encoding.UTF8.GetBytes(input);
+                var hash = sha.ComputeHash(bytes);
+
+                return Convert.ToBase64String(hash);
+            }
+        }
+    }
+
+        // ReSharper disable once InconsistentNaming
+        public class InMemorySQLite
     {
         public readonly OrmLiteConnectionFactory Database;
 
@@ -872,55 +898,55 @@ namespace OpenActive.FakeDatabase.NET
         {
             var bookingPartners = new List<BookingPartnerTable>
             {
-                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret", Email="acme@health.com", Registered = false, RegistrationKey = "openactive_test_suite_client_12345xaq", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientJson = new ClientRegistrationModel {
-                        ClientId = "clientid_123",
+                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="acme@health.com", Registered = false, RegistrationKey = "openactive_test_suite_client_12345xaq", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientProperties = new ClientModel {
                         ClientName = "Acme Health",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
                         GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg"
+                        LogoUri = "http://example.com/logo.jpg",
+                        RedirectUris = new string[] { "http://localhost:3000/cb" }
                     }
                 },
-                new BookingPartnerTable { ClientId = "clientid_456", SellerId = "abcd", ClientSecret = "secret", Email="sports@sportsengland.com", Registered = true, RegistrationKey = "12345", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = true,
-                    ClientJson = new ClientRegistrationModel {
-                        ClientId = "clientid_456",
+                new BookingPartnerTable { ClientId = "clientid_456", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="sports@sportsengland.com", Registered = true, RegistrationKey = "12345", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientProperties = new ClientModel {
                         ClientName = "Sports England",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
                         GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg"
+                        LogoUri = "http://example.com/logo.jpg",
+                        RedirectUris = new string[] { "http://localhost:3000/cb" }
                     }
                 },
-                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98765", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientJson = new ClientRegistrationModel {
-                        ClientId = "clientid_789",
+                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98765", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientProperties = new ClientModel {
                         ClientName = "Garden Athletics",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
                         GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg"
+                        LogoUri = "http://example.com/logo.jpg",
+                        RedirectUris = new string[] { "http://localhost:3000/cb" }
                     } 
                 },
-                new BookingPartnerTable { ClientId = "clientid_800", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98767", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientJson = new ClientRegistrationModel {
-                        ClientId = "clientid_800",
+                new BookingPartnerTable { ClientId = "clientid_800", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98767", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientProperties = new ClientModel {
                         ClientName = "Garden Athletics",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
                         GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg"
+                        LogoUri = "http://example.com/logo.jpg",
+                        RedirectUris = new string[] { "http://localhost:3000/cb" }
                     }
                 },
-                new BookingPartnerTable { ClientId = "clientid_801", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98768", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientJson = new ClientRegistrationModel {
-                        ClientId = "clientid_801",
+                new BookingPartnerTable { ClientId = "clientid_801", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98768", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientProperties = new ClientModel {
                         ClientName = "Garden Athletics",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
                         GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg"
-                    }
+                        LogoUri = "http://example.com/logo.jpg",
+                        RedirectUris = new string[] { "http://localhost:3000/cb" }
+        }
                 },
                 new BookingPartnerTable { RegistrationKey = "dynamic-primary-745ddf2d13019ce8b69c", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
                 new BookingPartnerTable { RegistrationKey = "dynamic-secondary-a21518cb57af7b6052df", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
@@ -1032,7 +1058,7 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
-                bookingPartner.ClientJson.Scope = scope;
+                bookingPartner.ClientProperties.Scope = scope;
                 bookingPartner.BookingsSuspended = true;
                 db.Save(bookingPartner);
             }

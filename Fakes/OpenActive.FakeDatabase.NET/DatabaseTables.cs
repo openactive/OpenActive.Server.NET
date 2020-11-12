@@ -155,7 +155,7 @@ namespace OpenActive.FakeDatabase.NET
         public string ClientId { get; set; }
         public string SellerId { get; set; }
         public string ClientSecret { get; set; }
-        public ClientRegistrationModel ClientJson { get; set; }
+        public ClientModel ClientProperties { get; set; }
         public bool Registered { get; set; } = false;
         public DateTime CreatedDate { get; set; }
         public string RegistrationKey { get; set; }
@@ -175,10 +175,8 @@ namespace OpenActive.FakeDatabase.NET
         public string Data { get; set; }
     }
 
-    public class ClientRegistrationModel
+    public class ClientModel
     {
-        public string ClientId { get; set; }
-
         public string ClientName { get; set; }
 
         public string ClientUri { get; set; }
@@ -187,9 +185,9 @@ namespace OpenActive.FakeDatabase.NET
 
         public string[] GrantTypes { get; set; }
 
-        public string[] RedirectUris { get; set; } = new string[] { "http://localhost:3000/cb" };
+        public string[] RedirectUris { get; set; }
 
-        public string Scope { get; set; } = "openid profile email";
+        public string Scope { get; set; }
     }
 
     public static class DatabaseCreator
