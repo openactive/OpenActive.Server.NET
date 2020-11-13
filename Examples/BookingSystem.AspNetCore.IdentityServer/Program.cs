@@ -4,6 +4,7 @@
 
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using OpenActive.FakeDatabase.NET;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -33,6 +34,8 @@ namespace IdentityServer
 
             try
             {
+                Log.Information("Initialising fake database (shared with Booking System)...");
+                FakeBookingSystem.Initialise();
                 Log.Information("Starting host...");
                 CreateHostBuilder(args).Build().Run();
                 return 0;

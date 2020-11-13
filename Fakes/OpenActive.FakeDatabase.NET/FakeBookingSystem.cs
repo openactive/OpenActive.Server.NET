@@ -23,6 +23,15 @@ namespace OpenActive.FakeDatabase.NET
         /// </summary>
         public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase();
 
+        public static void Initialise()
+        {
+            // Make an arbitrary call to the database to force the static instance to be instantiated, wiped and repopulated
+            // This SQLite database file is shared between the Booking System and Identity Server, and
+            // Initialise() must be called on startup of each to ensure they do not wipe the database
+            // on the first call to it
+            Database.GetBookingPartners();
+        }
+
         public static DateTime Truncate(this DateTime dateTime, TimeSpan timeSpan)
         {
             if (timeSpan == TimeSpan.Zero) return dateTime; // Or could throw an ArgumentException
@@ -64,7 +73,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
             // There are issues with transactions when using full in-memory SQLite. To workaround this, we create a temporary file and use this to hold the SQLite database.
-            string connectionString = Path.GetTempPath() + "fakedatabase.db";
+            string connectionString = Path.GetTempPath() + "openactive-fakedatabase.db";
             Database = new OrmLiteConnectionFactory(connectionString, SqliteDialect.Provider);
 
             using (var connection = Database.Open())

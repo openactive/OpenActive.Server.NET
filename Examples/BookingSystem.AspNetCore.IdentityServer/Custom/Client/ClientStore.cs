@@ -25,20 +25,20 @@ namespace IdentityServer
                 Enabled = bookingPartner.Registered,
                 ClientId = bookingPartner.ClientId,
                 ClientName = bookingPartner.Name,
-                AllowedGrantTypes = bookingPartner.ClientProperties.GrantTypes.ToList(),
-                ClientSecrets = { new Secret(bookingPartner.ClientSecret) },
-                AllowedScopes = bookingPartner.ClientProperties.Scope.Split(' ').ToList(),
-                Claims = new List<System.Security.Claims.Claim>() { new System.Security.Claims.Claim("https://openactive.io/clientId", bookingPartner.ClientId) },
+                AllowedGrantTypes = bookingPartner.ClientProperties?.GrantTypes == null ? new List<string>() : bookingPartner.ClientProperties.GrantTypes.ToList(),
+                ClientSecrets = bookingPartner.ClientSecret == null ? new List<Secret>() : new List<Secret>() { new Secret(bookingPartner.ClientSecret) },
+                AllowedScopes = bookingPartner.ClientProperties?.Scope == null ? new List<string>() : bookingPartner.ClientProperties.Scope.Split(' ').ToList(),
+                Claims = bookingPartner.ClientId == null ? new List<System.Security.Claims.Claim>() : new List<System.Security.Claims.Claim>() { new System.Security.Claims.Claim("https://openactive.io/clientId", bookingPartner.ClientId) },
                 ClientClaimsPrefix = "",
                 AlwaysSendClientClaims = true,
                 AlwaysIncludeUserClaimsInIdToken = true,
                 AllowOfflineAccess = true,
                 UpdateAccessTokenClaimsOnRefresh = true,
-                RedirectUris = bookingPartner.ClientProperties.RedirectUris.ToList(),
+                RedirectUris = bookingPartner.ClientProperties?.RedirectUris == null ? new List<string>() : bookingPartner.ClientProperties.RedirectUris.ToList(),
                 RequireConsent = true,
                 RequirePkce = true,
-                LogoUri = bookingPartner.ClientProperties.LogoUri,
-                ClientUri = bookingPartner.ClientProperties.ClientUri
+                LogoUri = bookingPartner.ClientProperties?.LogoUri,
+                ClientUri = bookingPartner.ClientProperties?.ClientUri
             };
         }
     }

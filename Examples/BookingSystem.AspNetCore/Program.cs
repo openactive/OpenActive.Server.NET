@@ -7,6 +7,7 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using OpenActive.FakeDatabase.NET;
 
 namespace BookingSystem.AspNetCore
 {
@@ -14,6 +15,8 @@ namespace BookingSystem.AspNetCore
     {
         public static void Main(string[] args)
         {
+            // Initialising fake database (shared with IdentityServer)
+            FakeBookingSystem.Initialise();
             CreateWebHostBuilder(args).Build().Run();
         }
 

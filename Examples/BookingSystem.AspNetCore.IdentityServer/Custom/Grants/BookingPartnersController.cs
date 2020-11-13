@@ -58,7 +58,9 @@ namespace src
         [HttpGet]
         public async Task<IActionResult> Edit(string Id)
         {
-            return View("BookingPartnerEdit", await BuildBookingPartnerViewModelAsync(Id));
+            var content = await BuildBookingPartnerViewModelAsync(Id);
+            if (content == null) return NotFound();
+            return View("BookingPartnerEdit", content);
         }
 
         /// <summary>
@@ -160,13 +162,15 @@ namespace src
 
         private async Task<BookingPartnerModel> BuildBookingPartnerViewModelAsync(string clientId)
         {
-            var client = await _clients.FindClientByIdAsync(clientId);
+            // var client = await _clients.FindClientByIdAsync(clientId);
             var bookingPartner = FakeBookingSystem.Database.GetBookingPartner(clientId);
+
+            if (bookingPartner == null) return null;
 
             return new BookingPartnerModel()
             {
-                ClientId = client.ClientId,
-                ClientName = client.ClientName,
+                ClientId = bookingPartner.ClientId,
+                ClientName = bookingPartner.Name,
                 ClientLogoUrl = bookingPartner.ClientProperties?.LogoUri,
                 ClientUrl = bookingPartner.ClientProperties?.ClientUri,
                 BookingPartner = bookingPartner
