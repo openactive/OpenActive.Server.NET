@@ -16,6 +16,7 @@ using System.Security.Cryptography;
 using System;
 using IdentityServer4.Models;
 using System.Text.RegularExpressions;
+using IdentityServer;
 
 namespace src
 {
@@ -76,26 +77,17 @@ namespace src
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateBookingPartner(string email, string bookingPartnerName)
         {
-            var hmac = new HMACSHA256();
-            var key = Convert.ToBase64String(hmac.Key);
-
-            Regex rgx = new Regex("[^a-z0-9 ]");
-            var humanKey = rgx.Replace(bookingPartnerName.ToLowerInvariant(), "").Replace(' ', '_') + "_" + key;
-
             var newBookingPartner = new BookingPartnerTable()
             {
-                ClientId = null,
+                ClientId = Guid.NewGuid().ToString(),
+                Name = bookingPartnerName,
                 ClientSecret = null,
                 Email = email,
                 Registered = false,
-                RegistrationKey = humanKey,
-                RegistrationKeyValidUntil = DateTime.Now.AddDays(2),
+                InitialAccessToken = KeyGenerator.GenerateInitialAccessToken(bookingPartnerName),
+                InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2),
                 CreatedDate = DateTime.Now,
-                BookingsSuspended = false,
-                ClientProperties = new ClientModel
-                {
-                    ClientName = bookingPartnerName
-                }
+                BookingsSuspended = false
             };
 
             FakeBookingSystem.Database.AddBookingPartner(newBookingPartner);
@@ -143,10 +135,8 @@ namespace src
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegenerateKey(string clientId)
         {
-            var hmac = new HMACSHA256();
-            var key = Convert.ToBase64String(hmac.Key);
-
-            FakeBookingSystem.Database.SetBookingPartnerKey(clientId, key, null);
+            var bookingPartner = FakeBookingSystem.Database.GetBookingPartner(clientId);
+            FakeBookingSystem.Database.SetBookingPartnerKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
 
             return View("BookingPartnerEdit", await BuildBookingPartnerViewModelAsync(clientId));
         }
@@ -158,16 +148,12 @@ namespace src
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegenerateAllKeys(string clientId)
         {
-            var hmac = new HMACSHA256();
-            var registrationKey = Convert.ToBase64String(hmac.Key);
+            var bookingPartner = FakeBookingSystem.Database.GetBookingPartner(clientId);
+            FakeBookingSystem.Database.ResetBookingPartnerKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
 
-            var hmacSecret = new HMACSHA256();
-            var clientSecret = Convert.ToBase64String(hmacSecret.Key);
-
-            FakeBookingSystem.Database.SetBookingPartnerKey(clientId, registrationKey, clientSecret);
-
-            var client = await _clients.FindClientByIdAsync(clientId);
-            client.ClientSecrets = new List<Secret>() { new Secret(clientSecret.Sha256()) };
+            // TODO: Is this cached in memory, does it need updating??
+            //var client = await _clients.FindClientByIdAsync(clientId);
+            //client.ClientSecrets = new List<Secret>() { new Secret(clientSecret.Sha256()) };
 
             return View("BookingPartnerEdit", await BuildBookingPartnerViewModelAsync(clientId));
         }
@@ -180,7 +166,7 @@ namespace src
             return new BookingPartnerModel()
             {
                 ClientId = client.ClientId,
-                ClientName = client.ClientName ?? client.ClientId,
+                ClientName = client.ClientName,
                 ClientLogoUrl = bookingPartner.ClientProperties?.LogoUri,
                 ClientUrl = bookingPartner.ClientProperties?.ClientUri,
                 BookingPartner = bookingPartner
@@ -195,7 +181,7 @@ namespace src
                 var item = new BookingPartnerModel()
                 {
                     ClientId = bookingPartner.ClientId,
-                    ClientName = bookingPartner.ClientProperties?.ClientName ?? bookingPartner.ClientId,
+                    ClientName = bookingPartner.Name,
                     ClientLogoUrl = bookingPartner.ClientProperties?.LogoUri,
                     ClientUrl = bookingPartner.ClientProperties?.ClientUri,
                     BookingPartner = bookingPartner

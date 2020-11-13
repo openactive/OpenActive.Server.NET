@@ -32,7 +32,7 @@
                         <label for="registrationKey" class="control-label">Registration Key</label>
                     </div>
                     <div class="col-sm-4">
-                        <input type="text" class="form-control" id="registrationKey" value="@(Model.BookingPartner.RegistrationKeyValidUntil > DateTime.Now ? Model.BookingPartner.RegistrationKey : "EXPIRED" )" disabled>
+                        <input type="text" class="form-control" id="registrationKey" value="@(Model.BookingPartner.InitialAccessTokenKeyValidUntil > DateTime.Now ? Model.BookingPartner.InitialAccessToken : "EXPIRED" )" disabled>
                     </div>
                     <div class="col-sm-2">
                         <button class="btn btn-md btn-default">Copy</button>

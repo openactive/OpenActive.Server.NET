@@ -24,7 +24,7 @@ namespace IdentityServer
             {
                 Enabled = bookingPartner.Registered,
                 ClientId = bookingPartner.ClientId,
-                ClientName = bookingPartner.ClientProperties.ClientName,
+                ClientName = bookingPartner.Name,
                 AllowedGrantTypes = bookingPartner.ClientProperties.GrantTypes.ToList(),
                 ClientSecrets = { new Secret(bookingPartner.ClientSecret) },
                 AllowedScopes = bookingPartner.ClientProperties.Scope.Split(' ').ToList(),

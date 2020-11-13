@@ -32,29 +32,6 @@ namespace IdentityServer
             _clients = clients;
         }
 
-        private static RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider();
-
-        static string ToBase62String(byte[] toConvert)
-        {
-            const string alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            BigInteger dividend = new BigInteger(toConvert);
-            var builder = new StringBuilder();
-            while (dividend != 0)
-            {
-                dividend = BigInteger.DivRem(dividend, alphabet.Length, out BigInteger remainder);
-                builder.Insert(0, alphabet[Math.Abs(((int)remainder))]);
-            }
-            return builder.ToString();
-        }
-
-        string CryptoRandomSecret(int length)
-        {
-            byte[] buffer = new byte[length];
-            rngCsp.GetBytes(buffer);
-            string uniq = ToBase62String(buffer);
-            return uniq;
-        }
-
         // POST: connect/register
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
@@ -80,7 +57,7 @@ namespace IdentityServer
             }
 
             // generate a secret for the client
-            var key = CryptoRandomSecret(32);
+            var key = KeyGenerator.GenerateSecret();
 
             StringValues headerValues;
             var registrationKey = string.Empty;
@@ -95,13 +72,11 @@ namespace IdentityServer
             if (bookingPartner == null)
                 return Unauthorized("Initial Access Token is not valid, or is expired");
 
-            if (bookingPartner.ClientId == null) bookingPartner.ClientId = Guid.NewGuid().ToString();
-
             bookingPartner.Registered = true;
             bookingPartner.ClientSecret = key.Sha256();
+            bookingPartner.Name = model.ClientName;
             bookingPartner.ClientProperties = new OpenActive.FakeDatabase.NET.ClientModel
             {
-                ClientName = model.ClientName,
                 ClientUri = model.ClientUri,
                 LogoUri = model.LogoUri,
                 GrantTypes = model.GrantTypes,
@@ -112,6 +87,10 @@ namespace IdentityServer
 
             // Read the updated client from the database and reflect back in the request
             var client = await _clients.FindClientByIdAsync(bookingPartner.ClientId);
+            if (bookingPartner.ClientSecret != client.ClientSecrets?.FirstOrDefault()?.Value)
+            {
+                return Problem(title: "New client secret not updated in cache", statusCode: 500);
+            }
             var response = new ClientRegistrationResponse
             {
                 ClientId = client.ClientId,

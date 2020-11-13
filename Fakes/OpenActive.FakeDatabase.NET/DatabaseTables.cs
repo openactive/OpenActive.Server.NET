@@ -150,15 +150,14 @@ namespace OpenActive.FakeDatabase.NET
     public class BookingPartnerTable
     {
         [PrimaryKey]
-        [AutoIncrement]
-        public long BookingPartnerId { get; set; }
         public string ClientId { get; set; }
+        public string Name { get; set; }
         public string ClientSecret { get; set; }
         public ClientModel ClientProperties { get; set; }
         public bool Registered { get; set; }
         public DateTime CreatedDate { get; set; }
-        public string RegistrationKey { get; set; }
-        public DateTime RegistrationKeyValidUntil { get; set; }
+        public string InitialAccessToken { get; set; }
+        public DateTime InitialAccessTokenKeyValidUntil { get; set; }
         public bool BookingsSuspended { get; set; }
         public string Email { get; set; }
     }
@@ -176,8 +175,6 @@ namespace OpenActive.FakeDatabase.NET
 
     public class ClientModel
     {
-        public string ClientName { get; set; }
-
         public string ClientUri { get; set; }
 
         public string LogoUri { get; set; }

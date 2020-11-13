@@ -898,10 +898,9 @@ namespace OpenActive.FakeDatabase.NET
         {
             var bookingPartners = new List<BookingPartnerTable>
             {
-                new BookingPartnerTable { RegistrationKey = "openactive_test_suite_client_12345xaq", Registered = false, RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
-                new BookingPartnerTable { ClientId = "clientid_800", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98767", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { Name = "Test Suite 1", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "openactive_test_suite_client_12345xaq", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { Name = "Acmefitness", ClientId = "clientid_800", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98767", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientProperties = new ClientModel {
-                        ClientName = "Garden Athletics 1",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
                         GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
                         ClientUri = "http://example.com",
@@ -909,9 +908,8 @@ namespace OpenActive.FakeDatabase.NET
                         RedirectUris = new string[] { "http://localhost:3000/cb" }
                     }
                 },
-                new BookingPartnerTable { ClientId = "clientid_801", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98768", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { Name = "Example app", ClientId = "clientid_801", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98768", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientProperties = new ClientModel {
-                        ClientName = "Garden Athletics 2",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
                         GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
                         ClientUri = "http://example.com",
@@ -919,8 +917,8 @@ namespace OpenActive.FakeDatabase.NET
                         RedirectUris = new string[] { "http://localhost:3000/cb" }
         }
                 },
-                new BookingPartnerTable { RegistrationKey = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
-                new BookingPartnerTable { RegistrationKey = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
+                new BookingPartnerTable { Name = "Test Suite 2", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { Name = "Test Suite 3", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
             };
             
             var grants = new List<GrantTable>() 
@@ -991,8 +989,8 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                var bookingPartner = db.Single<BookingPartnerTable>(x => x.RegistrationKey == registrationKey);
-                return bookingPartner?.RegistrationKeyValidUntil > DateTime.Now ? bookingPartner : null;
+                var bookingPartner = db.Single<BookingPartnerTable>(x => x.InitialAccessToken == registrationKey);
+                return bookingPartner?.InitialAccessTokenKeyValidUntil > DateTime.Now ? bookingPartner : null;
             }
         }
 
@@ -1012,14 +1010,26 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public void SetBookingPartnerKey(string clientId, string key, string clientSecret)
+        public void ResetBookingPartnerKey(string clientId, string key)
         {
             using (var db = Mem.Database.Open())
             {
                 var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
-                bookingPartner.RegistrationKey = key;
-                bookingPartner.RegistrationKeyValidUntil = DateTime.Now.AddDays(2);
-                if (clientSecret != null) bookingPartner.ClientSecret = clientSecret;
+                bookingPartner.Registered = false;
+                bookingPartner.InitialAccessToken = key;
+                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
+                bookingPartner.ClientSecret = null;
+                db.Save(bookingPartner);
+            }
+        }
+
+        public void SetBookingPartnerKey(string clientId, string key)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.InitialAccessToken = key;
+                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
                 db.Save(bookingPartner);
             }
         }
