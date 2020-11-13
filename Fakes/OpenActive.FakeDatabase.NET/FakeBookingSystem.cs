@@ -898,58 +898,29 @@ namespace OpenActive.FakeDatabase.NET
         {
             var bookingPartners = new List<BookingPartnerTable>
             {
-                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="acme@health.com", Registered = false, RegistrationKey = "openactive_test_suite_client_12345xaq", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { RegistrationKey = "openactive_test_suite_client_12345xaq", Registered = false, RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { ClientId = "clientid_800", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98767", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientProperties = new ClientModel {
-                        ClientName = "Acme Health",
-                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        ClientName = "Garden Athletics 1",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
                         GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
                         LogoUri = "http://example.com/logo.jpg",
                         RedirectUris = new string[] { "http://localhost:3000/cb" }
                     }
                 },
-                new BookingPartnerTable { ClientId = "clientid_456", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="sports@sportsengland.com", Registered = true, RegistrationKey = "12345", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { ClientId = "clientid_801", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98768", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientProperties = new ClientModel {
-                        ClientName = "Sports England",
-                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        GrantTypes = new[] { "client_credentials", "authorization_code" },
-                        ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg",
-                        RedirectUris = new string[] { "http://localhost:3000/cb" }
-                    }
-                },
-                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98765", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientProperties = new ClientModel {
-                        ClientName = "Garden Athletics",
-                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        GrantTypes = new[] { "client_credentials", "authorization_code" },
-                        ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg",
-                        RedirectUris = new string[] { "http://localhost:3000/cb" }
-                    } 
-                },
-                new BookingPartnerTable { ClientId = "clientid_800", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98767", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientProperties = new ClientModel {
-                        ClientName = "Garden Athletics",
-                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        GrantTypes = new[] { "client_credentials", "authorization_code" },
-                        ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg",
-                        RedirectUris = new string[] { "http://localhost:3000/cb" }
-                    }
-                },
-                new BookingPartnerTable { ClientId = "clientid_801", SellerId = "abcd", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, RegistrationKey = "98768", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientProperties = new ClientModel {
-                        ClientName = "Garden Athletics",
-                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        ClientName = "Garden Athletics 2",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
                         GrantTypes = new[] { "client_credentials", "authorization_code" },
                         ClientUri = "http://example.com",
                         LogoUri = "http://example.com/logo.jpg",
                         RedirectUris = new string[] { "http://localhost:3000/cb" }
         }
                 },
-                new BookingPartnerTable { RegistrationKey = "dynamic-primary-745ddf2d13019ce8b69c", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
-                new BookingPartnerTable { RegistrationKey = "dynamic-secondary-a21518cb57af7b6052df", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
+                new BookingPartnerTable { RegistrationKey = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { RegistrationKey = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
             };
             
             var grants = new List<GrantTable>() 

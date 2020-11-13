@@ -85,7 +85,6 @@ namespace src
             var newBookingPartner = new BookingPartnerTable()
             {
                 ClientId = null,
-                SellerId = "http://thissellerid", //TODO
                 ClientSecret = null,
                 Email = email,
                 Registered = false,
@@ -130,7 +129,7 @@ namespace src
 
             FakeBookingSystem.Database.UpdateBookingPartnerScope(
                 clientId,
-                "openid profile openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                "openid profile openactive-ordersfeed",
                 true
                 );
 

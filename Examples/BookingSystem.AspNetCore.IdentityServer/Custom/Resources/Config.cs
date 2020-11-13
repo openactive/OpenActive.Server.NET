@@ -37,12 +37,6 @@ namespace IdentityServer
                             Name = "openactive-ordersfeed",
                             DisplayName = "Access to Orders RPDE Feeds",
                             UserClaims = { JwtClaimTypes.Name, "https://openactive.io/clientId" }
-                        },
-                        new Scope
-                        {
-                            Name = "oauth-dymamic-client-update",
-                            DisplayName = "Access to perform a Dynamic Client Update",
-                            UserClaims = { JwtClaimTypes.Name, "https://openactive.io/clientId" }
                         }
                     }
                 }

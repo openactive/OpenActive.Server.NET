@@ -153,10 +153,9 @@ namespace OpenActive.FakeDatabase.NET
         [AutoIncrement]
         public long BookingPartnerId { get; set; }
         public string ClientId { get; set; }
-        public string SellerId { get; set; }
         public string ClientSecret { get; set; }
         public ClientModel ClientProperties { get; set; }
-        public bool Registered { get; set; } = false;
+        public bool Registered { get; set; }
         public DateTime CreatedDate { get; set; }
         public string RegistrationKey { get; set; }
         public DateTime RegistrationKeyValidUntil { get; set; }
