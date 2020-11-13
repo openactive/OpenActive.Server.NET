@@ -903,9 +903,9 @@ namespace OpenActive.FakeDatabase.NET
                     ClientProperties = new ClientModel {
                         ClientName = "Garden Athletics 1",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
-                        GrantTypes = new[] { "client_credentials", "authorization_code" },
+                        GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
                         ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg",
+                        LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
                         RedirectUris = new string[] { "http://localhost:3000/cb" }
                     }
                 },
@@ -913,9 +913,9 @@ namespace OpenActive.FakeDatabase.NET
                     ClientProperties = new ClientModel {
                         ClientName = "Garden Athletics 2",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
-                        GrantTypes = new[] { "client_credentials", "authorization_code" },
+                        GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
                         ClientUri = "http://example.com",
-                        LogoUri = "http://example.com/logo.jpg",
+                        LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
                         RedirectUris = new string[] { "http://localhost:3000/cb" }
         }
                 },
