@@ -25,10 +25,10 @@ jobs:
         ref: ${{ env.mirror_ref }}
         path: tests
 
-    - name: Setup Node.js 12.x
+    - name: Setup Node.js 14.x
       uses: actions/setup-node@v1
       with:
-        node-version: 12.x
+        node-version: 14.x
         
     - name: Setup MSBuild path
       uses: microsoft/setup-msbuild@v1.0.1
