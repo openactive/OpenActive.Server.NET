@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenActive.Server.NET;
 using BookingSystem.AspNetCore.Helpers;
+using System.Net.Http;
 
 namespace BookingSystem.AspNetCore
 {
@@ -27,8 +28,13 @@ namespace BookingSystem.AspNetCore
                 .AddJwtBearer("Bearer", options =>
                 {
                     options.Authority = appSettings.OpenIdIssuerUrl;
-                    options.RequireHttpsMetadata = false;
                     options.Audience = "openbooking";
+                    // Note these two options must be removed for a production implementation - they force TLS certificate validation to be ignored
+                    options.RequireHttpsMetadata = false;
+                    options.BackchannelHttpHandler = new HttpClientHandler()
+                    {
+                        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+                    };
                 });
 
             services
