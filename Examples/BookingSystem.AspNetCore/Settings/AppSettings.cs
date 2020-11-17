@@ -18,6 +18,8 @@ namespace BookingSystem
 
     public class PaymentSettings
     {
+        public bool TaxCalculationB2B { get; set; }
+        public bool TaxCalculationB2C { get; set; }
         public string AccountId { get; set; }
         public string PaymentProviderId { get; set; }
     }
