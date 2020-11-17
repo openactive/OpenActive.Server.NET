@@ -788,6 +788,7 @@ namespace OpenActive.FakeDatabase.NET
             {
 
                 CreateSellers(db);
+                CreateSellerUsers(db);
                 CreateFakeClasses(db);
                 CreateFakeFacilitiesAndSlots(db);
                 CreateBookingPartners(db);
@@ -903,6 +904,70 @@ namespace OpenActive.FakeDatabase.NET
             db.InsertAll(sellers);
         }
 
+        public static void CreateSellerUsers(IDbConnection db)
+        {
+            var sellerUsers = new List<SellerUserTable>
+            {
+                new SellerUserTable { Id = 100, Username = "test1", PasswordHash = "test1".Sha256(), SellerId = 1 },
+                new SellerUserTable { Id = 101, Username = "test1b", PasswordHash = "test1b".Sha256(), SellerId = 1 },
+                new SellerUserTable { Id = 102, Username = "test2", PasswordHash = "test2".Sha256(), SellerId = 2 },
+                new SellerUserTable { Id = 103, Username = "test3", PasswordHash = "test3".Sha256(), SellerId = 3 },
+                new SellerUserTable { Id = 104, Username = "test4", PasswordHash = "test4".Sha256(), SellerId = 4 },
+                new SellerUserTable { Id = 105, Username = "test5", PasswordHash = "test5".Sha256(), SellerId = 5 },
+            };
+
+            db.InsertAll(sellerUsers);
+        }
+
+        public bool ValidateSellerUserCredentials(string Username, string Password)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var matchingUser = db.Single<SellerUserTable>(x => x.Username == Username && x.PasswordHash == Password.Sha256());
+                return (matchingUser != null);
+            }
+        }
+
+        public SellerUserTable GetSellerUser(string Username)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Single<SellerUserTable>(x => x.Username == Username);
+            }
+        }
+
+        public SellerUserTable GetSellerUserById(long sellerUserId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.LoadSingleById<SellerUserTable>(sellerUserId);
+            }
+        }
+
+        /*
+        public List<BookingPartnerAdministratorTable> GetBookingPartnerAdministrators()
+        {
+            return new List<BookingPartnerAdministratorTable> {
+                new BookingPartnerAdministratorTable
+                {
+                    Username = "test",
+                    Password = "test".Sha256(),
+                    SubjectId = "TestSubjectId",
+                    Claims = new List<Claim>
+                    {
+                        new Claim("https://openactive.io/sellerName", "Example Seller"),
+                        new Claim("https://openactive.io/sellerId", "https://localhost:5001/api/identifiers/sellers/1"),
+                        new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
+                        new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
+                        new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),
+                        new Claim("https://openactive.io/bookingServiceUrl", "http://abc.com/booking-service")
+                    }
+                }
+            };
+        }
+        */
+
+
         public static void CreateBookingPartners(IDbConnection db)
         {
             var bookingPartners = new List<BookingPartnerTable>
@@ -924,7 +989,7 @@ namespace OpenActive.FakeDatabase.NET
                         ClientUri = "http://example.com",
                         LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
                         RedirectUris = new string[] { "http://localhost:3000/cb" }
-        }
+                    }
                 },
                 new BookingPartnerTable { Name = "Test Suite 2", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
                 new BookingPartnerTable { Name = "Test Suite 3", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
@@ -963,27 +1028,6 @@ namespace OpenActive.FakeDatabase.NET
 
             db.InsertAll(bookingPartners);
             //db.InsertAll(grants);
-        }
-
-        public List<BookingPartnerAdministratorTable> GetBookingPartnerAdministrators()
-        {
-            return new List<BookingPartnerAdministratorTable> {
-                new BookingPartnerAdministratorTable
-                {
-                    Username = "test",
-                    Password = "test",
-                    SubjectId = "TestSubjectId",
-                    Claims = new List<Claim>
-                    {
-                        new Claim("https://openactive.io/sellerName", "Example Seller"),
-                        new Claim("https://openactive.io/sellerId", "https://localhost:5001/api/identifiers/sellers/1"),
-                        new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
-                        new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
-                        new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),
-                        new Claim("https://openactive.io/bookingServiceUrl", "http://abc.com/booking-service")
-                    }
-                }
-            };
         }
 
         public List<BookingPartnerTable> GetBookingPartners()

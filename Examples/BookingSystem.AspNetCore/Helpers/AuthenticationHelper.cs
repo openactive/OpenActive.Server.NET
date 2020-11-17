@@ -13,13 +13,13 @@ namespace BookingSystem.AspNetCore.Helpers
         public static (string clientId, Uri sellerId) GetIdsFromAuth(HttpRequest request, ClaimsPrincipal principal, bool requireSellerId = true)
         {
             // NOT FOR PRODUCTION USE: Please remove this block in production
-            if (request.Headers.TryGetValue(AuthenticationTestHeaders.ClientId, out StringValues testClientId)
+            /*if (request.Headers.TryGetValue(AuthenticationTestHeaders.ClientId, out StringValues testClientId)
                 && testClientId.Count == 1
                 && (!requireSellerId || (request.Headers.TryGetValue(AuthenticationTestHeaders.SellerId, out StringValues testSellerId) && testSellerId.FirstOrDefault().ParseUrlOrNull() != null))
                 )
             {
                 return (testClientId.FirstOrDefault(), testSellerId.FirstOrDefault().ParseUrlOrNull());
-            }
+            }*/
 
             // For production use: Get Ids from JWT
             var clientId = principal.GetClientId();

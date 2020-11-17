@@ -111,11 +111,24 @@ namespace OpenActive.FakeDatabase.NET
     {
         [PrimaryKey]
         public long Id { get; set; }
-        //public string SellerId { get; set; }
         public string Name { get; set; }
         public bool IsIndividual { get; set; }
         public string Url { get; set; }
         public bool IsTaxGross { get; set; }
+        public string LogoUrl { get; set; }
+    }
+
+    public class SellerUserTable
+    {
+        [PrimaryKey]
+        public long Id { get; set; }
+        public string Username { get; set; }
+        public string PasswordHash { get; set; }
+
+        [Reference]
+        public SellerTable SellerTable { get; set; }
+        [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
+        public long SellerId { get; set; }
     }
 
     public class SlotTable : Table
@@ -192,6 +205,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = dbFactory.Open())
             {
+                db.DropTable<SellerUserTable>();
                 db.DropTable<OrderItemsTable>();
                 db.DropTable<OccurrenceTable>();
                 db.DropTable<OrderTable>();
@@ -210,6 +224,7 @@ namespace OpenActive.FakeDatabase.NET
                 db.CreateTable<OrderItemsTable>();
                 db.CreateTable<FacilityUseTable>();
                 db.CreateTable<SlotTable>();
+                db.CreateTable<SellerUserTable>();
             }
         }
     }

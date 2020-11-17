@@ -10,30 +10,77 @@ namespace IdentityServer
 {
     public class UserRepository : IUserRepository
     {
-        // since user data is being retrieved from an api, this store is built iteratively as authentication requests are made
-        // it will contain only a subset of the MWS user store at any one time
-        // if the server is restarted the store will be purged
-        private readonly List<BookingPartnerAdministratorTable> _users = FakeBookingSystem.Database.GetBookingPartnerAdministrators();
-
         public bool ValidateCredentials(string username, string password)
         {
-            var user = FindByUsername(username);
-            if (user != null)
+            return FakeBookingSystem.Database.ValidateSellerUserCredentials(username, password);
+        }
+
+        public UserWithClaims FindBySubjectId(string subjectId)
+        {
+            if (long.TryParse(subjectId, out long longSubjectId))
             {
-                return user.Password.Equals(password);
+                return GetUserFromSellerUserWithClaims(FakeBookingSystem.Database.GetSellerUserById(longSubjectId));
             }
-
-            return false;
+            else
+            {
+                return null;
+            }
         }
 
-        public BookingPartnerAdministratorTable FindBySubjectId(string subjectId)
+        public User FindByUsername(string username)
         {
-            return _users.FirstOrDefault(x => x.SubjectId == subjectId);
+            return GetUserFromSellerUser(FakeBookingSystem.Database.GetSellerUser(username));
         }
 
-        public BookingPartnerAdministratorTable FindByUsername(string username)
+        // TODO: Make this an extension method
+        private static void AddClaimIfNotNull(List<Claim> claims, string key, string value)
         {
-            return _users.FirstOrDefault(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(value))
+            {
+                claims.Add(new Claim(key, value));
+            }
         }
+
+        private UserWithClaims GetUserFromSellerUserWithClaims(SellerUserTable sellerUser)
+        {
+            if (sellerUser == null) return null;
+            var user = new UserWithClaims
+            {
+                Username = sellerUser.Username,
+                SubjectId = sellerUser.Id.ToString(),
+                IsActive = true,
+                Claims = new List<Claim>()
+            };
+            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerName", sellerUser.SellerTable.Name);
+            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerId", "https://localhost:5001/api/identifiers/sellers/" + sellerUser.SellerTable.Id);
+            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerUrl", sellerUser.SellerTable.Url);
+            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerLogo", sellerUser.SellerTable.LogoUrl);
+            // user.Claims.AddClaimIfNotNull("https://openactive.io/bookingServiceName", sellerUser.SellerTable.Name);
+            // user.Claims.AddClaimIfNotNull("https://openactive.io/bookingServiceUrl", sellerUser.SellerTable.Name);
+            return user;
+        }
+
+        private User GetUserFromSellerUser(SellerUserTable sellerUser)
+        {
+            if (sellerUser == null) return null;
+            return new User
+            {
+                Username = sellerUser.Username,
+                SubjectId = sellerUser.Id.ToString(),
+                IsActive = true,
+            };
+        }
+    }
+
+    public class User
+    {
+        public string Username { get; set; }
+        public string SubjectId { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class UserWithClaims : User
+    {
+        public List<Claim> Claims { get; set; }
     }
 }

@@ -8,7 +8,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 
 namespace BookingSystem.AspNetCore.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Route("api/openbooking")]
     [ApiController]
     [Consumes(OpenActiveMediaTypes.OpenBooking.Version1)]

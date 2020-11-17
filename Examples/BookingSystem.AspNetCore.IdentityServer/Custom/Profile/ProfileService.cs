@@ -50,8 +50,14 @@ namespace IdentityServer
                 var user = Users.FindBySubjectId(context.Subject.GetSubjectId());
                 if (user != null)
                 {
-
                     context.AddRequestedClaims(user.Claims);
+                    // Add the sellerId claim if it was not already added, to ensure it appears in the access_token
+                    var sellerIdClaim = user.Claims.FirstOrDefault(x => x.Type == "https://openactive.io/sellerId");
+                    if (sellerIdClaim != null && !context.IssuedClaims.Exists(x => x.Type == "https://openactive.io/sellerId"))
+                    {
+                        context.IssuedClaims.Add(sellerIdClaim);
+                    }
+
                 }
             }
 
