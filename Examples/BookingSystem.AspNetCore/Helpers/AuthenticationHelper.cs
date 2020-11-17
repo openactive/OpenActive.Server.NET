@@ -10,7 +10,7 @@ namespace BookingSystem.AspNetCore.Helpers
 {
     public static class AuthenticationHelper
     {
-        public static (string clientId, Uri sellerId) GetIdsFromAuth(HttpRequest request, ClaimsPrincipal principal, bool requireSellerId)
+        public static (string clientId, Uri sellerId) GetIdsFromAuth(HttpRequest request, ClaimsPrincipal principal, bool requireSellerId = true)
         {
             // NOT FOR PRODUCTION USE: Please remove this block in production
             if (request.Headers.TryGetValue(AuthenticationTestHeaders.ClientId, out StringValues testClientId)
@@ -32,11 +32,6 @@ namespace BookingSystem.AspNetCore.Helpers
             {
                 throw new OpenBookingException(new InvalidAPITokenError());
             }
-        }
-
-        public static (string clientId, Uri sellerId) GetIdsFromAuth(HttpRequest request, ClaimsPrincipal principal)
-        {
-            return GetIdsFromAuth(request, principal, true);
         }
 
         public static string GetClientIdFromAuth(HttpRequest request, ClaimsPrincipal principal)

@@ -976,7 +976,7 @@ namespace OpenActive.FakeDatabase.NET
                     Claims = new List<Claim>
                     {
                         new Claim("https://openactive.io/sellerName", "Example Seller"),
-                        new Claim("https://openactive.io/sellerId", "Example Seller Id_asdfiosjudg"),
+                        new Claim("https://openactive.io/sellerId", "https://localhost:5001/api/identifiers/sellers/1"),
                         new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
                         new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
                         new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),

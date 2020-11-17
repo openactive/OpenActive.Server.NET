@@ -1,5 +1,6 @@
 ﻿using System;
 using BookingSystem.AspNetCore.Helpers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenActive.NET;
 using OpenActive.Server.NET;
