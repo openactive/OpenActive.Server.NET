@@ -21,12 +21,13 @@ jobs:
         path: server
     - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
       if: ${{ startsWith(github.head_ref, 'coverage/') }}
-      run: echo "::set-env name=mirror_ref::${{ github.head_ref }}"
-    - name: Checkout OpenActive Test Suite ${{ env.mirror_ref }}
+      id: refs
+      run: echo "::set-output name=mirror_ref::${{ github.head_ref }}"
+    - name: Checkout OpenActive Test Suite ${{ steps.refs.outputs.mirror_ref }}
       uses: actions/checkout@v2
       with:
         repository: openactive/openactive-test-suite
-        ref: ${{ env.mirror_ref }}
+        ref: ${{ steps.refs.outputs.mirror_ref }}
         path: tests
 
     - name: Setup .NET Core 2.1.808 for Booking Server Reference Implementation
