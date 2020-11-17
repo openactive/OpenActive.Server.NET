@@ -894,11 +894,11 @@ namespace OpenActive.FakeDatabase.NET
         {
             var sellers = new List<SellerTable>
             {
-                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false, IsTaxGross = true },
-                new SellerTable { Id = 2, Name = "Road Runner Bookcamp Ltd", IsIndividual = false, IsTaxGross = false },
-                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false, IsTaxGross = true },
-                new SellerTable { Id = 4, Name = "Coyote Classes Ltd", IsIndividual = false, IsTaxGross = false },
-                new SellerTable { Id = 5, Name = "Jane Smith", IsIndividual = true, IsTaxGross = true }
+                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = true },
+                new SellerTable { Id = 2, Name = "Road Runner Bookcamp Ltd", IsIndividual = false, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = false },
+                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = true },
+                new SellerTable { Id = 4, Name = "Coyote Classes Ltd", IsIndividual = false, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = false },
+                new SellerTable { Id = 5, Name = "Jane Smith", IsIndividual = true, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = true }
             };
 
             db.InsertAll(sellers);
