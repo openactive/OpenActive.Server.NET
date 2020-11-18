@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Text;
+using OpenActive.NET;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
@@ -39,5 +40,43 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             return principal?.FindFirst(x => x.Type == OpenActiveCustomClaimNames.SellerId)?.Value;
         }
+
+        /// <summary>
+        /// Gets the SellerId and ClientId custom claims from the JWT
+        /// </summary>
+        /// <param name="principal"></param>
+        /// <returns></returns>
+        public static (string clientId, Uri sellerId) GetAccessTokenOpenBookingClaims(this ClaimsPrincipal principal)
+        {
+            var clientId = principal.GetClientId();
+            var sellerId = principal.GetSellerId().ParseUrlOrNull();
+            if (clientId != null && sellerId != null)
+            {
+                return (clientId, sellerId);
+            }
+            else
+            {
+                throw new OpenBookingException(new InvalidAPITokenError());
+            }
+        }
+
+        /// <summary>
+        /// Gets the ClientId custom claim from the JWT
+        /// </summary>
+        /// <param name="principal"></param>
+        /// <returns></returns>
+        public static string GetAccessTokenOrdersFeedClaim(this ClaimsPrincipal principal)
+        {
+            var clientId = principal.GetClientId();
+            if (clientId != null)
+            {
+                return clientId;
+            }
+            else
+            {
+                throw new OpenBookingException(new InvalidAPITokenError());
+            }
+        }
+
     }
 }

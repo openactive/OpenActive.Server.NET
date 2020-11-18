@@ -55,8 +55,6 @@ namespace IdentityServer
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerId", "https://localhost:5001/api/identifiers/sellers/" + sellerUser.SellerTable.Id);
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerUrl", sellerUser.SellerTable.Url);
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerLogo", sellerUser.SellerTable.LogoUrl);
-            // user.Claims.AddClaimIfNotNull("https://openactive.io/bookingServiceName", sellerUser.SellerTable.Name);
-            // user.Claims.AddClaimIfNotNull("https://openactive.io/bookingServiceUrl", sellerUser.SellerTable.Name);
             return user;
         }
 

@@ -13,6 +13,7 @@ namespace BookingSystem
     */
     public class FeatureSettings
     {
+        public bool EnableTokenAuth { get; set; } = true;
         public bool SingleSeller { get; set; } = false;
         public bool PaymentReconciliationDetailValidation { get; set; } = true;
     }
