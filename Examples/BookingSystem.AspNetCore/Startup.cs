@@ -41,8 +41,8 @@ namespace BookingSystem.AspNetCore
 
                 services.AddAuthorization(options =>
                 {
-                    options.AddPolicy(OpenActiveScopeNames.OpenBooking, policy => policy.Requirements.Add(new HasScopeRequirement(OpenActiveScopeNames.OpenBooking, AppSettings.OpenIdIssuerUrl)));
-                    options.AddPolicy(OpenActiveScopeNames.OrdersFeed, policy => policy.Requirements.Add(new HasScopeRequirement(OpenActiveScopeNames.OrdersFeed, AppSettings.OpenIdIssuerUrl)));
+                    options.AddPolicy(OpenActiveScopes.OpenBooking, policy => policy.Requirements.Add(new HasScopeRequirement(OpenActiveScopes.OpenBooking, AppSettings.OpenIdIssuerUrl)));
+                    options.AddPolicy(OpenActiveScopes.OrdersFeed, policy => policy.Requirements.Add(new HasScopeRequirement(OpenActiveScopes.OrdersFeed, AppSettings.OpenIdIssuerUrl)));
                 });
                 services.AddSingleton<IAuthorizationHandler, HasScopeHandler>();
             }
@@ -60,11 +60,11 @@ namespace BookingSystem.AspNetCore
                 services.AddAuthorization(options =>
                 {
                     // No authorization checks are performed, this just that the required claims are supplied
-                    options.AddPolicy(OpenActiveScopeNames.OpenBooking, policy => {
+                    options.AddPolicy(OpenActiveScopes.OpenBooking, policy => {
                         policy.RequireClaim(OpenActiveCustomClaimNames.ClientId);
                         policy.RequireClaim(OpenActiveCustomClaimNames.SellerId);
                     });
-                    options.AddPolicy(OpenActiveScopeNames.OrdersFeed, policy => policy.RequireClaim(OpenActiveCustomClaimNames.ClientId));
+                    options.AddPolicy(OpenActiveScopes.OrdersFeed, policy => policy.RequireClaim(OpenActiveCustomClaimNames.ClientId));
                 });
             }
 
