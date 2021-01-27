@@ -78,29 +78,29 @@ namespace BookingSystem
                                 validFromStartDate: isValid);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Optional",
-                                10M,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Prepayment Optional",
+                                14.99M,
                                 10,
                                 prepayment: RequiredStatusType.Optional);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Unavailable",
-                                10M,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Prepayment Unavailable",
+                                14.99M,
                                 10,
                                 prepayment: RequiredStatusType.Unavailable);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Required",
-                                10M,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Prepayment Required",
+                                14.99M,
                                 10,
                                 prepayment: RequiredStatusType.Required);
                             break;
@@ -151,7 +151,34 @@ namespace BookingSystem
 
         protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, FacilityOpportunity idComponents)
         {
-            throw new NotImplementedException();
+            switch(simulateAction)
+            {
+                case ChangeOfLogisticsSimulateAction _:
+                    switch(idComponents.OpportunityType)
+                    {
+                        case OpportunityType.FacilityUse:
+                            {
+                                if (!FakeBookingSystem.Database.UpdateFacilityUseName(idComponents.FacilityUseId.Value, "Updated Facility Use"))
+                                {
+                                    throw new OpenBookingException(new UnknownOpportunityError());
+                                }
+                                return;
+                            }
+                        case OpportunityType.FacilityUseSlot:
+                            {
+                                if (!FakeBookingSystem.Database.UpdateFacilitySlotStartAndEndTimeByPeriodInMins(idComponents.SlotId.Value, 60))
+                                {
+                                    throw new OpenBookingException(new UnknownOpportunityError());
+                                }
+                                return;
+                            }
+                        default:
+                            throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+
         }
 
 
