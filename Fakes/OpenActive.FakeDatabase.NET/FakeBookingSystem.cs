@@ -174,17 +174,19 @@ namespace OpenActive.FakeDatabase.NET
         /// <returns></returns>
         public bool UpdateFacilityUseName(long facilityUseId, string newName)
         {
-            using var db = Mem.Database.Open();
-            var facilityUse = db.Single<FacilityUseTable>(x => x.Id == facilityUseId && !x.Deleted);
-            if (facilityUse == null)
+            using (var db = Mem.Database.Open())
             {
-                return false;
-            }
+                var facilityUse = db.Single<FacilityUseTable>(x => x.Id == facilityUseId && !x.Deleted);
+                if (facilityUse == null)
+                {
+                    return false;
+                }
 
-            facilityUse.Name = newName;
-            facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
-            db.Update(facilityUse);
-            return true;
+                facilityUse.Name = newName;
+                facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(facilityUse);
+                return true;
+            }
         }
 
         /// <summary>
@@ -197,18 +199,20 @@ namespace OpenActive.FakeDatabase.NET
         /// <returns></returns>
         public bool UpdateFacilitySlotStartAndEndTimeByPeriodInMins(long slotId, int numberOfMins)
         {
-            using var db = Mem.Database.Open();
-            var slot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
-            if (slot == null)
+            using (var db = Mem.Database.Open())
             {
-                return false;
-            }
+                var slot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
+                if (slot == null)
+                {
+                    return false;
+                }
 
-            slot.Start.AddMinutes(numberOfMins);
-            slot.End.AddMinutes(numberOfMins);
-            slot.Modified = DateTimeOffset.Now.UtcTicks;
-            db.Update(slot);
-            return true;
+                slot.Start.AddMinutes(numberOfMins);
+                slot.End.AddMinutes(numberOfMins);
+                slot.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(slot);
+                return true;
+            }
         }
 
         /// <summary>
@@ -221,17 +225,19 @@ namespace OpenActive.FakeDatabase.NET
         /// <returns></returns>
         public bool UpdateClassTitle(long classId, string newTitle)
         {
-            using var db = Mem.Database.Open();
-            var classInstance = db.Single<ClassTable>(x => x.Id == classId && !x.Deleted);
-            if (classInstance == null)
+            using (var db = Mem.Database.Open())
             {
-                return false;
-            }
+                var classInstance = db.Single<ClassTable>(x => x.Id == classId && !x.Deleted);
+                if (classInstance == null)
+                {
+                    return false;
+                }
 
-            classInstance.Title = newTitle;
-            classInstance.Modified = DateTimeOffset.Now.UtcTicks;
-            db.Update(classInstance);
-            return true;
+                classInstance.Title = newTitle;
+                classInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(classInstance);
+                    return true;
+                }
         }
 
         /// <summary>
@@ -244,18 +250,20 @@ namespace OpenActive.FakeDatabase.NET
         /// <returns></returns>
         public bool UpdateScheduledSessionStartAndEndTimeByPeriodInMins(long occurrenceId, int numberOfMins)
         {
-            using var db = Mem.Database.Open();
-            var occurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
-            if (occurrence == null)
+            using (var db = Mem.Database.Open())
             {
-                return false;
-            }
+                var occurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
+                if (occurrence == null)
+                {
+                    return false;
+                }
 
-            occurrence.Start.AddMinutes(numberOfMins);
-            occurrence.End.AddMinutes(numberOfMins);
-            occurrence.Modified = DateTimeOffset.Now.UtcTicks;
-            db.Update(occurrence);
-            return true;
+                occurrence.Start.AddMinutes(numberOfMins);
+                occurrence.End.AddMinutes(numberOfMins);
+                occurrence.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(occurrence);
+                return true;            
+            }
         }
 
         public void DeleteLease(string clientId, string uuid, long? sellerId)
@@ -855,7 +863,7 @@ namespace OpenActive.FakeDatabase.NET
                     Id = seed.Id,
                     Deleted = false,
                     Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
-                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
+                    SellerId = Faker.Random.Bool() ? 1 : 3
                 })
                 .ToList();
 
@@ -910,7 +918,7 @@ namespace OpenActive.FakeDatabase.NET
                         ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
                         : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
                     RequiresApproval = Faker.Random.Bool(),
-                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
+                    SellerId = Faker.Random.Long(1, 3),
                     ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate
                 })
                 .ToList();
@@ -940,13 +948,10 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateSellers(IDbConnection db)
         {
-            var sellers = new List<SellerTable>
-            {
-                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false, IsTaxGross = true },
-                new SellerTable { Id = 2, Name = "Road Runner Bookcamp Ltd", IsIndividual = false, IsTaxGross = false },
-                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false, IsTaxGross = true },
-                new SellerTable { Id = 4, Name = "Coyote Classes Ltd", IsIndividual = false, IsTaxGross = false },
-                new SellerTable { Id = 5, Name = "Jane Smith", IsIndividual = true, IsTaxGross = true }
+            var sellers = new List<SellerTable> {
+                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false },
+                new SellerTable { Id = 2, Name = "Jane Smith", IsIndividual = true },
+                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false }
             };
 
             db.InsertAll(sellers);
