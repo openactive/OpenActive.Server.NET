@@ -151,7 +151,34 @@ namespace BookingSystem
 
         protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, FacilityOpportunity idComponents)
         {
-            throw new NotImplementedException();
+            switch(simulateAction)
+            {
+                case ChangeOfLogisticsSimulateAction _:
+                    switch(idComponents.OpportunityType)
+                    {
+                        case OpportunityType.FacilityUse:
+                            {
+                                if (!FakeBookingSystem.Database.UpdateFacilityUseName(idComponents.FacilityUseId.Value, "Updated Facility Use"))
+                                {
+                                    throw new OpenBookingException(new UnknownOpportunityError());
+                                }
+                                return;
+                            }
+                        case OpportunityType.FacilityUseSlot:
+                            {
+                                if (!FakeBookingSystem.Database.UpdateFacilitySlotStartAndEndTimeByPeriodInMins(idComponents.SlotId.Value, 60))
+                                {
+                                    throw new OpenBookingException(new UnknownOpportunityError());
+                                }
+                                return;
+                            }
+                        default:
+                            throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+
         }
 
 

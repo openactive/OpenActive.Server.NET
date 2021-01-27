@@ -36,10 +36,6 @@ namespace OpenActive.FakeDatabase.NET
         public RequiredStatusType? Prepayment { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
-        public string LocationAddress { get; set; } // Used only for ChangeOfLogisticsSimulateAction
-        public string LocationName { get; set; } // Used only for ChangeOfLogisticsSimulateAction
-        public decimal? LocationGeoLat { get; set; } // Used only for ChangeOfLogisticsSimulateAction
-        public decimal? LocationGeoLong { get; set; } // Used only for ChangeOfLogisticsSimulateAction
     }
 
     public class OccurrenceTable : Table
@@ -143,10 +139,6 @@ namespace OpenActive.FakeDatabase.NET
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; } // Provider
-        public string LocationAddress { get; set; } // Used only for ChangeOfLogisticsSimulateAction
-        public string LocationName { get; set; } // Used only for ChangeOfLogisticsSimulateAction
-        public decimal? LocationGeoLat { get; set; } // Used only for ChangeOfLogisticsSimulateAction
-        public decimal? LocationGeoLong { get; set; } // Used only for ChangeOfLogisticsSimulateAction
     }
 
     public static class DatabaseCreator

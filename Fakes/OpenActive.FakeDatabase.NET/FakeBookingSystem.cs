@@ -164,67 +164,98 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool UpdateOrderLogisticsData(string uuid)
+        /// <summary>
+        /// Update logistics data for FacilityUse to trigger logistics change notification
+        /// Other fields such as location and meetingPoint can also be updated to trigger
+        /// notification but for simpilicity only name is updated here
+        /// </summary>
+        /// <param name="facilityUseId"></param>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        public bool UpdateFacilityUseName(long facilityUseId, string newName)
         {
-            using (var db = Mem.Database.Open())
+            using var db = Mem.Database.Open();
+            var facilityUse = db.Single<FacilityUseTable>(x => x.Id == facilityUseId && !x.Deleted);
+            if (facilityUse == null)
             {
-                var order = db.Single<OrderTable>(x => x.OrderId == uuid);
-
-                if (order != null)
-                {
-                    var orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
-                    foreach (var orderItem in orderItems)
-                    {
-                        if (orderItem.SlotId.HasValue)
-                        {
-                            var slotInstance = db.Single<SlotTable>(x => x.Id == orderItem.SlotId && !x.Deleted);
-                            var facilityInstance =  db.Single<FacilityUseTable>(x => x.Id == slotInstance.FacilityUseId && !x.Deleted);
-
-                            // Update logistics data for Facility/Slot
-                            facilityInstance.Name = "Updated Name: " + facilityInstance.Name;
-                            facilityInstance.LocationAddress = "Updated address";
-                            facilityInstance.LocationName = "Updated location name";
-                            facilityInstance.LocationGeoLat = Faker.Random.Decimal(min: -5.0m, max: 5.0m);
-                            facilityInstance.LocationGeoLong = Faker.Random.Decimal(min: -5.0m, max: 5.0m);
-
-                            // this will also change duration as duration is calculated based on start and end time.
-                            slotInstance.Start = slotInstance.Start.AddHours(1);
-                            slotInstance.End = slotInstance.End.AddHours(2);
-
-                            slotInstance.Modified = DateTimeOffset.Now.UtcTicks;
-                            facilityInstance.Modified = DateTimeOffset.Now.UtcTicks;
-                            db.Update(slotInstance);
-                            db.Update(facilityInstance);
-                        }
-
-                        if (orderItem.OccurrenceId.HasValue)
-                        {
-                            var occurenceInstance = db.Single<OccurrenceTable>(x => x.Id == orderItem.OccurrenceId && !x.Deleted);
-                            var classInstance = db.Single<ClassTable>(x => x.Id == occurenceInstance.ClassId && !x.Deleted);
-
-                            // update logistcs data for Session/ScheduledSession.
-                            classInstance.Title = "Updated Name: " + classInstance.Title;
-                            classInstance.LocationAddress = "Updated address";
-                            classInstance.LocationName = "Updated location name";
-                            classInstance.LocationGeoLat = Faker.Random.Decimal(min: -5.0m, max: 5.0m);
-                            classInstance.LocationGeoLong = Faker.Random.Decimal(min: -5.0m, max: 5.0m);
-
-                            //this will also change duration as duration is calculated based on start and end time.
-                            occurenceInstance.Start = occurenceInstance.Start.AddHours(1);
-                            occurenceInstance.End = occurenceInstance.End.AddHours(2);
-
-                            occurenceInstance.Modified = DateTimeOffset.Now.UtcTicks;
-                            classInstance.Modified = DateTimeOffset.Now.UtcTicks;
-                            db.Update(occurenceInstance);
-                            db.Update(classInstance);
-                        }
-                    }
-
-                    return true;
-                }
-
                 return false;
             }
+
+            facilityUse.Name = newName;
+            facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
+            db.Update(facilityUse);
+            return true;
+        }
+
+        /// <summary>
+        /// Update logistics data for Slot to trigger logistics change notification
+        /// Other fields such as duration can also be updated to trigger notification
+        /// but for simpilicity only start and end date is updated here
+        /// </summary>
+        /// <param name="slotId"></param>
+        /// <param name="numberOfMins"></param>
+        /// <returns></returns>
+        public bool UpdateFacilitySlotStartAndEndTimeByPeriodInMins(long slotId, int numberOfMins)
+        {
+            using var db = Mem.Database.Open();
+            var slot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
+            if (slot == null)
+            {
+                return false;
+            }
+
+            slot.Start.AddMinutes(numberOfMins);
+            slot.End.AddMinutes(numberOfMins);
+            slot.Modified = DateTimeOffset.Now.UtcTicks;
+            db.Update(slot);
+            return true;
+        }
+
+        /// <summary>
+        /// Update logistics data for SessionSeries to trigger logistics change notification
+        /// Other fields such as location and meetingPoint can also be updated to trigger
+        /// notification but for simpilicity only title is updated here
+        /// </summary>
+        /// <param name="classId"></param>
+        /// <param name="newTitle"></param>
+        /// <returns></returns>
+        public bool UpdateClassTitle(long classId, string newTitle)
+        {
+            using var db = Mem.Database.Open();
+            var classInstance = db.Single<ClassTable>(x => x.Id == classId && !x.Deleted);
+            if (classInstance == null)
+            {
+                return false;
+            }
+
+            classInstance.Title = newTitle;
+            classInstance.Modified = DateTimeOffset.Now.UtcTicks;
+            db.Update(classInstance);
+            return true;
+        }
+
+        /// <summary>
+        /// Update logistics data for ScheduledSession to trigger logistics change notification
+        /// Other fields such as duration can also be updated to trigger notification
+        /// but for simpilicity only start and end date is updated here
+        /// </summary>
+        /// <param name="occurrenceId"></param>
+        /// <param name="numberOfMins"></param>
+        /// <returns></returns>
+        public bool UpdateScheduledSessionStartAndEndTimeByPeriodInMins(long occurrenceId, int numberOfMins)
+        {
+            using var db = Mem.Database.Open();
+            var occurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
+            if (occurrence == null)
+            {
+                return false;
+            }
+
+            occurrence.Start.AddMinutes(numberOfMins);
+            occurrence.End.AddMinutes(numberOfMins);
+            occurrence.Modified = DateTimeOffset.Now.UtcTicks;
+            db.Update(occurrence);
+            return true;
         }
 
         public void DeleteLease(string clientId, string uuid, long? sellerId)
