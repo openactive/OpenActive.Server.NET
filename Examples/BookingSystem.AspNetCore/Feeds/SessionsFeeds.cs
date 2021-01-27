@@ -112,12 +112,12 @@ namespace BookingSystem
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
-                                TaxMode = TaxMode.TaxGross
+                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet
                             } : (ILegalEntity)new Organization
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
-                                TaxMode = TaxMode.TaxGross
+                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet
                             },
                             Offers = new List<Offer> { new Offer
                                 {
@@ -136,7 +136,8 @@ namespace BookingSystem
                                     OpenBookingFlowRequirement = result.Item1.RequiresApproval 
                                         ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
                                         : null,
-                                    ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate
+                                    ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate,
+                                    Prepayment = result.Item1.Prepayment.Convert()
                                 }
                             },
                             Location = new Place
