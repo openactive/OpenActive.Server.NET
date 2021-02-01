@@ -125,7 +125,6 @@ namespace OpenActive.Server.NET.CustomBooking
         private Dictionary<string, IOpportunityDataRpdeFeedGenerator> feedLookup;
         private List<OpportunityType> supportedFeeds;
         private Uri openDataFeedBaseUrl;
-        private Uri openBookingAPIBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
 

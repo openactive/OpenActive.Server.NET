@@ -147,8 +147,9 @@ namespace OpenActive.Server.NET.StoreBooking
         /// <summary>
         /// Simple contructor
         /// </summary>
-        /// <param name="settings">Settings are used exclusively by the AbstractBookingEngine</param>
-        /// <param name="store">Store used exclusively by the StoreBookingEngine</param>
+        /// <param name="settings">settings are used exclusively by the AbstractBookingEngine</param>
+        /// <param name="datasetSettings">datasetSettings are used exclusively by the DatasetSiteGenerator</param>
+        /// <param name="storeBookingEngineSettings">storeBookingEngineSettings used exclusively by the StoreBookingEngine</param>
         public StoreBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings, StoreBookingEngineSettings storeBookingEngineSettings) : base(settings, datasetSettings)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));
