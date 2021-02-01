@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenActive.Server.NET;
 using BookingSystem.AspNetCore.Helpers;
-using BookingSystem.AspNetCore.Filters;
 
 namespace BookingSystem.AspNetCore
 {
@@ -29,7 +28,7 @@ namespace BookingSystem.AspNetCore
             //     .AddAzureADB2CBearer(options => Configuration.Bind("AzureAdB2C", options));
 
             services
-                .AddMvc(options => options.Filters.Add<OperationCancelledExceptionFilter>())
+                .AddMvc()
                 .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()))
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 

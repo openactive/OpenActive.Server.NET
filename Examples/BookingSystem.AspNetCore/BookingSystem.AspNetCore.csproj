@@ -20,9 +20,6 @@
     <ProjectReference Include="..\..\OpenActive.Server.NET\OpenActive.Server.NET.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Filters\" />
-  </ItemGroup>
   <PropertyGroup>
     <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
