@@ -489,10 +489,10 @@ namespace OpenActive.Server.NET.CustomBooking
         {
             Event genericEvent = OpenActiveSerializer.Deserialize<Event>(eventJson);
 
-            // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-            OpportunityType? opportunityType = null;
-            ILegalEntity seller = null;
 
+            // Note opportunityType is required here to facilitate routing to the correct store to handle the request
+            OpportunityType? opportunityType;
+            ILegalEntity seller;
             switch (genericEvent)
             {
                 case ScheduledSession scheduledSession:
@@ -682,10 +682,13 @@ namespace OpenActive.Server.NET.CustomBooking
             // Throw error on incomplete customer details if C2, P or B
             if (stage != FlowStage.C1 && (order.Customer == null || string.IsNullOrWhiteSpace(order.Customer.Email)))
             {
-                // Don't throw exception if stage is B and ResellerBroker, else throw.
-                if (stage != FlowStage.B || order.BrokerRole != BrokerType.ResellerBroker)
+                // Unless it's B when the Broker isn't a ResellerBroker
+                if (order.BrokerRole != BrokerType.ResellerBroker)
                 {
-                    throw new OpenBookingException(new IncompleteCustomerDetailsError());
+                    if (stage != FlowStage.B)
+                    {
+                        throw new OpenBookingException(new IncompleteCustomerDetailsError());
+                    }
                 }
             }
 
