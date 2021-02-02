@@ -73,7 +73,7 @@ namespace BookingSystem
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
-                                TaxMode = TaxMode.TaxGross,
+                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
                                 TermsOfService = new List<Terms>
                                 {
                                     new PrivacyPolicy
