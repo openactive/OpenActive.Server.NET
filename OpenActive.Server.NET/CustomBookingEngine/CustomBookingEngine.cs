@@ -685,10 +685,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 // Unless it's B when the Broker isn't a ResellerBroker
                 if (order.BrokerRole != BrokerType.ResellerBroker)
                 {
-                    if (stage != FlowStage.B)
-                    {
-                        throw new OpenBookingException(new IncompleteCustomerDetailsError());
-                    }
+                    throw new OpenBookingException(new IncompleteCustomerDetailsError());
                 }
             }
 
