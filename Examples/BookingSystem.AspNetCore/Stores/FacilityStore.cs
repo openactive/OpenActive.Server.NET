@@ -130,7 +130,7 @@ namespace BookingSystem
                                 requiresApproval: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 2,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Net",
@@ -138,7 +138,7 @@ namespace BookingSystem
                                 10);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxGross:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
