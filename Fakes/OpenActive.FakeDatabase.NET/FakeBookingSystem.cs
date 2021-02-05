@@ -761,7 +761,7 @@ namespace OpenActive.FakeDatabase.NET
                     Id = seed.Id,
                     Deleted = false,
                     Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
-                    SellerId = Faker.Random.Bool() ? 1 : 3
+                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                 })
                 .ToList();
 
@@ -816,7 +816,7 @@ namespace OpenActive.FakeDatabase.NET
                         ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
                         : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
                     RequiresApproval = Faker.Random.Bool(),
-                    SellerId = Faker.Random.Long(1, 3),
+                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                     ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate
                 })
                 .ToList();
@@ -846,10 +846,13 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateSellers(IDbConnection db)
         {
-            var sellers = new List<SellerTable> {
-                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false },
-                new SellerTable { Id = 2, Name = "Jane Smith", IsIndividual = true },
-                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false }
+            var sellers = new List<SellerTable>
+            {
+                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false, IsTaxGross = true },
+                new SellerTable { Id = 2, Name = "Road Runner Bookcamp Ltd", IsIndividual = false, IsTaxGross = false },
+                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false, IsTaxGross = true },
+                new SellerTable { Id = 4, Name = "Coyote Classes Ltd", IsIndividual = false, IsTaxGross = false },
+                new SellerTable { Id = 5, Name = "Jane Smith", IsIndividual = true, IsTaxGross = true }
             };
 
             db.InsertAll(sellers);

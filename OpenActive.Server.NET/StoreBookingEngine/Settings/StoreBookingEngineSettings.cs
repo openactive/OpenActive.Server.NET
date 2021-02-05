@@ -2,7 +2,6 @@
 using OpenActive.NET;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace OpenActive.Server.NET.StoreBooking
 {
@@ -17,5 +16,7 @@ namespace OpenActive.Server.NET.StoreBooking
         public Dictionary<IOpportunityStore, List<OpportunityType>> OpportunityStoreRouting { get; set; }
             = new Dictionary<IOpportunityStore, List<OpportunityType>>();
         public IOrderStore OrderStore { get; set; }
+        public bool BusinessToConsumerTaxCalculation { get; set; }
+        public bool BusinessToBusinessTaxCalculation { get; set; }
     }
 }

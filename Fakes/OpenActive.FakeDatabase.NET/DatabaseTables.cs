@@ -110,6 +110,7 @@ namespace OpenActive.FakeDatabase.NET
     {
         public string Name { get; set; }
         public bool IsIndividual { get; set; }
+        public bool IsTaxGross { get; set; }
     }
 
     public class SlotTable : Table

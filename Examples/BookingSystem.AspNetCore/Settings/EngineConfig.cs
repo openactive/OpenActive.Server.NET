@@ -145,8 +145,7 @@ namespace BookingSystem
                         },
                         {
                             OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
-                        }
-                        ,
+                        },
                         {
                             OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
                         }
@@ -247,13 +246,15 @@ namespace BookingSystem
                     // List of _bookable_ opportunity types and which store to route to for each
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
-                            new SessionStore(appSettings.FeatureFlags.SingleSeller), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                            new SessionStore(appSettings), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStore(appSettings.FeatureFlags.SingleSeller), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
+                            new FacilityStore(appSettings), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
                         }
                     },
                     OrderStore = new AcmeOrderStore(appSettings),
+                    BusinessToBusinessTaxCalculation = appSettings.Payment.TaxCalculationB2B,
+                    BusinessToConsumerTaxCalculation = appSettings.Payment.TaxCalculationB2C,
                 });
         }
     }

@@ -457,6 +457,18 @@ namespace OpenActive.Server.NET.StoreBooking
                     throw new OpenBookingException(new OpenBookingError(), "beta:CustomerAuthTokenMissingError");
             }
 
+            // Throw error on incomplete customer details if C2, P or B
+            else if (context.Stage != FlowStage.C1 && (context.Customer == null || context.Customer.IsPerson && string.IsNullOrWhiteSpace(context.Customer.Email)))
+            {
+                throw new OpenBookingException(new IncompleteCustomerDetailsError());
+            }
+
+            // Throw error on incomplete broker details
+            if (order.BrokerRole != BrokerType.NoBroker && (order.Broker == null || string.IsNullOrWhiteSpace(order.Broker.Name)))
+            {
+                throw new OpenBookingException(new IncompleteBrokerDetailsError());
+            }
+
             // Reflect back only those broker fields that are supported
             context.Broker = storeBookingEngineSettings.BrokerSupportedFields(order.Broker);
 
@@ -496,8 +508,8 @@ namespace OpenActive.Server.NET.StoreBooking
             };
 
             // Add totals to the resulting Order
-            OrderCalculations.AugmentOrderWithTotals(responseGenericOrder);
-
+            OrderCalculations.AugmentOrderWithTotals(
+                responseGenericOrder, context, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation);
 
             switch (responseGenericOrder)
             {
