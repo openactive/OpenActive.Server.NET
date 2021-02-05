@@ -45,7 +45,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="openBookingAPIBaseUrl"></param>
         /// <param name="openDataFeedBaseUrl"></param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "Exception relates to specific settings property being null")]
-        public CustomBookingEngine(BookingEngineSettings settings, Uri openBookingAPIBaseUrl, Uri openDataFeedBaseUrl) : this (settings, openBookingAPIBaseUrl)
+        public CustomBookingEngine(BookingEngineSettings settings, Uri openBookingAPIBaseUrl, Uri openDataFeedBaseUrl) : this(settings, openBookingAPIBaseUrl)
         {
             // Check constructor configuration is correct
             if (openDataFeedBaseUrl == null) throw new ArgumentNullException(nameof(openDataFeedBaseUrl));
@@ -60,7 +60,8 @@ namespace OpenActive.Server.NET.CustomBooking
 
             this.openDataFeedBaseUrl = openDataFeedBaseUrl;
 
-            foreach (var idConfiguration in settings.IdConfiguration) {
+            foreach (var idConfiguration in settings.IdConfiguration)
+            {
                 idConfiguration.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
             }
             settings.OrderIdTemplate.RequiredBaseUrl = openBookingAPIBaseUrl;
@@ -124,7 +125,6 @@ namespace OpenActive.Server.NET.CustomBooking
         private Dictionary<string, IOpportunityDataRpdeFeedGenerator> feedLookup;
         private List<OpportunityType> supportedFeeds;
         private Uri openDataFeedBaseUrl;
-        private Uri openBookingAPIBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
 
@@ -210,7 +210,8 @@ namespace OpenActive.Server.NET.CustomBooking
             if (feedLookup.TryGetValue(feedname, out IOpportunityDataRpdeFeedGenerator generator))
             {
                 return generator.GetRpdePage(feedname, afterTimestamp, afterId, afterChangeNumber);
-            } else
+            }
+            else
             {
                 throw new OpenBookingException(new NotFoundError(), $"OpportunityTypeConfiguration for '{feedname}' not found.");
             }
@@ -280,7 +281,8 @@ namespace OpenActive.Server.NET.CustomBooking
             if (result == null)
             {
                 throw new OpenBookingException(new UnknownOrderError());
-            } else
+            }
+            else
             {
                 return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(result), HttpStatusCode.OK);
             }
@@ -415,7 +417,8 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 OrderedItem = order.OrderedItem.Select(x => new OrderItem { Id = x.Id, OrderItemStatus = x.OrderItemStatus }).ToList()
             };
-            if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties)) {
+            if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties))
+            {
                 throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
             }
 
@@ -486,11 +489,12 @@ namespace OpenActive.Server.NET.CustomBooking
         {
             Event genericEvent = OpenActiveSerializer.Deserialize<Event>(eventJson);
 
-            // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-            OpportunityType? opportunityType = null;
-            ILegalEntity seller = null;
 
-            switch (genericEvent) {
+            // Note opportunityType is required here to facilitate routing to the correct store to handle the request
+            OpportunityType? opportunityType;
+            ILegalEntity seller;
+            switch (genericEvent)
+            {
                 case ScheduledSession scheduledSession:
                     switch (scheduledSession.SuperEvent.Value)
                     {
@@ -499,7 +503,7 @@ namespace OpenActive.Server.NET.CustomBooking
                             seller = sessionSeries.Organizer;
                             break;
                         default:
-                           throw new OpenBookingException(new OpenBookingError(), "ScheduledSession must have superEvent of SessionSeries");
+                            throw new OpenBookingException(new OpenBookingError(), "ScheduledSession must have superEvent of SessionSeries");
                     }
                     break;
                 case Slot slot:
@@ -541,7 +545,8 @@ namespace OpenActive.Server.NET.CustomBooking
                     }
                     break;
                 case Event @event:
-                    switch (@event.SuperEvent) {
+                    switch (@event.SuperEvent)
+                    {
                         case HeadlineEvent headlineEvent:
                             opportunityType = OpportunityType.HeadlineEventSubEvent;
                             seller = headlineEvent.Organizer;
@@ -593,7 +598,7 @@ namespace OpenActive.Server.NET.CustomBooking
         ResponseContent IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
         {
             this.DeleteTestDataset(testDatasetIdentifier);
-            
+
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
@@ -659,7 +664,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // Default to BusinessToConsumer if no customer provided
             TaxPayeeRelationship taxPayeeRelationship =
-                order.Customer == null ? 
+                order.Customer == null ?
                     TaxPayeeRelationship.BusinessToConsumer :
                     order.BrokerRole == BrokerType.ResellerBroker || order.Customer.IsOrganization
                         ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
@@ -669,16 +674,37 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new IncompleteBrokerDetailsError());
             }
 
+            if (order.BrokerRole == BrokerType.NoBroker && order.Broker != null)
+            {
+                throw new OpenBookingException(new IncompleteBrokerDetailsError()); // TODO: Placeholder for https://github.com/openactive/open-booking-api/issues/167
+            }
+
+            // Throw error on incomplete customer details if C2, P or B if Broker type is not ResellerBroker
+            if (order.BrokerRole != BrokerType.ResellerBroker)
+            {
+                if (stage != FlowStage.C1 && (order.Customer == null || order.Customer.IsPerson && string.IsNullOrWhiteSpace(order.Customer.Email)))
+                {
+                    throw new OpenBookingException(new IncompleteCustomerDetailsError());
+                }
+            }
+
+            // Throw error on incomplete broker details
+            if (order.BrokerRole != BrokerType.NoBroker && (order.Broker == null || string.IsNullOrWhiteSpace(order.Broker.Name)))
+            {
+                throw new OpenBookingException(new IncompleteBrokerDetailsError());
+            }
+
             var payer = order.BrokerRole == BrokerType.ResellerBroker ? order.Broker : order.Customer;
 
-            return new BookingFlowContext {
+            return new BookingFlowContext
+            {
                 Stage = stage,
                 OrderId = orderId,
                 OrderIdTemplate = settings.OrderIdTemplate,
                 Seller = seller,
                 SellerId = sellerIdComponents,
                 TaxPayeeRelationship = taxPayeeRelationship,
-                Payer = payer 
+                Payer = payer
             };
         }
 

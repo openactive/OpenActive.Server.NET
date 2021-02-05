@@ -209,9 +209,9 @@ namespace BookingSystem
                     // Note that storage of these details is entirely optional
                     BrokerSupportedFields = o => new Organization
                     {
-                        Name = o.Name,
-                        Url = o.Url,
-                        Telephone = o.Telephone
+                        Name = o?.Name,
+                        Url = o?.Url,
+                        Telephone = o?.Telephone
                     },
                     // Details of your booking system, complete with an customer-facing terms and conditions
                     BookingServiceDetails = new BookingService
