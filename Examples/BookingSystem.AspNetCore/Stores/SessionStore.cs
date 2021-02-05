@@ -145,6 +145,14 @@ namespace BookingSystem
                                 14.99M,
                                 10);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableSellerTermsOfService:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Seller Terms Of Service",
+                                14.99M,
+                                10);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
