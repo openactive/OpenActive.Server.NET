@@ -2,6 +2,8 @@
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using ServiceStack.OrmLite;
+using System;
+using System.Collections.Generic;
 
 namespace BookingSystem
 {
@@ -39,6 +41,15 @@ namespace BookingSystem
                         AddressRegion = "Oxfordshire",
                         PostalCode = "OX1 1AA",
                         AddressCountry = "GB"
+                    },
+                    TermsOfService = new List<Terms>
+                    {
+                        new PrivacyPolicy
+                        {
+                            Name = "Privacy Policy",
+                            Url = new Uri("https://example.com/privacy.html"),
+                            RequiresExplicitConsent = false
+                        }
                     }
                 };
             }
@@ -48,7 +59,9 @@ namespace BookingSystem
             {
                 var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
                 if (seller == null)
+                {
                     return null;
+                }
 
                 return seller.IsIndividual ? new Person
                 {
@@ -77,6 +90,15 @@ namespace BookingSystem
                         AddressRegion = "Oxfordshire",
                         PostalCode = "OX1 1AA",
                         AddressCountry = "GB"
+                    },
+                    TermsOfService = new List<Terms>
+                    {
+                        new PrivacyPolicy
+                        {
+                            Name = "Privacy Policy",
+                            Url = new Uri("https://example.com/privacy.html"),
+                            RequiresExplicitConsent = false
+                        }
                     }
                 };
 
