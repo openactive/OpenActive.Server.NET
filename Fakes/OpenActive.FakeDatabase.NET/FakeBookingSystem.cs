@@ -774,7 +774,7 @@ namespace OpenActive.FakeDatabase.NET
                     Id = seed.Id,
                     Deleted = false,
                     Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
-                    SellerId = Faker.Random.Bool() ? 1 : 3
+                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                 })
                 .ToList();
 
@@ -784,7 +784,8 @@ namespace OpenActive.FakeDatabase.NET
                     .Select(_ => new
                     {
                         StartDate = seed.RandomStartDate(),
-                        TotalUses = Faker.Random.Int(0, 8)
+                        TotalUses = Faker.Random.Int(0, 8),
+                        Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     })
                     .Select(slot => new SlotTable
                     {
@@ -795,7 +796,10 @@ namespace OpenActive.FakeDatabase.NET
                         End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
                         MaximumUses = slot.TotalUses,
                         RemainingUses = slot.TotalUses,
-                        Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                        Price = slot.Price,
+                        Prepayment = slot.Price == 0
+                            ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
+                            : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
                         RequiresApproval = Faker.Random.Bool(),
                         ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                         LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate()
@@ -810,16 +814,25 @@ namespace OpenActive.FakeDatabase.NET
             var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
 
             var classes = opportunitySeeds
-                .Select(seed => new ClassTable
+                .Select(seed => new
                 {
-                    Id = seed.Id,
+                    seed.Id,
+                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                    ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate()
+                })
+                .Select(@class => new ClassTable
+                {
+                    Id = @class.Id,
                     Deleted = false,
                     Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
-                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                    Price = @class.Price,
+                    Prepayment = @class.Price == 0
+                        ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
+                        : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
                     RequiresApproval = Faker.Random.Bool(),
-                    SellerId = Faker.Random.Long(1, 3),
-                    ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
-                    LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate()
+                    LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
+                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
+                    ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate
                 })
                 .ToList();
 
@@ -848,10 +861,13 @@ namespace OpenActive.FakeDatabase.NET
 
         public static void CreateSellers(IDbConnection db)
         {
-            var sellers = new List<SellerTable> {
-                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false },
-                new SellerTable { Id = 2, Name = "Jane Smith", IsIndividual = true },
-                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false }
+            var sellers = new List<SellerTable>
+            {
+                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false, IsTaxGross = true },
+                new SellerTable { Id = 2, Name = "Road Runner Bookcamp Ltd", IsIndividual = false, IsTaxGross = false },
+                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false, IsTaxGross = true },
+                new SellerTable { Id = 4, Name = "Coyote Classes Ltd", IsIndividual = false, IsTaxGross = false },
+                new SellerTable { Id = 5, Name = "Jane Smith", IsIndividual = true, IsTaxGross = true }
             };
 
             db.InsertAll(sellers);
@@ -865,7 +881,9 @@ namespace OpenActive.FakeDatabase.NET
             long totalSpaces,
             bool requiresApproval = false,
             bool? validFromStartDate = null,
-            bool? latestCancellationBeforeStartDate = null)
+            bool? latestCancellationBeforeStartDate = null,
+            RequiredStatusType? prepayment = null)
+
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -879,6 +897,7 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     Title = title,
                     Price = price,
+                    Prepayment = prepayment,
                     SellerId = sellerId ?? 1,
                     RequiresApproval = requiresApproval,
                     ValidFromBeforeStartDate = validFromStartDate.HasValue
@@ -916,7 +935,8 @@ namespace OpenActive.FakeDatabase.NET
             long totalUses,
             bool requiresApproval = false,
             bool? validFromStartDate = null,
-            bool? latestCancellationBeforeStartDate = null)
+            bool? latestCancellationBeforeStartDate = null,
+            RequiredStatusType? prepayment = null)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -943,6 +963,7 @@ namespace OpenActive.FakeDatabase.NET
                     MaximumUses = totalUses,
                     RemainingUses = totalUses,
                     Price = price,
+                    Prepayment = prepayment,
                     RequiresApproval = requiresApproval,
                     ValidFromBeforeStartDate =  validFromStartDate.HasValue
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)

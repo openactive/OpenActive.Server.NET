@@ -12,6 +12,8 @@ namespace OpenActive.FakeDatabase.NET
 
     public enum OrderMode { Lease, Proposal, Booking }
 
+    public enum RequiredStatusType { Required, Optional, Unavailable }
+
     [CompositeIndex(nameof(Modified), nameof(Id))]
     public abstract class Table
     {
@@ -31,6 +33,7 @@ namespace OpenActive.FakeDatabase.NET
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; }
         public decimal? Price { get; set; }
+        public RequiredStatusType? Prepayment { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
         public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
@@ -108,6 +111,7 @@ namespace OpenActive.FakeDatabase.NET
     {
         public string Name { get; set; }
         public bool IsIndividual { get; set; }
+        public bool IsTaxGross { get; set; }
     }
 
     public class SlotTable : Table
@@ -123,6 +127,7 @@ namespace OpenActive.FakeDatabase.NET
         public long LeasedUses { get; set; }
         public long RemainingUses { get; set; }
         public decimal? Price { get; set; }
+        public RequiredStatusType? Prepayment { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
         public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
