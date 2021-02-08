@@ -537,19 +537,24 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     var now = DateTime.Now;
 
-                    if (slot?.LatestCancellationBeforeStartDate != null &&
-                        slot.Start - slot.LatestCancellationBeforeStartDate < now)
+                    // Customers can only cancel orderItems if within the cancellation window
+                    // If it's the seller cancelling, this restriction does not apply.
+                    if (customerCancelled)
                     {
-                        transaction.Rollback();
-                        throw new InvalidOperationException();
-                    }
+                        if (slot?.LatestCancellationBeforeStartDate != null &&
+                            slot.Start - slot.LatestCancellationBeforeStartDate < now)
+                        {
+                            transaction.Rollback();
+                            throw new InvalidOperationException();
+                        }
 
-                    if (occurrence != null &&
-                        @class?.LatestCancellationBeforeStartDate != null &&
-                        occurrence.Start - @class.LatestCancellationBeforeStartDate < now)
-                    {
-                        transaction.Rollback();
-                        throw new InvalidOperationException();
+                        if (occurrence != null &&
+                            @class?.LatestCancellationBeforeStartDate != null &&
+                            occurrence.Start - @class.LatestCancellationBeforeStartDate < now)
+                        {
+                            transaction.Rollback();
+                            throw new InvalidOperationException();
+                        }
                     }
 
                     updatedOrderItems.Add(orderItem);
@@ -581,6 +586,7 @@ namespace OpenActive.FakeDatabase.NET
                 }
 
                 transaction.Commit();
+                Console.WriteLine("here");
                 return true;
             }
         }
