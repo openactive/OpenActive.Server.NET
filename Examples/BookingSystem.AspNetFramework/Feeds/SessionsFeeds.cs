@@ -107,17 +107,35 @@ namespace BookingSystem
                             {
                                 Id = RenderSingleSellerId(),
                                 Name = "Test Seller",
-                                TaxMode = TaxMode.TaxGross
+                                TaxMode = TaxMode.TaxGross,
+                                TermsOfService = new List<Terms>
+                                {
+                                    new PrivacyPolicy
+                                    {
+                                        Name = "Privacy Policy",
+                                        Url = new Uri("https://example.com/privacy.html"),
+                                        RequiresExplicitConsent = false
+                                    }
+                                }
                             } : result.Item2.IsIndividual ? (ILegalEntity)new Person
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
-                                TaxMode = TaxMode.TaxGross
+                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet
                             } : (ILegalEntity)new Organization
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
-                                TaxMode = TaxMode.TaxGross
+                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
+                                TermsOfService = new List<Terms>
+                                {
+                                    new PrivacyPolicy
+                                    {
+                                        Name = "Privacy Policy",
+                                        Url = new Uri("https://example.com/privacy.html"),
+                                        RequiresExplicitConsent = false
+                                    }
+                                }
                             },
                             Offers = new List<Offer> { new Offer
                                 {
@@ -137,6 +155,7 @@ namespace BookingSystem
                                         ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
                                         : null,
                                     ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate,
+                                    LatestCancellationBeforeStartDate = result.Item1.LatestCancellationBeforeStartDate,
                                     Prepayment = result.Item1.Prepayment.Convert()
                                 }
                             },

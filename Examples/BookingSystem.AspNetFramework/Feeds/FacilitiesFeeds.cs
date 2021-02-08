@@ -7,7 +7,6 @@ using ServiceStack.OrmLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem
 {
@@ -59,12 +58,30 @@ namespace BookingSystem
                             {
                                 Id = RenderSingleSellerId(),
                                 Name = "Test Seller",
-                                TaxMode = TaxMode.TaxGross
+                                TaxMode = TaxMode.TaxGross,
+                                TermsOfService = new List<Terms>
+                                {
+                                    new PrivacyPolicy
+                                    {
+                                        Name = "Privacy Policy",
+                                        Url = new Uri("https://example.com/privacy.html"),
+                                        RequiresExplicitConsent = false
+                                    }
+                                }
                             } : new Organization
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
-                                TaxMode = TaxMode.TaxGross
+                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
+                                TermsOfService = new List<Terms>
+                                {
+                                    new PrivacyPolicy
+                                    {
+                                        Name = "Privacy Policy",
+                                        Url = new Uri("https://example.com/privacy.html"),
+                                        RequiresExplicitConsent = false
+                                    }
+                                }
                             },
                             Location = new Place
                             {
@@ -163,6 +180,7 @@ namespace BookingSystem
                                         ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
                                         : null,
                                     ValidFromBeforeStartDate = x.ValidFromBeforeStartDate,
+                                    LatestCancellationBeforeStartDate = x.LatestCancellationBeforeStartDate,
                                     Prepayment = x.Prepayment.Convert()
                                 }
                             },

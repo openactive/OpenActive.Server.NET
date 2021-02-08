@@ -29,12 +29,18 @@ namespace BookingSystem
         /// <returns>True if Order found, False if Order not found</returns>
         public override bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
-            //throw new OpenBookingException(new CancellationNotPermittedError());
-            return FakeBookingSystem.Database.CancelOrderItems(
-                orderId.ClientId,
-                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
-                orderId.uuid,
-                orderItemIds.Where(x => x.OrderItemIdLong.HasValue).Select(x => x.OrderItemIdLong.Value).ToList(), true);
+            try
+            {
+                return FakeBookingSystem.Database.CancelOrderItems(
+                    orderId.ClientId,
+                    sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                    orderId.uuid,
+                    orderItemIds.Where(x => x.OrderItemIdLong.HasValue).Select(x => x.OrderItemIdLong.Value).ToList(), true);
+            }
+            catch (InvalidOperationException)
+            {
+                throw new OpenBookingException(new CancellationNotPermittedError());
+            }
         }
 
         /// <summary>
@@ -172,7 +178,7 @@ namespace BookingSystem
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer.Email,
+                flowContext.Customer?.Email,
                 flowContext.Payment?.Identifier,
                 responseOrder.TotalPaymentDue.Price.Value,
                 databaseTransaction.FakeDatabaseTransaction,
@@ -194,7 +200,7 @@ namespace BookingSystem
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer.Email,
+                flowContext.Customer?.Email,
                 flowContext.Payment?.Identifier,
                 responseOrderProposal.TotalPaymentDue.Price.Value,
                 databaseTransaction.FakeDatabaseTransaction,
