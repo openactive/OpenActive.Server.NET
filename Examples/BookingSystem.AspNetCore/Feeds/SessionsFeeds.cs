@@ -155,6 +155,7 @@ namespace BookingSystem
                                         ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
                                         : null,
                                     ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate,
+                                    LatestCancellationBeforeStartDate = result.Item1.LatestCancellationBeforeStartDate,
                                     Prepayment = result.Item1.Prepayment.Convert()
                                 }
                             },

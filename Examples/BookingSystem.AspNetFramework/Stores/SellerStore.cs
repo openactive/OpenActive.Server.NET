@@ -59,7 +59,9 @@ namespace BookingSystem
             {
                 var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
                 if (seller == null)
+                {
                     return null;
+                }
 
                 return seller.IsIndividual ? new Person
                 {
@@ -99,6 +101,7 @@ namespace BookingSystem
                         }
                     }
                 };
+
             }
         }
     }

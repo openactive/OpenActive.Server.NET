@@ -29,12 +29,18 @@ namespace BookingSystem
         /// <returns>True if Order found, False if Order not found</returns>
         public override bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
-            //throw new OpenBookingException(new CancellationNotPermittedError());
-            return FakeBookingSystem.Database.CancelOrderItems(
-                orderId.ClientId,
-                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
-                orderId.uuid,
-                orderItemIds.Where(x => x.OrderItemIdLong.HasValue).Select(x => x.OrderItemIdLong.Value).ToList(), true);
+            try
+            {
+                return FakeBookingSystem.Database.CancelOrderItems(
+                    orderId.ClientId,
+                    sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                    orderId.uuid,
+                    orderItemIds.Where(x => x.OrderItemIdLong.HasValue).Select(x => x.OrderItemIdLong.Value).ToList(), true);
+            }
+            catch (InvalidOperationException)
+            {
+                throw new OpenBookingException(new CancellationNotPermittedError());
+            }
         }
 
         /// <summary>

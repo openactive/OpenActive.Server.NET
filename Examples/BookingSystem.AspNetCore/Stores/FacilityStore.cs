@@ -68,14 +68,29 @@ namespace BookingSystem
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
-                            var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                                testDatasetIdentifier,
-                                sellerId,
-                                $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
-                                14.99M,
-                                10,
-                                validFromStartDate: isValid);
+                            {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
+                                (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
+                                    14.99M,
+                                    10,
+                                    validFromStartDate: isValid);
+                            }
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableOutsideWindow:
+                            {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow;
+                                (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Cancellation Window",
+                                    14.99M,
+                                    10,
+                                    latestCancellationBeforeStartDate: isValid);
+                            }
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
@@ -212,6 +227,7 @@ namespace BookingSystem
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = slot.Price,
                                          PriceCurrency = "GBP",
+                                         LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
                                          Prepayment = slot.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate
                                      },
