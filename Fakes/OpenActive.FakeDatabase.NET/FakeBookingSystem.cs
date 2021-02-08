@@ -503,6 +503,7 @@ namespace OpenActive.FakeDatabase.NET
             return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
         }
 
+        // this is 500ing
         public bool CancelOrderItems(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled, bool includeCancellationMessage = false)
         {
             using (var db = Mem.Database.Open())
