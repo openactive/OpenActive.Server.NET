@@ -589,25 +589,6 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public List<Tuple<OrderItemsTable, OrderTable>> GetOrderAndOrderItems(string clientId, long? sellerId, string uuid)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                // Get OrderItems and Order for uuid
-                var query = db.From<OrderItemsTable>()
-                              .Join<OrderTable>()
-                              .Where<OrderItemsTable>(x => x.OrderId == uuid)
-                              .Where<OrderTable>(x => !x.Deleted);
-                var orderItemsAndOrder = db.SelectMulti<OrderItemsTable, OrderTable>(query);
-                var order = orderItemsAndOrder[0].Item2;
-                if (sellerId.HasValue && order.SellerId != sellerId)
-                {
-                    throw new ArgumentException("SellerId does not match Order");
-                }
-                return orderItemsAndOrder;
-            }
-        }
-
         public bool ReplaceOrderOpportunity(string uuid)
         {
             using (var db = Mem.Database.Open())
