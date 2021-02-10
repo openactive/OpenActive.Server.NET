@@ -361,7 +361,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public struct BookedOrderItemInfo
         {
-            public long OrderItemId{ get; set; }
+            public long OrderItemId { get; set; }
             public string PinCode { get; set; }
             public string ImageUrl { get; set; }
             public string BarCodeText { get; set; }
@@ -417,7 +417,7 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisClass.Price.Value,
-                    PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar:'9'),
+                    PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar: '9'),
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
                     BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
@@ -585,7 +585,86 @@ namespace OpenActive.FakeDatabase.NET
                 }
 
                 transaction.Commit();
-                Console.WriteLine("here");
+                return true;
+            }
+        }
+
+        public bool ReplaceOrderOpportunity(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OrderItemsTable>()
+                              .Join<OrderTable>()
+                              .Where<OrderItemsTable>(x => x.OrderId == uuid)
+                              .Where<OrderTable>(x => x.OrderMode != OrderMode.Proposal);
+                var orderItemsAndOrder = db.SelectMulti<OrderItemsTable, OrderTable>(query);
+                if (!orderItemsAndOrder.Any())
+                    return false;
+                var order = orderItemsAndOrder.First().Item2;
+                var orderItems = orderItemsAndOrder.Select(x => x.Item1);
+                // This makes the call idempotent
+                if (orderItemsAndOrder.First().Item2.ProposalStatus == ProposalStatus.SellerAccepted)
+                    return true;
+
+                var index = Faker.Random.Int(0, orderItemsAndOrder.Count - 1);
+                var orderItem = orderItemsAndOrder[index].Item1;
+
+                if (orderItem.SlotId.HasValue)
+                {
+                    var oldSlotQuery = db.From<SlotTable>()
+                                      .Where(s => s.Id == orderItem.SlotId.Value)
+                                      .Take(1);
+                    var oldSlot = db.Select(oldSlotQuery).Single();
+
+                    var slotQuery = db.From<SlotTable>()
+                                      .Where(s => s.Id != orderItem.SlotId.Value && s.Price <= orderItem.Price)
+                                      .Take(1);
+                    var slot = db.Select(slotQuery).Single();
+
+                    // Hack to replace JSON LD Ids
+                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"facility-uses/{oldSlot.FacilityUseId}", $"facility-uses/{slot.FacilityUseId}");
+                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"facility-use-slots/{oldSlot.Id}", $"facility-use-slots/{slot.Id}");
+                    orderItem.OfferJsonLdId = orderItem.OfferJsonLdId.Replace($"facility-uses/{oldSlot.FacilityUseId}", $"facility-uses/{slot.FacilityUseId}");
+                    orderItem.OfferJsonLdId = orderItem.OfferJsonLdId.Replace($"facility-uses-slots/{oldSlot.Id}", $"facility-uses-slots/{slot.Id}");
+
+                    orderItem.SlotId = slot.Id;
+                }
+                else if (orderItem.OccurrenceId.HasValue)
+                {
+                    var oldOccurrenceQuery = db.From<OccurrenceTable>()
+                                            .Where<OccurrenceTable>(o => o.Id == orderItem.OccurrenceId.Value)
+                                            .Take(1);
+                    var oldOccurrence = db.Select(oldOccurrenceQuery).Single();
+
+                    var occurrenceQuery = db.From<OccurrenceTable>()
+                                            .Join<ClassTable>()
+                                            .Where<OccurrenceTable>(o => o.Id != orderItem.OccurrenceId.Value)
+                                            .Where<ClassTable>(c => c.Price <= orderItem.Price)
+                                            .Take(1);
+                    var occurrence = db.Select(occurrenceQuery).Single();
+                    // Hack to replace JSON LD Ids
+                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"scheduled-sessions/{oldOccurrence.ClassId}", $"scheduled-sessions/{occurrence.ClassId}");
+                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"events/{orderItem.OccurrenceId}", $"events/{occurrence.Id}");
+                    orderItem.OfferJsonLdId = orderItem.OfferJsonLdId.Replace($"session-series/{oldOccurrence.ClassId}", $"session-series/{occurrence.ClassId}");
+
+                    orderItem.OccurrenceId = occurrence.Id;
+                }
+                else
+                {
+                    return false;
+                }
+
+                db.Update(orderItem);
+
+                order.TotalOrderPrice = orderItems.Sum(x => x.Price); ;
+                order.VisibleInFeed = true;
+                order.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(order);
+
+                // Note an actual implementation would need to handle different opportunity types here
+                // Update the number of spaces available as a result of cancellation
+                RecalculateSpaces(db, orderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                RecalculateSlotUses(db, orderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
                 return true;
             }
         }
@@ -971,7 +1050,7 @@ namespace OpenActive.FakeDatabase.NET
                     Price = price,
                     Prepayment = prepayment,
                     RequiresApproval = requiresApproval,
-                    ValidFromBeforeStartDate =  validFromStartDate.HasValue
+                    ValidFromBeforeStartDate = validFromStartDate.HasValue
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
                         : (TimeSpan?)null,
                     LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
@@ -1052,7 +1131,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             public Faker Faker { get; set; }
             public int Id { get; set; }
-            public Bounds StartDateBounds { get; set;}
+            public Bounds StartDateBounds { get; set; }
             public Bounds? ValidFromBeforeStartDateBounds { get; set; }
 
             public DateTime RandomStartDate() => DateTime.Now.AddMinutes(this.Faker.Random.Int(StartDateBounds));
@@ -1064,7 +1143,7 @@ namespace OpenActive.FakeDatabase.NET
 
         private static TimeSpan? RandomLatestCancellationBeforeStartDate()
         {
-            if (Faker.Random.Bool(1f/3))
+            if (Faker.Random.Bool(1f / 3))
                 return null;
 
             return Faker.Random.Bool() ? TimeSpan.FromDays(1) : TimeSpan.FromHours(40);

@@ -62,7 +62,8 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
                     }
-                    if (!FakeBookingSystem.Database.AcceptOrderProposal(idComponents.uuid)) {
+                    if (!FakeBookingSystem.Database.AcceptOrderProposal(idComponents.uuid))
+                    {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
@@ -92,6 +93,16 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
                     if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                case ReplacementSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.ReplaceOrderOpportunity(idComponents.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -307,7 +318,7 @@ namespace BookingSystem
                 var order = db.Single<OrderTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid && !x.Deleted);
                 var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid);
 
-                var o = RenderOrderFromDatabaseResult(RenderOrderId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId), order, 
+                var o = RenderOrderFromDatabaseResult(RenderOrderId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId), order,
                     orderItems.Select((orderItem) => new OrderItem
                     {
                         Id = order.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, order.OrderId, orderItem.Id) : null,
@@ -322,7 +333,6 @@ namespace BookingSystem
                             orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
                             orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended :
                             orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
-
                     }).ToList());
 
                 // These additional properties that are only available in the Order Status endpoint
