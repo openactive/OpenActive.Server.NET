@@ -213,7 +213,8 @@ namespace BookingSystem
                              join occurrences in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurrences.Id
                              join classes in classTable on occurrences.ClassId equals classes.Id
                              // and offers.id = opportunityOfferId.OfferId
-                             select occurrences == null ? null : new {
+                             select occurrences == null ? null : new
+                             {
                                  OrderItem = new OrderItem
                                  {
                                      AllowCustomerCancellationFullRefund = true,
@@ -415,12 +416,7 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    false,
-                    ctxGroup.ToList().Select(ctx => new OpenActive.FakeDatabase.NET.FakeDatabase.RequestBarCode
-                    {
-                        Url = ctx.RequestOrderItem.AccessPass?.FirstOrDefault()?.Url.ToString(),
-                        BarCodeText = ctx.RequestOrderItem.AccessPass?.FirstOrDefault()?.Text
-                    })
+                    false
                     );
 
                 switch (result)
@@ -430,7 +426,7 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-                            
+
                             // Setting the access code and access pass after booking.
                             ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                             {
@@ -441,7 +437,8 @@ namespace BookingSystem
                                     Value = "defaultValue"
                                 }
                             };
-
+                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
+                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>();
                             ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
                             {
                                 new ImageObject()
@@ -455,6 +452,7 @@ namespace BookingSystem
                                     CodeType = "code128"
                                 }
                             };
+                            ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
@@ -496,8 +494,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    true,
-                    null);
+                    true
+                    );
 
                 switch (result)
                 {
