@@ -165,6 +165,118 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false)
+        {
+            if (!updateAccessPass && !updateAccessCode)
+            {
+                return false;
+            }
+
+            using (var db = Mem.Database.Open())
+            {
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+
+                if (order != null)
+                {
+                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+
+                    foreach (OrderItemsTable orderItem in orderItems)
+                    {
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        {
+                            if (updateAccessCode)
+                            {
+                                orderItem.PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar: '9');
+                            }
+
+                            if (updateAccessPass)
+                            {
+                                orderItem.ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25);
+                                orderItem.BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                            }
+
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Save(orderItem);
+                        }
+                    }
+
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
+                    db.Update(order);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool UpdateOpportunityAttendance(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+
+                if (order != null)
+                {
+                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+
+                    foreach (OrderItemsTable orderItem in orderItems)
+                    {
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        {
+                            orderItem.Status = BookingStatus.Attended;
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Update(orderItem);
+                        }
+                    }
+
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
+                    db.Update(order);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool AddCustomerNotice(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+                if (order != null)
+                {
+                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+                    foreach (OrderItemsTable orderItem in orderItems)
+                    {
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        {
+                            orderItem.CustomerNotice = $"customer notice message: {Faker.Random.String(10, minChar: 'a', maxChar: 'z')}";
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Update(orderItem);
+                        }
+                    }
+
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
+                    db.Update(order);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
         public void DeleteLease(string clientId, string uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())
@@ -378,7 +490,8 @@ namespace OpenActive.FakeDatabase.NET
             string opportunityJsonLdId,
             string offerJsonLdId,
             long numberOfSpaces,
-            bool proposal)
+            bool proposal
+            )
         {
             var db = transaction.DatabaseConnection;
             var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
@@ -446,7 +559,8 @@ namespace OpenActive.FakeDatabase.NET
             string opportunityJsonLdId,
             string offerJsonLdId,
             long numberOfSpaces,
-            bool proposal)
+            bool proposal
+            )
         {
             var db = transaction.DatabaseConnection;
             var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
@@ -489,7 +603,9 @@ namespace OpenActive.FakeDatabase.NET
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
                     BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
+
                 db.Save(orderItem);
+
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
                     OrderItemId = orderItem.Id,

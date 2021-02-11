@@ -391,7 +391,6 @@ namespace BookingSystem
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
-
             foreach (var ctxGroup in orderItemContexts.GroupBy(x => x.RequestBookableOpportunityOfferId))
             {
                 // Check that the Opportunity ID and type are as expected for the store 
@@ -411,7 +410,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    false);
+                    false
+                    );
 
                 switch (result)
                 {
@@ -420,7 +420,7 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-                            
+
                             // Setting the access code and access pass after booking.
                             ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                             {
@@ -431,7 +431,6 @@ namespace BookingSystem
                                     Value = "defaultValue"
                                 }
                             };
-
                             ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
                             {
                                 new ImageObject()
@@ -445,6 +444,10 @@ namespace BookingSystem
                                     CodeType = "code128"
                                 }
                             };
+                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
+                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
+                            if (requestBarcodes?.Count > 0)
+                                ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
@@ -486,7 +489,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    true);
+                    true
+                    );
 
                 switch (result)
                 {

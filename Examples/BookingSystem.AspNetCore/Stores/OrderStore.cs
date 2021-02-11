@@ -97,6 +97,46 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
+                case AccessCodeUpdateSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.UpdateAccess(idComponents.uuid, updateAccessCode: true))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                case AccessPassUpdateSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.UpdateAccess(idComponents.uuid, updateAccessPass: true))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                case OpportunityAttendanceUpdateSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.UpdateOpportunityAttendance(idComponents.uuid))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                case CustomerNoticeSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.AddCustomerNotice(idComponents.uuid))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
                 case ReplacementSimulateAction _:
                     if (idComponents.OrderType != OrderType.Order)
                     {

@@ -78,6 +78,7 @@ namespace OpenActive.FakeDatabase.NET
         public string PinCode {get; set;}
         public string ImageUrl { get; set; }
         public string BarCodeText { get; set; }
+        public string CustomerNotice { get; set; }
     }
 
     [CompositeIndex(nameof(Modified), nameof(OrderId))]

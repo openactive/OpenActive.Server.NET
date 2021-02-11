@@ -58,13 +58,32 @@ namespace BookingSystem
                                         PriceCurrency = "GBP"
                                     },
                                     OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
+                                    AccessCode = new List<PropertyValue>
+                                    {
+                                        new PropertyValue()
+                                        {
+                                            Name = "Pin Code",
+                                            Description = orderItem.PinCode,
+                                            Value = "defaultValue"
+                                        }
+                                    },
+                                    AccessPass = new List<ImageObject>
+                                    {
+                                        new Barcode()
+                                        {
+                                            Url = new Uri(orderItem.ImageUrl),
+                                            Text = orderItem.BarCodeText,
+                                            CodeType = "code128"
+                                        }
+                                    },
                                     OrderItemStatus =
                                         orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
                                         orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
                                         orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
                                         orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended :
                                         orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null,
-                                    CancellationMessage = orderItem.CancellationMessage
+                                    CancellationMessage = orderItem.CancellationMessage,
+                                    CustomerNotice = orderItem.CustomerNotice,
                                 }).ToList()
                             )
                     });
