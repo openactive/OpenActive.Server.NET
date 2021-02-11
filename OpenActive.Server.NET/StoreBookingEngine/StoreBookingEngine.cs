@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Text;
 using OpenActive.DatasetSite.NET;
@@ -147,8 +147,9 @@ namespace OpenActive.Server.NET.StoreBooking
         /// <summary>
         /// Simple contructor
         /// </summary>
-        /// <param name="settings">Settings are used exclusively by the AbstractBookingEngine</param>
-        /// <param name="store">Store used exclusively by the StoreBookingEngine</param>
+        /// <param name="settings">settings are used exclusively by the AbstractBookingEngine</param>
+        /// <param name="datasetSettings">datasetSettings are used exclusively by the DatasetSiteGenerator</param>
+        /// <param name="storeBookingEngineSettings">storeBookingEngineSettings used exclusively by the StoreBookingEngine</param>
         public StoreBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings, StoreBookingEngineSettings storeBookingEngineSettings) : base(settings, datasetSettings)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));
@@ -456,16 +457,19 @@ namespace OpenActive.Server.NET.StoreBooking
                     throw new OpenBookingException(new OpenBookingError(), "beta:CustomerAuthTokenMissingError");
             }
 
-            // Throw error on incomplete customer details if C2, P or B
-            else if (context.Stage != FlowStage.C1 && (context.Customer == null || context.Customer.IsPerson && string.IsNullOrWhiteSpace(context.Customer.Email)))
-            {
-                throw new OpenBookingException(new IncompleteCustomerDetailsError());
-            }
-
             // Throw error on incomplete broker details
             if (order.BrokerRole != BrokerType.NoBroker && (order.Broker == null || string.IsNullOrWhiteSpace(order.Broker.Name)))
             {
                 throw new OpenBookingException(new IncompleteBrokerDetailsError());
+            }
+
+            // Throw error on incomplete customer details if C2, P or B if Broker type is not ResellerBroker
+            if (order.BrokerRole != BrokerType.ResellerBroker)
+            {
+                if (context.Stage != FlowStage.C1 && (context.Customer == null || context.Customer.IsPerson && string.IsNullOrWhiteSpace(context.Customer.Email)))
+                {
+                    throw new OpenBookingException(new IncompleteCustomerDetailsError());
+                }
             }
 
             // Reflect back only those broker fields that are supported
