@@ -2,6 +2,8 @@
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using ServiceStack.OrmLite;
+using System;
+using System.Collections.Generic;
 
 namespace BookingSystem
 {
@@ -9,7 +11,11 @@ namespace BookingSystem
     {
         private readonly bool _useSingleSellerMode;
 
-        // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
+        /// <summary>
+        /// Example constructor that can set state from EngineConfig.
+        /// This is not required for an actual implementation.
+        /// </summary>
+        /// <param name="useSingleSellerMode">Single seller mode feature-flag</param>
         public AcmeSellerStore(bool useSingleSellerMode)
         {
             _useSingleSellerMode = useSingleSellerMode;
@@ -35,53 +41,67 @@ namespace BookingSystem
                         AddressRegion = "Oxfordshire",
                         PostalCode = "OX1 1AA",
                         AddressCountry = "GB"
+                    },
+                    TermsOfService = new List<Terms>
+                    {
+                        new PrivacyPolicy
+                        {
+                            Name = "Privacy Policy",
+                            Url = new Uri("https://example.com/privacy.html"),
+                            RequiresExplicitConsent = false
+                        }
                     }
                 };
             }
-            else
-            {
 
-                // Otherwise it may be looked up based on supplied sellerIdComponents which are extacted from the sellerId.
-                using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            // Otherwise it may be looked up based on supplied sellerIdComponents which are extracted from the sellerId.
+            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            {
+                var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
+                if (seller == null)
                 {
-                    var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
-                    if (seller != null)
-                    {
-                        return seller.IsIndividual ? new Person
-                        {
-                            Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
-                            Name = seller.Name,
-                            TaxMode = TaxMode.TaxGross,
-                            LegalName = seller.Name,
-                            Address = new PostalAddress
-                            {
-                                StreetAddress = "1 Fake Place",
-                                AddressLocality = "Faketown",
-                                AddressRegion = "Oxfordshire",
-                                PostalCode = "OX1 1AA",
-                                AddressCountry = "GB"
-                            }
-                        } : (ILegalEntity)new Organization
-                        {
-                            Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
-                            Name = seller.Name,
-                            TaxMode = TaxMode.TaxGross,
-                            LegalName = seller.Name,
-                            Address = new PostalAddress
-                            {
-                                StreetAddress = "1 Hidden Gem",
-                                AddressLocality = "Another town",
-                                AddressRegion = "Oxfordshire",
-                                PostalCode = "OX1 1AA",
-                                AddressCountry = "GB"
-                            }
-                        };
-                    }
-                    else
-                    {
-                        return null;
-                    }
+                    return null;
                 }
+
+                return seller.IsIndividual ? new Person
+                {
+                    Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                    Name = seller.Name,
+                    TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
+                    LegalName = seller.Name,
+                    Address = new PostalAddress
+                    {
+                        StreetAddress = "1 Fake Place",
+                        AddressLocality = "Faketown",
+                        AddressRegion = "Oxfordshire",
+                        PostalCode = "OX1 1AA",
+                        AddressCountry = "GB"
+                    }
+                } : (ILegalEntity)new Organization
+                {
+                    Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                    Name = seller.Name,
+                    TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
+                    LegalName = seller.Name,
+                    Address = new PostalAddress
+                    {
+                        StreetAddress = "1 Hidden Gem",
+                        AddressLocality = "Another town",
+                        AddressRegion = "Oxfordshire",
+                        PostalCode = "OX1 1AA",
+                        AddressCountry = "GB"
+                    },
+                    TermsOfService = new List<Terms>
+                    {
+                        new PrivacyPolicy
+                        {
+                            Name = "Privacy Policy",
+                            Url = new Uri("https://example.com/privacy.html"),
+                            RequiresExplicitConsent = false
+                        }
+                    }
+                };
+
             }
         }
     }

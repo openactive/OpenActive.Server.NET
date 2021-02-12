@@ -78,9 +78,9 @@ namespace BookingSystem.AspNetCore.Controllers
 
         /// <summary>
         /// OrderQuote Deletion
-        /// DELETE api/openbooking/orders-quotes/ABCD1234
+        /// DELETE api/openbooking/order-quotes/ABCD1234
         /// </summary>
-        [HttpDelete("orders-quotes/{uuid}")]
+        [HttpDelete("order-quotes/{uuid}")]
         public IActionResult OrderQuoteDeletion([FromServices] IBookingEngine bookingEngine, string uuid)
         {
             try

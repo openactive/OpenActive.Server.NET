@@ -13,12 +13,12 @@ namespace BookingSystem
 {
     class SessionStore : OpportunityStore<SessionOpportunity, OrderTransaction, OrderStateContext>
     {
-        private readonly bool _useSingleSellerMode;
+        private readonly AppSettings _appSettings;
 
         // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
-        public SessionStore(bool useSingleSellerMode)
+        public SessionStore(AppSettings appSettings)
         {
-            _useSingleSellerMode = useSingleSellerMode;
+            _appSettings = appSettings;
         }
 
         Random rnd = new Random();
@@ -29,10 +29,10 @@ namespace BookingSystem
             TestOpportunityCriteriaEnumeration criteria,
             SellerIdComponents seller)
         {
-            if (!_useSingleSellerMode && !seller.SellerIdLong.HasValue)
+            if (!_appSettings.FeatureFlags.SingleSeller && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
 
-            long? sellerId = _useSingleSellerMode ? null : seller.SellerIdLong;
+            long? sellerId = _appSettings.FeatureFlags.SingleSeller ? null : seller.SellerIdLong;
 
             switch (opportunityType)
             {
@@ -60,14 +60,29 @@ namespace BookingSystem
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
-                            var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Window",
-                                14.99M,
-                                10,
-                                validFromStartDate: isValid);
+                            {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
+                                (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Window",
+                                    14.99M,
+                                    10,
+                                    validFromStartDate: isValid);
+                            }
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableOutsideWindow:
+                            {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow;
+                                (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Cancellation Window",
+                                    14.99M,
+                                    10,
+                                    latestCancellationBeforeStartDate: isValid);
+                            }
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -129,6 +144,30 @@ namespace BookingSystem
                                 10,
                                 requiresApproval: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                2,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Net",
+                                14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxGross:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
+                                14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableSellerTermsOfService:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Seller Terms Of Service",
+                                14.99M,
+                                10);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -174,28 +213,20 @@ namespace BookingSystem
                              join occurrences in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurrences.Id
                              join classes in classTable on occurrences.ClassId equals classes.Id
                              // and offers.id = opportunityOfferId.OfferId
-                             select occurrences == null ? null : new {
+                             select occurrences == null ? null : new
+                             {
                                  OrderItem = new OrderItem
                                  {
                                      AllowCustomerCancellationFullRefund = true,
                                      // TODO: The static example below should come from the database (which doesn't currently support tax)
-                                     UnitTaxSpecification = flowContext.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
-                                         new List<TaxChargeSpecification>
-                                         {
-                                            new TaxChargeSpecification
-                                            {
-                                                Name = "VAT at 20%",
-                                                Price = classes.Price * (decimal?)0.2,
-                                                PriceCurrency = "GBP",
-                                                Rate = (decimal?)0.2
-                                            }
-                                         } : null,
+                                     UnitTaxSpecification = GetUnitTaxSpecification(flowContext, classes),
                                      AcceptedOffer = new Offer
                                      {
                                          // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = classes.Price,
                                          PriceCurrency = "GBP",
+                                         LatestCancellationBeforeStartDate = classes.LatestCancellationBeforeStartDate,
                                          Prepayment = classes.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate
                                      },
@@ -260,7 +291,7 @@ namespace BookingSystem
                                      OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
                                      OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
                                  },
-                                 SellerId = _useSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
+                                 SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
                                  classes.RequiresApproval
                              }).ToArray();
 
@@ -393,7 +424,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    false);
+                    false
+                    );
 
                 switch (result)
                 {
@@ -402,7 +434,7 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-                            
+
                             // Setting the access code and access pass after booking.
                             ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                             {
@@ -413,7 +445,6 @@ namespace BookingSystem
                                     Value = "defaultValue"
                                 }
                             };
-
                             ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
                             {
                                 new ImageObject()
@@ -427,6 +458,10 @@ namespace BookingSystem
                                     CodeType = "code128"
                                 }
                             };
+                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
+                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
+                            if (requestBarcodes?.Count > 0)
+                                ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
@@ -468,7 +503,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    true);
+                    true
+                    );
 
                 switch (result)
                 {
@@ -488,6 +524,29 @@ namespace BookingSystem
                 }
             }
         }
-    }
 
+        private List<TaxChargeSpecification> GetUnitTaxSpecification(BookingFlowContext flowContext, ClassTable classes)
+        {
+            switch (flowContext.TaxPayeeRelationship)
+            {
+                case TaxPayeeRelationship.BusinessToBusiness when _appSettings.Payment.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when _appSettings.Payment.TaxCalculationB2C:
+                    return new List<TaxChargeSpecification>
+                    {
+                        new TaxChargeSpecification
+                        {
+                            Name = "VAT at 20%",
+                            Price = classes.Price * (decimal?)0.2,
+                            PriceCurrency = "GBP",
+                            Rate = (decimal?)0.2
+                        }
+                    };
+                case TaxPayeeRelationship.BusinessToBusiness when !_appSettings.Payment.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when !_appSettings.Payment.TaxCalculationB2C:
+                    return null;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
 }
