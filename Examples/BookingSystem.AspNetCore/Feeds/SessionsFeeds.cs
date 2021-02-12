@@ -63,11 +63,12 @@ namespace BookingSystem
 
     public class AcmeSessionSeriesRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<SessionOpportunity, SessionSeries>
     {
+        private readonly bool _useSingleSellerMode;
+
         // Example constructor that can set state from EngineConfig
-        private bool UseSingleSellerMode;
-        public AcmeSessionSeriesRpdeGenerator(bool UseSingleSellerMode)
+        public AcmeSessionSeriesRpdeGenerator(bool useSingleSellerMode)
         {
-            this.UseSingleSellerMode = UseSingleSellerMode;
+            this._useSingleSellerMode = useSingleSellerMode;
         }
 
         protected override List<RpdeItem<SessionSeries>> GetRpdeItems(long? afterTimestamp, long? afterId)
@@ -103,7 +104,7 @@ namespace BookingSystem
                                 SessionSeriesId = result.Item1.Id
                             }),
                             Name = result.Item1.Title,
-                            Organizer = UseSingleSellerMode ? new Organization
+                            Organizer = _useSingleSellerMode ? new Organization
                             {
                                 Id = RenderSingleSellerId(),
                                 Name = "Test Seller",
@@ -151,9 +152,7 @@ namespace BookingSystem
                                     {
                                         AvailableChannelType.OpenBookingPrepayment
                                     },
-                                    OpenBookingFlowRequirement = result.Item1.RequiresApproval 
-                                        ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
-                                        : null,
+                                    OpenBookingFlowRequirement = OpenBookingFlowRequirement(result.Item1),
                                     ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = result.Item1.LatestCancellationBeforeStartDate,
                                     Prepayment = result.Item1.Prepayment.Convert()
@@ -191,6 +190,25 @@ namespace BookingSystem
 
                 return query.ToList();
             }
+        }
+
+        private static List<OpenBookingFlowRequirement> OpenBookingFlowRequirement(ClassTable @class)
+        {
+            List<OpenBookingFlowRequirement> openBookingFlowRequirement = null;
+
+            if (@class.RequiresApproval)
+            {
+                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
+                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingApproval);
+            }
+
+            if (@class.RequiresAttendeeValidation)
+            {
+                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
+                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingAttendeeDetails);
+            }
+
+            return openBookingFlowRequirement;
         }
     }
 }

@@ -168,6 +168,15 @@ namespace BookingSystem
                                 14.99M,
                                 10);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                10M,
+                                10,
+                                requiresAttendeeValidation: true);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -277,7 +286,19 @@ namespace BookingSystem
                                                  x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
                                                  x.OccurrenceId == occurrences.Id &&
                                                  x.OrderId != flowContext.OrderId.uuid)
-                                     }
+                                     },
+                                     Attendee = orderItemContext.RequestOrderItem.Attendee,
+                                     AttendeeDetailsRequired = classes.RequiresAttendeeValidation
+                                         ? new List<Uri>
+                                         {
+                                             new Uri("https://schema.org/givenName"),
+                                             new Uri("https://schema.org/familyName"),
+                                             new Uri("https://schema.org/email"),
+                                             new Uri("https://schema.org/telephone")
+                                         }
+                                         : null,
+                                     OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
+                                     OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
                                  },
                                  SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
                                  classes.RequiresApproval
@@ -295,22 +316,18 @@ namespace BookingSystem
                     {
                         ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
-                        if (item.RequiresApproval) ctx.SetRequiresApproval();
+                        if (item.RequiresApproval)
+                            ctx.SetRequiresApproval();
 
                         if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
-                        {
                             ctx.AddError(new OpportunityIsFullError());
-                        }
                     }
                 }
             }
 
             // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
-            // and those provided in the requestOrderItem
-            orderItemContexts.ForEach(ctx => ctx.ValidateAttendeeDetails());
-
-            // Additional attendee detail validation logic goes here
-            // ...
+            // and those provided in the requestOrderItem, as well as the order intake form response (if specified)
+            orderItemContexts.ForEach(ctx => ctx.ValidateDetails());
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)

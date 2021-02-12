@@ -128,10 +128,13 @@ namespace OpenActive.Server.NET.StoreBooking
             ResponseOrderItem = item;
         }
 
-        public void ValidateAttendeeDetails()
+        public void ValidateDetails()
         {
-            if (ResponseOrderItem == null) throw new NotSupportedException("ValidateAttendeeDetails cannot be used before SetResponseOrderItem.");
+            if (ResponseOrderItem == null)
+                throw new NotSupportedException("ValidateAttendeeDetails cannot be used before SetResponseOrderItem.");
+
             OrderCalculations.ValidateAttendeeDetails(RequestOrderItem, ResponseOrderItem);
+            OrderCalculations.ValidateAdditionalDetails(RequestOrderItem, ResponseOrderItem);
         }
     }
 
@@ -145,7 +148,7 @@ namespace OpenActive.Server.NET.StoreBooking
     public class StoreBookingEngine : CustomBookingEngine
     {
         /// <summary>
-        /// Simple contructor
+        /// Simple constructor
         /// </summary>
         /// <param name="settings">settings are used exclusively by the AbstractBookingEngine</param>
         /// <param name="datasetSettings">datasetSettings are used exclusively by the DatasetSiteGenerator</param>

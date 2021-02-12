@@ -13,12 +13,12 @@ namespace BookingSystem
     public class AcmeFacilityUseRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<FacilityOpportunity, FacilityUse>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
+        private readonly bool _useSingleSellerMode;
 
         // Example constructor that can set state
-        private bool UseSingleSellerMode;
-        public AcmeFacilityUseRpdeGenerator(bool UseSingleSellerMode)
+        public AcmeFacilityUseRpdeGenerator(bool useSingleSellerMode)
         {
-            this.UseSingleSellerMode = UseSingleSellerMode;
+            _useSingleSellerMode = useSingleSellerMode;
         }
 
         protected override List<RpdeItem<FacilityUse>> GetRpdeItems(long? afterTimestamp, long? afterId)
@@ -54,7 +54,7 @@ namespace BookingSystem
                                 FacilityUseId = result.Item1.Id
                             }),
                             Name = result.Item1.Name,
-                            Provider = UseSingleSellerMode ? new Organization
+                            Provider = _useSingleSellerMode ? new Organization
                             {
                                 Id = RenderSingleSellerId(),
                                 Name = "Test Seller",
@@ -176,9 +176,7 @@ namespace BookingSystem
                                     {
                                         AvailableChannelType.OpenBookingPrepayment
                                     },
-                                    OpenBookingFlowRequirement = x.RequiresApproval
-                                        ? new List<OpenBookingFlowRequirement> { OpenBookingFlowRequirement.OpenBookingApproval }
-                                        : null,
+                                    OpenBookingFlowRequirement = OpenBookingFlowRequirement(x),
                                     ValidFromBeforeStartDate = x.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = x.LatestCancellationBeforeStartDate,
                                     Prepayment = x.Prepayment.Convert()
@@ -189,6 +187,25 @@ namespace BookingSystem
 
                 return query.ToList();
             }
+        }
+
+        private static List<OpenBookingFlowRequirement> OpenBookingFlowRequirement(SlotTable slot)
+        {
+            List<OpenBookingFlowRequirement> openBookingFlowRequirement = null;
+
+            if (slot.RequiresApproval)
+            {
+                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
+                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingApproval);
+            }
+
+            if (slot.RequiresAttendeeValidation)
+            {
+                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
+                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingAttendeeDetails);
+            }
+
+            return openBookingFlowRequirement;
         }
     }
 }

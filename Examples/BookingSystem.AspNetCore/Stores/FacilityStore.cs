@@ -1,11 +1,11 @@
-﻿using OpenActive.NET;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenActive.DatasetSite.NET;
-using OpenActive.Server.NET.StoreBooking;
-using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
+using OpenActive.NET;
+using OpenActive.Server.NET.OpenBookingHelper;
+using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 
@@ -168,6 +168,15 @@ namespace BookingSystem
                                 14.99M,
                                 10);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event That Requires Attendee Details",
+                                14.99M,
+                                10,
+                                requiresAttendeeValidation: true);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -193,11 +202,9 @@ namespace BookingSystem
             throw new NotImplementedException();
         }
 
-
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
         protected override void GetOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
-
             // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
 
             // Additionally this method must check that there are enough spaces in each entry
@@ -206,7 +213,6 @@ namespace BookingSystem
 
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
-
                 var slotTable = db.Select<SlotTable>();
                 var facilityTable = db.Select<FacilityUseTable>();
 
@@ -223,7 +229,7 @@ namespace BookingSystem
                                      UnitTaxSpecification = GetUnitTaxSpecification(flowContext, slot),
                                      AcceptedOffer = new Offer
                                      {
-                                         // Note this should always use RenderOfferId with the supplied SessioFacilityOpportunitynOpportunity, to take into account inheritance and OfferType
+                                         // Note this should always use RenderOfferId with the supplied SessionFacilityOpportunity, to take into account inheritance and OfferType
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = slot.Price,
                                          PriceCurrency = "GBP",
@@ -266,7 +272,7 @@ namespace BookingSystem
                                                      PrefLabel = "Rave Fitness",
                                                      InScheme = new Uri("https://openactive.io/activity-list")
                                                  }
-                                             }
+                                             },
                                          },
                                          StartDate = (DateTimeOffset)slot.Start,
                                          EndDate = (DateTimeOffset)slot.End,
@@ -278,7 +284,19 @@ namespace BookingSystem
                                                  x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
                                                  x.SlotId == slot.Id &&
                                                  x.OrderId != flowContext.OrderId.uuid)
-                                     }
+                                     },
+                                     Attendee = orderItemContext.RequestOrderItem.Attendee,
+                                     AttendeeDetailsRequired = slot.RequiresAttendeeValidation
+                                        ? new List<Uri>
+                                        {
+                                            new Uri("https://schema.org/givenName"),
+                                            new Uri("https://schema.org/familyName"),
+                                            new Uri("https://schema.org/email"),
+                                            new Uri("https://schema.org/telephone")
+                                        }
+                                        : null,
+                                     OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
+                                     OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
                                  },
                                  SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
                                  slot.RequiresApproval
@@ -296,22 +314,18 @@ namespace BookingSystem
                     {
                         ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
-                        if (item.RequiresApproval) ctx.SetRequiresApproval();
+                        if (item.RequiresApproval)
+                            ctx.SetRequiresApproval();
 
                         if (((Slot)item.OrderItem.OrderedItem).RemainingUses == 0)
-                        {
                             ctx.AddError(new OpportunityIsFullError());
-                        }
                     }
                 }
             }
 
             // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
-            // and those provided in the requestOrderItem
-            orderItemContexts.ForEach(ctx => ctx.ValidateAttendeeDetails());
-
-            // Additional attendee detail validation logic goes here
-            // ...
+            // and those provided in the requestOrderItem, as well as the order intake form response (if specified)
+            orderItemContexts.ForEach(ctx => ctx.ValidateDetails());
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -424,7 +438,7 @@ namespace BookingSystem
                             // Setting the access code and access pass after booking.
                             ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                             {
-                                new PropertyValue()
+                                new PropertyValue
                                 {
                                     Name = "Pin Code",
                                     Description = bookedOrderItemInfo.PinCode,
@@ -433,11 +447,11 @@ namespace BookingSystem
                             };
                             ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
                             {
-                                new ImageObject()
+                                new ImageObject
                                 {
                                     Url = new Uri(bookedOrderItemInfo.ImageUrl)
                                 },
-                                new Barcode()
+                                new Barcode
                                 {
                                     Url = new Uri(bookedOrderItemInfo.ImageUrl),
                                     Text = bookedOrderItemInfo.BarCodeText,

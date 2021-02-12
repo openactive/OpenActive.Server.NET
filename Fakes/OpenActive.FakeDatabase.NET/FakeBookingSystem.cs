@@ -93,6 +93,8 @@ namespace OpenActive.FakeDatabase.NET
 
     public class FakeDatabase
     {
+        private const float ProportionWithRequiresAttendeeValidation = 1f / 10;
+
         public readonly InMemorySQLite Mem = new InMemorySQLite();
 
         private static readonly Faker Faker = new Faker();
@@ -1001,6 +1003,7 @@ namespace OpenActive.FakeDatabase.NET
                         Prepayment = slot.Price == 0
                             ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
                             : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                        RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
                         RequiresApproval = Faker.Random.Bool(),
                         ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                         LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate()
@@ -1030,6 +1033,7 @@ namespace OpenActive.FakeDatabase.NET
                     Prepayment = @class.Price == 0
                         ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
                         : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                    RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
                     RequiresApproval = Faker.Random.Bool(),
                     LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                     SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
@@ -1083,7 +1087,8 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresApproval = false,
             bool? validFromStartDate = null,
             bool? latestCancellationBeforeStartDate = null,
-            RequiredStatusType? prepayment = null)
+            RequiredStatusType? prepayment = null,
+            bool requiresAttendeeValidation = false)
 
         {
             var startTime = DateTime.Now.AddDays(1);
@@ -1106,7 +1111,8 @@ namespace OpenActive.FakeDatabase.NET
                         : (TimeSpan?)null,
                     LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
                         ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
-                        : (TimeSpan?)null
+                        : (TimeSpan?)null,
+                    RequiresAttendeeValidation = requiresAttendeeValidation
                 };
                 db.Save(@class);
 
@@ -1137,7 +1143,8 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresApproval = false,
             bool? validFromStartDate = null,
             bool? latestCancellationBeforeStartDate = null,
-            RequiredStatusType? prepayment = null)
+            RequiredStatusType? prepayment = null,
+            bool requiresAttendeeValidation = false)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -1171,7 +1178,8 @@ namespace OpenActive.FakeDatabase.NET
                         : (TimeSpan?)null,
                     LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
                         ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
-                        : (TimeSpan?)null
+                        : (TimeSpan?)null,
+                    RequiresAttendeeValidation = requiresAttendeeValidation
                 };
                 db.Save(slot);
 
