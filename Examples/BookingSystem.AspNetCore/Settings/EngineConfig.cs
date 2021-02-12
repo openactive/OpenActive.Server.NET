@@ -145,8 +145,7 @@ namespace BookingSystem
                         },
                         {
                             OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
-                        }
-                        ,
+                        },
                         {
                             OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
                         }
@@ -210,9 +209,9 @@ namespace BookingSystem
                     // Note that storage of these details is entirely optional
                     BrokerSupportedFields = o => new Organization
                     {
-                        Name = o.Name,
-                        Url = o.Url,
-                        Telephone = o.Telephone
+                        Name = o?.Name,
+                        Url = o?.Url,
+                        Telephone = o?.Telephone
                     },
                     // Details of your booking system, complete with an customer-facing terms and conditions
                     BookingServiceDetails = new BookingService
@@ -247,13 +246,15 @@ namespace BookingSystem
                     // List of _bookable_ opportunity types and which store to route to for each
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
-                            new SessionStore(appSettings.FeatureFlags.SingleSeller), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                            new SessionStore(appSettings), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStore(appSettings.FeatureFlags.SingleSeller), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
+                            new FacilityStore(appSettings), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
                         }
                     },
                     OrderStore = new AcmeOrderStore(appSettings),
+                    BusinessToBusinessTaxCalculation = appSettings.Payment.TaxCalculationB2B,
+                    BusinessToConsumerTaxCalculation = appSettings.Payment.TaxCalculationB2C,
                 });
         }
     }

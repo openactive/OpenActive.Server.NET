@@ -1,12 +1,11 @@
-﻿using OpenActive.NET;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using BookingSystem.AspNetCore.Helpers;
 using OpenActive.DatasetSite.NET;
-using OpenActive.Server.NET.StoreBooking;
-using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
+using OpenActive.NET;
+using OpenActive.Server.NET.OpenBookingHelper;
+using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 
@@ -14,11 +13,12 @@ namespace BookingSystem
 {
     class FacilityStore : OpportunityStore<FacilityOpportunity, OrderTransaction, OrderStateContext>
     {
+        private readonly AppSettings _appSettings;
+
         // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
-        private bool UseSingleSellerMode;
-        public FacilityStore(bool UseSingleSellerMode)
+        public FacilityStore(AppSettings appSettings)
         {
-            this.UseSingleSellerMode = UseSingleSellerMode;
+            _appSettings = appSettings;
         }
 
         Random rnd = new Random();
@@ -29,10 +29,10 @@ namespace BookingSystem
             TestOpportunityCriteriaEnumeration criteria,
             SellerIdComponents seller)
         {
-            if (!UseSingleSellerMode && !seller.SellerIdLong.HasValue)
+            if (!_appSettings.FeatureFlags.SingleSeller && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
 
-            long? sellerId = UseSingleSellerMode ? null : seller.SellerIdLong;
+            long? sellerId = _appSettings.FeatureFlags.SingleSeller ? null : seller.SellerIdLong;
 
             switch (opportunityType)
             {
@@ -68,14 +68,29 @@ namespace BookingSystem
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
-                            var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                                testDatasetIdentifier,
-                                sellerId,
-                                $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
-                                14.99M,
-                                10,
-                                validFromStartDate: isValid);
+                            {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
+                                (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
+                                    14.99M,
+                                    10,
+                                    validFromStartDate: isValid);
+                            }
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableOutsideWindow:
+                            {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow;
+                                (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Cancellation Window",
+                                    14.99M,
+                                    10,
+                                    latestCancellationBeforeStartDate: isValid);
+                            }
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
@@ -129,6 +144,39 @@ namespace BookingSystem
                                 10,
                                 requiresApproval: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                2,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Net",
+                                14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxGross:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
+                                14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableSellerTermsOfService:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Seller Terms Of Service",
+                                14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event That Requires Attendee Details",
+                                14.99M,
+                                10,
+                                requiresAttendeeValidation: true);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -154,24 +202,19 @@ namespace BookingSystem
             throw new NotImplementedException();
         }
 
-
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
         protected override void GetOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
-
             // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
 
             // Additionally this method must check that there are enough spaces in each entry
 
             // Response OrderItems must be updated into supplied orderItemContexts (including duplicates for multi-party booking)
 
-            List<SlotTable> slotTable;
-            List<FacilityUseTable> facilityTable;
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
-
-                slotTable = db.Select<SlotTable>();
-                facilityTable = db.Select<FacilityUseTable>();
+                var slotTable = db.Select<SlotTable>();
+                var facilityTable = db.Select<FacilityUseTable>();
 
                 var query = (from orderItemContext in orderItemContexts
                              join slot in slotTable on orderItemContext.RequestBookableOpportunityOfferId.SlotId equals slot.Id
@@ -183,23 +226,14 @@ namespace BookingSystem
                                  {
                                      AllowCustomerCancellationFullRefund = true,
                                      // TODO: The static example below should come from the database (which doesn't currently support tax)
-                                     UnitTaxSpecification = flowContext.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
-                                         new List<TaxChargeSpecification>
-                                         {
-                                            new TaxChargeSpecification
-                                            {
-                                                Name = "VAT at 20%",
-                                                Price = slot.Price * (decimal?)0.2,
-                                                PriceCurrency = "GBP",
-                                                Rate = (decimal?)0.2
-                                            }
-                                         } : null,
+                                     UnitTaxSpecification = GetUnitTaxSpecification(flowContext, slot),
                                      AcceptedOffer = new Offer
                                      {
-                                         // Note this should always use RenderOfferId with the supplied SessioFacilityOpportunitynOpportunity, to take into account inheritance and OfferType
+                                         // Note this should always use RenderOfferId with the supplied SessionFacilityOpportunity, to take into account inheritance and OfferType
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = slot.Price,
                                          PriceCurrency = "GBP",
+                                         LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
                                          Prepayment = slot.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate
                                      },
@@ -238,7 +272,7 @@ namespace BookingSystem
                                                      PrefLabel = "Rave Fitness",
                                                      InScheme = new Uri("https://openactive.io/activity-list")
                                                  }
-                                             }
+                                             },
                                          },
                                          StartDate = (DateTimeOffset)slot.Start,
                                          EndDate = (DateTimeOffset)slot.End,
@@ -250,9 +284,21 @@ namespace BookingSystem
                                                  x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
                                                  x.SlotId == slot.Id &&
                                                  x.OrderId != flowContext.OrderId.uuid)
-                                     }
+                                     },
+                                     Attendee = orderItemContext.RequestOrderItem.Attendee,
+                                     AttendeeDetailsRequired = slot.RequiresAttendeeValidation
+                                        ? new List<Uri>
+                                        {
+                                            new Uri("https://schema.org/givenName"),
+                                            new Uri("https://schema.org/familyName"),
+                                            new Uri("https://schema.org/email"),
+                                            new Uri("https://schema.org/telephone")
+                                        }
+                                        : null,
+                                     OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
+                                     OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
                                  },
-                                 SellerId = UseSingleSellerMode ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
+                                 SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
                                  slot.RequiresApproval
                              }).ToArray();
 
@@ -268,23 +314,18 @@ namespace BookingSystem
                     {
                         ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
-                        if (item.RequiresApproval) ctx.SetRequiresApproval();
+                        if (item.RequiresApproval)
+                            ctx.SetRequiresApproval();
 
                         if (((Slot)item.OrderItem.OrderedItem).RemainingUses == 0)
-                        {
                             ctx.AddError(new OpportunityIsFullError());
-                        }
                     }
                 }
             }
 
             // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
-            // and those provided in the requestOrderItem
-            orderItemContexts.ForEach(ctx => ctx.ValidateAttendeeDetails());
-
-            // Additional attendee detail validation logic goes here
-            // ...
-
+            // and those provided in the requestOrderItem, as well as the order intake form response (if specified)
+            orderItemContexts.ForEach(ctx => ctx.ValidateDetails());
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -364,7 +405,6 @@ namespace BookingSystem
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
-
             foreach (var ctxGroup in orderItemContexts.GroupBy(x => x.RequestBookableOpportunityOfferId))
             {
                 // Check that the Opportunity ID and type are as expected for the store 
@@ -384,7 +424,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    false);
+                    false
+                    );
 
                 switch (result)
                 {
@@ -393,31 +434,34 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-                            
+
                             // Setting the access code and access pass after booking.
                             ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                             {
-                                new PropertyValue()
+                                new PropertyValue
                                 {
                                     Name = "Pin Code",
                                     Description = bookedOrderItemInfo.PinCode,
                                     Value = "defaultValue"
                                 }
                             };
-
                             ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
                             {
-                                new ImageObject()
+                                new ImageObject
                                 {
                                     Url = new Uri(bookedOrderItemInfo.ImageUrl)
                                 },
-                                new Barcode()
+                                new Barcode
                                 {
                                     Url = new Uri(bookedOrderItemInfo.ImageUrl),
                                     Text = bookedOrderItemInfo.BarCodeText,
                                     CodeType = "code128"
                                 }
                             };
+                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
+                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
+                            if (requestBarcodes?.Count > 0)
+                                ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
@@ -459,7 +503,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    true);
+                    true
+                    );
 
                 switch (result)
                 {
@@ -477,6 +522,30 @@ namespace BookingSystem
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
+            }
+        }
+
+        private List<TaxChargeSpecification> GetUnitTaxSpecification(BookingFlowContext flowContext, SlotTable slot)
+        {
+            switch (flowContext.TaxPayeeRelationship)
+            {
+                case TaxPayeeRelationship.BusinessToBusiness when _appSettings.Payment.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when _appSettings.Payment.TaxCalculationB2C:
+                    return new List<TaxChargeSpecification>
+                    {
+                        new TaxChargeSpecification
+                        {
+                            Name = "VAT at 20%",
+                            Price = slot.Price * (decimal?) 0.2,
+                            PriceCurrency = "GBP",
+                            Rate = (decimal?) 0.2
+                        }
+                    };
+                case TaxPayeeRelationship.BusinessToBusiness when !_appSettings.Payment.TaxCalculationB2B:
+                case TaxPayeeRelationship.BusinessToConsumer when !_appSettings.Payment.TaxCalculationB2C:
+                    return null;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
     }
