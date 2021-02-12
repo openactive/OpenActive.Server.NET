@@ -93,7 +93,7 @@ namespace OpenActive.FakeDatabase.NET
 
     public class FakeDatabase
     {
-        private const float ProportionWithRequiresAttendeeValidation = 1f/10;
+        private const float ProportionWithRequiresAttendeeValidation = 1f / 10;
 
         public readonly InMemorySQLite Mem = new InMemorySQLite();
 
@@ -1087,7 +1087,8 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresApproval = false,
             bool? validFromStartDate = null,
             bool? latestCancellationBeforeStartDate = null,
-            RequiredStatusType? prepayment = null)
+            RequiredStatusType? prepayment = null,
+            bool requiresAttendeeValidation = false)
 
         {
             var startTime = DateTime.Now.AddDays(1);
@@ -1110,7 +1111,8 @@ namespace OpenActive.FakeDatabase.NET
                         : (TimeSpan?)null,
                     LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
                         ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
-                        : (TimeSpan?)null
+                        : (TimeSpan?)null,
+                    RequiresAttendeeValidation = requiresAttendeeValidation
                 };
                 db.Save(@class);
 
@@ -1141,7 +1143,8 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresApproval = false,
             bool? validFromStartDate = null,
             bool? latestCancellationBeforeStartDate = null,
-            RequiredStatusType? prepayment = null)
+            RequiredStatusType? prepayment = null,
+            bool requiresAttendeeValidation = false)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -1175,7 +1178,8 @@ namespace OpenActive.FakeDatabase.NET
                         : (TimeSpan?)null,
                     LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
                         ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
-                        : (TimeSpan?)null
+                        : (TimeSpan?)null,
+                    RequiresAttendeeValidation = requiresAttendeeValidation
                 };
                 db.Save(slot);
 
