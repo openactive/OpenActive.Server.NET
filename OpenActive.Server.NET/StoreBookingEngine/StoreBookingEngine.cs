@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
 using System;
 using System.Linq;
-using System.Text;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.CustomBooking;
 
@@ -159,7 +157,6 @@ namespace OpenActive.Server.NET.StoreBooking
             if (datasetSettings == null) throw new ArgumentNullException(nameof(datasetSettings));
             if (storeBookingEngineSettings == null) throw new ArgumentNullException(nameof(storeBookingEngineSettings));
 
-            this.stores = storeBookingEngineSettings.OpportunityStoreRouting.Keys.ToList();
             this.storeBookingEngineSettings = storeBookingEngineSettings;
 
             // TODO: Add test to ensure there are not two or more at FirstOrDefault step, in case of configuration error 
@@ -179,10 +176,9 @@ namespace OpenActive.Server.NET.StoreBooking
             storeBookingEngineSettings.OrderStore.SetConfiguration(settings.OrderIdTemplate, settings.SellerIdTemplate);
         }
 
-        private readonly List<IOpportunityStore> stores;
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
-        
+
         protected override Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
         {
             if (!storeRouting.ContainsKey(opportunityType))
@@ -193,7 +189,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
         protected override void DeleteTestDataset(string testDatasetIdentifier)
         {
-            foreach(var store in storeRouting.Values)
+            foreach (var store in storeRouting.Values)
             {
                 store.DeleteTestDataset(testDatasetIdentifier);
             }
@@ -356,7 +352,8 @@ namespace OpenActive.Server.NET.StoreBooking
         private (List<IOrderItemContext>, List<OrderItemContextGroup>) GetOrderItemContexts(List<OrderItem> sourceOrderItems, StoreBookingFlowContext flowContext, IStateContext stateContext)
         {
             // Create OrderItemContext for each OrderItem
-            var orderItemContexts = sourceOrderItems.Select((orderItem, index) => {
+            var orderItemContexts = sourceOrderItems.Select((orderItem, index) =>
+            {
                 // Error if this group of types is not recognised
                 if (!base.IsOpportunityTypeRecognised(orderItem.OrderedItem.Type))
                 {
@@ -466,6 +463,12 @@ namespace OpenActive.Server.NET.StoreBooking
                 throw new OpenBookingException(new IncompleteBrokerDetailsError());
             }
 
+            // Throw error on Incomplete Order Item Error if OrderedItem or AcceptedOffer is null or their Urls don't match.
+            if ((context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2 || context.Stage == FlowStage.B) && order.OrderedItem.Any(orderItem => orderItem.OrderedItem == null || orderItem.AcceptedOffer == null || orderItem.OrderedItem.Url != orderItem.AcceptedOffer.Url))
+            {
+                throw new OpenBookingException(new IncompleteOrderItemError());
+            }
+
             // Throw error on incomplete customer details if C2, P or B if Broker type is not ResellerBroker
             if (order.BrokerRole != BrokerType.ResellerBroker)
             {
@@ -562,7 +565,7 @@ namespace OpenActive.Server.NET.StoreBooking
                             responseOrderProposal.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
 
                             storeBookingEngineSettings.OrderStore.UpdateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
-                            
+
                             dbTransaction.Commit();
                         }
                         catch
@@ -587,34 +590,34 @@ namespace OpenActive.Server.NET.StoreBooking
                     // Leasing is optimistic, booking is atomic
                     using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
                     {
-                            try
-                            {
-                                responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction);
+                        try
+                        {
+                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction);
 
-                                // Lease the OrderItems, if a lease exists
-                                if (responseOrderQuote.Lease != null)
+                            // Lease the OrderItems, if a lease exists
+                            if (responseOrderQuote.Lease != null)
+                            {
+                                foreach (var g in orderItemGroups)
                                 {
-                                    foreach (var g in orderItemGroups)
-                                    {
-                                        g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
-                                    }
+                                    g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
                                 }
-
-                                // Update this in case ResponseOrderItem was overwritten in Lease
-                                responseOrderQuote.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
-
-                                // Note OrderRequiresApproval is only required during C1 and C2
-                                responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
-
-                                storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction);
-
-                                if (dbTransaction != null) dbTransaction.Commit();
                             }
-                            catch
-                            {
-                                if (dbTransaction != null) dbTransaction.Rollback();
-                                throw;
-                            }
+
+                            // Update this in case ResponseOrderItem was overwritten in Lease
+                            responseOrderQuote.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
+
+                            // Note OrderRequiresApproval is only required during C1 and C2
+                            responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
+
+                            storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction);
+
+                            if (dbTransaction != null) dbTransaction.Commit();
+                        }
+                        catch
+                        {
+                            if (dbTransaction != null) dbTransaction.Rollback();
+                            throw;
+                        }
                     }
                     break;
 
@@ -636,7 +639,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         {
                             // Create the parent Order
                             storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction);
-                            
+
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
                             {
@@ -645,7 +648,7 @@ namespace OpenActive.Server.NET.StoreBooking
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
                                     // Check that OrderItem Id was added
-                                    if (ctx.ResponseOrderItemId == null || ctx.ResponseOrderItem.Id == null )
+                                    if (ctx.ResponseOrderItemId == null || ctx.ResponseOrderItem.Id == null)
                                     {
                                         throw new ArgumentException("SetOrderItemId must be called for each OrderItemContext in BookOrderItems");
                                     }
