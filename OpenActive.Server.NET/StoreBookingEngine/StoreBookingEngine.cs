@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
 using System;
 using System.Linq;
-using System.Text;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.CustomBooking;
 
@@ -361,16 +359,6 @@ namespace OpenActive.Server.NET.StoreBooking
                 {
                     return new UnknownOrderItemContext(index, orderItem,
                         new UnknownOpportunityError(), $"The type of opportunity specified is not recognised: '{orderItem.OrderedItem.Type}'.");
-                }
-
-                if (orderItem.OrderedItem.Id == null)
-                {
-                    var a = GetComponentsWhenNoOpportunityOrOffer(orderItem.OrderedItem.Type);
-                    Type typea = typeof(OrderItemContext<>).MakeGenericType(a.GetType());
-
-                    OrderItemContext<> orderItemContexta = (IOrderItemContext)Activator.CreateInstance(typea);
-                    orderItemContexta.Index = index;
-                    // orderItemContexta.
                 }
 
                 var idComponents = base.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
