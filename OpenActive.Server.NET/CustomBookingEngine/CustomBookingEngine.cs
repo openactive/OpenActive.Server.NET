@@ -296,6 +296,11 @@ namespace OpenActive.Server.NET.CustomBooking
             return this.idConfigurationLookup.ContainsKey(opportunityTypeString);
         }
 
+        protected IBookablePairIdTemplate GetComponentsWhenNoOpportunityOrOffer(string opportunityTypeString)
+        {
+            return this.idConfigurationLookup[opportunityTypeString].FirstOrDefault();
+        }
+
         // Note this is not a helper as it relies on engine settings state
         protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId, Uri offerId)
         {

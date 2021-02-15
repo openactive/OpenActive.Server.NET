@@ -159,7 +159,6 @@ namespace OpenActive.Server.NET.StoreBooking
             if (datasetSettings == null) throw new ArgumentNullException(nameof(datasetSettings));
             if (storeBookingEngineSettings == null) throw new ArgumentNullException(nameof(storeBookingEngineSettings));
 
-            this.stores = storeBookingEngineSettings.OpportunityStoreRouting.Keys.ToList();
             this.storeBookingEngineSettings = storeBookingEngineSettings;
 
             // TODO: Add test to ensure there are not two or more at FirstOrDefault step, in case of configuration error 
@@ -179,7 +178,6 @@ namespace OpenActive.Server.NET.StoreBooking
             storeBookingEngineSettings.OrderStore.SetConfiguration(settings.OrderIdTemplate, settings.SellerIdTemplate);
         }
 
-        private readonly List<IOpportunityStore> stores;
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
 
@@ -363,6 +361,16 @@ namespace OpenActive.Server.NET.StoreBooking
                 {
                     return new UnknownOrderItemContext(index, orderItem,
                         new UnknownOpportunityError(), $"The type of opportunity specified is not recognised: '{orderItem.OrderedItem.Type}'.");
+                }
+
+                if (orderItem.OrderedItem.Id == null)
+                {
+                    var a = GetComponentsWhenNoOpportunityOrOffer(orderItem.OrderedItem.Type);
+                    Type typea = typeof(OrderItemContext<>).MakeGenericType(a.GetType());
+
+                    OrderItemContext<> orderItemContexta = (IOrderItemContext)Activator.CreateInstance(typea);
+                    orderItemContexta.Index = index;
+                    // orderItemContexta.
                 }
 
                 var idComponents = base.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
