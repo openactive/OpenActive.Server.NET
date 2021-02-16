@@ -57,7 +57,7 @@ namespace BookingSystem
                 });
 
                 return query.ToList();
-            }      
+            }
         }
     }
 
@@ -171,8 +171,8 @@ namespace BookingSystem
                                 },
                                 Geo = new GeoCoordinates
                                 {
-                                    Latitude = 0.1m,
-                                    Longitude = 0.1m
+                                    Latitude = result.Item1.LocationLat,
+                                    Longitude = result.Item1.LocationLng,
                                 }
                             },
                             Url = new Uri("https://www.example.com/a-session-age"),

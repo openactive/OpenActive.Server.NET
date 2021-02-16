@@ -167,6 +167,166 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        /// <summary>
+        /// Update logistics data for FacilityUse to trigger logistics change notification
+        /// </summary>
+        /// <param name="slotId"></param>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        public bool UpdateFacilityUseName(long slotId, string newName)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<SlotTable>()
+                            .LeftJoin<SlotTable, FacilityUseTable>()
+                            .Where(x => x.Id == slotId)
+                            .And<FacilityUseTable>(y => !y.Deleted);
+                var facilityUse = db.Select<FacilityUseTable>(query).Single();
+                if (facilityUse == null)
+                {
+                    return false;
+                }
+
+                facilityUse.Name = newName;
+                facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(facilityUse);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update logistics data for Slot to trigger logistics change notification
+        /// </summary>
+        /// <param name="slotId"></param>
+        /// <param name="numberOfMins"></param>
+        /// <returns></returns>
+        public bool UpdateFacilitySlotStartAndEndTimeByPeriodInMins(long slotId, int numberOfMins)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var slot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
+                if (slot == null)
+                {
+                    return false;
+                }
+
+                slot.Start.AddMinutes(numberOfMins);
+                slot.End.AddMinutes(numberOfMins);
+                slot.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(slot);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update location based logistics data for FacilityUse to trigger logistics change notification
+        /// </summary>
+        /// <param name="slotId"></param>
+        /// <param name="newLat"></param>
+        /// <param name="newLng"></param>
+        /// <returns></returns>
+        public bool UpdateFacilityUseLocationLatLng(long slotId, decimal newLat, decimal newLng)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<SlotTable>()
+                            .LeftJoin<SlotTable, FacilityUseTable>()
+                            .Where(x => x.Id == slotId)
+                            .And<FacilityUseTable>(y => !y.Deleted);
+                var facilityUse = db.Select<FacilityUseTable>(query).Single();
+                if (facilityUse == null)
+                {
+                    return false;
+                }
+
+                facilityUse.LocationLat = newLat;
+                facilityUse.LocationLng = newLng;
+                facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(facilityUse);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update name logistics data for SessionSeries to trigger logistics change notification
+        /// </summary>
+        /// <param name="occurrenceId"></param>
+        /// <param name="newTitle"></param>
+        /// <returns></returns>
+        public bool UpdateClassTitle(long occurrenceId, string newTitle)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OccurrenceTable>()
+                            .LeftJoin<OccurrenceTable, ClassTable>()
+                            .Where(x => x.Id == occurrenceId)
+                            .And<ClassTable>(y => !y.Deleted);
+                var classInstance = db.Select<ClassTable>(query).Single();
+                if (classInstance == null)
+                {
+                    return false;
+                }
+
+                classInstance.Title = newTitle;
+                classInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(classInstance);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update time based logistics data for ScheduledSession to trigger logistics change notification
+        /// </summary>
+        /// <param name="occurrenceId"></param>
+        /// <param name="numberOfMins"></param>
+        /// <returns></returns>
+        public bool UpdateScheduledSessionStartAndEndTimeByPeriodInMins(long occurrenceId, int numberOfMins)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var occurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
+                if (occurrence == null)
+                {
+                    return false;
+                }
+
+                occurrence.Start.AddMinutes(numberOfMins);
+                occurrence.End.AddMinutes(numberOfMins);
+                occurrence.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(occurrence);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update location based logistics data for SessionSeries to trigger logistics change notification
+        /// </summary>
+        /// <param name="occurrenceId"></param>
+        /// <param name="newLat"></param>
+        /// <param name="newLng"></param>
+        /// <returns></returns>
+        public bool UpdateSessionSeriesLocationLatLng(long occurrenceId, decimal newLat, decimal newLng)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OccurrenceTable>()
+                            .LeftJoin<OccurrenceTable, ClassTable>()
+                            .Where(x => x.Id == occurrenceId)
+                            .And<ClassTable>(y => !y.Deleted);
+                var classInstance = db.Select<ClassTable>(query).Single();
+                if (classInstance == null)
+                {
+                    return false;
+                }
+
+                classInstance.LocationLat = newLat;
+                classInstance.LocationLng = newLng;
+                classInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(classInstance);
+                return true;
+            }
+        }
+
         public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false)
         {
             if (!updateAccessPass && !updateAccessCode)
@@ -1088,7 +1248,9 @@ namespace OpenActive.FakeDatabase.NET
             bool? validFromStartDate = null,
             bool? latestCancellationBeforeStartDate = null,
             RequiredStatusType? prepayment = null,
-            bool requiresAttendeeValidation = false)
+            bool requiresAttendeeValidation = false,
+            decimal locationLat = 0.1m,
+            decimal locationLng = 0.1m)
 
         {
             var startTime = DateTime.Now.AddDays(1);
@@ -1112,7 +1274,9 @@ namespace OpenActive.FakeDatabase.NET
                     LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
                         ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
                         : (TimeSpan?)null,
-                    RequiresAttendeeValidation = requiresAttendeeValidation
+                    RequiresAttendeeValidation = requiresAttendeeValidation,
+                    LocationLat = locationLat,
+                    LocationLng = locationLng,
                 };
                 db.Save(@class);
 
@@ -1144,7 +1308,9 @@ namespace OpenActive.FakeDatabase.NET
             bool? validFromStartDate = null,
             bool? latestCancellationBeforeStartDate = null,
             RequiredStatusType? prepayment = null,
-            bool requiresAttendeeValidation = false)
+            bool requiresAttendeeValidation = false,
+            decimal locationLat = 0.1m,
+            decimal locationLng = 0.1m)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -1157,7 +1323,9 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     Name = title,
-                    SellerId = sellerId ?? 1
+                    SellerId = sellerId ?? 1,
+                    LocationLat = locationLat,
+                    LocationLng = locationLng,
                 };
                 db.Save(facility);
 

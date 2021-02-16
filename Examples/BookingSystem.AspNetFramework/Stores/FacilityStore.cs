@@ -168,6 +168,15 @@ namespace BookingSystem
                                 14.99M,
                                 10);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event That Requires Attendee Details",
+                                14.99M,
+                                10,
+                                requiresAttendeeValidation: true);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -190,7 +199,30 @@ namespace BookingSystem
 
         protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, FacilityOpportunity idComponents)
         {
-            throw new NotImplementedException();
+            switch (simulateAction)
+            {
+                case ChangeOfLogisticsTimeSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateFacilitySlotStartAndEndTimeByPeriodInMins(idComponents.SlotId.Value, 60))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                case ChangeOfLogisticsNameSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateFacilityUseName(idComponents.SlotId.Value, "Updated Facility Title"))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                case ChangeOfLogisticsLocationSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateFacilityUseLocationLatLng(idComponents.SlotId.Value, 0.2m, 0.3m))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                default:
+                    throw new NotImplementedException();
+            }
+
         }
 
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
@@ -251,8 +283,8 @@ namespace BookingSystem
                                                  Name = "Fake fitness studio",
                                                  Geo = new GeoCoordinates
                                                  {
-                                                     Latitude = 51.6201M,
-                                                     Longitude = 0.302396M
+                                                     Latitude = facility.LocationLat,
+                                                     Longitude = facility.LocationLng,
                                                  }
                                              },
                                              Activity = new List<Concept>
@@ -436,8 +468,6 @@ namespace BookingSystem
                                     Value = "defaultValue"
                                 }
                             };
-                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
-                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>();
                             ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
                             {
                                 new ImageObject
@@ -451,7 +481,10 @@ namespace BookingSystem
                                     CodeType = "code128"
                                 }
                             };
-                            ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
+                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
+                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
+                            if (requestBarcodes?.Count > 0)
+                                ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

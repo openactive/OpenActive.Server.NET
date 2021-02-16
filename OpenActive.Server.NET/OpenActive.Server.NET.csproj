@@ -31,7 +31,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="OpenActive.DatasetSite.NET" Version="4.0.1" />
-    <PackageReference Include="OpenActive.NET" Version="12.7.7" />
+    <PackageReference Include="OpenActive.NET" Version="12.7.8" />
     <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
   </ItemGroup>
 

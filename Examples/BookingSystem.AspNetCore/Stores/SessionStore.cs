@@ -200,7 +200,30 @@ namespace BookingSystem
 
         protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, SessionOpportunity idComponents)
         {
-            throw new NotImplementedException();
+            switch (simulateAction)
+            {
+                case ChangeOfLogisticsTimeSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateScheduledSessionStartAndEndTimeByPeriodInMins(idComponents.ScheduledSessionId.Value, 60))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                case ChangeOfLogisticsNameSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateClassTitle(idComponents.ScheduledSessionId.Value, "Updated Class Title"))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                case ChangeOfLogisticsLocationSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateSessionSeriesLocationLatLng(idComponents.ScheduledSessionId.Value, 0.2m, 0.3m))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                default:
+                    throw new NotImplementedException();
+            }
+
         }
 
 
