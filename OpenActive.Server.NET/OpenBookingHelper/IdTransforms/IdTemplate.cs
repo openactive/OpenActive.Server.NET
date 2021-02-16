@@ -2,11 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using UriTemplate.Core;
 using OpenActive.NET;
 using OpenActive.DatasetSite.NET;
-using System.Collections;
 using System.Runtime.Serialization;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
@@ -150,7 +147,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public OpportunityType AssignedFeed { get; set; }
         public string OpportunityIdTemplate { get; set; }
         public string OfferIdTemplate { get; set; }
-        public bool Bookable { get; set; } 
+        public bool Bookable { get; set; }
     }
 
 
@@ -188,7 +185,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             this.OpportunityIdConfiguration = opportunityIdConfiguration;
             this.ParentIdConfiguration = parentIdConfiguration;
             this.GrandparentIdConfiguration = grandparentIdConfiguration;
-            
+
             // Create list to simplify access
             var list = new List<OpportunityIdConfiguration> { this.OpportunityIdConfiguration };
             if (this.ParentIdConfiguration.HasValue) list.Add(this.ParentIdConfiguration.Value);
@@ -198,7 +195,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
 
         protected OpportunityIdConfiguration OpportunityIdConfiguration { get; }
-        protected OpportunityIdConfiguration? ParentIdConfiguration { get;}
+        protected OpportunityIdConfiguration? ParentIdConfiguration { get; }
         protected OpportunityIdConfiguration? GrandparentIdConfiguration { get; }
         public List<OpportunityIdConfiguration> IdConfigurations { get; }
 
@@ -241,7 +238,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             // Note that if any URL templates to be used for one of the checks below are null, the result for that check will be null
             // Note the grandparent is never bookable
 
-            return 
+            return
                 (
                 this.OpportunityIdConfiguration.Bookable && OpportunityTypes.Configurations[this.OpportunityIdConfiguration.OpportunityType].Bookable ?
                     GetIdComponentsWithOpportunityType(this.OpportunityIdConfiguration.OpportunityType, opportunityId, null, null, null) : null
@@ -483,7 +480,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// 
         /// </summary>
         /// <param name="method"></param>
-        /// <param name="matchRequired">Defaults to bool[] { true, true, ... } if not set</param>
         /// <param name="ids"></param>
         /// <returns></returns>
         protected T GetIdComponents(string method, params Uri[] ids)
@@ -513,7 +509,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 // Set matching components in supplied POCO based on property name
                 foreach (var binding in match.Bindings)
                 {
-                    
+
                     if (binding.Key == BaseUrlPlaceholder && this.RequiredBaseUrl != null)
                     {
                         //Special behaviour for BaseUrl
@@ -582,7 +578,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         catch (Exception ex)
                         {
                             throw new ArgumentException($"An enumeration in the template for binding {binding.Key} failed to parse.", ex);
-                        } 
+                        }
                     }
                     else
                     {

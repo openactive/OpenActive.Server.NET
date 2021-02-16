@@ -60,14 +60,29 @@ namespace BookingSystem
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
-                            var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Window",
-                                14.99M,
-                                10,
-                                validFromStartDate: isValid);
+                            {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
+                                (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Window",
+                                    14.99M,
+                                    10,
+                                    validFromStartDate: isValid);
+                            }
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableOutsideWindow:
+                            {
+                                var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow;
+                                (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                    testDatasetIdentifier,
+                                    sellerId,
+                                    $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Cancellation Window",
+                                    14.99M,
+                                    10,
+                                    latestCancellationBeforeStartDate: isValid);
+                            }
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -145,6 +160,23 @@ namespace BookingSystem
                                 14.99M,
                                 10);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableSellerTermsOfService:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Seller Terms Of Service",
+                                14.99M,
+                                10);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                10M,
+                                10,
+                                requiresAttendeeValidation: true);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -168,7 +200,30 @@ namespace BookingSystem
 
         protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, SessionOpportunity idComponents)
         {
-            throw new NotImplementedException();
+            switch (simulateAction)
+            {
+                case ChangeOfLogisticsTimeSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateScheduledSessionStartAndEndTimeByPeriodInMins(idComponents.ScheduledSessionId.Value, 60))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                case ChangeOfLogisticsNameSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateClassTitle(idComponents.ScheduledSessionId.Value, "Updated Class Title"))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                case ChangeOfLogisticsLocationSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateSessionSeriesLocationLatLng(idComponents.ScheduledSessionId.Value, 0.2m, 0.3m))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                default:
+                    throw new NotImplementedException();
+            }
+
         }
 
 
@@ -190,7 +245,8 @@ namespace BookingSystem
                              join occurrences in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurrences.Id
                              join classes in classTable on occurrences.ClassId equals classes.Id
                              // and offers.id = opportunityOfferId.OfferId
-                             select occurrences == null ? null : new {
+                             select occurrences == null ? null : new
+                             {
                                  OrderItem = new OrderItem
                                  {
                                      AllowCustomerCancellationFullRefund = true,
@@ -202,6 +258,7 @@ namespace BookingSystem
                                          Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                          Price = classes.Price,
                                          PriceCurrency = "GBP",
+                                         LatestCancellationBeforeStartDate = classes.LatestCancellationBeforeStartDate,
                                          Prepayment = classes.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate
                                      },
@@ -252,7 +309,19 @@ namespace BookingSystem
                                                  x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
                                                  x.OccurrenceId == occurrences.Id &&
                                                  x.OrderId != flowContext.OrderId.uuid)
-                                     }
+                                     },
+                                     Attendee = orderItemContext.RequestOrderItem.Attendee,
+                                     AttendeeDetailsRequired = classes.RequiresAttendeeValidation
+                                         ? new List<Uri>
+                                         {
+                                             new Uri("https://schema.org/givenName"),
+                                             new Uri("https://schema.org/familyName"),
+                                             new Uri("https://schema.org/email"),
+                                             new Uri("https://schema.org/telephone")
+                                         }
+                                         : null,
+                                     OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
+                                     OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
                                  },
                                  SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
                                  classes.RequiresApproval
@@ -270,22 +339,18 @@ namespace BookingSystem
                     {
                         ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
-                        if (item.RequiresApproval) ctx.SetRequiresApproval();
+                        if (item.RequiresApproval)
+                            ctx.SetRequiresApproval();
 
                         if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
-                        {
                             ctx.AddError(new OpportunityIsFullError());
-                        }
                     }
                 }
             }
 
             // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
-            // and those provided in the requestOrderItem
-            orderItemContexts.ForEach(ctx => ctx.ValidateAttendeeDetails());
-
-            // Additional attendee detail validation logic goes here
-            // ...
+            // and those provided in the requestOrderItem, as well as the order intake form response (if specified)
+            orderItemContexts.ForEach(ctx => ctx.ValidateDetails());
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -391,7 +456,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    false);
+                    false
+                    );
 
                 switch (result)
                 {
@@ -400,7 +466,7 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-                            
+
                             // Setting the access code and access pass after booking.
                             ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                             {
@@ -411,7 +477,6 @@ namespace BookingSystem
                                     Value = "defaultValue"
                                 }
                             };
-
                             ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
                             {
                                 new ImageObject()
@@ -425,6 +490,10 @@ namespace BookingSystem
                                     CodeType = "code128"
                                 }
                             };
+                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
+                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
+                            if (requestBarcodes?.Count > 0)
+                                ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
@@ -466,7 +535,8 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key).ToString(),
                     RenderOfferId(ctxGroup.Key).ToString(),
                     ctxGroup.Count(),
-                    true);
+                    true
+                    );
 
                 switch (result)
                 {

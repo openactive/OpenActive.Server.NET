@@ -192,9 +192,6 @@
     <Reference Include="OpenActive.DatasetSite.NET, Version=4.0.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\OpenActive.DatasetSite.NET.4.0.2\lib\net45\OpenActive.DatasetSite.NET.dll</HintPath>
     </Reference>
-    <Reference Include="OpenActive.NET, Version=12.5.9.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\OpenActive.NET.12.5.9\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
-    </Reference>
     <Reference Include="Schema.NET, Version=7.0.1.0, Culture=neutral, PublicKeyToken=fc5550082a9c642c, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Schema.NET.7.0.1\lib\net461\Schema.NET.dll</HintPath>
     </Reference>
@@ -373,6 +370,9 @@
     <Reference Include="Antlr3.Runtime">
       <Private>True</Private>
       <HintPath>..\..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenActive.NET">
+      <HintPath>..\..\packages\OpenActive.NET.12.7.8\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

@@ -4,6 +4,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Linq.Expressions;
 using Bogus;
 using OpenActive.FakeDatabase.NET.Helpers;
 using ServiceStack.OrmLite;
@@ -64,8 +65,8 @@ namespace OpenActive.FakeDatabase.NET
         }
     }
 
-        // ReSharper disable once InconsistentNaming
-        public class InMemorySQLite
+    // ReSharper disable once InconsistentNaming
+    public class InMemorySQLite
     {
         public readonly OrmLiteConnectionFactory Database;
 
@@ -135,6 +136,8 @@ namespace OpenActive.FakeDatabase.NET
 
     public class FakeDatabase
     {
+        private const float ProportionWithRequiresAttendeeValidation = 1f / 10;
+
         public readonly InMemorySQLite Mem = new InMemorySQLite();
 
         private static readonly Faker Faker = new Faker();
@@ -204,6 +207,278 @@ namespace OpenActive.FakeDatabase.NET
                 db.Update(existingOrder);
 
                 return true;
+            }
+        }
+
+        /// <summary>
+        /// Update logistics data for FacilityUse to trigger logistics change notification
+        /// </summary>
+        /// <param name="slotId"></param>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        public bool UpdateFacilityUseName(long slotId, string newName)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<SlotTable>()
+                            .LeftJoin<SlotTable, FacilityUseTable>()
+                            .Where(x => x.Id == slotId)
+                            .And<FacilityUseTable>(y => !y.Deleted);
+                var facilityUse = db.Select<FacilityUseTable>(query).Single();
+                if (facilityUse == null)
+                {
+                    return false;
+                }
+
+                facilityUse.Name = newName;
+                facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(facilityUse);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update logistics data for Slot to trigger logistics change notification
+        /// </summary>
+        /// <param name="slotId"></param>
+        /// <param name="numberOfMins"></param>
+        /// <returns></returns>
+        public bool UpdateFacilitySlotStartAndEndTimeByPeriodInMins(long slotId, int numberOfMins)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var slot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
+                if (slot == null)
+                {
+                    return false;
+                }
+
+                slot.Start.AddMinutes(numberOfMins);
+                slot.End.AddMinutes(numberOfMins);
+                slot.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(slot);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update location based logistics data for FacilityUse to trigger logistics change notification
+        /// </summary>
+        /// <param name="slotId"></param>
+        /// <param name="newLat"></param>
+        /// <param name="newLng"></param>
+        /// <returns></returns>
+        public bool UpdateFacilityUseLocationLatLng(long slotId, decimal newLat, decimal newLng)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<SlotTable>()
+                            .LeftJoin<SlotTable, FacilityUseTable>()
+                            .Where(x => x.Id == slotId)
+                            .And<FacilityUseTable>(y => !y.Deleted);
+                var facilityUse = db.Select<FacilityUseTable>(query).Single();
+                if (facilityUse == null)
+                {
+                    return false;
+                }
+
+                facilityUse.LocationLat = newLat;
+                facilityUse.LocationLng = newLng;
+                facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(facilityUse);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update name logistics data for SessionSeries to trigger logistics change notification
+        /// </summary>
+        /// <param name="occurrenceId"></param>
+        /// <param name="newTitle"></param>
+        /// <returns></returns>
+        public bool UpdateClassTitle(long occurrenceId, string newTitle)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OccurrenceTable>()
+                            .LeftJoin<OccurrenceTable, ClassTable>()
+                            .Where(x => x.Id == occurrenceId)
+                            .And<ClassTable>(y => !y.Deleted);
+                var classInstance = db.Select<ClassTable>(query).Single();
+                if (classInstance == null)
+                {
+                    return false;
+                }
+
+                classInstance.Title = newTitle;
+                classInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(classInstance);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update time based logistics data for ScheduledSession to trigger logistics change notification
+        /// </summary>
+        /// <param name="occurrenceId"></param>
+        /// <param name="numberOfMins"></param>
+        /// <returns></returns>
+        public bool UpdateScheduledSessionStartAndEndTimeByPeriodInMins(long occurrenceId, int numberOfMins)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var occurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
+                if (occurrence == null)
+                {
+                    return false;
+                }
+
+                occurrence.Start.AddMinutes(numberOfMins);
+                occurrence.End.AddMinutes(numberOfMins);
+                occurrence.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(occurrence);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update location based logistics data for SessionSeries to trigger logistics change notification
+        /// </summary>
+        /// <param name="occurrenceId"></param>
+        /// <param name="newLat"></param>
+        /// <param name="newLng"></param>
+        /// <returns></returns>
+        public bool UpdateSessionSeriesLocationLatLng(long occurrenceId, decimal newLat, decimal newLng)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OccurrenceTable>()
+                            .LeftJoin<OccurrenceTable, ClassTable>()
+                            .Where(x => x.Id == occurrenceId)
+                            .And<ClassTable>(y => !y.Deleted);
+                var classInstance = db.Select<ClassTable>(query).Single();
+                if (classInstance == null)
+                {
+                    return false;
+                }
+
+                classInstance.LocationLat = newLat;
+                classInstance.LocationLng = newLng;
+                classInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(classInstance);
+                return true;
+            }
+        }
+
+        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false)
+        {
+            if (!updateAccessPass && !updateAccessCode)
+            {
+                return false;
+            }
+
+            using (var db = Mem.Database.Open())
+            {
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+
+                if (order != null)
+                {
+                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+
+                    foreach (OrderItemsTable orderItem in orderItems)
+                    {
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        {
+                            if (updateAccessCode)
+                            {
+                                orderItem.PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar: '9');
+                            }
+
+                            if (updateAccessPass)
+                            {
+                                orderItem.ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25);
+                                orderItem.BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                            }
+
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Save(orderItem);
+                        }
+                    }
+
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
+                    db.Update(order);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool UpdateOpportunityAttendance(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+
+                if (order != null)
+                {
+                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+
+                    foreach (OrderItemsTable orderItem in orderItems)
+                    {
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        {
+                            orderItem.Status = BookingStatus.Attended;
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Update(orderItem);
+                        }
+                    }
+
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
+                    db.Update(order);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool AddCustomerNotice(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+                if (order != null)
+                {
+                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+                    foreach (OrderItemsTable orderItem in orderItems)
+                    {
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        {
+                            orderItem.CustomerNotice = $"customer notice message: {Faker.Random.String(10, minChar: 'a', maxChar: 'z')}";
+                            orderItem.Modified = DateTimeOffset.Now.UtcTicks;
+                            db.Update(orderItem);
+                        }
+                    }
+
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInFeed = true;
+                    db.Update(order);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
 
@@ -403,7 +678,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public struct BookedOrderItemInfo
         {
-            public long OrderItemId{ get; set; }
+            public long OrderItemId { get; set; }
             public string PinCode { get; set; }
             public string ImageUrl { get; set; }
             public string BarCodeText { get; set; }
@@ -420,7 +695,8 @@ namespace OpenActive.FakeDatabase.NET
             string opportunityJsonLdId,
             string offerJsonLdId,
             long numberOfSpaces,
-            bool proposal)
+            bool proposal
+            )
         {
             var db = transaction.DatabaseConnection;
             var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
@@ -459,7 +735,7 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisClass.Price.Value,
-                    PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar:'9'),
+                    PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar: '9'),
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
                     BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
@@ -488,7 +764,8 @@ namespace OpenActive.FakeDatabase.NET
             string opportunityJsonLdId,
             string offerJsonLdId,
             long numberOfSpaces,
-            bool proposal)
+            bool proposal
+            )
         {
             var db = transaction.DatabaseConnection;
             var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
@@ -531,7 +808,9 @@ namespace OpenActive.FakeDatabase.NET
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
                     BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
+
                 db.Save(orderItem);
+
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
                     OrderItemId = orderItem.Id,
@@ -548,69 +827,166 @@ namespace OpenActive.FakeDatabase.NET
         public bool CancelOrderItems(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled, bool includeCancellationMessage = false)
         {
             using (var db = Mem.Database.Open())
+            using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
-                OrderTable order = null;
-                if (customerCancelled)
-                {
-                    order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid && !x.Deleted);
-                }
-                else
-                {
-                    // When seller cancels only uuid is sent.
-                    order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
-                }
+                var order = customerCancelled
+                    ? db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid && !x.Deleted)
+                    : db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
 
-                if (order != null)
-                {
-                    if (sellerId.HasValue && order.SellerId != sellerId)
-                    {
-                        throw new ArgumentException("SellerId does not match Order");
-                    }
-                    List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
-                    List<OrderItemsTable> orderItems = null;
+                if (order == null)
+                    return false;
 
+                if (sellerId.HasValue && order.SellerId != sellerId)
+                    throw new ArgumentException("SellerId does not match Order");
+
+                var whereClause = customerCancelled
+                    ? x => x.ClientId == clientId && x.OrderId == order.OrderId && orderItemIds.Contains(x.Id)
+                    : (Expression<Func<OrderItemsTable, bool>>)(x => x.OrderId == order.OrderId);
+                var query = db.From<OrderItemsTable>()
+                              .LeftJoin<OrderItemsTable, SlotTable>()
+                              .LeftJoin<OrderItemsTable, OccurrenceTable>()
+                              .LeftJoin<OccurrenceTable, ClassTable>()
+                              .Where(whereClause);
+                var orderItems = db
+                    .SelectMulti<OrderItemsTable, SlotTable, OccurrenceTable, ClassTable>(query)
+                    .Where(t => t.Item1.Status == BookingStatus.Confirmed || t.Item1.Status == BookingStatus.Attended)
+                    .ToArray();
+
+                var updatedOrderItems = new List<OrderItemsTable>();
+                foreach (var (orderItem, slot, occurrence, @class) in orderItems)
+                {
+                    var now = DateTime.Now;
+
+                    // Customers can only cancel orderItems if within the cancellation window
+                    // If it's the seller cancelling, this restriction does not apply.
                     if (customerCancelled)
                     {
-                        orderItems = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && orderItemIds.Contains(x.Id));
-                    }
-                    else
-                    {
-                        orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
-                    }
-
-                    foreach (OrderItemsTable orderItem in orderItems)
-                    {
-                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Attended)
+                        if (slot?.LatestCancellationBeforeStartDate != null &&
+                            slot.Start - slot.LatestCancellationBeforeStartDate < now)
                         {
-                            updatedOrderItems.Add(orderItem);
-                            orderItem.Status = customerCancelled ? BookingStatus.CustomerCancelled : BookingStatus.SellerCancelled;
-                            if (includeCancellationMessage)
-                            {
-                                orderItem.CancellationMessage = "Order canceled by seller";
-                            }
-                            db.Save(orderItem);
+                            transaction.Rollback();
+                            throw new InvalidOperationException();
+                        }
+
+                        if (occurrence != null &&
+                            @class?.LatestCancellationBeforeStartDate != null &&
+                            occurrence.Start - @class.LatestCancellationBeforeStartDate < now)
+                        {
+                            transaction.Rollback();
+                            throw new InvalidOperationException();
                         }
                     }
-                    // Update the total price and modified date on the Order to update the feed, if something has changed
-                    // This makes the call idempotent
-                    if (updatedOrderItems.Count > 0)
-                    {
-                        var totalPrice = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
-                        order.TotalOrderPrice = totalPrice;
-                        order.VisibleInFeed = true;
-                        order.Modified = DateTimeOffset.Now.UtcTicks;
-                        db.Update(order);
-                        // Note an actual implementation would need to handle different opportunity types here
-                        // Update the number of spaces available as a result of cancellation
-                        RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
-                        RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
-                    }
+
+                    updatedOrderItems.Add(orderItem);
+                    orderItem.Status = customerCancelled ? BookingStatus.CustomerCancelled : BookingStatus.SellerCancelled;
+
+                    if (includeCancellationMessage)
+                        orderItem.CancellationMessage = "Order canceled by seller";
+
+                    db.Save(orderItem);
+                }
+
+                // Update the total price and modified date on the Order to update the feed, if something has changed
+                // This makes the call idempotent
+                if (updatedOrderItems.Count > 0)
+                {
+                    var totalPrice = db.Select<OrderItemsTable>(x =>
+                        x.ClientId == clientId && x.OrderId == order.OrderId &&
+                        (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
+
+                    order.TotalOrderPrice = totalPrice;
+                    order.VisibleInFeed = true;
+                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    db.Update(order);
+
+                    // Note an actual implementation would need to handle different opportunity types here
+                    // Update the number of spaces available as a result of cancellation
+                    RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                    RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                }
+
+                transaction.Commit();
+                return true;
+            }
+        }
+
+        public bool ReplaceOrderOpportunity(string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OrderItemsTable>()
+                              .Join<OrderTable>()
+                              .Where<OrderItemsTable>(x => x.OrderId == uuid)
+                              .Where<OrderTable>(x => x.OrderMode != OrderMode.Proposal);
+                var orderItemsAndOrder = db.SelectMulti<OrderItemsTable, OrderTable>(query);
+                if (!orderItemsAndOrder.Any())
+                    return false;
+                var order = orderItemsAndOrder.First().Item2;
+                var orderItems = orderItemsAndOrder.Select(x => x.Item1);
+                // This makes the call idempotent
+                if (orderItemsAndOrder.First().Item2.ProposalStatus == ProposalStatus.SellerAccepted)
                     return true;
+
+                var index = Faker.Random.Int(0, orderItemsAndOrder.Count - 1);
+                var orderItem = orderItemsAndOrder[index].Item1;
+
+                if (orderItem.SlotId.HasValue)
+                {
+                    var oldSlotQuery = db.From<SlotTable>()
+                                      .Where(s => s.Id == orderItem.SlotId.Value)
+                                      .Take(1);
+                    var oldSlot = db.Select(oldSlotQuery).Single();
+
+                    var slotQuery = db.From<SlotTable>()
+                                      .Where(s => s.Id != orderItem.SlotId.Value && s.Price <= orderItem.Price)
+                                      .Take(1);
+                    var slot = db.Select(slotQuery).Single();
+
+                    // Hack to replace JSON LD Ids
+                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"facility-uses/{oldSlot.FacilityUseId}", $"facility-uses/{slot.FacilityUseId}");
+                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"facility-use-slots/{oldSlot.Id}", $"facility-use-slots/{slot.Id}");
+                    orderItem.OfferJsonLdId = orderItem.OfferJsonLdId.Replace($"facility-uses/{oldSlot.FacilityUseId}", $"facility-uses/{slot.FacilityUseId}");
+                    orderItem.OfferJsonLdId = orderItem.OfferJsonLdId.Replace($"facility-uses-slots/{oldSlot.Id}", $"facility-uses-slots/{slot.Id}");
+
+                    orderItem.SlotId = slot.Id;
+                }
+                else if (orderItem.OccurrenceId.HasValue)
+                {
+                    var oldOccurrenceQuery = db.From<OccurrenceTable>()
+                                            .Where<OccurrenceTable>(o => o.Id == orderItem.OccurrenceId.Value)
+                                            .Take(1);
+                    var oldOccurrence = db.Select(oldOccurrenceQuery).Single();
+
+                    var occurrenceQuery = db.From<OccurrenceTable>()
+                                            .Join<ClassTable>()
+                                            .Where<OccurrenceTable>(o => o.Id != orderItem.OccurrenceId.Value)
+                                            .Where<ClassTable>(c => c.Price <= orderItem.Price)
+                                            .Take(1);
+                    var occurrence = db.Select(occurrenceQuery).Single();
+                    // Hack to replace JSON LD Ids
+                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"scheduled-sessions/{oldOccurrence.ClassId}", $"scheduled-sessions/{occurrence.ClassId}");
+                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"events/{orderItem.OccurrenceId}", $"events/{occurrence.Id}");
+                    orderItem.OfferJsonLdId = orderItem.OfferJsonLdId.Replace($"session-series/{oldOccurrence.ClassId}", $"session-series/{occurrence.ClassId}");
+
+                    orderItem.OccurrenceId = occurrence.Id;
                 }
                 else
                 {
                     return false;
                 }
+
+                db.Update(orderItem);
+
+                order.TotalOrderPrice = orderItems.Sum(x => x.Price); ;
+                order.VisibleInFeed = true;
+                order.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(order);
+
+                // Note an actual implementation would need to handle different opportunity types here
+                // Update the number of spaces available as a result of cancellation
+                RecalculateSpaces(db, orderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                RecalculateSlotUses(db, orderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                return true;
             }
         }
 
@@ -833,8 +1209,10 @@ namespace OpenActive.FakeDatabase.NET
                         Prepayment = slot.Price == 0
                             ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
                             : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                        RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
                         RequiresApproval = Faker.Random.Bool(),
                         ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
+                        LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate()
                     })).SelectMany(os => os);
 
             db.InsertAll(facilities);
@@ -861,7 +1239,9 @@ namespace OpenActive.FakeDatabase.NET
                     Prepayment = @class.Price == 0
                         ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
                         : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                    RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
                     RequiresApproval = Faker.Random.Bool(),
+                    LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                     SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                     ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate
                 })
@@ -994,9 +1374,9 @@ namespace OpenActive.FakeDatabase.NET
                 new BookingPartnerTable { Name = "Test Suite 2", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
                 new BookingPartnerTable { Name = "Test Suite 3", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
             };
-            
-            var grants = new List<GrantTable>() 
-            { 
+
+            var grants = new List<GrantTable>()
+            {
                 new GrantTable()
                 {
                     Key = "8vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
@@ -1172,7 +1552,12 @@ namespace OpenActive.FakeDatabase.NET
             long totalSpaces,
             bool requiresApproval = false,
             bool? validFromStartDate = null,
-            RequiredStatusType? prepayment = null)
+            bool? latestCancellationBeforeStartDate = null,
+            RequiredStatusType? prepayment = null,
+            bool requiresAttendeeValidation = false,
+            decimal locationLat = 0.1m,
+            decimal locationLng = 0.1m)
+
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -1191,7 +1576,13 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresApproval = requiresApproval,
                     ValidFromBeforeStartDate = validFromStartDate.HasValue
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
-                        : (TimeSpan?)null
+                        : (TimeSpan?)null,
+                    LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
+                        ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
+                        : (TimeSpan?)null,
+                    RequiresAttendeeValidation = requiresAttendeeValidation,
+                    LocationLat = locationLat,
+                    LocationLng = locationLng,
                 };
                 db.Save(@class);
 
@@ -1221,7 +1612,11 @@ namespace OpenActive.FakeDatabase.NET
             long totalUses,
             bool requiresApproval = false,
             bool? validFromStartDate = null,
-            RequiredStatusType? prepayment = null)
+            bool? latestCancellationBeforeStartDate = null,
+            RequiredStatusType? prepayment = null,
+            bool requiresAttendeeValidation = false,
+            decimal locationLat = 0.1m,
+            decimal locationLng = 0.1m)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -1234,7 +1629,9 @@ namespace OpenActive.FakeDatabase.NET
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     Name = title,
-                    SellerId = sellerId ?? 1
+                    SellerId = sellerId ?? 1,
+                    LocationLat = locationLat,
+                    LocationLng = locationLng,
                 };
                 db.Save(facility);
 
@@ -1250,9 +1647,13 @@ namespace OpenActive.FakeDatabase.NET
                     Price = price,
                     Prepayment = prepayment,
                     RequiresApproval = requiresApproval,
-                    ValidFromBeforeStartDate =  validFromStartDate.HasValue
+                    ValidFromBeforeStartDate = validFromStartDate.HasValue
                         ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
-                        : (TimeSpan?)null
+                        : (TimeSpan?)null,
+                    LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
+                        ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
+                        : (TimeSpan?)null,
+                    RequiresAttendeeValidation = requiresAttendeeValidation
                 };
                 db.Save(slot);
 
@@ -1328,7 +1729,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             public Faker Faker { get; set; }
             public int Id { get; set; }
-            public Bounds StartDateBounds { get; set;}
+            public Bounds StartDateBounds { get; set; }
             public Bounds? ValidFromBeforeStartDateBounds { get; set; }
 
             public DateTime RandomStartDate() => DateTime.Now.AddMinutes(this.Faker.Random.Int(StartDateBounds));
@@ -1336,6 +1737,14 @@ namespace OpenActive.FakeDatabase.NET
             public TimeSpan? RandomValidFromBeforeStartDate() => ValidFromBeforeStartDateBounds.HasValue
                 ? TimeSpan.FromMinutes(this.Faker.Random.Int(ValidFromBeforeStartDateBounds.Value))
                 : (TimeSpan?)null;
+        }
+
+        private static TimeSpan? RandomLatestCancellationBeforeStartDate()
+        {
+            if (Faker.Random.Bool(1f / 3))
+                return null;
+
+            return Faker.Random.Bool() ? TimeSpan.FromDays(1) : TimeSpan.FromHours(40);
         }
     }
 }
