@@ -202,28 +202,24 @@ namespace BookingSystem
         {
             switch (simulateAction)
             {
-                case ChangeOfLogisticsSimulateAction _:
-                    switch (idComponents.OpportunityType)
+                case ChangeOfLogisticsTimeSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateScheduledSessionStartAndEndTimeByPeriodInMins(idComponents.ScheduledSessionId.Value, 60))
                     {
-                        case OpportunityType.SessionSeries:
-                            {
-                                if (!FakeBookingSystem.Database.UpdateClassTitle(idComponents.SessionSeriesId.Value, "Updated Class Title"))
-                                {
-                                    throw new OpenBookingException(new UnknownOpportunityError());
-                                }
-                                return;
-                            }
-                        case OpportunityType.ScheduledSession:
-                            {
-                                if (!FakeBookingSystem.Database.UpdateScheduledSessionStartAndEndTimeByPeriodInMins(idComponents.ScheduledSessionId.Value, 60))
-                                {
-                                    throw new OpenBookingException(new UnknownOpportunityError());
-                                }
-                                return;
-                            }
-                        default:
-                            throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
+                        throw new OpenBookingException(new UnknownOpportunityError());
                     }
+                    return;
+                case ChangeOfLogisticsNameSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateClassTitle(idComponents.ScheduledSessionId.Value, "Updated Class Title"))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                case ChangeOfLogisticsLocationSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateSessionSeriesLocationLatLng(idComponents.ScheduledSessionId.Value, 0.2m, 0.3m))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
                 default:
                     throw new NotImplementedException();
             }

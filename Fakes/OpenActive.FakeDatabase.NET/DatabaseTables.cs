@@ -38,6 +38,8 @@ namespace OpenActive.FakeDatabase.NET
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
         public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
+        public decimal LocationLat { get; set; }
+        public decimal LocationLng { get; set; }
     }
 
     public class OccurrenceTable : Table
@@ -76,7 +78,7 @@ namespace OpenActive.FakeDatabase.NET
         public BookingStatus Status { get; set; }
         public string CancellationMessage { get; set; }
         public decimal Price { get; set; }
-        public string PinCode {get; set;}
+        public string PinCode { get; set; }
         public string ImageUrl { get; set; }
         public string BarCodeText { get; set; }
         public string CustomerNotice { get; set; }
@@ -145,6 +147,8 @@ namespace OpenActive.FakeDatabase.NET
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; } // Provider
+        public decimal LocationLat { get; set; }
+        public decimal LocationLng { get; set; }
     }
 
     public static class DatabaseCreator

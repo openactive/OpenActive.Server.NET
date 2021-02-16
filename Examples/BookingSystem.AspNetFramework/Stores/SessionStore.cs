@@ -168,6 +168,15 @@ namespace BookingSystem
                                 14.99M,
                                 10);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                10M,
+                                10,
+                                requiresAttendeeValidation: true);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -193,28 +202,24 @@ namespace BookingSystem
         {
             switch (simulateAction)
             {
-                case ChangeOfLogisticsSimulateAction _:
-                    switch (idComponents.OpportunityType)
+                case ChangeOfLogisticsTimeSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateScheduledSessionStartAndEndTimeByPeriodInMins(idComponents.ScheduledSessionId.Value, 60))
                     {
-                        case OpportunityType.SessionSeries:
-                            {
-                                if (!FakeBookingSystem.Database.UpdateClassTitle(idComponents.SessionSeriesId.Value, "Updated Class Title"))
-                                {
-                                    throw new OpenBookingException(new UnknownOpportunityError());
-                                }
-                                return;
-                            }
-                        case OpportunityType.ScheduledSession:
-                            {
-                                if (!FakeBookingSystem.Database.UpdateScheduledSessionStartAndEndTimeByPeriodInMins(idComponents.ScheduledSessionId.Value, 60))
-                                {
-                                    throw new OpenBookingException(new UnknownOpportunityError());
-                                }
-                                return;
-                            }
-                        default:
-                            throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
+                        throw new OpenBookingException(new UnknownOpportunityError());
                     }
+                    return;
+                case ChangeOfLogisticsNameSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateClassTitle(idComponents.ScheduledSessionId.Value, "Updated Class Title"))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
+                case ChangeOfLogisticsLocationSimulateAction _:
+                    if (!FakeBookingSystem.Database.UpdateSessionSeriesLocationLatLng(idComponents.ScheduledSessionId.Value, 0.2m, 0.3m))
+                    {
+                        throw new OpenBookingException(new UnknownOpportunityError());
+                    }
+                    return;
                 default:
                     throw new NotImplementedException();
             }
@@ -472,8 +477,6 @@ namespace BookingSystem
                                     Value = "defaultValue"
                                 }
                             };
-                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
-                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>();
                             ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
                             {
                                 new ImageObject()
@@ -487,7 +490,10 @@ namespace BookingSystem
                                     CodeType = "code128"
                                 }
                             };
-                            ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
+                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
+                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
+                            if (requestBarcodes?.Count > 0)
+                                ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
