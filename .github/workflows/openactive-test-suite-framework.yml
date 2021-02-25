@@ -37,7 +37,7 @@ jobs:
         vs-version: "[16.4,16.9)"
     
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.2
+      uses: NuGet/setup-nuget@v1.0.5
     
     - name: Install OpenActive.Server.NET dependencies
       run: nuget restore .\server\
