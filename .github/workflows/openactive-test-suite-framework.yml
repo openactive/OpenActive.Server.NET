@@ -32,7 +32,7 @@ jobs:
         node-version: 14.x
         
     - name: Setup MSBuild path
-      uses: microsoft/setup-msbuild@v1.0.1
+      uses: microsoft/setup-msbuild@v1.0.2
       with:
         vs-version: "[16.4,16.9)"
     
