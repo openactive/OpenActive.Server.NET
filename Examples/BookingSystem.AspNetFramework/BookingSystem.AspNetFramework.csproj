@@ -372,7 +372,7 @@
       <HintPath>..\..\packages\OpenActive.DatasetSite.NET.4.0.1\lib\net45\OpenActive.DatasetSite.NET.dll</HintPath>
     </Reference>
     <Reference Include="OpenActive.NET">
-      <HintPath>..\..\packages\OpenActive.NET.12.7.8\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
+      <HintPath>..\..\packages\OpenActive.NET.12.7.13\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

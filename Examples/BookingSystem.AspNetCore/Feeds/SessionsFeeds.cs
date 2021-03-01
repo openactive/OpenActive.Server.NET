@@ -104,6 +104,7 @@ namespace BookingSystem
                                 SessionSeriesId = result.Item1.Id
                             }),
                             Name = result.Item1.Title,
+                            EventAttendanceMode = MapAttendanceMode(result.Item1.AttendanceMode),
                             Organizer = _useSingleSellerMode ? new Organization
                             {
                                 Id = RenderSingleSellerId(),
@@ -158,7 +159,24 @@ namespace BookingSystem
                                     Prepayment = result.Item1.Prepayment.Convert()
                                 }
                             },
-                            Location = new Place
+                            Location = result.Item1.AttendanceMode == AttendanceMode.Online ? null : new Place
+                            {
+                                Name = "Fake Pond",
+                                Address = new PostalAddress
+                                {
+                                    StreetAddress = "1 Fake Park",
+                                    AddressLocality = "Another town",
+                                    AddressRegion = "Oxfordshire",
+                                    PostalCode = "OX1 1AA",
+                                    AddressCountry = "GB"
+                                },
+                                Geo = new GeoCoordinates
+                                {
+                                    Latitude = result.Item1.LocationLat,
+                                    Longitude = result.Item1.LocationLng,
+                                }
+                            },
+                            AffiliatedLocation = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : new Place
                             {
                                 Name = "Fake Pond",
                                 Address = new PostalAddress
@@ -186,7 +204,7 @@ namespace BookingSystem
                                 }
                             }
                         }
-                    });
+                    }); ;
 
                 return query.ToList();
             }
@@ -209,6 +227,21 @@ namespace BookingSystem
             }
 
             return openBookingFlowRequirement;
+        }
+
+        private static EventAttendanceModeEnumeration MapAttendanceMode(AttendanceMode attendanceMode)
+        {
+            switch (attendanceMode)
+            {
+                case AttendanceMode.Offline:
+                    return EventAttendanceModeEnumeration.OfflineEventAttendanceMode;
+                case AttendanceMode.Online:
+                    return EventAttendanceModeEnumeration.OnlineEventAttendanceMode;
+                case AttendanceMode.Mixed:
+                    return EventAttendanceModeEnumeration.MixedEventAttendanceMode;
+                default:
+                    throw new OpenBookingException(new OpenBookingError(), $"AttendanceMode Type {attendanceMode} not supported");
+            }
         }
     }
 }
