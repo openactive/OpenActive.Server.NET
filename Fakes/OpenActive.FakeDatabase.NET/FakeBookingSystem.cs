@@ -327,9 +327,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false)
+        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false, bool updateAccessChannel = false)
         {
-            if (!updateAccessPass && !updateAccessCode)
+            if (!updateAccessPass && !updateAccessCode && !updateAccessChannel)
             {
                 return false;
             }
@@ -355,6 +355,13 @@ namespace OpenActive.FakeDatabase.NET
                             {
                                 orderItem.ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25);
                                 orderItem.BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                            }
+
+                            if (updateAccessChannel)
+                            {
+                                orderItem.MeetingUrl = new Uri(Faker.Internet.Url());
+                                orderItem.MeetingId = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                                orderItem.Password = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
                             }
 
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
@@ -1287,7 +1294,7 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresAttendeeValidation = requiresAttendeeValidation,
                     LocationLat = locationLat,
                     LocationLng = locationLng,
-                    AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline
+                    AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
                 };
                 db.Save(@class);
 
