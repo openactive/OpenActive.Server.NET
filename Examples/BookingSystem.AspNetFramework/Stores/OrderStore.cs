@@ -147,6 +147,16 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
+                case AccessChannelUpdateSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.UpdateAccess(idComponents.uuid, updateAccessChannel: true))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
             }
         }
 
@@ -198,11 +208,12 @@ namespace BookingSystem
 
         public override void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            if (!sellerId.SellerIdLong.HasValue)
-                throw new OpenBookingException(new OpenBookingError(), "SellerIdLong must be set");
-
             // Note if no lease support, simply do nothing here
-            FakeBookingSystem.Database.DeleteLease(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong.Value);
+            FakeBookingSystem.Database.DeleteLease(
+                orderId.ClientId,
+                orderId.uuid,
+                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */
+                );
         }
 
         public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
