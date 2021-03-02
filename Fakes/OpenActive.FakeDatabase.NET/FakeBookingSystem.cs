@@ -68,6 +68,16 @@ namespace OpenActive.FakeDatabase.NET
     }
 
     /// <summary>
+    /// Result of cancelling (or attempting to cancel) an OrderItem in a FakeDatabase
+    /// </summary>
+    public enum FakeDatabaseCancelOrderItemResult
+    {
+        OrderItemWasAlreadyCancelled,
+        OrderItemSuccessfullyCancelled,
+        OrderItemWasNotFound
+    }
+
+    /// <summary>
     /// Result of booking (or attempting to book) an OrderProposal in a FakeDatabase
     /// </summary>
     public enum FakeDatabaseBookOrderProposalResult
@@ -806,8 +816,9 @@ namespace OpenActive.FakeDatabase.NET
                               .Where(whereClause);
                 var orderItems = db
                     .SelectMulti<OrderItemsTable, SlotTable, OccurrenceTable, ClassTable>(query)
-                    .Where(t => t.Item1.Status == BookingStatus.Confirmed || t.Item1.Status == BookingStatus.Attended)
+                    .Where(t => t.Item1.Status == BookingStatus.Confirmed || t.Item1.Status == BookingStatus.Attended || t.Item1.Status == BookingStatus.CustomerCancelled)
                     .ToArray();
+
 
                 var updatedOrderItems = new List<OrderItemsTable>();
                 foreach (var (orderItem, slot, occurrence, @class) in orderItems)
@@ -833,12 +844,27 @@ namespace OpenActive.FakeDatabase.NET
                             throw new InvalidOperationException();
                         }
                     }
+                    if (customerCancelled)
+                    {
+                        if (orderItem.Status == BookingStatus.CustomerCancelled)
+                        {
+                            // If the customer has already cancelled this OrderItem, do nothing to maintain idempotency
+                            continue;
+                        }
+                        else
+                        {
+                            orderItem.Status = BookingStatus.CustomerCancelled;
+                            updatedOrderItems.Add(orderItem);
+                        }
+                    }
+                    else
+                    {
+                        orderItem.Status = BookingStatus.SellerCancelled;
+                        updatedOrderItems.Add(orderItem);
 
-                    updatedOrderItems.Add(orderItem);
-                    orderItem.Status = customerCancelled ? BookingStatus.CustomerCancelled : BookingStatus.SellerCancelled;
-
-                    if (includeCancellationMessage)
-                        orderItem.CancellationMessage = "Order canceled by seller";
+                        if (includeCancellationMessage)
+                            orderItem.CancellationMessage = "Order cancelled by seller";
+                    }
 
                     db.Save(orderItem);
                 }
