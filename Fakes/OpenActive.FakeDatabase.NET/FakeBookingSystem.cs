@@ -68,16 +68,6 @@ namespace OpenActive.FakeDatabase.NET
     }
 
     /// <summary>
-    /// Result of cancelling (or attempting to cancel) an OrderItem in a FakeDatabase
-    /// </summary>
-    public enum FakeDatabaseCancelOrderItemResult
-    {
-        OrderItemWasAlreadyCancelled,
-        OrderItemSuccessfullyCancelled,
-        OrderItemWasNotFound
-    }
-
-    /// <summary>
     /// Result of booking (or attempting to book) an OrderProposal in a FakeDatabase
     /// </summary>
     public enum FakeDatabaseBookOrderProposalResult
