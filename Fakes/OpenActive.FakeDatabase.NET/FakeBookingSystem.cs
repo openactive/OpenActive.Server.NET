@@ -815,27 +815,36 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     var now = DateTime.Now;
 
-                    // Customers can only cancel orderItems if within the cancellation window
+                    // Customers can only cancel orderItems if within the cancellation window or if full refund is allowed
                     // If it's the seller cancelling, this restriction does not apply.
                     if (customerCancelled)
                     {
-                        if (slot?.LatestCancellationBeforeStartDate != null &&
+                        if (slot.Id != 0 && slot.LatestCancellationBeforeStartDate != null &&
                             slot.Start - slot.LatestCancellationBeforeStartDate < now)
                         {
                             transaction.Rollback();
                             throw new InvalidOperationException();
                         }
 
-                        if (occurrence != null &&
+                        if (occurrence.Id != 0 &&
                             @class?.LatestCancellationBeforeStartDate != null &&
                             occurrence.Start - @class.LatestCancellationBeforeStartDate < now)
                         {
                             transaction.Rollback();
                             throw new InvalidOperationException();
                         }
-                    }
-                    if (customerCancelled)
-                    {
+                        if (slot.Id != 0 && slot.AllowCustomerCancellationFullRefund == false)
+                        {
+                            transaction.Rollback();
+                            throw new InvalidOperationException();
+                        }
+                        if (occurrence.Id != 0 &&
+                            @class.AllowCustomerCancellationFullRefund == false)
+                        {
+                            transaction.Rollback();
+                            throw new InvalidOperationException();
+                        }
+
                         if (orderItem.Status == BookingStatus.CustomerCancelled)
                         {
                             // If the customer has already cancelled this OrderItem, do nothing to maintain idempotency
@@ -846,6 +855,7 @@ namespace OpenActive.FakeDatabase.NET
                             orderItem.Status = BookingStatus.CustomerCancelled;
                             updatedOrderItems.Add(orderItem);
                         }
+
                     }
                     else
                     {
@@ -1182,7 +1192,8 @@ namespace OpenActive.FakeDatabase.NET
                         RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
                         RequiresApproval = Faker.Random.Bool(),
                         ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
-                        LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate()
+                        LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
+                        AllowCustomerCancellationFullRefund = Faker.Random.Bool()
                     })).SelectMany(os => os);
 
             db.InsertAll(facilities);
@@ -1213,7 +1224,8 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresApproval = Faker.Random.Bool(),
                     LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                     SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
-                    ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate
+                    ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
+                    AllowCustomerCancellationFullRefund = Faker.Random.Bool()
                 })
                 .ToList();
 
@@ -1263,6 +1275,7 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresApproval = false,
             bool? validFromStartDate = null,
             bool? latestCancellationBeforeStartDate = null,
+            bool allowCustomerCancellationFullRefund = true,
             RequiredStatusType? prepayment = null,
             bool requiresAttendeeValidation = false,
             decimal locationLat = 0.1m,
@@ -1293,6 +1306,7 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresAttendeeValidation = requiresAttendeeValidation,
                     LocationLat = locationLat,
                     LocationLng = locationLng,
+                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund
                 };
                 db.Save(@class);
 
@@ -1323,6 +1337,7 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresApproval = false,
             bool? validFromStartDate = null,
             bool? latestCancellationBeforeStartDate = null,
+            bool allowCustomerCancellationFullRefund = true,
             RequiredStatusType? prepayment = null,
             bool requiresAttendeeValidation = false,
             decimal locationLat = 0.1m,
@@ -1363,7 +1378,8 @@ namespace OpenActive.FakeDatabase.NET
                     LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
                         ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
                         : (TimeSpan?)null,
-                    RequiresAttendeeValidation = requiresAttendeeValidation
+                    RequiresAttendeeValidation = requiresAttendeeValidation,
+                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund
                 };
                 db.Save(slot);
 

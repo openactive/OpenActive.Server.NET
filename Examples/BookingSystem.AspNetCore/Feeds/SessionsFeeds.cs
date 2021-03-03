@@ -155,7 +155,8 @@ namespace BookingSystem
                                     OpenBookingFlowRequirement = OpenBookingFlowRequirement(result.Item1),
                                     ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = result.Item1.LatestCancellationBeforeStartDate,
-                                    Prepayment = result.Item1.Prepayment.Convert()
+                                    Prepayment = result.Item1.Prepayment.Convert(),
+                                    AllowCustomerCancellationFullRefund = result.Item1.AllowCustomerCancellationFullRefund
                                 }
                             },
                             Location = new Place
