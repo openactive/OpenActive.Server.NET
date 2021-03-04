@@ -247,7 +247,6 @@ namespace BookingSystem
                              {
                                  OrderItem = new OrderItem
                                  {
-                                     AllowCustomerCancellationFullRefund = true,
                                      // TODO: The static example below should come from the database (which doesn't currently support tax)
                                      UnitTaxSpecification = GetUnitTaxSpecification(flowContext, slot),
                                      AcceptedOffer = new Offer
@@ -258,7 +257,8 @@ namespace BookingSystem
                                          PriceCurrency = "GBP",
                                          LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
                                          Prepayment = slot.Prepayment.Convert(),
-                                         ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate
+                                         ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate,
+                                         AllowCustomerCancellationFullRefund = true,
                                      },
                                      OrderedItem = new Slot
                                      {

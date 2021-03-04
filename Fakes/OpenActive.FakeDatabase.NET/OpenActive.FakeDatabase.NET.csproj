@@ -31,8 +31,9 @@
   <ItemGroup>
     <PackageReference Include="Bogus" Version="33.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Core" Version="5.10.4" />
+    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Core" Version="5.9.2" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="OpenActive.NET" Version="12.7.21" />
   </ItemGroup>
 
   <PropertyGroup>
