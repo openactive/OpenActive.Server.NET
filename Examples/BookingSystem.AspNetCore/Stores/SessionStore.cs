@@ -177,6 +177,15 @@ namespace BookingSystem
                                 10,
                                 requiresAttendeeValidation: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                10M,
+                                10,
+                                allowCustomerCancellationFullRefund: false);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }

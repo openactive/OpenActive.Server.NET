@@ -179,7 +179,8 @@ namespace BookingSystem
                                     OpenBookingFlowRequirement = OpenBookingFlowRequirement(x),
                                     ValidFromBeforeStartDate = x.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = x.LatestCancellationBeforeStartDate,
-                                    Prepayment = x.Prepayment.Convert()
+                                    Prepayment = x.Prepayment.Convert(),
+                                    AllowCustomerCancellationFullRefund = x.AllowCustomerCancellationFullRefund,
                                 }
                             },
                     }
