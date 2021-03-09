@@ -267,7 +267,7 @@ namespace BookingSystem
                                          LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
                                          Prepayment = slot.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate,
-                                         AllowCustomerCancellationFullRefund = true,
+                                         AllowCustomerCancellationFullRefund = slot.AllowCustomerCancellationFullRefund,
                                      },
                                      OrderedItem = new Slot
                                      {
