@@ -269,7 +269,7 @@ namespace BookingSystem
                                          LatestCancellationBeforeStartDate = classes.LatestCancellationBeforeStartDate,
                                          Prepayment = classes.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate,
-                                         AllowCustomerCancellationFullRefund = true,
+                                         AllowCustomerCancellationFullRefund = classes.AllowCustomerCancellationFullRefund,
                                      },
                                      OrderedItem = new ScheduledSession
                                      {
