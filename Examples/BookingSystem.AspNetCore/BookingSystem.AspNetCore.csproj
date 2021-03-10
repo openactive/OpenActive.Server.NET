@@ -1,28 +1,25 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
-  <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-    <UserSecretsId>aspnet-BookingSystem.AspNetCore-443B4F82-A20C-41CE-9924-329A0BCF0D14</UserSecretsId>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="IdentityServer4" Version="2.5.3" />
-    <PackageReference Include="Microsoft.AspNetCore.App">
-      <PrivateAssets Condition="'%(PackageReference.Version)' == ''">all</PrivateAssets>
-      <Publish Condition="'%(PackageReference.Version)' == ''">true</Publish>
-    </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureADB2C.UI" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
-    <PackageReference Include="OpenActive.NET" Version="12.7.13" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\Fakes\OpenActive.FakeDatabase.NET\OpenActive.FakeDatabase.NET.csproj" />
-    <ProjectReference Include="..\..\OpenActive.Server.NET\OpenActive.Server.NET.csproj" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
-
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <UserSecretsId>aspnet-BookingSystem.AspNetCore-443B4F82-A20C-41CE-9924-329A0BCF0D14</UserSecretsId>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="IdentityServer4" Version="2.5.3" />
+        <PackageReference Include="Microsoft.AspNetCore.App">
+            <PrivateAssets Condition="'%(PackageReference.Version)' == ''">all</PrivateAssets>
+            <Publish Condition="'%(PackageReference.Version)' == ''">true</Publish>
+        </PackageReference>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureADB2C.UI" Version="2.1.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
+        <PackageReference Include="OpenActive.NET" Version="12.7.21" />
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\Fakes\OpenActive.FakeDatabase.NET\OpenActive.FakeDatabase.NET.csproj" />
+        <ProjectReference Include="..\..\OpenActive.Server.NET\OpenActive.Server.NET.csproj" />
+    </ItemGroup>
+    <PropertyGroup>
+        <NoWarn>1701;1702;1591</NoWarn>
+    </PropertyGroup>
 </Project>

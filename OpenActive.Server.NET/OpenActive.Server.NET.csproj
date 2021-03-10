@@ -1,42 +1,40 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
-    <Authors>OpenActive Community</Authors>
-    <Company>OpenActive</Company>
-    <Copyright>OpenActive</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/openactive/OpenActive.Server.NET</PackageProjectUrl>
-    <PackageIconUrl>https://www.openactive.io/assets/openactive-icon-64x64.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/openactive/OpenActive.Server.NET</RepositoryUrl>
-    <PackageTags>OpenActive booking</PackageTags>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.10.0</Version>
-    <Description>.NET server library for OpenActive implementation</Description>
-    <PackageId>OpenActive.Server.NET</PackageId>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DefineConstants>TRACE</DefineConstants>
-    <DebugType>portable</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\OpenActive.Server.NET.xml</DocumentationFile>
-    <OutputPath></OutputPath>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.7">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="OpenActive.DatasetSite.NET" Version="4.0.1" />
-    <PackageReference Include="OpenActive.NET" Version="12.7.13" />
-    <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
-
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+        <Authors>OpenActive Community</Authors>
+        <Company>OpenActive</Company>
+        <Copyright>OpenActive</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/openactive/OpenActive.Server.NET</PackageProjectUrl>
+        <PackageIconUrl>https://www.openactive.io/assets/openactive-icon-64x64.png</PackageIconUrl>
+        <RepositoryUrl>https://github.com/openactive/OpenActive.Server.NET</RepositoryUrl>
+        <PackageTags>OpenActive booking</PackageTags>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>0.10.0</Version>
+        <Description>.NET server library for OpenActive implementation</Description>
+        <PackageId>OpenActive.Server.NET</PackageId>
+    </PropertyGroup>
+    <PropertyGroup>
+        <DefineConstants>TRACE</DefineConstants>
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\OpenActive.Server.NET.xml</DocumentationFile>
+        <OutputPath>
+        </OutputPath>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="OpenActive.DatasetSite.NET" Version="4.0.2" />
+        <PackageReference Include="OpenActive.NET" Version="12.7.21" />
+        <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    </ItemGroup>
+    <PropertyGroup>
+        <NoWarn>1701;1702;1591</NoWarn>
+    </PropertyGroup>
 </Project>
