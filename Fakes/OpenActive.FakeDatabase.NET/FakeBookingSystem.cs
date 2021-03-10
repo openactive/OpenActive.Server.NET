@@ -12,7 +12,7 @@ namespace OpenActive.FakeDatabase.NET
 {
     /// <summary>
     /// This class models the database schema within an actual booking system.
-    /// It is designed to simulate the database that would be available in a full implementation.
+    /// It is designed to simulate the database that woFuld be available in a full implementation.
     /// </summary>
     public static class FakeBookingSystem
     {
@@ -361,7 +361,7 @@ namespace OpenActive.FakeDatabase.NET
                             {
                                 orderItem.MeetingUrl = new Uri(Faker.Internet.Url());
                                 orderItem.MeetingId = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
-                                orderItem.Password = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                                orderItem.MeetingPassword = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
                             }
 
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
@@ -648,7 +648,8 @@ namespace OpenActive.FakeDatabase.NET
             public string BarCodeText { get; set; }
             public Uri MeetingUrl { get; set; }
             public string MeetingId { get; set; }
-            public string Password { get; set; }
+            public string MeetingPassword { get; set; }
+            public AttendanceMode AttendanceMode { get; set; }
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
@@ -707,7 +708,7 @@ namespace OpenActive.FakeDatabase.NET
                     BarCodeText = thisClass.AttendanceMode != AttendanceMode.Online ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
                     MeetingUrl = thisClass.AttendanceMode != AttendanceMode.Offline ? new Uri(Faker.Internet.Url()) : null,
                     MeetingId = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
-                    Password = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null
+                    MeetingPassword = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null
                 };
                 db.Save(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
@@ -717,7 +718,8 @@ namespace OpenActive.FakeDatabase.NET
                     ImageUrl = orderItem.ImageUrl,
                     BarCodeText = orderItem.BarCodeText,
                     MeetingId = orderItem.MeetingId,
-                    Password = orderItem.Password
+                    MeetingPassword = orderItem.MeetingPassword,
+                    AttendanceMode = thisClass.AttendanceMode,
                 });
             }
 

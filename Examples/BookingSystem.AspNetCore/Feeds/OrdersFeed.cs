@@ -63,7 +63,7 @@ namespace BookingSystem
                                         Name = "Zoom Video Chat",
                                         Url = orderItem.MeetingUrl,
                                         AccessId = orderItem.MeetingId,
-                                        AccessCode = orderItem.Password,
+                                        AccessCode = orderItem.MeetingPassword,
                                         Description = "Please log into Zoom a few minutes before the event"
                                     } : null,
                                     AccessCode = orderItem.PinCode != null ? new List<PropertyValue>

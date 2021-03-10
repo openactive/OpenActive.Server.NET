@@ -186,6 +186,15 @@ namespace BookingSystem
                                 10,
                                 isOnlineOrMixedAttendanceMode: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                10M,
+                                10,
+                                allowCustomerCancellationFullRefund: false);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -269,7 +278,7 @@ namespace BookingSystem
                                          LatestCancellationBeforeStartDate = classes.LatestCancellationBeforeStartDate,
                                          Prepayment = classes.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate,
-                                         AllowCustomerCancellationFullRefund = true,
+                                         AllowCustomerCancellationFullRefund = classes.AllowCustomerCancellationFullRefund,
                                      },
                                      OrderedItem = new ScheduledSession
                                      {
@@ -477,22 +486,20 @@ namespace BookingSystem
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
                             // Setting the access code and access pass after booking.
                             // If online session, add accessChannel
-                            if (ctx.ResponseOrderItem.OrderedItem.EventAttendanceMode == EventAttendanceModeEnumeration.OnlineEventAttendanceMode
-                                || ctx.ResponseOrderItem.OrderedItem.EventAttendanceMode == EventAttendanceModeEnumeration.MixedEventAttendanceMode)
+                            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Online || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
                             {
                                 ctx.ResponseOrderItem.AccessChannel = new VirtualLocation()
                                 {
                                     Name = "Zoom Video Chat",
                                     Url = bookedOrderItemInfo.MeetingUrl,
                                     AccessId = bookedOrderItemInfo.MeetingId,
-                                    AccessCode = bookedOrderItemInfo.Password,
+                                    AccessCode = bookedOrderItemInfo.MeetingPassword,
                                     Description = "Please log into Zoom a few minutes before the event"
                                 };
                             }
 
                             // If offline session, add accessCode and accessPass
-                            if (ctx.ResponseOrderItem.OrderedItem.EventAttendanceMode == EventAttendanceModeEnumeration.OfflineEventAttendanceMode
-                                || ctx.ResponseOrderItem.OrderedItem.EventAttendanceMode == EventAttendanceModeEnumeration.MixedEventAttendanceMode)
+                            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
                             {
                                 ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                                 {

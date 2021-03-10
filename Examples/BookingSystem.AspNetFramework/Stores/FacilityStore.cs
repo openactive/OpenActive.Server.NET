@@ -177,6 +177,15 @@ namespace BookingSystem
                                 10,
                                 requiresAttendeeValidation: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                10M,
+                                10,
+                                allowCustomerCancellationFullRefund: false);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -258,7 +267,7 @@ namespace BookingSystem
                                          LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
                                          Prepayment = slot.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate,
-                                         AllowCustomerCancellationFullRefund = true,
+                                         AllowCustomerCancellationFullRefund = slot.AllowCustomerCancellationFullRefund,
                                      },
                                      OrderedItem = new Slot
                                      {

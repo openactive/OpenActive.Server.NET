@@ -88,7 +88,7 @@ namespace OpenActive.FakeDatabase.NET
         public string CustomerNotice { get; set; }
         public Uri MeetingUrl { get; set; }
         public string MeetingId { get; set; }
-        public string Password { get; set; }
+        public string MeetingPassword { get; set; }
     }
 
     [CompositeIndex(nameof(Modified), nameof(OrderId))]
