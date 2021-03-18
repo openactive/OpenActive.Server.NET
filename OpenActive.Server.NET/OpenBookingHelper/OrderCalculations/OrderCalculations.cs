@@ -119,7 +119,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
 
             // If compatible, return the sum
-            return new TaxChargeSpecification {
+            return new TaxChargeSpecification
+            {
                 Name = x.Name,
                 Price = x.Price + y.Price,
                 PriceCurrency = x.PriceCurrency,
@@ -146,14 +147,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 if (!(orderedItem.Error?.Count > 0))
                 {
                     // Keep track of total price
-                    totalPaymentDuePrice += orderedItem.AcceptedOffer.Price ?? 0;
+                    totalPaymentDuePrice += orderedItem.AcceptedOffer.Object.Price ?? 0;
 
                     // Set currency based on first item
                     if (totalPaymentDueCurrency == null)
                     {
-                        totalPaymentDueCurrency = orderedItem.AcceptedOffer.PriceCurrency;
+                        totalPaymentDueCurrency = orderedItem.AcceptedOffer.Object.PriceCurrency;
                     }
-                    else if (totalPaymentDueCurrency != orderedItem.AcceptedOffer.PriceCurrency)
+                    else if (totalPaymentDueCurrency != orderedItem.AcceptedOffer.Object.PriceCurrency)
                     {
                         throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "All currencies in an Order must match");
                     }
@@ -193,7 +194,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
 
             // If we're in Net taxMode, tax must be added to get the total price
-            if (order.Seller.TaxMode == TaxMode.TaxNet)
+            if (order.Seller.Object.TaxMode == TaxMode.TaxNet)
             {
                 totalPaymentDuePrice += order.TotalPaymentTax.Sum(x => x.Price ?? 0);
             }
@@ -208,18 +209,18 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         private static RequiredStatusType? GetRequiredStatusType(IReadOnlyCollection<OrderItem> orderItems)
         {
-            if (orderItems.Any(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Required ||
-                                             x.AcceptedOffer.Price != 0 && x.AcceptedOffer.Prepayment == null))
+            if (orderItems.Any(x => x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Required ||
+                                             x.AcceptedOffer.Object.Price != 0 && x.AcceptedOffer.Object.Prepayment == null))
                 return RequiredStatusType.Required;
 
-            if (orderItems.Any(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Optional) &&
-                orderItems.All(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Optional ||
-                                             x.AcceptedOffer.Prepayment == RequiredStatusType.Unavailable ||
-                                             x.AcceptedOffer.Price == 0 && x.AcceptedOffer.Prepayment == null))
+            if (orderItems.Any(x => x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Optional) &&
+                orderItems.All(x => x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Optional ||
+                                             x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Unavailable ||
+                                             x.AcceptedOffer.Object.Price == 0 && x.AcceptedOffer.Object.Prepayment == null))
                 return RequiredStatusType.Optional;
 
-            if (orderItems.All(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Unavailable ||
-                                             x.AcceptedOffer.Price == 0))
+            if (orderItems.All(x => x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Unavailable ||
+                                             x.AcceptedOffer.Object.Price == 0))
                 return RequiredStatusType.Unavailable;
 
             return null;

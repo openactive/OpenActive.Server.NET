@@ -387,7 +387,7 @@ namespace BookingSystem
                     }).ToList());
 
                 // These additional properties that are only available in the Order Status endpoint
-                o.Seller = seller;
+                o.Seller = new ReferenceValue<ILegalEntity>(seller);
 
                 // Todo take these from database (and check whether Customer should be included from a GDPR point of view?!)
                 o.BrokerRole = BrokerType.AgentBroker;

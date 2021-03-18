@@ -349,7 +349,7 @@ namespace BookingSystem
                         if (item.RequiresApproval)
                             ctx.SetRequiresApproval();
 
-                        if (((Slot)item.OrderItem.OrderedItem).RemainingUses == 0)
+                        if (((Slot)item.OrderItem.OrderedItem.Object).RemainingUses == 0)
                             ctx.AddError(new OpportunityIsFullError());
                     }
                 }

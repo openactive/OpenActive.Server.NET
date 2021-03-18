@@ -360,7 +360,7 @@ namespace BookingSystem
                         if (item.RequiresApproval)
                             ctx.SetRequiresApproval();
 
-                        if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
+                        if (item.OrderItem.OrderedItem.Object.RemainingAttendeeCapacity == 0)
                             ctx.AddError(new OpportunityIsFullError());
                     }
                 }
