@@ -352,7 +352,7 @@ namespace BookingSystem
         {
             var o = CreateOrderFromOrderMode(order.OrderMode, orderId, order.ProposalVersionId, order.ProposalStatus);
             o.Id = orderId;
-            o.Identifier = order.OrderId;
+            o.Identifier = new Guid(order.OrderId);
             o.TotalPaymentDue = new PriceSpecification
             {
                 Price = order.TotalOrderPrice,
