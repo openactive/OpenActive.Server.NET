@@ -22,13 +22,17 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             PersonAttributes = attributes.ToDictionary(t => t.name, t => t.property);
         }
 
-        public static void ValidateAttendeeDetails(OrderItem requestOrderItem, OrderItem responseOrderItem)
+        public static IncompleteAttendeeDetailsError ValidateAttendeeDetails(OrderItem responseOrderItem, FlowStage flowStage)
         {
+            // Validation is needed for C2, B, and P
+            if (flowStage == FlowStage.C1)
+                return null;
+
             if (responseOrderItem?.AttendeeDetailsRequired == null)
-                return;
+                return null;
 
             if (responseOrderItem.Attendee == null)
-                throw new OpenBookingException(new IncompleteAttendeeDetailsError());
+                return new IncompleteAttendeeDetailsError();
 
             var values = (from uri in responseOrderItem.AttendeeDetailsRequired
                           let name = uri.ToString().Split('/').Last()
@@ -37,29 +41,55 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                           select value).ToArray();
 
             if (values.Length != responseOrderItem.AttendeeDetailsRequired.Count || values.Any(v => v == null))
-                throw new OpenBookingException(new IncompleteAttendeeDetailsError());
+                return new IncompleteAttendeeDetailsError();
+
+            return null;
         }
 
-        public static void ValidateAdditionalDetails(OrderItem requestOrderItem, OrderItem responseOrderItem)
+        public static List<OpenBookingError> ValidateAdditionalDetails(OrderItem responseOrderItem, FlowStage flowStage)
         {
+            var validationErrorArray = new List<OpenBookingError>();
+            // Validation is needed for C2, B, and P
+            if (flowStage == FlowStage.C1)
+                return validationErrorArray;
+
             var properties = responseOrderItem?.OrderItemIntakeForm;
             if (properties == null)
-                return;
+                return validationErrorArray;
 
             var values = responseOrderItem.OrderItemIntakeFormResponse;
-            if (values == null)
-                throw new OpenBookingException(new IncompleteAttendeeDetailsError());
 
             foreach (var property in properties)
             {
+                var required = property.ValueRequired ?? false;
+                if (required && values == null)
+                {
+                    var error = new IncompleteIntakeFormError();
+                    error.Instance = property.Id;
+                    error.Description = "Incomplete additional details supplied";
+                    validationErrorArray.Add(error);
+                    continue;
+                }
+
                 var correspondingValues = values.Where(value => value.PropertyID == property.Id).ToArray();
                 if (correspondingValues.Length > 1)
-                    throw new OpenBookingException(new InvalidIntakeFormError());
+                {
+                    var error = new InvalidIntakeFormError();
+                    error.Instance = property.Id;
+                    error.Description = $"More than one Response provided for {property.Id}";
+                    validationErrorArray.Add(error);
+                    continue;
+                }
 
                 var correspondingValue = correspondingValues.SingleOrDefault();
-                var required = string.Equals(property.ValueRequired, "true", StringComparison.OrdinalIgnoreCase);
                 if (required && correspondingValue == null)
-                    throw new OpenBookingException(new IncompleteAttendeeDetailsError());
+                {
+                    var error = new IncompleteIntakeFormError();
+                    error.Instance = property.Id;
+                    error.Description = "Incomplete additional details supplied";
+                    validationErrorArray.Add(error);
+                    continue;
+                }
 
                 if (!required && correspondingValue == null)
                     continue;
@@ -67,11 +97,32 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 switch (property.Type)
                 {
                     case "DropdownFormFieldSpecification" when !((DropdownFormFieldSpecification)property).ValueOption.Contains(correspondingValue.Value.Value):
-                        throw new OpenBookingException(new InvalidIntakeFormError());
-                    case "BooleanFormFieldSpecification" when !bool.TryParse((string)correspondingValue.Value.Value, out _):
-                        throw new OpenBookingException(new InvalidIntakeFormError());
+                        {
+                            var error = new InvalidIntakeFormError();
+                            error.Instance = property.Id;
+                            error.Description = "Value provided is not one of ValueOptions provided";
+                            validationErrorArray.Add(error);
+                            break;
+                        }
+                    case "BooleanFormFieldSpecification" when !correspondingValue.Value.HasValueOfType<bool?>():
+                        {
+                            var error = new InvalidIntakeFormError();
+                            error.Instance = property.Id;
+                            error.Description = "Value provided is not a boolean";
+                            validationErrorArray.Add(error);
+                            break;
+                        }
+                    case "ShortAnswerFormFieldSpecification" when !correspondingValue.Value.HasValueOfType<string>():
+                        {
+                            var error = new InvalidIntakeFormError();
+                            error.Instance = property.Id;
+                            error.Description = "Value provided is not a string";
+                            validationErrorArray.Add(error);
+                        }
+                        break;
                 }
             }
+            return validationErrorArray;
         }
 
         public static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)

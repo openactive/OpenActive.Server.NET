@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using ServiceStack.DataAnnotations;
 using ServiceStack.OrmLite;
 
@@ -15,6 +16,8 @@ namespace OpenActive.FakeDatabase.NET
     public enum RequiredStatusType { Required, Optional, Unavailable }
 
     public enum AttendanceMode { Offline, Online, Mixed }
+
+    public enum AdditionalDetailTypes { Age, PhotoConsent, Experience, Gender }
 
     [CompositeIndex(nameof(Modified), nameof(Id))]
     public abstract class Table
@@ -37,6 +40,8 @@ namespace OpenActive.FakeDatabase.NET
         public decimal? Price { get; set; }
         public RequiredStatusType? Prepayment { get; set; }
         public bool RequiresAttendeeValidation { get; set; }
+        public bool RequiresAdditionalDetails { get; set; }
+        public List<AdditionalDetailTypes> RequiredAdditionalDetails { get; set; }
         public bool AllowCustomerCancellationFullRefund { get; set; }
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
@@ -142,6 +147,8 @@ namespace OpenActive.FakeDatabase.NET
         public RequiredStatusType? Prepayment { get; set; }
         public bool RequiresAttendeeValidation { get; set; }
         public bool RequiresApproval { get; set; }
+        public bool RequiresAdditionalDetails { get; set; }
+        public List<AdditionalDetailTypes> RequiredAdditionalDetails { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
         public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
     }

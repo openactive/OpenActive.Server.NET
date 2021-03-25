@@ -56,6 +56,13 @@ namespace OpenActive.Server.NET.StoreBooking
             ResponseOrderItem.Error.Add(openBookingError);
         }
 
+        public void AddErrors(List<OpenBookingError> openBookingErrors)
+        {
+            if (ResponseOrderItem == null) throw new NotSupportedException("AddErrors cannot be used before SetResponseOrderItem.");
+            if (ResponseOrderItem.Error == null) ResponseOrderItem.Error = new List<OpenBookingError>();
+            ResponseOrderItem.Error.AddRange(openBookingErrors);
+        }
+
         public void SetRequiresApproval()
         {
             RequiresApproval = true;
@@ -126,13 +133,20 @@ namespace OpenActive.Server.NET.StoreBooking
             ResponseOrderItem = item;
         }
 
-        public void ValidateDetails()
+        public List<OpenBookingError> ValidateDetails(FlowStage flowStage)
         {
             if (ResponseOrderItem == null)
                 throw new NotSupportedException("ValidateAttendeeDetails cannot be used before SetResponseOrderItem.");
 
-            OrderCalculations.ValidateAttendeeDetails(RequestOrderItem, ResponseOrderItem);
-            OrderCalculations.ValidateAdditionalDetails(RequestOrderItem, ResponseOrderItem);
+            var validationErrors = new List<OpenBookingError>();
+            var attendeeDetailsValidationResult = OrderCalculations.ValidateAttendeeDetails(ResponseOrderItem, flowStage);
+            if (attendeeDetailsValidationResult != null)
+                validationErrors.Add(attendeeDetailsValidationResult);
+
+            var additionalDetailsValidationResult = OrderCalculations.ValidateAdditionalDetails(ResponseOrderItem, flowStage);
+            validationErrors.AddRange(additionalDetailsValidationResult);
+
+            return validationErrors;
         }
     }
 

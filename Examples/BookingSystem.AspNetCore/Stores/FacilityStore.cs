@@ -8,6 +8,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
+using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem
 {
@@ -148,7 +149,7 @@ namespace BookingSystem
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 2,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Net",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Tax Net",
                                 14.99M,
                                 10);
                             break;
@@ -156,7 +157,7 @@ namespace BookingSystem
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 1,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Tax Gross",
                                 14.99M,
                                 10);
                             break;
@@ -164,7 +165,7 @@ namespace BookingSystem
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 1,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Seller Terms Of Service",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Facility With Seller Terms Of Service",
                                 14.99M,
                                 10);
                             break;
@@ -172,16 +173,25 @@ namespace BookingSystem
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 1,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event That Requires Attendee Details",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Facility That Requires Attendee Details",
                                 14.99M,
                                 10,
                                 requiresAttendeeValidation: true);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAdditionalDetails:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility That Requires Additional Details",
+                                10M,
+                                10,
+                                requiresAdditionalDetails: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Facility Paid That Does Not Allow Full Refund",
                                 10M,
                                 10,
                                 allowCustomerCancellationFullRefund: false);
@@ -327,8 +337,10 @@ namespace BookingSystem
                                             new Uri("https://schema.org/telephone")
                                         }
                                         : null,
-                                     OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
-                                     OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
+                                     OrderItemIntakeForm = slot.RequiresAdditionalDetails
+                                     ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(slot.RequiredAdditionalDetails)
+                                     : null,
+                                     OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse,
                                  },
                                  SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
                                  slot.RequiresApproval
@@ -351,13 +363,14 @@ namespace BookingSystem
 
                         if (((Slot)item.OrderItem.OrderedItem.Object).RemainingUses == 0)
                             ctx.AddError(new OpportunityIsFullError());
+
+                        // Add validation errors to the OrderItem if either attendee details or additional details are required but not provided
+                        var validationErrors = ctx.ValidateDetails(flowContext.Stage);
+                        if (validationErrors.Count > 0)
+                            ctx.AddErrors(validationErrors);
                     }
                 }
             }
-
-            // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
-            // and those provided in the requestOrderItem, as well as the order intake form response (if specified)
-            orderItemContexts.ForEach(ctx => ctx.ValidateDetails());
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)

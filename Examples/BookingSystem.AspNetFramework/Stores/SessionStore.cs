@@ -368,7 +368,7 @@ namespace BookingSystem
 
             // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
             // and those provided in the requestOrderItem, as well as the order intake form response (if specified)
-            orderItemContexts.ForEach(ctx => ctx.ValidateDetails());
+            orderItemContexts.ForEach(ctx => ctx.ValidateDetails(flowContext.Stage));
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
