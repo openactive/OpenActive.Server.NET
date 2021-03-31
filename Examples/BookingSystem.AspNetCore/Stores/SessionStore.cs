@@ -524,10 +524,18 @@ namespace BookingSystem
                                     }
                                 };
                             }
+                            // The request OrderItem can include an AccessPass if it is a Broker provided access pass
                             // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
                             var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
                             if (requestBarcodes?.Count > 0)
+                            {
+                                if (ctx.ResponseOrderItem.AccessPass == null)
+                                {
+                                    ctx.ResponseOrderItem.AccessPass = new List<ImageObject>();
+
+                                }
                                 ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
+                            }
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
