@@ -177,6 +177,15 @@ namespace BookingSystem
                                 10,
                                 requiresAttendeeValidation: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                10M,
+                                10,
+                                allowCustomerCancellationFullRefund: false);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -247,7 +256,6 @@ namespace BookingSystem
                              {
                                  OrderItem = new OrderItem
                                  {
-                                     AllowCustomerCancellationFullRefund = true,
                                      // TODO: The static example below should come from the database (which doesn't currently support tax)
                                      UnitTaxSpecification = GetUnitTaxSpecification(flowContext, slot),
                                      AcceptedOffer = new Offer
@@ -258,7 +266,8 @@ namespace BookingSystem
                                          PriceCurrency = "GBP",
                                          LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
                                          Prepayment = slot.Prepayment.Convert(),
-                                         ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate
+                                         ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate,
+                                         AllowCustomerCancellationFullRefund = slot.AllowCustomerCancellationFullRefund,
                                      },
                                      OrderedItem = new Slot
                                      {
