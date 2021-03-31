@@ -33,8 +33,6 @@ jobs:
         
     - name: Setup MSBuild path
       uses: microsoft/setup-msbuild@v1.0.2
-      with:
-        vs-version: "[16.4,16.9)"
     
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
