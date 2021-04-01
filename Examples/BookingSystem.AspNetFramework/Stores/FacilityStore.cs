@@ -196,6 +196,14 @@ namespace BookingSystem
                                 10,
                                 allowCustomerCancellationFullRefund: false);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Facility",
+                                10M,
+                                10);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
