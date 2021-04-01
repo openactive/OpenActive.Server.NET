@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         mode: ['random', 'controlled']
-        profile: ['all-features', 'single-seller', 'no-payment-reconciliation']
+        profile: ['all-features', 'single-seller', 'no-payment-reconciliation', 'no-auth']
         
     steps:
     - name: Checkout OpenActive.Server.NET
@@ -36,6 +36,7 @@ jobs:
       with:
         dotnet-version: 2.1.808
     - name: Setup .NET Core 3.0.103 for Authentication Authority Reference Implementation
+      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.0.103
@@ -46,16 +47,19 @@ jobs:
         node-version: 14.x
 
     - name: Install OpenActive.Server.NET dependencies
+      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
       run: dotnet restore ./server/
 
     - name: Build .NET Core Authentication Authority Reference Implementation
+      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-restore
     - name: Start .NET Core Authentication Authority Reference Implementation
+      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
       run: |
         dotnet run --project ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-build &
 
     - name: Build .NET Core Booking Server Reference Implementation
-      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' && '--no-restore' || '' }}
     - name: Start .NET Core Booking Server Reference Implementation
       run: |
         dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
@@ -63,6 +67,7 @@ jobs:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
 
     - name: Attempt to ping IdentityServer force it to initialise
+      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
       continue-on-error: true
       run: curl --insecure --show-error --silent --max-time 30 https://localhost:5003/.well-known/openid-configuration
 
@@ -99,74 +104,11 @@ jobs:
         publish_dir: ./publish
         force_orphan: true
         enable_jekyll: true
-        
-  no-auth:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        mode: ['random', 'controlled']
-
-    steps:
-    - name: Checkout OpenActive.Server.NET
-      uses: actions/checkout@v2
-      with:
-        path: server
-    - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
-      if: ${{ startsWith(github.head_ref, 'coverage/') }}
-      id: refs
-      run: echo "::set-output name=mirror_ref::${{ github.head_ref }}"
-    - name: Checkout OpenActive Test Suite ${{ steps.refs.outputs.mirror_ref }}
-      uses: actions/checkout@v2
-      with:
-        repository: openactive/openactive-test-suite
-        ref: ${{ steps.refs.outputs.mirror_ref }}
-        path: tests
-
-    - name: Setup .NET Core 2.1.808 for Booking Server Reference Implementation
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 2.1.808
-
-    - name: Setup Node.js 14.x
-      uses: actions/setup-node@v1
-      with:
-        node-version: 14.x
-
-    - name: Build .NET Core Booking Server Reference Implementation with dependencies
-      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release
-    - name: Start .NET Core Booking Server Reference Implementation
-      run: |
-        dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
-      env:
-        ASPNETCORE_ENVIRONMENT: no-auth
-    
-    - name: Install OpenActive Test Suite
-      run: npm install
-      working-directory: tests
-
-    - name: Run OpenActive Integration Tests in ${{ matrix.mode }} mode
-      run: npm start
-      env:
-        FORCE_COLOR: 1
-        NODE_CONFIG: |
-          { "outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
-        NODE_ENV: .example.no-auth
-        NODE_APP_INSTANCE: ci
-      working-directory: tests
-    - name: Upload test output for ${{ matrix.mode }} mode as artifact
-      uses: actions/upload-artifact@v2
-      if: ${{ success() || failure() }}
-      with:
-        name: test.${{ matrix.mode }}.no-auth
-        path: ./tests/output/
 
   deploy-reference-implementation:
     # Master branch only
     if: ${{ github.ref == 'refs/heads/master' }}
-    needs:
-      - suite
-      - no-auth
+    needs: suite
     runs-on: ubuntu-latest
     steps:
 
