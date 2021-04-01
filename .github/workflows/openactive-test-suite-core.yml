@@ -133,11 +133,8 @@ jobs:
       with:
         node-version: 14.x
 
-    - name: Install OpenActive.Server.NET dependencies
-      run: dotnet restore ./server/
-
-    - name: Build .NET Core Booking Server Reference Implementation
-      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
+    - name: Build .NET Core Booking Server Reference Implementation with dependencies
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release
     - name: Start .NET Core Booking Server Reference Implementation
       run: |
         dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
