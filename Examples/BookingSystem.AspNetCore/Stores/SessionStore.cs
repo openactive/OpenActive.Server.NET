@@ -181,10 +181,19 @@ namespace BookingSystem
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Virtual Event That Requires Attendee Details",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Virtual Event",
                                 10M,
                                 10,
                                 isOnlineOrMixedAttendanceMode: true);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Offline Event",
+                                10M,
+                                10,
+                                isOnlineOrMixedAttendanceMode: false);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
