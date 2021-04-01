@@ -181,10 +181,19 @@ namespace BookingSystem
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Virtual Event That Requires Attendee Details",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Virtual Event",
                                 10M,
                                 10,
                                 isOnlineOrMixedAttendanceMode: true);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Offline Event",
+                                10M,
+                                10,
+                                isOnlineOrMixedAttendanceMode: false);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -330,12 +339,12 @@ namespace BookingSystem
                                      },
                                      Attendee = orderItemContext.RequestOrderItem.Attendee,
                                      AttendeeDetailsRequired = classes.RequiresAttendeeValidation
-                                         ? new List<Uri>
+                                         ? new List<PropertyEnumeration>
                                          {
-                                             new Uri("https://schema.org/givenName"),
-                                             new Uri("https://schema.org/familyName"),
-                                             new Uri("https://schema.org/email"),
-                                             new Uri("https://schema.org/telephone")
+                                             PropertyEnumeration.GivenName,
+                                             PropertyEnumeration.FamilyName,
+                                             PropertyEnumeration.Email,
+                                             PropertyEnumeration.Telephone,
                                          }
                                          : null,
                                      OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
@@ -524,10 +533,18 @@ namespace BookingSystem
                                     }
                                 };
                             }
+                            // The request OrderItem can include an AccessPass if it is a Broker provided access pass
                             // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
                             var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
                             if (requestBarcodes?.Count > 0)
+                            {
+                                if (ctx.ResponseOrderItem.AccessPass == null)
+                                {
+                                    ctx.ResponseOrderItem.AccessPass = new List<ImageObject>();
+
+                                }
                                 ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
+                            }
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

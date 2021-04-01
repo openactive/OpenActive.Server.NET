@@ -57,7 +57,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                     throw new OpenBookingException(new InvalidIntakeFormError());
 
                 var correspondingValue = correspondingValues.SingleOrDefault();
-                var required = string.Equals(property.ValueRequired, "true", StringComparison.OrdinalIgnoreCase);
+                var required = property.ValueRequired ?? false;
                 if (required && correspondingValue == null)
                     throw new OpenBookingException(new IncompleteAttendeeDetailsError());
 

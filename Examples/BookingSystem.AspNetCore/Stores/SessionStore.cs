@@ -339,12 +339,12 @@ namespace BookingSystem
                                      },
                                      Attendee = orderItemContext.RequestOrderItem.Attendee,
                                      AttendeeDetailsRequired = classes.RequiresAttendeeValidation
-                                         ? new List<Uri>
+                                         ? new List<PropertyEnumeration>
                                          {
-                                             new Uri("https://schema.org/givenName"),
-                                             new Uri("https://schema.org/familyName"),
-                                             new Uri("https://schema.org/email"),
-                                             new Uri("https://schema.org/telephone")
+                                             PropertyEnumeration.GivenName,
+                                             PropertyEnumeration.FamilyName,
+                                             PropertyEnumeration.Email,
+                                             PropertyEnumeration.Telephone,
                                          }
                                          : null,
                                      OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
