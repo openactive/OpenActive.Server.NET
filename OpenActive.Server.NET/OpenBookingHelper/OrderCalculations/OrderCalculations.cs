@@ -62,7 +62,15 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
             foreach (var property in properties)
             {
-                var required = property.ValueRequired ?? false;
+                var required = false;
+                if (property.Type == "BooleanFormFieldSpecification")
+                {
+                    required = true;
+                }
+                else
+                {
+                    required = property.ValueRequired ?? false;
+                }
                 if (required && values == null)
                 {
                     var error = new IncompleteIntakeFormError();
