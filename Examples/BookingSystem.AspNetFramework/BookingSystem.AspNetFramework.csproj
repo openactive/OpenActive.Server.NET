@@ -464,6 +464,7 @@
     <Compile Include="Stores\SessionStore.cs" />
     <Compile Include="Utils\DependencyResolver.cs" />
     <Compile Include="Utils\ServiceConfig.cs" />
+    <Compile Include="Helpers\PropertyValueSpecificationHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />
