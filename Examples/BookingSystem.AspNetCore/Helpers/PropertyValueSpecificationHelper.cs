@@ -56,8 +56,7 @@ namespace BookingSystem.AspNetCore.Helpers
                             {
                                 Id = new Uri("https://example.com/photoconsent"),
                                 Name = "Photo Consent",
-                                Description = "Are you happy for us to include photos of you in our marketing materials?",
-                                ValueRequired = true
+                                Description = "Are you happy for us to include photos of you in our marketing materials?"
                             });
                         }
                         break;
