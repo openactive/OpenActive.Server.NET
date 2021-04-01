@@ -7,13 +7,14 @@ on:
     branches: [ master ]
 
 jobs:
-  openactive-test-suite:
+  suite:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
+        mode: ['random', 'controlled']
         profile: ['all-features', 'single-seller', 'no-payment-reconciliation']
-
+        
     steps:
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
@@ -69,47 +70,30 @@ jobs:
       run: npm install
       working-directory: tests
 
-    - name: Run OpenActive Integration Tests in Random Mode
+    - name: Run OpenActive Integration Tests in ${{ matrix.mode }} mode
       run: npm start
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          { "outputPath": "../../output/random/", "useRandomOpportunities": true, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
+          { "outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
       working-directory: tests
-    - name: Upload test output for Random Mode as artifact
+    - name: Upload test output for ${{ matrix.mode }} mode as artifact
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
       with:
-        name: test.random.${{ matrix.profile }}
-        path: ./tests/output/random/
+        name: test.${{ matrix.mode }}.${{ matrix.profile }}
+        path: ./tests/output/
 
-    - name: Run OpenActive Integration Tests in Controlled Mode
-      run: npm start
-      env:
-        FORCE_COLOR: 1
-        NODE_CONFIG: |
-          { "outputPath": "../../output/controlled/", "useRandomOpportunities": false, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }
-        NODE_ENV: .example.${{ matrix.profile }}
-        NODE_APP_INSTANCE: ci
-
-      working-directory: tests
-    - name: Upload test output for Controlled Mode as artifact
-      uses: actions/upload-artifact@v2
-      if: ${{ success() || failure() }}
-      with:
-        name: test.controlled.${{ matrix.profile }}
-        path: ./tests/output/controlled/
-
-    - name: Copy certificate for deployment to GitHub Pages (master branch for 'all-features' profile only)
+    - name: Copy certificate for deployment to GitHub Pages (master branch for 'all-features' profile in controlled mode only)
       run: |
         mkdir -p ./publish/certification/
-        cp ./tests/output/controlled/certification/* ./publish/certification/
-      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' }}
-    - name: Deploy certificate to GitHub Pages (master branch for multiple-sellers only)
+        cp ./tests/output/certification/* ./publish/certification/
+      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
+    - name: Deploy certificate to GitHub Pages (master branch for 'all-features' profile in controlled mode only)
       uses: peaceiris/actions-gh-pages@v3
-      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' }}
+      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./publish
@@ -119,7 +103,7 @@ jobs:
   deploy-reference-implementation:
     # Master branch only
     if: ${{ github.ref == 'refs/heads/master' }}
-    needs: openactive-test-suite
+    needs: suite
     runs-on: ubuntu-latest
     steps:
 
