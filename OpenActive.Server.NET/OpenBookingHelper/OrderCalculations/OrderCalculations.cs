@@ -34,8 +34,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             if (responseOrderItem.Attendee == null)
                 return new IncompleteAttendeeDetailsError();
 
-            var values = (from uri in responseOrderItem.AttendeeDetailsRequired
-                          let name = uri.ToString().Split('/').Last()
+            var values = (from namespacedName in responseOrderItem.AttendeeDetailsRequired
+                          let titleCasedName = namespacedName.ToString().Split('.').Last()
+                          let name = char.ToLowerInvariant(titleCasedName[0]) + titleCasedName.Substring(1)
                           let property = PersonAttributes[name]
                           let value = property.GetValue(responseOrderItem.Attendee)
                           select value).ToArray();
