@@ -58,7 +58,15 @@ namespace BookingSystem
                                         PriceCurrency = "GBP"
                                     },
                                     OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
-                                    AccessCode = new List<PropertyValue>
+                                    AccessChannel = orderItem.MeetingUrl != null ? new VirtualLocation()
+                                    {
+                                        Name = "Zoom Video Chat",
+                                        Url = orderItem.MeetingUrl,
+                                        AccessId = orderItem.MeetingId,
+                                        AccessCode = orderItem.MeetingPassword,
+                                        Description = "Please log into Zoom a few minutes before the event"
+                                    } : null,
+                                    AccessCode = orderItem.PinCode != null ? new List<PropertyValue>
                                     {
                                         new PropertyValue()
                                         {
@@ -66,8 +74,8 @@ namespace BookingSystem
                                             Description = orderItem.PinCode,
                                             Value = "defaultValue"
                                         }
-                                    },
-                                    AccessPass = new List<ImageObject>
+                                    } : null,
+                                    AccessPass = orderItem.BarCodeText != null ? new List<ImageObject>
                                     {
                                         new Barcode()
                                         {
@@ -75,7 +83,7 @@ namespace BookingSystem
                                             Text = orderItem.BarCodeText,
                                             CodeType = "code128"
                                         }
-                                    },
+                                    } : null,
                                     OrderItemStatus =
                                         orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
                                         orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
@@ -89,7 +97,7 @@ namespace BookingSystem
                     });
 
                 return query.ToList();
-            }  
+            }
         }
     }
 }

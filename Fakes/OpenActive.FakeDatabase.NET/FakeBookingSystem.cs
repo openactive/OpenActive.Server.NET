@@ -15,7 +15,7 @@ namespace OpenActive.FakeDatabase.NET
 {
     /// <summary>
     /// This class models the database schema within an actual booking system.
-    /// It is designed to simulate the database that would be available in a full implementation.
+    /// It is designed to simulate the database that woFuld be available in a full implementation.
     /// </summary>
     public static class FakeBookingSystem
     {
@@ -137,6 +137,7 @@ namespace OpenActive.FakeDatabase.NET
     public class FakeDatabase
     {
         private const float ProportionWithRequiresAttendeeValidation = 1f / 10;
+        private const float ProportionWithRequiresAdditionalDetails = 1f / 10;
 
         public readonly InMemorySQLite Mem = new InMemorySQLite();
 
@@ -370,9 +371,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false)
+        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false, bool updateAccessChannel = false)
         {
-            if (!updateAccessPass && !updateAccessCode)
+            if (!updateAccessPass && !updateAccessCode && !updateAccessChannel)
             {
                 return false;
             }
@@ -398,6 +399,13 @@ namespace OpenActive.FakeDatabase.NET
                             {
                                 orderItem.ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25);
                                 orderItem.BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                            }
+
+                            if (updateAccessChannel)
+                            {
+                                orderItem.MeetingUrl = new Uri(Faker.Internet.Url());
+                                orderItem.MeetingId = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                                orderItem.MeetingPassword = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
                             }
 
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
@@ -682,6 +690,10 @@ namespace OpenActive.FakeDatabase.NET
             public string PinCode { get; set; }
             public string ImageUrl { get; set; }
             public string BarCodeText { get; set; }
+            public Uri MeetingUrl { get; set; }
+            public string MeetingId { get; set; }
+            public string MeetingPassword { get; set; }
+            public AttendanceMode AttendanceMode { get; set; }
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
@@ -735,9 +747,12 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisClass.Price.Value,
-                    PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar: '9'),
-                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
-                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
+                    PinCode = thisClass.AttendanceMode != AttendanceMode.Online ? Faker.Random.String(length: 6, minChar: '0', maxChar: '9') : null,
+                    ImageUrl = thisClass.AttendanceMode != AttendanceMode.Online ? Faker.Image.PlaceholderUrl(width: 25, height: 25) : null,
+                    BarCodeText = thisClass.AttendanceMode != AttendanceMode.Online ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
+                    MeetingUrl = thisClass.AttendanceMode != AttendanceMode.Offline ? new Uri(Faker.Internet.Url()) : null,
+                    MeetingId = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
+                    MeetingPassword = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null
                 };
                 db.Save(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
@@ -745,7 +760,10 @@ namespace OpenActive.FakeDatabase.NET
                     OrderItemId = orderItem.Id,
                     PinCode = orderItem.PinCode,
                     ImageUrl = orderItem.ImageUrl,
-                    BarCodeText = orderItem.BarCodeText
+                    BarCodeText = orderItem.BarCodeText,
+                    MeetingId = orderItem.MeetingId,
+                    MeetingPassword = orderItem.MeetingPassword,
+                    AttendanceMode = thisClass.AttendanceMode,
                 });
             }
 
@@ -1222,25 +1240,32 @@ namespace OpenActive.FakeDatabase.NET
                         TotalUses = Faker.Random.Int(0, 8),
                         Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     })
-                    .Select(slot => new SlotTable
+                    .Select((slot) =>
                     {
-                        FacilityUseId = seed.Id,
-                        Id = slotId++,
-                        Deleted = false,
-                        Start = slot.StartDate,
-                        End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                        MaximumUses = slot.TotalUses,
-                        RemainingUses = slot.TotalUses,
-                        Price = slot.Price,
-                        Prepayment = slot.Price == 0
-                            ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
-                            : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
-                        RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
-                        RequiresApproval = Faker.Random.Bool(),
-                        ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
-                        LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
-                        AllowCustomerCancellationFullRefund = Faker.Random.Bool()
-                    })).SelectMany(os => os);
+                        var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
+                        return new SlotTable
+                        {
+                            FacilityUseId = seed.Id,
+                            Id = slotId++,
+                            Deleted = false,
+                            Start = slot.StartDate,
+                            End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                            MaximumUses = slot.TotalUses,
+                            RemainingUses = slot.TotalUses,
+                            Price = slot.Price,
+                            Prepayment = slot.Price == 0
+                                ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
+                                : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                            RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
+                            RequiresAdditionalDetails = requiresAdditionalDetails,
+                            RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
+                            RequiresApproval = Faker.Random.Bool(),
+                            ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
+                            LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
+                            AllowCustomerCancellationFullRefund = Faker.Random.Bool()
+                        };
+                    }
+                    )).SelectMany(os => os);
 
             db.InsertAll(facilities);
             db.InsertAll(slots);
@@ -1257,21 +1282,28 @@ namespace OpenActive.FakeDatabase.NET
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate()
                 })
-                .Select(@class => new ClassTable
+                .Select((@class) =>
                 {
-                    Id = @class.Id,
-                    Deleted = false,
-                    Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
-                    Price = @class.Price,
-                    Prepayment = @class.Price == 0
-                        ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
-                        : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
-                    RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
-                    RequiresApproval = Faker.Random.Bool(),
-                    LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
-                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
-                    ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
-                    AllowCustomerCancellationFullRefund = Faker.Random.Bool()
+                    var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
+                    return new ClassTable
+                    {
+                        Id = @class.Id,
+                        Deleted = false,
+                        Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
+                        Price = @class.Price,
+                        Prepayment = @class.Price == 0
+                            ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
+                            : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                        RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
+                        RequiresAdditionalDetails = requiresAdditionalDetails,
+                        RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
+                        RequiresApproval = Faker.Random.Bool(),
+                        LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
+                        SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
+                        ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
+                        AttendanceMode = Faker.PickRandom<AttendanceMode>(),
+                        AllowCustomerCancellationFullRefund = Faker.Random.Bool()
+                    };
                 })
                 .ToList();
 
@@ -1584,8 +1616,10 @@ namespace OpenActive.FakeDatabase.NET
             bool allowCustomerCancellationFullRefund = true,
             RequiredStatusType? prepayment = null,
             bool requiresAttendeeValidation = false,
+            bool requiresAdditionalDetails = false,
             decimal locationLat = 0.1m,
-            decimal locationLng = 0.1m)
+            decimal locationLng = 0.1m,
+            bool isOnlineOrMixedAttendanceMode = false)
 
         {
             var startTime = DateTime.Now.AddDays(1);
@@ -1610,9 +1644,13 @@ namespace OpenActive.FakeDatabase.NET
                         ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
                         : (TimeSpan?)null,
                     RequiresAttendeeValidation = requiresAttendeeValidation,
+                    RequiresAdditionalDetails = requiresAdditionalDetails,
+                    RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
                     LocationLat = locationLat,
                     LocationLng = locationLng,
+                    AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund
+
                 };
                 db.Save(@class);
 
@@ -1646,6 +1684,7 @@ namespace OpenActive.FakeDatabase.NET
             bool allowCustomerCancellationFullRefund = true,
             RequiredStatusType? prepayment = null,
             bool requiresAttendeeValidation = false,
+            bool requiresAdditionalDetails = false,
             decimal locationLat = 0.1m,
             decimal locationLng = 0.1m)
         {
@@ -1685,6 +1724,8 @@ namespace OpenActive.FakeDatabase.NET
                         ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
                         : (TimeSpan?)null,
                     RequiresAttendeeValidation = requiresAttendeeValidation,
+                    RequiresAdditionalDetails = requiresAdditionalDetails,
+                    RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund
                 };
                 db.Save(slot);
@@ -1777,6 +1818,11 @@ namespace OpenActive.FakeDatabase.NET
                 return null;
 
             return Faker.Random.Bool() ? TimeSpan.FromDays(1) : TimeSpan.FromHours(40);
+        }
+
+        private static List<AdditionalDetailTypes> PickRandomAdditionalDetails()
+        {
+            return new HashSet<AdditionalDetailTypes> { Faker.PickRandom<AdditionalDetailTypes>(), Faker.PickRandom<AdditionalDetailTypes>() }.ToList();
         }
     }
 }

@@ -179,7 +179,8 @@ namespace BookingSystem
                                     OpenBookingFlowRequirement = OpenBookingFlowRequirement(x),
                                     ValidFromBeforeStartDate = x.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = x.LatestCancellationBeforeStartDate,
-                                    Prepayment = x.Prepayment.Convert()
+                                    Prepayment = x.Prepayment.Convert(),
+                                    AllowCustomerCancellationFullRefund = x.AllowCustomerCancellationFullRefund,
                                 }
                             },
                     }
@@ -203,6 +204,12 @@ namespace BookingSystem
             {
                 openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
                 openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingAttendeeDetails);
+            }
+
+            if (slot.RequiresAdditionalDetails)
+            {
+                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
+                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingIntakeForm);
             }
 
             return openBookingFlowRequirement;

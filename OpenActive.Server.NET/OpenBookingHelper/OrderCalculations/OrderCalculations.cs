@@ -22,44 +22,83 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             PersonAttributes = attributes.ToDictionary(t => t.name, t => t.property);
         }
 
-        public static void ValidateAttendeeDetails(OrderItem requestOrderItem, OrderItem responseOrderItem)
+        public static IncompleteAttendeeDetailsError ValidateAttendeeDetails(OrderItem responseOrderItem, FlowStage flowStage)
         {
+            // Validation is needed for C2, B, and P
+            if (flowStage == FlowStage.C1)
+                return null;
+
             if (responseOrderItem?.AttendeeDetailsRequired == null)
-                return;
+                return null;
 
             if (responseOrderItem.Attendee == null)
-                throw new OpenBookingException(new IncompleteAttendeeDetailsError());
+                return new IncompleteAttendeeDetailsError();
 
-            var values = (from uri in responseOrderItem.AttendeeDetailsRequired
-                          let name = uri.ToString().Split('/').Last()
+            var values = (from namespacedName in responseOrderItem.AttendeeDetailsRequired
+                          let titleCasedName = namespacedName.ToString().Split('.').Last()
+                          let name = char.ToLowerInvariant(titleCasedName[0]) + titleCasedName.Substring(1)
                           let property = PersonAttributes[name]
                           let value = property.GetValue(responseOrderItem.Attendee)
                           select value).ToArray();
 
             if (values.Length != responseOrderItem.AttendeeDetailsRequired.Count || values.Any(v => v == null))
-                throw new OpenBookingException(new IncompleteAttendeeDetailsError());
+                return new IncompleteAttendeeDetailsError();
+
+            return null;
         }
 
-        public static void ValidateAdditionalDetails(OrderItem requestOrderItem, OrderItem responseOrderItem)
+        public static List<OpenBookingError> ValidateAdditionalDetails(OrderItem responseOrderItem, FlowStage flowStage)
         {
+            var validationErrorArray = new List<OpenBookingError>();
+            // Validation is needed for C2, B, and P
+            if (flowStage == FlowStage.C1)
+                return validationErrorArray;
+
             var properties = responseOrderItem?.OrderItemIntakeForm;
             if (properties == null)
-                return;
+                return validationErrorArray;
 
             var values = responseOrderItem.OrderItemIntakeFormResponse;
-            if (values == null)
-                throw new OpenBookingException(new IncompleteAttendeeDetailsError());
 
             foreach (var property in properties)
             {
+                var required = false;
+                if (property.Type == "BooleanFormFieldSpecification")
+                {
+                    required = true;
+                }
+                else
+                {
+                    required = property.ValueRequired ?? false;
+                }
+                if (required && values == null)
+                {
+                    var error = new IncompleteIntakeFormError();
+                    error.Instance = property.Id;
+                    error.Description = "Incomplete additional details supplied";
+                    validationErrorArray.Add(error);
+                    continue;
+                }
+
                 var correspondingValues = values.Where(value => value.PropertyID == property.Id).ToArray();
                 if (correspondingValues.Length > 1)
-                    throw new OpenBookingException(new InvalidIntakeFormError());
+                {
+                    var error = new InvalidIntakeFormError();
+                    error.Instance = property.Id;
+                    error.Description = $"More than one Response provided for {property.Id}";
+                    validationErrorArray.Add(error);
+                    continue;
+                }
 
                 var correspondingValue = correspondingValues.SingleOrDefault();
-                var required = string.Equals(property.ValueRequired, "true", StringComparison.OrdinalIgnoreCase);
                 if (required && correspondingValue == null)
-                    throw new OpenBookingException(new IncompleteAttendeeDetailsError());
+                {
+                    var error = new IncompleteIntakeFormError();
+                    error.Instance = property.Id;
+                    error.Description = "Incomplete additional details supplied";
+                    validationErrorArray.Add(error);
+                    continue;
+                }
 
                 if (!required && correspondingValue == null)
                     continue;
@@ -67,11 +106,32 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 switch (property.Type)
                 {
                     case "DropdownFormFieldSpecification" when !((DropdownFormFieldSpecification)property).ValueOption.Contains(correspondingValue.Value.Value):
-                        throw new OpenBookingException(new InvalidIntakeFormError());
-                    case "BooleanFormFieldSpecification" when !bool.TryParse((string)correspondingValue.Value.Value, out _):
-                        throw new OpenBookingException(new InvalidIntakeFormError());
+                        {
+                            var error = new InvalidIntakeFormError();
+                            error.Instance = property.Id;
+                            error.Description = "Value provided is not one of ValueOptions provided";
+                            validationErrorArray.Add(error);
+                            break;
+                        }
+                    case "BooleanFormFieldSpecification" when !correspondingValue.Value.HasValueOfType<bool?>():
+                        {
+                            var error = new InvalidIntakeFormError();
+                            error.Instance = property.Id;
+                            error.Description = "Value provided is not a boolean";
+                            validationErrorArray.Add(error);
+                            break;
+                        }
+                    case "ShortAnswerFormFieldSpecification" when !correspondingValue.Value.HasValueOfType<string>():
+                        {
+                            var error = new InvalidIntakeFormError();
+                            error.Instance = property.Id;
+                            error.Description = "Value provided is not a string";
+                            validationErrorArray.Add(error);
+                        }
+                        break;
                 }
             }
+            return validationErrorArray;
         }
 
         public static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)
@@ -119,7 +179,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
 
             // If compatible, return the sum
-            return new TaxChargeSpecification {
+            return new TaxChargeSpecification
+            {
                 Name = x.Name,
                 Price = x.Price + y.Price,
                 PriceCurrency = x.PriceCurrency,
@@ -146,14 +207,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 if (!(orderedItem.Error?.Count > 0))
                 {
                     // Keep track of total price
-                    totalPaymentDuePrice += orderedItem.AcceptedOffer.Price ?? 0;
+                    totalPaymentDuePrice += orderedItem.AcceptedOffer.Object.Price ?? 0;
 
                     // Set currency based on first item
                     if (totalPaymentDueCurrency == null)
                     {
-                        totalPaymentDueCurrency = orderedItem.AcceptedOffer.PriceCurrency;
+                        totalPaymentDueCurrency = orderedItem.AcceptedOffer.Object.PriceCurrency;
                     }
-                    else if (totalPaymentDueCurrency != orderedItem.AcceptedOffer.PriceCurrency)
+                    else if (totalPaymentDueCurrency != orderedItem.AcceptedOffer.Object.PriceCurrency)
                     {
                         throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "All currencies in an Order must match");
                     }
@@ -193,7 +254,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
 
             // If we're in Net taxMode, tax must be added to get the total price
-            if (order.Seller.TaxMode == TaxMode.TaxNet)
+            if (order.Seller.Object.TaxMode == TaxMode.TaxNet)
             {
                 totalPaymentDuePrice += order.TotalPaymentTax.Sum(x => x.Price ?? 0);
             }
@@ -208,18 +269,18 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         private static RequiredStatusType? GetRequiredStatusType(IReadOnlyCollection<OrderItem> orderItems)
         {
-            if (orderItems.Any(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Required ||
-                                             x.AcceptedOffer.Price != 0 && x.AcceptedOffer.Prepayment == null))
+            if (orderItems.Any(x => x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Required ||
+                                             x.AcceptedOffer.Object.Price != 0 && x.AcceptedOffer.Object.Prepayment == null))
                 return RequiredStatusType.Required;
 
-            if (orderItems.Any(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Optional) &&
-                orderItems.All(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Optional ||
-                                             x.AcceptedOffer.Prepayment == RequiredStatusType.Unavailable ||
-                                             x.AcceptedOffer.Price == 0 && x.AcceptedOffer.Prepayment == null))
+            if (orderItems.Any(x => x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Optional) &&
+                orderItems.All(x => x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Optional ||
+                                             x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Unavailable ||
+                                             x.AcceptedOffer.Object.Price == 0 && x.AcceptedOffer.Object.Prepayment == null))
                 return RequiredStatusType.Optional;
 
-            if (orderItems.All(x => x.AcceptedOffer.Prepayment == RequiredStatusType.Unavailable ||
-                                             x.AcceptedOffer.Price == 0))
+            if (orderItems.All(x => x.AcceptedOffer.Object.Prepayment == RequiredStatusType.Unavailable ||
+                                             x.AcceptedOffer.Object.Price == 0))
                 return RequiredStatusType.Unavailable;
 
             return null;

@@ -56,6 +56,13 @@ namespace OpenActive.Server.NET.StoreBooking
             ResponseOrderItem.Error.Add(openBookingError);
         }
 
+        public void AddErrors(List<OpenBookingError> openBookingErrors)
+        {
+            if (ResponseOrderItem == null) throw new NotSupportedException("AddErrors cannot be used before SetResponseOrderItem.");
+            if (ResponseOrderItem.Error == null) ResponseOrderItem.Error = new List<OpenBookingError>();
+            ResponseOrderItem.Error.AddRange(openBookingErrors);
+        }
+
         public void SetRequiresApproval()
         {
             RequiresApproval = true;
@@ -99,20 +106,20 @@ namespace OpenActive.Server.NET.StoreBooking
                 Position = RequestOrderItem?.Position,
                 AcceptedOffer = new Offer
                 {
-                    Id = RequestOrderItem?.AcceptedOffer?.Id
+                    Id = RequestOrderItem?.AcceptedOffer.Object?.Id
                 },
-                OrderedItem = OrderCalculations.RenderOpportunityWithOnlyId(RequestOrderItem?.OrderedItem?.Type, RequestOrderItem?.OrderedItem?.Id)
+                OrderedItem = OrderCalculations.RenderOpportunityWithOnlyId(RequestOrderItem?.OrderedItem.Object?.Type, RequestOrderItem?.OrderedItem.Object?.Id)
             };
         }
 
         public void SetResponseOrderItem(OrderItem item, SellerIdComponents sellerId, StoreBookingFlowContext flowContext)
         {
             if (item == null) throw new ArgumentNullException(nameof(item));
-            if (item?.OrderedItem?.Id != RequestOrderItem?.OrderedItem?.Id)
+            if (item?.OrderedItem.Object?.Id != RequestOrderItem?.OrderedItem.Object?.Id)
             {
                 throw new ArgumentException("The Opportunity ID within the response OrderItem must match the request OrderItem");
             }
-            if (item?.AcceptedOffer?.Id != RequestOrderItem?.AcceptedOffer?.Id)
+            if (item?.AcceptedOffer.Object?.Id != RequestOrderItem?.AcceptedOffer.Object?.Id)
             {
                 throw new ArgumentException("The Offer ID within the response OrderItem must match the request OrderItem");
             }
@@ -126,13 +133,20 @@ namespace OpenActive.Server.NET.StoreBooking
             ResponseOrderItem = item;
         }
 
-        public void ValidateDetails()
+        public List<OpenBookingError> ValidateDetails(FlowStage flowStage)
         {
             if (ResponseOrderItem == null)
                 throw new NotSupportedException("ValidateAttendeeDetails cannot be used before SetResponseOrderItem.");
 
-            OrderCalculations.ValidateAttendeeDetails(RequestOrderItem, ResponseOrderItem);
-            OrderCalculations.ValidateAdditionalDetails(RequestOrderItem, ResponseOrderItem);
+            var validationErrors = new List<OpenBookingError>();
+            var attendeeDetailsValidationResult = OrderCalculations.ValidateAttendeeDetails(ResponseOrderItem, flowStage);
+            if (attendeeDetailsValidationResult != null)
+                validationErrors.Add(attendeeDetailsValidationResult);
+
+            var additionalDetailsValidationResult = OrderCalculations.ValidateAdditionalDetails(ResponseOrderItem, flowStage);
+            validationErrors.AddRange(additionalDetailsValidationResult);
+
+            return validationErrors;
         }
     }
 
@@ -355,17 +369,17 @@ namespace OpenActive.Server.NET.StoreBooking
             var orderItemContexts = sourceOrderItems.Select((orderItem, index) =>
             {
                 // Error if this group of types is not recognised
-                if (!base.IsOpportunityTypeRecognised(orderItem.OrderedItem.Type))
+                if (!base.IsOpportunityTypeRecognised(orderItem.OrderedItem.Object.Type))
                 {
                     return new UnknownOrderItemContext(index, orderItem,
-                        new UnknownOpportunityError(), $"The type of opportunity specified is not recognised: '{orderItem.OrderedItem.Type}'.");
+                        new UnknownOpportunityError(), $"The type of opportunity specified is not recognised: '{orderItem.OrderedItem.Object.Type}'.");
                 }
 
-                var idComponents = base.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
+                var idComponents = base.ResolveOpportunityID(orderItem.OrderedItem.Object.Type, orderItem.OrderedItem.Object.Id, orderItem.AcceptedOffer.Object.Id);
                 if (idComponents == null)
                 {
                     return new UnknownOrderItemContext(index, orderItem,
-                        new InvalidOpportunityOrOfferIdError(), $"Opportunity and Offer ID pair are not in the expected format for a '{orderItem.OrderedItem.Type}': '{orderItem.OrderedItem.Id}' and '{orderItem.AcceptedOffer.Id}'");
+                        new InvalidOpportunityOrOfferIdError(), $"Opportunity and Offer ID pair are not in the expected format for a '{orderItem.OrderedItem.Object.Type}': '{orderItem.OrderedItem.Object.Id}' and '{orderItem.AcceptedOffer.Object.Id}'");
                 }
 
                 if (idComponents.OpportunityType == null)
@@ -411,7 +425,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Not all OrderItemContext have a ResponseOrderItem set. GetOrderItems must always call SetResponseOrderItem for each supplied OrderItemContext.");
                 }
 
-                if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem?.Error != null || (x.ResponseOrderItem?.AcceptedOffer?.Price != null && x.ResponseOrderItem?.AcceptedOffer?.PriceCurrency != null)))
+                if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem?.Error != null || (x.ResponseOrderItem?.AcceptedOffer.Object?.Price != null && x.ResponseOrderItem?.AcceptedOffer.Object?.PriceCurrency != null)))
                 {
                     throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Not all OrderItemContext have a ResponseOrderItem set with an AcceptedOffer containing both Price and PriceCurrency.");
                 }
@@ -464,7 +478,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
 
             // Throw error on Incomplete Order Item Error if OrderedItem or AcceptedOffer is null or their Urls don't match.
-            if ((context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2 || context.Stage == FlowStage.B) && order.OrderedItem.Any(orderItem => orderItem.OrderedItem == null || orderItem.AcceptedOffer == null || orderItem.OrderedItem.Url != orderItem.AcceptedOffer.Url))
+            if ((context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2 || context.Stage == FlowStage.B) && order.OrderedItem.Any(orderItem => orderItem.OrderedItem.Object == null || orderItem.AcceptedOffer.Object == null || orderItem.OrderedItem.Object.Url != orderItem.AcceptedOffer.Object.Url))
             {
                 throw new OpenBookingException(new IncompleteOrderItemError());
             }
@@ -509,7 +523,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 Id = context.OrderIdTemplate.RenderOrderId(context.OrderId),
                 BrokerRole = context.BrokerRole,
                 Broker = context.Broker,
-                Seller = context.Seller,
+                Seller = new ReferenceValue<ILegalEntity>(context.Seller),
                 Customer = context.Customer,
                 BookingService = context.BookingService,
                 Payment = context.Payment,
