@@ -8,6 +8,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
+using BookingSystem.AspNetFramework.Helpers;
 
 namespace BookingSystem
 {
@@ -177,6 +178,15 @@ namespace BookingSystem
                                 10,
                                 requiresAttendeeValidation: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAdditionalDetails:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Requires Additional Details",
+                                10M,
+                                10,
+                                requiresAdditionalDetails: true);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityOnlineBookable:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
@@ -199,7 +209,7 @@ namespace BookingSystem
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Does Not Allow Full Refund",
                                 10M,
                                 10,
                                 allowCustomerCancellationFullRefund: false);
@@ -347,7 +357,9 @@ namespace BookingSystem
                                              PropertyEnumeration.Telephone,
                                          }
                                          : null,
-                                     OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
+                                     OrderItemIntakeForm = classes.RequiresAdditionalDetails
+                                     ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(classes.RequiredAdditionalDetails)
+                                     : null,
                                      OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
                                  },
                                  SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
@@ -371,13 +383,14 @@ namespace BookingSystem
 
                         if (item.OrderItem.OrderedItem.Object.RemainingAttendeeCapacity == 0)
                             ctx.AddError(new OpportunityIsFullError());
+
+                        // Add validation errors to the OrderItem if either attendee details or additional details are required but not provided
+                        var validationErrors = ctx.ValidateDetails(flowContext.Stage);
+                        if (validationErrors.Count > 0)
+                            ctx.AddErrors(validationErrors);
                     }
                 }
             }
-
-            // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
-            // and those provided in the requestOrderItem, as well as the order intake form response (if specified)
-            orderItemContexts.ForEach(ctx => ctx.ValidateDetails(flowContext.Stage));
         }
 
         protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -533,7 +546,6 @@ namespace BookingSystem
                                     }
                                 };
                             }
-
                             // The request OrderItem can include an AccessPass if it is a Broker provided access pass
                             // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
                             var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
