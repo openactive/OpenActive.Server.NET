@@ -36,7 +36,7 @@ jobs:
       with:
         dotnet-version: 2.1.808
     - name: Setup .NET Core 3.0.103 for Authentication Authority Reference Implementation
-      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.0.103
@@ -47,19 +47,19 @@ jobs:
         node-version: 14.x
 
     - name: Install OpenActive.Server.NET dependencies
-      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: dotnet restore ./server/
 
     - name: Build .NET Core Authentication Authority Reference Implementation
-      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-restore
     - name: Start .NET Core Authentication Authority Reference Implementation
-      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: |
         dotnet run --project ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-build &
 
     - name: Build .NET Core Booking Server Reference Implementation
-      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' && '--no-restore' || '' }}
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' && '--no-restore' || '' }}
     - name: Start .NET Core Booking Server Reference Implementation
       run: |
         dotnet run --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
@@ -67,7 +67,7 @@ jobs:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
 
     - name: Attempt to ping IdentityServer force it to initialise
-      if: ${{ matrix.profile !== 'no-auth' && matrix.profile !== 'single-seller' }}
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       continue-on-error: true
       run: curl --insecure --show-error --silent --max-time 30 https://localhost:5003/.well-known/openid-configuration
 
