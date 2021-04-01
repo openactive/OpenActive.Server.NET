@@ -12,7 +12,7 @@ namespace OpenActive.FakeDatabase.NET
 {
     /// <summary>
     /// This class models the database schema within an actual booking system.
-    /// It is designed to simulate the database that would be available in a full implementation.
+    /// It is designed to simulate the database that woFuld be available in a full implementation.
     /// </summary>
     public static class FakeBookingSystem
     {
@@ -327,9 +327,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false)
+        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false, bool updateAccessChannel = false)
         {
-            if (!updateAccessPass && !updateAccessCode)
+            if (!updateAccessPass && !updateAccessCode && !updateAccessChannel)
             {
                 return false;
             }
@@ -355,6 +355,13 @@ namespace OpenActive.FakeDatabase.NET
                             {
                                 orderItem.ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25);
                                 orderItem.BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                            }
+
+                            if (updateAccessChannel)
+                            {
+                                orderItem.MeetingUrl = new Uri(Faker.Internet.Url());
+                                orderItem.MeetingId = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
+                                orderItem.MeetingPassword = Faker.Random.String(length: 10, minChar: '0', maxChar: '9');
                             }
 
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
@@ -639,6 +646,10 @@ namespace OpenActive.FakeDatabase.NET
             public string PinCode { get; set; }
             public string ImageUrl { get; set; }
             public string BarCodeText { get; set; }
+            public Uri MeetingUrl { get; set; }
+            public string MeetingId { get; set; }
+            public string MeetingPassword { get; set; }
+            public AttendanceMode AttendanceMode { get; set; }
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
@@ -692,9 +703,12 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisClass.Price.Value,
-                    PinCode = Faker.Random.String(length: 6, minChar: '0', maxChar: '9'),
-                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
-                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
+                    PinCode = thisClass.AttendanceMode != AttendanceMode.Online ? Faker.Random.String(length: 6, minChar: '0', maxChar: '9') : null,
+                    ImageUrl = thisClass.AttendanceMode != AttendanceMode.Online ? Faker.Image.PlaceholderUrl(width: 25, height: 25) : null,
+                    BarCodeText = thisClass.AttendanceMode != AttendanceMode.Online ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
+                    MeetingUrl = thisClass.AttendanceMode != AttendanceMode.Offline ? new Uri(Faker.Internet.Url()) : null,
+                    MeetingId = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
+                    MeetingPassword = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null
                 };
                 db.Save(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
@@ -702,7 +716,10 @@ namespace OpenActive.FakeDatabase.NET
                     OrderItemId = orderItem.Id,
                     PinCode = orderItem.PinCode,
                     ImageUrl = orderItem.ImageUrl,
-                    BarCodeText = orderItem.BarCodeText
+                    BarCodeText = orderItem.BarCodeText,
+                    MeetingId = orderItem.MeetingId,
+                    MeetingPassword = orderItem.MeetingPassword,
+                    AttendanceMode = thisClass.AttendanceMode,
                 });
             }
 
@@ -1225,6 +1242,7 @@ namespace OpenActive.FakeDatabase.NET
                     LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                     SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                     ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
+                    AttendanceMode = Faker.PickRandom<AttendanceMode>(),
                     AllowCustomerCancellationFullRefund = Faker.Random.Bool()
                 })
                 .ToList();
@@ -1279,7 +1297,8 @@ namespace OpenActive.FakeDatabase.NET
             RequiredStatusType? prepayment = null,
             bool requiresAttendeeValidation = false,
             decimal locationLat = 0.1m,
-            decimal locationLng = 0.1m)
+            decimal locationLng = 0.1m,
+            bool isOnlineOrMixedAttendanceMode = false)
 
         {
             var startTime = DateTime.Now.AddDays(1);
@@ -1306,7 +1325,9 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresAttendeeValidation = requiresAttendeeValidation,
                     LocationLat = locationLat,
                     LocationLng = locationLng,
+                    AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund
+
                 };
                 db.Save(@class);
 

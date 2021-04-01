@@ -14,6 +14,8 @@ namespace OpenActive.FakeDatabase.NET
 
     public enum RequiredStatusType { Required, Optional, Unavailable }
 
+    public enum AttendanceMode { Offline, Online, Mixed }
+
     [CompositeIndex(nameof(Modified), nameof(Id))]
     public abstract class Table
     {
@@ -41,6 +43,7 @@ namespace OpenActive.FakeDatabase.NET
         public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
         public decimal LocationLat { get; set; }
         public decimal LocationLng { get; set; }
+        public AttendanceMode AttendanceMode { get; set; }
     }
 
     public class OccurrenceTable : Table
@@ -83,6 +86,9 @@ namespace OpenActive.FakeDatabase.NET
         public string ImageUrl { get; set; }
         public string BarCodeText { get; set; }
         public string CustomerNotice { get; set; }
+        public Uri MeetingUrl { get; set; }
+        public string MeetingId { get; set; }
+        public string MeetingPassword { get; set; }
     }
 
     [CompositeIndex(nameof(Modified), nameof(OrderId))]

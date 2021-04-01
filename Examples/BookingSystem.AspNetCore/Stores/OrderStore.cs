@@ -147,6 +147,16 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
+                case AccessChannelUpdateSimulateAction _:
+                    if (idComponents.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.UpdateAccess(idComponents.uuid, updateAccessChannel: true))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
             }
         }
 
@@ -342,7 +352,7 @@ namespace BookingSystem
         {
             var o = CreateOrderFromOrderMode(order.OrderMode, orderId, order.ProposalVersionId, order.ProposalStatus);
             o.Id = orderId;
-            o.Identifier = order.OrderId;
+            o.Identifier = new Guid(order.OrderId);
             o.TotalPaymentDue = new PriceSpecification
             {
                 Price = order.TotalOrderPrice,
@@ -377,7 +387,7 @@ namespace BookingSystem
                     }).ToList());
 
                 // These additional properties that are only available in the Order Status endpoint
-                o.Seller = seller;
+                o.Seller = new ReferenceValue<ILegalEntity>(seller);
 
                 // Todo take these from database (and check whether Customer should be included from a GDPR point of view?!)
                 o.BrokerRole = BrokerType.AgentBroker;

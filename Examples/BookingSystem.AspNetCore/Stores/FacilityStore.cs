@@ -319,13 +319,13 @@ namespace BookingSystem
                                      },
                                      Attendee = orderItemContext.RequestOrderItem.Attendee,
                                      AttendeeDetailsRequired = slot.RequiresAttendeeValidation
-                                        ? new List<Uri>
-                                        {
-                                            new Uri("https://schema.org/givenName"),
-                                            new Uri("https://schema.org/familyName"),
-                                            new Uri("https://schema.org/email"),
-                                            new Uri("https://schema.org/telephone")
-                                        }
+                                        ? new List<PropertyEnumeration>
+                                         {
+                                             PropertyEnumeration.GivenName,
+                                             PropertyEnumeration.FamilyName,
+                                             PropertyEnumeration.Email,
+                                             PropertyEnumeration.Telephone,
+                                         }
                                         : null,
                                      OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
                                      OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
@@ -349,7 +349,7 @@ namespace BookingSystem
                         if (item.RequiresApproval)
                             ctx.SetRequiresApproval();
 
-                        if (((Slot)item.OrderItem.OrderedItem).RemainingUses == 0)
+                        if (((Slot)item.OrderItem.OrderedItem.Object).RemainingUses == 0)
                             ctx.AddError(new OpportunityIsFullError());
                     }
                 }

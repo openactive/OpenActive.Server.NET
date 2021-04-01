@@ -172,10 +172,28 @@ namespace BookingSystem
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Requires Attendee Details",
                                 10M,
                                 10,
                                 requiresAttendeeValidation: true);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOnlineBookable:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Virtual Event",
+                                10M,
+                                10,
+                                isOnlineOrMixedAttendanceMode: true);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Offline Event",
+                                10M,
+                                10,
+                                isOnlineOrMixedAttendanceMode: false);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -321,12 +339,12 @@ namespace BookingSystem
                                      },
                                      Attendee = orderItemContext.RequestOrderItem.Attendee,
                                      AttendeeDetailsRequired = classes.RequiresAttendeeValidation
-                                         ? new List<Uri>
+                                         ? new List<PropertyEnumeration>
                                          {
-                                             new Uri("https://schema.org/givenName"),
-                                             new Uri("https://schema.org/familyName"),
-                                             new Uri("https://schema.org/email"),
-                                             new Uri("https://schema.org/telephone")
+                                             PropertyEnumeration.GivenName,
+                                             PropertyEnumeration.FamilyName,
+                                             PropertyEnumeration.Email,
+                                             PropertyEnumeration.Telephone,
                                          }
                                          : null,
                                      OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
@@ -351,7 +369,7 @@ namespace BookingSystem
                         if (item.RequiresApproval)
                             ctx.SetRequiresApproval();
 
-                        if (item.OrderItem.OrderedItem.RemainingAttendeeCapacity == 0)
+                        if (item.OrderItem.OrderedItem.Object.RemainingAttendeeCapacity == 0)
                             ctx.AddError(new OpportunityIsFullError());
                     }
                 }
@@ -475,34 +493,58 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-
                             // Setting the access code and access pass after booking.
-                            ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
+                            // If online session, add accessChannel
+                            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Online || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
                             {
-                                new PropertyValue()
+                                ctx.ResponseOrderItem.AccessChannel = new VirtualLocation()
                                 {
-                                    Name = "Pin Code",
-                                    Description = bookedOrderItemInfo.PinCode,
-                                    Value = "defaultValue"
-                                }
-                            };
-                            ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
+                                    Name = "Zoom Video Chat",
+                                    Url = bookedOrderItemInfo.MeetingUrl,
+                                    AccessId = bookedOrderItemInfo.MeetingId,
+                                    AccessCode = bookedOrderItemInfo.MeetingPassword,
+                                    Description = "Please log into Zoom a few minutes before the event"
+                                };
+                            }
+
+                            // If offline session, add accessCode and accessPass
+                            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
                             {
-                                new ImageObject()
+                                ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
                                 {
-                                    Url = new Uri(bookedOrderItemInfo.ImageUrl)
-                                },
-                                new Barcode()
+                                    new PropertyValue()
+                                    {
+                                        Name = "Pin Code",
+                                        Description = bookedOrderItemInfo.PinCode,
+                                        Value = "defaultValue"
+                                    }
+                                };
+                                ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
                                 {
-                                    Url = new Uri(bookedOrderItemInfo.ImageUrl),
-                                    Text = bookedOrderItemInfo.BarCodeText,
-                                    CodeType = "code128"
-                                }
-                            };
+                                    new ImageObject()
+                                    {
+                                        Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                                    },
+                                    new Barcode()
+                                    {
+                                        Url = new Uri(bookedOrderItemInfo.ImageUrl),
+                                        Text = bookedOrderItemInfo.BarCodeText,
+                                        CodeType = "code128"
+                                    }
+                                };
+                            }
+                            // The request OrderItem can include an AccessPass if it is a Broker provided access pass
                             // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
                             var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
                             if (requestBarcodes?.Count > 0)
+                            {
+                                if (ctx.ResponseOrderItem.AccessPass == null)
+                                {
+                                    ctx.ResponseOrderItem.AccessPass = new List<ImageObject>();
+
+                                }
                                 ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
+                            }
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

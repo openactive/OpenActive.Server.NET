@@ -177,6 +177,15 @@ namespace BookingSystem
                                 10,
                                 requiresAttendeeValidation: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Requires Attendee Details",
+                                10M,
+                                10,
+                                allowCustomerCancellationFullRefund: false);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -258,7 +267,7 @@ namespace BookingSystem
                                          LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
                                          Prepayment = slot.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate,
-                                         AllowCustomerCancellationFullRefund = true,
+                                         AllowCustomerCancellationFullRefund = slot.AllowCustomerCancellationFullRefund,
                                      },
                                      OrderedItem = new Slot
                                      {
@@ -310,13 +319,13 @@ namespace BookingSystem
                                      },
                                      Attendee = orderItemContext.RequestOrderItem.Attendee,
                                      AttendeeDetailsRequired = slot.RequiresAttendeeValidation
-                                        ? new List<Uri>
-                                        {
-                                            new Uri("https://schema.org/givenName"),
-                                            new Uri("https://schema.org/familyName"),
-                                            new Uri("https://schema.org/email"),
-                                            new Uri("https://schema.org/telephone")
-                                        }
+                                        ? new List<PropertyEnumeration>
+                                         {
+                                             PropertyEnumeration.GivenName,
+                                             PropertyEnumeration.FamilyName,
+                                             PropertyEnumeration.Email,
+                                             PropertyEnumeration.Telephone,
+                                         }
                                         : null,
                                      OrderItemIntakeForm = orderItemContext.RequestOrderItem.OrderItemIntakeForm,
                                      OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
@@ -340,7 +349,7 @@ namespace BookingSystem
                         if (item.RequiresApproval)
                             ctx.SetRequiresApproval();
 
-                        if (((Slot)item.OrderItem.OrderedItem).RemainingUses == 0)
+                        if (((Slot)item.OrderItem.OrderedItem.Object).RemainingUses == 0)
                             ctx.AddError(new OpportunityIsFullError());
                     }
                 }
