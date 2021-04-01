@@ -196,6 +196,15 @@ namespace BookingSystem
                                 10,
                                 isOnlineOrMixedAttendanceMode: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Offline Event",
+                                10M,
+                                10,
+                                isOnlineOrMixedAttendanceMode: false);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
@@ -340,12 +349,12 @@ namespace BookingSystem
                                      },
                                      Attendee = orderItemContext.RequestOrderItem.Attendee,
                                      AttendeeDetailsRequired = classes.RequiresAttendeeValidation
-                                         ? new List<Uri>
+                                         ? new List<PropertyEnumeration>
                                          {
-                                             new Uri("https://schema.org/givenName"),
-                                             new Uri("https://schema.org/familyName"),
-                                             new Uri("https://schema.org/email"),
-                                             new Uri("https://schema.org/telephone")
+                                             PropertyEnumeration.GivenName,
+                                             PropertyEnumeration.FamilyName,
+                                             PropertyEnumeration.Email,
+                                             PropertyEnumeration.Telephone,
                                          }
                                          : null,
                                      OrderItemIntakeForm = classes.RequiresAdditionalDetails

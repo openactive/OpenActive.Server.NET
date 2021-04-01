@@ -329,13 +329,13 @@ namespace BookingSystem
                                      },
                                      Attendee = orderItemContext.RequestOrderItem.Attendee,
                                      AttendeeDetailsRequired = slot.RequiresAttendeeValidation
-                                        ? new List<Uri>
-                                        {
-                                            new Uri("https://schema.org/givenName"),
-                                            new Uri("https://schema.org/familyName"),
-                                            new Uri("https://schema.org/email"),
-                                            new Uri("https://schema.org/telephone")
-                                        }
+                                        ? new List<PropertyEnumeration>
+                                         {
+                                             PropertyEnumeration.GivenName,
+                                             PropertyEnumeration.FamilyName,
+                                             PropertyEnumeration.Email,
+                                             PropertyEnumeration.Telephone,
+                                         }
                                         : null,
                                      OrderItemIntakeForm = slot.RequiresAdditionalDetails
                                      ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(slot.RequiredAdditionalDetails)

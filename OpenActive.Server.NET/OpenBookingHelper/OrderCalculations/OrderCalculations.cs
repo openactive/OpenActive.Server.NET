@@ -82,6 +82,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 }
 
                 var correspondingValue = correspondingValues.SingleOrDefault();
+                var required = property.ValueRequired ?? false;
                 if (required && correspondingValue == null)
                 {
                     var error = new IncompleteIntakeFormError();
