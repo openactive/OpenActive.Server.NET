@@ -8,7 +8,6 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
-using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem
 {

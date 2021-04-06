@@ -3,7 +3,7 @@ using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
 using System.Collections.Generic;
 
-namespace BookingSystem.AspNetCore.Helpers
+namespace BookingSystem
 {
     public static class PropertyValueSpecificationHelper
     {
