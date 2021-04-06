@@ -80,7 +80,7 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          {"broker": {"outputPath": "../../output/"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }}
+          {"ci": true, "broker": {"outputPath": "../../output/"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
       working-directory: tests
@@ -163,7 +163,7 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://localhost:5000/openactive"}, "integrationTests": {"outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/"}, "sellers": { "primary": {"@id": "http://localhost:5000/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/1" } }, "secondary": { "@id": "http://localhost:5000/api/identifiers/sellers/3" } }}
+          {"ci": true, "broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://localhost:5000/openactive"}, "integrationTests": {"outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/"}, "sellers": { "primary": {"@id": "http://localhost:5000/api/identifiers/sellers/1", "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/1" } }, "secondary": { "@id": "http://localhost:5000/api/identifiers/sellers/3" } }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
       working-directory: tests
