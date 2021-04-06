@@ -3,6 +3,7 @@ namespace BookingSystem
     public class AppSettings
     {
         public string ApplicationHostBaseUrl { get; set; }
+        public string OpenIdIssuerUrl { get; set; }
         public FeatureSettings FeatureFlags { get; set; }
         public PaymentSettings Payment { get; set; }
     }
@@ -12,6 +13,7 @@ namespace BookingSystem
     */
     public class FeatureSettings
     {
+        public bool EnableTokenAuth { get; set; } = true;
         public bool SingleSeller { get; set; } = false;
         public bool PaymentReconciliationDetailValidation { get; set; } = true;
     }

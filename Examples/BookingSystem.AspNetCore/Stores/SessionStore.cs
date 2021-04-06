@@ -482,7 +482,7 @@ namespace BookingSystem
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the SessionStore, during booking");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
@@ -585,7 +585,7 @@ namespace BookingSystem
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the SessionStore, during proposal");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic

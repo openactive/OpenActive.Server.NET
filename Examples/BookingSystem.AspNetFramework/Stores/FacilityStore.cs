@@ -8,7 +8,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
-using BookingSystem.AspNetFramework.Helpers;
+using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem
 {
@@ -463,7 +463,7 @@ namespace BookingSystem
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.FacilityUseSlot || !ctxGroup.Key.SlotId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the FacilityStore, during booking");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
@@ -542,7 +542,7 @@ namespace BookingSystem
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.FacilityUseSlot || !ctxGroup.Key.SlotId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the FacilityStore, during proposal");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
