@@ -465,6 +465,7 @@
     <Compile Include="Utils\DependencyResolver.cs" />
     <Compile Include="Utils\ServiceConfig.cs" />
     <Compile Include="Helpers\PropertyValueSpecificationHelper.cs" />
+    <Compile Include="Extensions\PropertyValueSpecificationHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />
