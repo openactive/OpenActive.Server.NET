@@ -143,6 +143,11 @@ namespace OpenActive.FakeDatabase.NET
 
         private static readonly Faker Faker = new Faker();
 
+        static FakeDatabase()
+        {
+            Randomizer.Seed = new Random((int)(DateTime.Today - new DateTime(1970, 1, 1)).TotalDays);
+        }
+
         private const int OpportunityCount = 1000;
 
         /// <summary>
