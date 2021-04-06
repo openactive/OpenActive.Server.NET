@@ -524,7 +524,7 @@ namespace BookingSystem
                     case ReserveOrderItemsResult.NotEnoughCapacity:
                         throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
                     case ReserveOrderItemsResult.OpportunityOfferPairNotBookable:
-                        throw new OpenBookingException(new OpportunityOfferPairNotBookableError());
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity and offer pair were not bookable");
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
@@ -571,7 +571,7 @@ namespace BookingSystem
                     case ReserveOrderItemsResult.NotEnoughCapacity:
                         throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
                     case ReserveOrderItemsResult.OpportunityOfferPairNotBookable:
-                        throw new OpenBookingException(new OpportunityOfferPairNotBookableError());
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity and offer pair were not bookable");
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
