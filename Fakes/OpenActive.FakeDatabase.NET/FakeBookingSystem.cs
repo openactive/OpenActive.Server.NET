@@ -1654,8 +1654,8 @@ namespace OpenActive.FakeDatabase.NET
                     LocationLat = locationLat,
                     LocationLng = locationLng,
                     AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
-                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund
-
+                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
+                    Modified = DateTimeOffset.Now.UtcTicks
                 };
                 db.Save(@class);
 
@@ -1667,7 +1667,8 @@ namespace OpenActive.FakeDatabase.NET
                     Start = startTime,
                     End = endTime,
                     TotalSpaces = totalSpaces,
-                    RemainingSpaces = totalSpaces
+                    RemainingSpaces = totalSpaces,
+                    Modified = DateTimeOffset.Now.UtcTicks
                 };
                 db.Save(occurrence);
 
@@ -1707,6 +1708,7 @@ namespace OpenActive.FakeDatabase.NET
                     SellerId = sellerId ?? 1,
                     LocationLat = locationLat,
                     LocationLng = locationLng,
+                    Modified = DateTimeOffset.Now.UtcTicks
                 };
                 db.Save(facility);
 
@@ -1731,7 +1733,8 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresAttendeeValidation = requiresAttendeeValidation,
                     RequiresAdditionalDetails = requiresAdditionalDetails,
                     RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
-                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund
+                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
+                    Modified = DateTimeOffset.Now.UtcTicks
                 };
                 db.Save(slot);
 

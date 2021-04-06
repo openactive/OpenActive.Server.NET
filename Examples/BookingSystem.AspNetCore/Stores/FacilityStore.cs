@@ -42,8 +42,9 @@ namespace BookingSystem
                     switch (criteria)
                     {
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                            testDatasetIdentifier,
+                                testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Facility",
                                  rnd.Next(2) == 0 ? 0M : 14.99M,
@@ -195,14 +196,6 @@ namespace BookingSystem
                                 10M,
                                 10,
                                 allowCustomerCancellationFullRefund: false);
-                            break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Facility",
-                                10M,
-                                10);
                             break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
