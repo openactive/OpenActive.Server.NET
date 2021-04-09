@@ -79,6 +79,8 @@ namespace BookingSystem.AspNetCore
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            // Note this will prevent UnknownOrIncorrectEndpointError being produced for 404 status in Development mode
+            // Hence the `unknown-endpoint` test of the OpenActive Test Suite will always fail in Development mode
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
