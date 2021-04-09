@@ -8,7 +8,6 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
-using BookingSystem.AspNetFramework.Helpers;
 
 namespace BookingSystem
 {
@@ -482,7 +481,7 @@ namespace BookingSystem
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the SessionStore, during booking");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
@@ -567,7 +566,7 @@ namespace BookingSystem
                     case ReserveOrderItemsResult.NotEnoughCapacity:
                         throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
                     case ReserveOrderItemsResult.OpportunityOfferPairNotBookable:
-                        throw new OpenBookingException(new OpportunityOfferPairNotBookableError());
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity and offer pair were not bookable");
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
@@ -585,7 +584,7 @@ namespace BookingSystem
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the SessionStore, during proposal");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
@@ -614,7 +613,7 @@ namespace BookingSystem
                     case ReserveOrderItemsResult.NotEnoughCapacity:
                         throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
                     case ReserveOrderItemsResult.OpportunityOfferPairNotBookable:
-                        throw new OpenBookingException(new OpportunityOfferPairNotBookableError());
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity and offer pair were not bookable");
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }

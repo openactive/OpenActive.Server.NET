@@ -1,0 +1,210 @@
+name: Ref Impl
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ['random', 'controlled']
+        profile: ['all-features', 'single-seller', 'no-payment-reconciliation', 'no-auth']
+        
+    steps:
+    - name: Checkout OpenActive.Server.NET
+      uses: actions/checkout@v2
+      with:
+        path: server
+    - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
+      if: ${{ startsWith(github.head_ref, 'coverage/') }}
+      id: refs
+      run: echo "::set-output name=mirror_ref::${{ github.head_ref }}"
+    - name: Checkout OpenActive Test Suite ${{ steps.refs.outputs.mirror_ref }}
+      uses: actions/checkout@v2
+      with:
+        repository: openactive/openactive-test-suite
+        ref: ${{ steps.refs.outputs.mirror_ref }}
+        path: tests
+
+    - name: Setup .NET Core 2.1.808 for Booking Server Reference Implementation
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.1.808
+    - name: Setup .NET Core 3.0.103 for Authentication Authority Reference Implementation
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.0.103
+
+    - name: Setup Node.js 14.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 14.x
+
+    - name: Install OpenActive.Server.NET dependencies
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
+      run: dotnet restore ./server/
+
+    - name: Build .NET Core Authentication Authority Reference Implementation
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-restore
+    - name: Start .NET Core Authentication Authority Reference Implementation
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
+      run: |
+        dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-build &
+
+    - name: Build .NET Core Booking Server Reference Implementation
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' && '--no-restore' || '' }}
+    - name: Start .NET Core Booking Server Reference Implementation
+      run: |
+        dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
+      env:
+        ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
+
+    - name: Attempt to ping IdentityServer force it to initialise
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
+      continue-on-error: true
+      run: curl --insecure --show-error --silent --max-time 30 https://localhost:5003/.well-known/openid-configuration
+
+    - name: Install OpenActive Test Suite
+      run: npm install
+      working-directory: tests
+
+    - name: Run OpenActive Integration Tests in ${{ matrix.mode }} mode
+      run: npm start
+      env:
+        FORCE_COLOR: 1
+        NODE_CONFIG: |
+          {"broker": {"outputPath": "../../output/"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }}
+        NODE_ENV: .example.${{ matrix.profile }}
+        NODE_APP_INSTANCE: ci
+      working-directory: tests
+    - name: Upload test output for ${{ matrix.mode }} mode as artifact
+      uses: actions/upload-artifact@v2
+      if: ${{ success() || failure() }}
+      with:
+        name: core.${{ matrix.mode }}.${{ matrix.profile }}
+        path: ./tests/output/
+
+    - name: Copy certificate for deployment to GitHub Pages (master branch for 'all-features' profile in controlled mode only)
+      run: |
+        mkdir -p ./publish/certification/
+        cp ./tests/output/certification/* ./publish/certification/
+      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
+    - name: Deploy certificate to GitHub Pages (master branch for 'all-features' profile in controlled mode only)
+      uses: peaceiris/actions-gh-pages@v3
+      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./publish
+        force_orphan: true
+        enable_jekyll: true
+
+
+  framework:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ['random', 'controlled']
+        profile: ['no-auth']
+
+    steps:
+    - name: Checkout OpenActive.Server.NET
+      uses: actions/checkout@v2
+      with:
+        path: server
+    - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
+      if: ${{ startsWith(github.head_ref, 'coverage/') }}
+      id: refs
+      run: echo "::set-output name=mirror_ref::${{ github.head_ref }}"
+    - name: Checkout OpenActive Test Suite ${{ steps.refs.outputs.mirror_ref }}
+      uses: actions/checkout@v2
+      with:
+        repository: openactive/openactive-test-suite
+        ref: ${{ steps.refs.outputs.mirror_ref }}
+        path: tests
+
+    - name: Setup Node.js 14.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 14.x
+        
+    - name: Setup MSBuild path
+      uses: microsoft/setup-msbuild@v1.0.2
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+    
+    - name: Install OpenActive.Server.NET dependencies
+      run: nuget restore .\server\
+
+    - name: Build .NET Framework Reference Implementation
+      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release
+
+    - name: Deploy .NET Framework Reference Implementation to folder
+      run: msbuild .\server\Examples\BookingSystem.AspNetFramework\BookingSystem.AspNetFramework.csproj /p:Configuration=Release /p:DeployOnBuild=true /t:WebPublish /p:WebPublishMethod=FileSystem /p:publishUrl=${{ runner.temp }}\deploy\ /p:PackageAsSingleFile=false
+
+    - name: Start .NET Framework Reference Implementation from folder (using IIS Express)
+      run: |
+        Start-Process -FilePath "$Env:Programfiles\IIS Express\iisexpress.exe" -ArgumentList "/path:${{ runner.temp }}\deploy\ /port:5000"
+
+    - name: Install OpenActive Test Suite
+      run: npm install
+      working-directory: tests
+
+    - name: Run OpenActive Integration Tests in ${{ matrix.mode }} mode
+      run: npm start
+      env:
+        FORCE_COLOR: 1
+        NODE_CONFIG: |
+          {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://localhost:5000/openactive"}, "integrationTests": {"outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/"}, "sellers": { "primary": {"@id": "http://localhost:5000/api/identifiers/sellers/1", "authentication": { "loginCredentials": null, "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/1" } } }, "secondary": { "@id": "http://localhost:5000/api/identifiers/sellers/2", "authentication": { "loginCredentials": null, "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/2" } } } }}
+        NODE_ENV: .example.${{ matrix.profile }}
+        NODE_APP_INSTANCE: ci
+      working-directory: tests
+    - name: Upload test output for ${{ matrix.mode }} mode as artifact
+      uses: actions/upload-artifact@v2
+      if: ${{ success() || failure() }}
+      with:
+        name: framework.${{ matrix.mode }}.${{ matrix.profile }}
+        path: ./tests/output/
+
+  deploy-reference-implementation:
+    # Master branch only
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs:
+      - core
+      - framework
+    runs-on: ubuntu-latest
+    steps:
+
+      # Checkout the repo
+      - uses: actions/checkout@master
+      
+      # Setup .NET Core SDK
+      - name: Setup .NET Core 2.1.808
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 2.1.808
+      
+      # Run dotnet build and publish
+      - name: Install OpenActive.Server.NET dependencies
+        run: dotnet restore
+      - name: Build OpenActive.Server.NET Reference Implementation
+        run: dotnet build ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
+      - name: Publish OpenActive.Server.NET Reference Implementation
+        run: dotnet publish ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build --output './web-app-package' 
+          
+      # Deploy to Azure Web apps
+      - name: 'Deploy Azure webapp using publish profile credentials'
+        uses: azure/webapps-deploy@v2
+        with: 
+          app-name: openactive-reference-implementation # Replace with your app name
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE  }} # Define secret variable in repository settings as per action documentation
+          package: './Examples/BookingSystem.AspNetCore/web-app-package'

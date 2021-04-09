@@ -8,7 +8,6 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
-using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem
 {
@@ -42,8 +41,9 @@ namespace BookingSystem
                     switch (criteria)
                     {
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
-                            testDatasetIdentifier,
+                                testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Facility",
                                  rnd.Next(2) == 0 ? 0M : 14.99M,
@@ -195,14 +195,6 @@ namespace BookingSystem
                                 10M,
                                 10,
                                 allowCustomerCancellationFullRefund: false);
-                            break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Facility",
-                                10M,
-                                10);
                             break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
@@ -463,7 +455,7 @@ namespace BookingSystem
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.FacilityUseSlot || !ctxGroup.Key.SlotId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the FacilityStore, during booking");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
@@ -524,7 +516,7 @@ namespace BookingSystem
                     case ReserveOrderItemsResult.NotEnoughCapacity:
                         throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
                     case ReserveOrderItemsResult.OpportunityOfferPairNotBookable:
-                        throw new OpenBookingException(new OpportunityOfferPairNotBookableError());
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity and offer pair were not bookable");
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
@@ -542,7 +534,7 @@ namespace BookingSystem
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.FacilityUseSlot || !ctxGroup.Key.SlotId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError());
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the FacilityStore, during proposal");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
@@ -571,7 +563,7 @@ namespace BookingSystem
                     case ReserveOrderItemsResult.NotEnoughCapacity:
                         throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
                     case ReserveOrderItemsResult.OpportunityOfferPairNotBookable:
-                        throw new OpenBookingException(new OpportunityOfferPairNotBookableError());
+                        throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity and offer pair were not bookable");
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }

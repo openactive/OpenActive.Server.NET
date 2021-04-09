@@ -1,0 +1,71 @@
+﻿@model BookingPartnerModel
+@using System;
+
+    <div class="partner container">
+        <div class="row page-header">
+            <div class="col-sm-10">
+                <h1>
+                    @Model.ClientName Registration Key
+                </h1>
+            </div>
+        </div>
+        <div class="row">
+            <form class="form-horizontal">
+                <div class="form-group">
+                    <div class="col-sm-2">
+                        <label for="emailAddress" class="control-label">Email address</label>
+                    </div>
+                    <div class="col-sm-6">
+                        <input type="email" class="form-control" id="emailAddress" value="@Model.BookingPartner.Email" disabled>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-2">
+                        <label for="clientId" class="control-label">Client Id</label>
+                    </div>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control" id="clientId" value="@Model.ClientId" disabled>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-2">
+                        <label for="registrationKey" class="control-label">Registration Key</label>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="registrationKey" value="@(Model.BookingPartner.InitialAccessTokenKeyValidUntil > DateTime.Now ? Model.BookingPartner.InitialAccessToken : "EXPIRED" )" disabled>
+                    </div>
+                    <div class="col-sm-2">
+                        <button class="btn btn-md btn-default">Copy</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <hr />
+        <div class="row pb-10">
+            <div class="col-sm-3">
+                <form asp-action="RegenerateKey">
+                    <input type="hidden" name="clientId" value="@Model.BookingPartner.ClientId">
+                    <button class="btn btn-md btn-default">Generate New Registration Key</button>
+                </form>
+            </div>
+            <div class="col-sm-5">
+                If the booking partner has requested a new registration key
+            </div>
+        </div>
+        <div class="row pb-40">
+            <div class="col-sm-3">
+                <form asp-action="RegenerateAllKeys">
+                    <input type="hidden" name="clientId" value="@Model.BookingPartner.ClientId">
+                    <button class="btn btn-md btn-default">Regenerate all Keys</button>
+                </form>
+            </div>
+            <div class="col-sm-5">
+                If you suspect the booking partner's security has been compromised
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-8 text-center">
+                <a class="btn btn-md btn-default" href="~/bookingpartners">Close</a>
+            </div>
+        </div>
+    </div>

@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Linq.Expressions;
 using Bogus;
 using OpenActive.FakeDatabase.NET.Helpers;
 using ServiceStack.OrmLite;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -21,11 +24,44 @@ namespace OpenActive.FakeDatabase.NET
         /// </summary>
         public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase();
 
+        public static void Initialise()
+        {
+            // Make an arbitrary call to the database to force the static instance to be instantiated, wiped and repopulated
+            // This SQLite database file is shared between the Booking System and Identity Server, and
+            // Initialise() must be called on startup of each to ensure they do not wipe the database
+            // on the first call to it
+            Database.GetBookingPartners();
+        }
+
         public static DateTime Truncate(this DateTime dateTime, TimeSpan timeSpan)
         {
             if (timeSpan == TimeSpan.Zero) return dateTime; // Or could throw an ArgumentException
             if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue) return dateTime; // do not modify "guard" values
             return dateTime.AddTicks(-(dateTime.Ticks % timeSpan.Ticks));
+        }
+    }
+
+    /// <summary>
+    /// Extension methods for hashing strings and byte arrays
+    /// </summary>
+    internal static class HashExtensions
+    {
+        /// <summary>
+        /// Creates a SHA256 hash of the specified input.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <returns>A hash</returns>
+        public static string Sha256(this string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+
+            using (var sha = SHA256.Create())
+            {
+                var bytes = Encoding.UTF8.GetBytes(input);
+                var hash = sha.ComputeHash(bytes);
+
+                return Convert.ToBase64String(hash);
+            }
         }
     }
 
@@ -38,7 +74,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
             // There are issues with transactions when using full in-memory SQLite. To workaround this, we create a temporary file and use this to hold the SQLite database.
-            string connectionString = Path.GetTempPath() + "fakedatabase.db";
+            string connectionString = Path.GetTempPath() + "openactive-fakedatabase.db";
             Database = new OrmLiteConnectionFactory(connectionString, SqliteDialect.Provider);
 
             using (var connection = Database.Open())
@@ -89,7 +125,14 @@ namespace OpenActive.FakeDatabase.NET
         OpportunityOfferPairNotBookable,
         NotEnoughCapacity
     }
-
+    public class BookingPartnerAdministratorTable
+    {
+        public string SubjectId { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public bool IsActive { get; set; } = true;
+        public List<Claim> Claims { get; set; }
+    }
 
     public class FakeDatabase
     {
@@ -99,6 +142,11 @@ namespace OpenActive.FakeDatabase.NET
         public readonly InMemorySQLite Mem = new InMemorySQLite();
 
         private static readonly Faker Faker = new Faker();
+
+        static FakeDatabase()
+        {
+            Randomizer.Seed = new Random((int)(DateTime.Today - new DateTime(1970, 1, 1)).TotalDays);
+        }
 
         private const int OpportunityCount = 1000;
 
@@ -1163,9 +1211,12 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = database.Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
+
                 CreateSellers(db);
+                CreateSellerUsers(db);
                 CreateFakeClasses(db);
                 CreateFakeFacilitiesAndSlots(db);
+                CreateBookingPartners(db);
                 transaction.Commit();
             }
             return database;
@@ -1288,14 +1339,274 @@ namespace OpenActive.FakeDatabase.NET
         {
             var sellers = new List<SellerTable>
             {
-                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false, IsTaxGross = true },
-                new SellerTable { Id = 2, Name = "Road Runner Bookcamp Ltd", IsIndividual = false, IsTaxGross = false },
-                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false, IsTaxGross = true },
-                new SellerTable { Id = 4, Name = "Coyote Classes Ltd", IsIndividual = false, IsTaxGross = false },
-                new SellerTable { Id = 5, Name = "Jane Smith", IsIndividual = true, IsTaxGross = true }
+                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = true },
+                new SellerTable { Id = 2, Name = "Road Runner Bookcamp Ltd", IsIndividual = false, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = false },
+                new SellerTable { Id = 3, Name = "Lorem Fitsum Ltd", IsIndividual = false, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = true },
+                new SellerTable { Id = 4, Name = "Coyote Classes Ltd", IsIndividual = false, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = false },
+                new SellerTable { Id = 5, Name = "Jane Smith", IsIndividual = true, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = true }
             };
 
             db.InsertAll(sellers);
+        }
+
+        public static void CreateSellerUsers(IDbConnection db)
+        {
+            var sellerUsers = new List<SellerUserTable>
+            {
+                new SellerUserTable { Id = 100, Username = "test1", PasswordHash = "test1".Sha256(), SellerId = 1 },
+                new SellerUserTable { Id = 101, Username = "test1b", PasswordHash = "test1b".Sha256(), SellerId = 1 },
+                new SellerUserTable { Id = 102, Username = "test2", PasswordHash = "test2".Sha256(), SellerId = 2 },
+                new SellerUserTable { Id = 103, Username = "test3", PasswordHash = "test3".Sha256(), SellerId = 3 },
+                new SellerUserTable { Id = 104, Username = "test4", PasswordHash = "test4".Sha256(), SellerId = 4 },
+                new SellerUserTable { Id = 105, Username = "test5", PasswordHash = "test5".Sha256(), SellerId = 5 },
+            };
+
+            db.InsertAll(sellerUsers);
+        }
+
+        public bool ValidateSellerUserCredentials(string Username, string Password)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var matchingUser = db.Single<SellerUserTable>(x => x.Username == Username && x.PasswordHash == Password.Sha256());
+                return (matchingUser != null);
+            }
+        }
+
+        public SellerUserTable GetSellerUser(string Username)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Single<SellerUserTable>(x => x.Username == Username);
+            }
+        }
+
+        public SellerUserTable GetSellerUserById(long sellerUserId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.LoadSingleById<SellerUserTable>(sellerUserId);
+            }
+        }
+
+        /*
+        public List<BookingPartnerAdministratorTable> GetBookingPartnerAdministrators()
+        {
+            return new List<BookingPartnerAdministratorTable> {
+                new BookingPartnerAdministratorTable
+                {
+                    Username = "test",
+                    Password = "test".Sha256(),
+                    SubjectId = "TestSubjectId",
+                    Claims = new List<Claim>
+                    {
+                        new Claim("https://openactive.io/sellerName", "Example Seller"),
+                        new Claim("https://openactive.io/sellerId", "https://localhost:5001/api/identifiers/sellers/1"),
+                        new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
+                        new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
+                        new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),
+                        new Claim("https://openactive.io/bookingServiceUrl", "http://abc.com/booking-service")
+                    }
+                }
+            };
+        }
+        */
+
+
+        public static void CreateBookingPartners(IDbConnection db)
+        {
+            var bookingPartners = new List<BookingPartnerTable>
+            {
+                new BookingPartnerTable { Name = "Test Suite 1", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "openactive_test_suite_client_12345xaq", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { Name = "Acmefitness", ClientId = "clientid_800", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98767", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientProperties = new ClientModel {
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
+                        GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
+                        RedirectUris = new string[] { "http://localhost:3000/cb" }
+                    }
+                },
+                new BookingPartnerTable { Name = "Example app", ClientId = "clientid_801", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98768", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    ClientProperties = new ClientModel {
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
+                        GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
+                        RedirectUris = new string[] { "http://localhost:3000/cb" }
+                    }
+                },
+                new BookingPartnerTable { Name = "Test Suite 2", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { Name = "Test Suite 3", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
+            };
+
+            var grants = new List<GrantTable>()
+            {
+                new GrantTable()
+                {
+                    Key = "8vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
+                    Type = "user_consent",
+                    SubjectId = "TestSubjectId",
+                    ClientId = "clientid_123",
+                    CreationTime = DateTime.Now,
+                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_123\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
+                },
+                new GrantTable()
+                {
+                    Key = "7vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
+                    Type = "user_consent",
+                    SubjectId = "TestSubjectId",
+                    ClientId = "clientid_456",
+                    CreationTime = DateTime.Now,
+                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_456\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
+                },
+                new GrantTable()
+                {
+                    Key = "9vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
+                    Type = "user_consent",
+                    SubjectId = "TestSubjectId",
+                    ClientId = "clientid_789",
+                    CreationTime = DateTime.Now,
+                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_789\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
+                },
+            };
+
+            db.InsertAll(bookingPartners);
+            //db.InsertAll(grants);
+        }
+
+        public List<BookingPartnerTable> GetBookingPartners()
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Select<BookingPartnerTable>().ToList();
+            }
+        }
+
+        public BookingPartnerTable GetBookingPartnerByInitialAccessToken(string registrationKey)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var bookingPartner = db.Single<BookingPartnerTable>(x => x.InitialAccessToken == registrationKey);
+                return bookingPartner?.InitialAccessTokenKeyValidUntil > DateTime.Now ? bookingPartner : null;
+            }
+        }
+
+        public BookingPartnerTable GetBookingPartner(string clientId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
+            }
+        }
+
+        public void SaveBookingPartner(BookingPartnerTable bookingPartnerTable)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                db.Save(bookingPartnerTable);
+            }
+        }
+
+        public void ResetBookingPartnerKey(string clientId, string key)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.Registered = false;
+                bookingPartner.InitialAccessToken = key;
+                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
+                bookingPartner.ClientSecret = null;
+                db.Save(bookingPartner);
+            }
+        }
+
+        public void SetBookingPartnerKey(string clientId, string key)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.InitialAccessToken = key;
+                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
+                db.Save(bookingPartner);
+            }
+        }
+
+        public void UpdateBookingPartnerScope(string clientId, string scope, bool bookingsSuspended)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.ClientProperties.Scope = scope;
+                bookingPartner.BookingsSuspended = true;
+                db.Save(bookingPartner);
+            }
+        }
+
+
+        public void AddBookingPartner(BookingPartnerTable newBookingPartner)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                db.Save(newBookingPartner);
+            }
+        }
+
+        public GrantTable GetGrant(string key)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Single<GrantTable>(x => x.Key == key);
+            }
+        }
+        public IEnumerable<GrantTable> GetAllGrants(string subjectId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Select<GrantTable>(x => x.SubjectId == subjectId).ToList();
+            }
+        }
+
+        public void AddGrant(string key, string type, string subjectId, string clientId, DateTime CreationTime, DateTime? Expiration, string data)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var grant = new GrantTable()
+                {
+                    Key = key,
+                    Type = type,
+                    SubjectId = subjectId,
+                    ClientId = clientId,
+                    CreationTime = CreationTime,
+                    Expiration = Expiration,
+                    Data = data
+                };
+                db.Save(grant);
+            }
+        }
+
+        public void RemoveGrant(string key)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                db.Delete<GrantTable>(x => x.Key == key);
+            }
+        }
+
+        public void RemoveGrant(string subjectId, string clientId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                db.Delete<GrantTable>(x => x.SubjectId == subjectId && x.ClientId == clientId);
+            }
+        }
+
+        public void RemoveGrant(string subjectId, string clientId, string type)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                db.Delete<GrantTable>(x => x.SubjectId == subjectId && x.ClientId == clientId && x.Type == type);
+            }
         }
 
         public (int, int) AddClass(
@@ -1343,8 +1654,8 @@ namespace OpenActive.FakeDatabase.NET
                     LocationLat = locationLat,
                     LocationLng = locationLng,
                     AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
-                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund
-
+                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
+                    Modified = DateTimeOffset.Now.UtcTicks
                 };
                 db.Save(@class);
 
@@ -1356,7 +1667,8 @@ namespace OpenActive.FakeDatabase.NET
                     Start = startTime,
                     End = endTime,
                     TotalSpaces = totalSpaces,
-                    RemainingSpaces = totalSpaces
+                    RemainingSpaces = totalSpaces,
+                    Modified = DateTimeOffset.Now.UtcTicks
                 };
                 db.Save(occurrence);
 
@@ -1396,6 +1708,7 @@ namespace OpenActive.FakeDatabase.NET
                     SellerId = sellerId ?? 1,
                     LocationLat = locationLat,
                     LocationLng = locationLng,
+                    Modified = DateTimeOffset.Now.UtcTicks
                 };
                 db.Save(facility);
 
@@ -1420,7 +1733,8 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresAttendeeValidation = requiresAttendeeValidation,
                     RequiresAdditionalDetails = requiresAdditionalDetails,
                     RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
-                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund
+                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
+                    Modified = DateTimeOffset.Now.UtcTicks
                 };
                 db.Save(slot);
 

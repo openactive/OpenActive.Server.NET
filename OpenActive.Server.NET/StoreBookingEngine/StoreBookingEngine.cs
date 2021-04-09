@@ -298,7 +298,7 @@ namespace OpenActive.Server.NET.StoreBooking
             // https://www.openactive.io/open-booking-api/EditorsDraft/#order-creation-b
             if (responseOrder.OrderedItem.Any(x => x.Error != null && x.Error.Count > 0))
             {
-                throw new OpenBookingException(new UnableToProcessOrderItemError());
+                throw new OpenBookingException(new UnableToProcessOrderItemError(), string.Join(", ", responseOrder.OrderedItem.Where(x => x.Error != null).SelectMany(x => x.Error).Select(x => x.Name ?? "").ToList()));
             }
 
             // Throw error on payment due mismatch

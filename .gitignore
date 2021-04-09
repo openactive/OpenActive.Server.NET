@@ -52,7 +52,6 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
-**/Properties/launchSettings.json
 
 # StyleCop
 StyleCopReport.xml
@@ -334,6 +333,3 @@ ASALocalRun/
 
 # MacOS
 .DS_Store
-
-# Fake databases
-fakedatabase.db*

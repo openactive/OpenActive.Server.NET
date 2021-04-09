@@ -26,7 +26,7 @@ namespace OpenActive.FakeDatabase.NET
         [AutoIncrement]
         public long Id { get; set; }
         public bool Deleted { get; set; }
-        public long Modified { get; set; } = DateTimeOffset.Now.UtcTicks;
+        public long Modified { get; set; } = new DateTimeOffset(DateTime.Today).UtcTicks;
     }
 
     public class ClassTable : Table
@@ -123,11 +123,28 @@ namespace OpenActive.FakeDatabase.NET
         public string ProposalVersionId { get; set; }
     }
 
-    public class SellerTable : Table
+    public class SellerTable
     {
+        [PrimaryKey]
+        public long Id { get; set; }
         public string Name { get; set; }
         public bool IsIndividual { get; set; }
+        public string Url { get; set; }
         public bool IsTaxGross { get; set; }
+        public string LogoUrl { get; set; }
+    }
+
+    public class SellerUserTable
+    {
+        [PrimaryKey]
+        public long Id { get; set; }
+        public string Username { get; set; }
+        public string PasswordHash { get; set; }
+
+        [Reference]
+        public SellerTable SellerTable { get; set; }
+        [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
+        public long SellerId { get; set; }
     }
 
     public class SlotTable : Table
@@ -166,12 +183,52 @@ namespace OpenActive.FakeDatabase.NET
         public decimal LocationLng { get; set; }
     }
 
+    public class BookingPartnerTable
+    {
+        [PrimaryKey]
+        public string ClientId { get; set; }
+        public string Name { get; set; }
+        public string ClientSecret { get; set; }
+        public ClientModel ClientProperties { get; set; }
+        public bool Registered { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public string InitialAccessToken { get; set; }
+        public DateTime InitialAccessTokenKeyValidUntil { get; set; }
+        public bool BookingsSuspended { get; set; }
+        public string Email { get; set; }
+    }
+
+    public class GrantTable
+    {
+        public string Key { get; set; }
+        public string Type { get; set; }
+        public string SubjectId { get; set; }
+        public string ClientId { get; set; }
+        public DateTime CreationTime { get; set; }
+        public DateTime? Expiration { get; set; }
+        public string Data { get; set; }
+    }
+
+    public class ClientModel
+    {
+        public string ClientUri { get; set; }
+
+        public string LogoUri { get; set; }
+
+        public string[] GrantTypes { get; set; }
+
+        public string[] RedirectUris { get; set; }
+
+        public string Scope { get; set; }
+    }
+
     public static class DatabaseCreator
     {
         public static void CreateTables(OrmLiteConnectionFactory dbFactory)
         {
             using (var db = dbFactory.Open())
             {
+                db.DropTable<SellerUserTable>();
                 db.DropTable<OrderItemsTable>();
                 db.DropTable<OccurrenceTable>();
                 db.DropTable<OrderTable>();
@@ -179,6 +236,10 @@ namespace OpenActive.FakeDatabase.NET
                 db.DropTable<SellerTable>();
                 db.DropTable<FacilityUseTable>();
                 db.DropTable<SlotTable>();
+                db.DropTable<GrantTable>();
+                db.DropTable<BookingPartnerTable>();
+                db.CreateTable<GrantTable>();
+                db.CreateTable<BookingPartnerTable>();
                 db.CreateTable<SellerTable>();
                 db.CreateTable<ClassTable>();
                 db.CreateTable<OrderTable>();
@@ -186,6 +247,7 @@ namespace OpenActive.FakeDatabase.NET
                 db.CreateTable<OrderItemsTable>();
                 db.CreateTable<FacilityUseTable>();
                 db.CreateTable<SlotTable>();
+                db.CreateTable<SellerUserTable>();
             }
         }
     }
