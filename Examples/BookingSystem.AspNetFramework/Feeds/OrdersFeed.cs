@@ -18,8 +18,7 @@ namespace BookingSystem
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
                 var q = db.From<OrderTable>()
-                .Join<SellerTable>()
-                .Join<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
+                .LeftJoin<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
                 .OrderBy(x => x.Modified)
                 .ThenBy(x => x.OrderId)
                 .Where(x =>
@@ -32,13 +31,12 @@ namespace BookingSystem
                 .Take(RPDEPageSize);
 
                 var query = db
-                    .SelectMulti<OrderTable, SellerTable, OrderItemsTable>(q)
+                    .SelectMulti<OrderTable, OrderItemsTable>(q)
                     .GroupBy(x => new { x.Item1.OrderId })
                     .Select(result => new
                     {
                         OrderTable = result.Select(item => new { item.Item1 }).FirstOrDefault()?.Item1,
-                        Seller = result.Select(item => new { item.Item2 }).FirstOrDefault()?.Item2,
-                        OrderItemsTable = result.Select(item => new { item.Item3 }).ToList().Select(orderItem => orderItem.Item3).ToList()
+                        OrderItemsTable = result.Select(item => new { item.Item2 }).ToList().Select(orderItem => orderItem.Item2).ToList()
                     })
                     .Select(result => new RpdeItem
                     {

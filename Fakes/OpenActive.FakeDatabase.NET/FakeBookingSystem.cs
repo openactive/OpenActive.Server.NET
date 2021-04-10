@@ -889,7 +889,7 @@ namespace OpenActive.FakeDatabase.NET
                             slot.Start - slot.LatestCancellationBeforeStartDate < now)
                         {
                             transaction.Rollback();
-                            throw new InvalidOperationException();
+                            throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the slot");
                         }
 
                         if (occurrence.Id != 0 &&
@@ -897,18 +897,18 @@ namespace OpenActive.FakeDatabase.NET
                             occurrence.Start - @class.LatestCancellationBeforeStartDate < now)
                         {
                             transaction.Rollback();
-                            throw new InvalidOperationException();
+                            throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the session");
                         }
                         if (slot.Id != 0 && slot.AllowCustomerCancellationFullRefund == false)
                         {
                             transaction.Rollback();
-                            throw new InvalidOperationException();
+                            throw new InvalidOperationException("Customer cancellation not permitted on this slot");
                         }
                         if (occurrence.Id != 0 &&
                             @class.AllowCustomerCancellationFullRefund == false)
                         {
                             transaction.Rollback();
-                            throw new InvalidOperationException();
+                            throw new InvalidOperationException("Customer cancellation not permitted on this session");
                         }
 
                         if (orderItem.Status == BookingStatus.CustomerCancelled)
