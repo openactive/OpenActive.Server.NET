@@ -37,9 +37,9 @@ namespace BookingSystem
                     orderId.uuid,
                     orderItemIds.Where(x => x.OrderItemIdLong.HasValue).Select(x => x.OrderItemIdLong.Value).ToList(), true);
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
-                throw new OpenBookingException(new CancellationNotPermittedError());
+                throw new OpenBookingException(new CancellationNotPermittedError(), ex.Message);
             }
         }
 
