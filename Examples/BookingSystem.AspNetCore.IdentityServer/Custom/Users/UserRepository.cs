@@ -10,6 +10,13 @@ namespace IdentityServer
 {
     public class UserRepository : IUserRepository
     {
+        private string applicationHostBaseUrl;
+
+        public UserRepository(string applicationHostBaseUrl)
+        {
+            this.applicationHostBaseUrl = applicationHostBaseUrl;
+        }
+
         public bool ValidateCredentials(string username, string password)
         {
             return FakeBookingSystem.Database.ValidateSellerUserCredentials(username, password);
@@ -52,7 +59,7 @@ namespace IdentityServer
                 Claims = new List<Claim>()
             };
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerName", sellerUser.SellerTable.Name);
-            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerId", "https://localhost:5001/api/identifiers/sellers/" + sellerUser.SellerTable.Id);
+            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerId", applicationHostBaseUrl + "/api/identifiers/sellers/" + sellerUser.SellerTable.Id);
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerUrl", sellerUser.SellerTable.Url);
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerLogo", sellerUser.SellerTable.LogoUrl);
             return user;

@@ -10,7 +10,7 @@ namespace IdentityServer
     {
         public static IIdentityServerBuilder AddFakeUserStore(this IIdentityServerBuilder builder, string ApplicationHostBaseUrl)
         {
-            builder.Services.AddSingleton<IUserRepository, UserRepository>();
+            builder.Services.AddSingleton<IUserRepository>(repo => new UserRepository(ApplicationHostBaseUrl));
             builder.AddProfileService<ProfileService>();
             builder.AddResourceOwnerValidator<ResourceOwnerPasswordValidator>();
 

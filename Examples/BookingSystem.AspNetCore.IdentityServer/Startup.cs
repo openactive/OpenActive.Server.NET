@@ -8,14 +8,18 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using src;
 
 namespace IdentityServer
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public IWebHostEnvironment Environment { get; }
+
+        public Startup(IWebHostEnvironment environment, IConfiguration configuration)
         {
+            Environment = environment;
             AppSettings = new AppSettings();
             configuration.Bind(AppSettings);
         }
@@ -43,9 +47,9 @@ namespace IdentityServer
             builder.AddDeveloperSigningCredential();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
-            if (env.IsDevelopment())
+            if (Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
