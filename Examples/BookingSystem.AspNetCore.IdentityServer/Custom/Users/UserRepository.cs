@@ -10,11 +10,11 @@ namespace IdentityServer
 {
     public class UserRepository : IUserRepository
     {
-        private string applicationHostBaseUrl;
+        private string jsonLdIdBaseUrl;
 
-        public UserRepository(string applicationHostBaseUrl)
+        public UserRepository(string jsonLdIdBaseUrl)
         {
-            this.applicationHostBaseUrl = applicationHostBaseUrl;
+            this.jsonLdIdBaseUrl = jsonLdIdBaseUrl;
         }
 
         public bool ValidateCredentials(string username, string password)
@@ -59,7 +59,7 @@ namespace IdentityServer
                 Claims = new List<Claim>()
             };
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerName", sellerUser.SellerTable.Name);
-            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerId", applicationHostBaseUrl + "/api/identifiers/sellers/" + sellerUser.SellerTable.Id);
+            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerId", jsonLdIdBaseUrl + "/api/identifiers/sellers/" + sellerUser.SellerTable.Id);
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerUrl", sellerUser.SellerTable.Url);
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerLogo", sellerUser.SellerTable.LogoUrl);
             return user;

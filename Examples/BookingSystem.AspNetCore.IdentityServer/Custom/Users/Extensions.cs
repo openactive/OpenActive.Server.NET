@@ -8,9 +8,9 @@ namespace IdentityServer
 {
     public static class CustomIdentityServerBuilderExtensions
     {
-        public static IIdentityServerBuilder AddFakeUserStore(this IIdentityServerBuilder builder, string ApplicationHostBaseUrl)
+        public static IIdentityServerBuilder AddFakeUserStore(this IIdentityServerBuilder builder, string jsonLdIdBaseUrl)
         {
-            builder.Services.AddSingleton<IUserRepository>(repo => new UserRepository(ApplicationHostBaseUrl));
+            builder.Services.AddSingleton<IUserRepository>(repo => new UserRepository(jsonLdIdBaseUrl));
             builder.AddProfileService<ProfileService>();
             builder.AddResourceOwnerValidator<ResourceOwnerPasswordValidator>();
 

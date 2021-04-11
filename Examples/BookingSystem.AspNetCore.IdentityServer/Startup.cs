@@ -37,7 +37,7 @@ namespace IdentityServer
                 .AddInMemoryIdentityResources(Config.Ids)
                 .AddInMemoryApiResources(Config.Apis)
                 .AddClientStore<ClientStore>()
-                .AddFakeUserStore(AppSettings.ApplicationHostBaseUrl)
+                .AddFakeUserStore(AppSettings.JsonLdIdBaseUrl)
                 .AddPersistedGrantStore<AcmePersistedGrantStore>()
                 .AddProfileService<ProfileService>(); //adding a custom profile service
 
