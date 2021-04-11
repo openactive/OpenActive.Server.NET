@@ -14,12 +14,13 @@ namespace IdentityServer
 {
     public class Startup
     {
-        public IWebHostEnvironment Environment { get; }
-
-        public Startup(IWebHostEnvironment environment)
+        public Startup(IConfiguration configuration)
         {
-            Environment = environment;
+            AppSettings = new AppSettings();
+            configuration.Bind(AppSettings);
         }
+
+        public AppSettings AppSettings { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -32,7 +33,7 @@ namespace IdentityServer
                 .AddInMemoryIdentityResources(Config.Ids)
                 .AddInMemoryApiResources(Config.Apis)
                 .AddClientStore<ClientStore>()
-                .AddFakeUserStore()
+                .AddFakeUserStore(AppSettings.ApplicationHostBaseUrl)
                 .AddPersistedGrantStore<AcmePersistedGrantStore>()
                 .AddProfileService<ProfileService>(); //adding a custom profile service
 
@@ -42,9 +43,9 @@ namespace IdentityServer
             builder.AddDeveloperSigningCredential();
         }
 
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            if (Environment.IsDevelopment())
+            if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }

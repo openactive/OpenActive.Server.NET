@@ -8,7 +8,7 @@ namespace IdentityServer
 {
     public static class CustomIdentityServerBuilderExtensions
     {
-        public static IIdentityServerBuilder AddFakeUserStore(this IIdentityServerBuilder builder)
+        public static IIdentityServerBuilder AddFakeUserStore(this IIdentityServerBuilder builder, string ApplicationHostBaseUrl)
         {
             builder.Services.AddSingleton<IUserRepository, UserRepository>();
             builder.AddProfileService<ProfileService>();
