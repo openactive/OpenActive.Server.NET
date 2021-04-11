@@ -80,7 +80,7 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          {"broker": {"outputPath": "../../output/"}, "integrationTests": { "outputPath": "../../output/", "conformanceCertificatePath": "../../conformance/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/${{ matrix.profile }}/${{ matrix.mode }}/" }}
+          {"broker": {"outputPath": "../../output/"}, "integrationTests": { "outputPath": "../../output/", "conformanceCertificatePath": "../../conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
       working-directory: tests
