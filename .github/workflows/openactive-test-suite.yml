@@ -80,10 +80,11 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          {"broker": {"outputPath": "../../output/"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }}
+          {"broker": {"outputPath": "../../output/"}, "integrationTests": { "outputPath": "../../output/", "conformanceCertificatePath": "../../conformance/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/${{ matrix.profile }}/${{ matrix.mode }}/" }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
       working-directory: tests
+
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
@@ -91,19 +92,14 @@ jobs:
         name: core.${{ matrix.mode }}.${{ matrix.profile }}
         path: ./tests/output/
 
-    - name: Copy certificate for deployment to GitHub Pages (master branch for 'all-features' profile in controlled mode only)
-      run: |
-        mkdir -p ./publish/certification/
-        cp ./tests/output/certification/* ./publish/certification/
-      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
-    - name: Deploy certificate to GitHub Pages (master branch for 'all-features' profile in controlled mode only)
-      uses: peaceiris/actions-gh-pages@v3
-      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
+    - name: Deploy conformance certificate to Azure Blob Storage (master branch for 'all-features' profile in controlled mode only)
+      uses: bacongobbler/azure-blob-storage-upload@v1.1.1
+      # if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./publish
-        force_orphan: true
-        enable_jekyll: true
+        source_dir: ./tests/conformance/
+        container_name: '$web'
+        connection_string: ${{ secrets.CONFORMANCE_CERTIFICATE_BLOB_STORAGE_CONNECTION_STRING }}
+        sync: false
 
 
   framework:
