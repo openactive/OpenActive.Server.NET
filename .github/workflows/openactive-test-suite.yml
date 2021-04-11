@@ -188,6 +188,10 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 2.1.808
+      - name: Setup .NET Core 3.0.103 for Authentication Authority Reference Implementation
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.0.103
       
       # Run dotnet build and publish
       - name: Install OpenActive.Server.NET dependencies
@@ -196,12 +200,12 @@ jobs:
       - name: Build OpenActive.Server.NET Booking Server Reference Implementation
         run: dotnet build ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
       - name: Publish OpenActive.Server.NET Booking Server Reference Implementation
-        run: dotnet publish ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build --output './web-app-package' 
+        run: dotnet publish ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build --output './web-app-package/BookingSystem.AspNetCore' 
 
       - name: Build OpenActive.Server.NET Authentication Authority Reference Implementation
         run: dotnet build ./Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-restore
       - name: Publish OpenActive.Server.NET Authentication Authority Reference Implementation
-        run: dotnet publish ./Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-build --output './web-app-package' 
+        run: dotnet publish ./Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-build --output './web-app-package/BookingSystem.AspNetCore.IdentityServer' 
 
       # Deploy to Azure Web apps
       - name: 'Deploy Booking Server Reference Implementation using publish profile credentials'
@@ -209,11 +213,11 @@ jobs:
         with: 
           app-name: openactive-reference-implementation
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE  }} # Define secret variable in repository settings as per action documentation
-          package: './Examples/BookingSystem.AspNetCore/web-app-package'
+          package: './web-app-package/BookingSystem.AspNetCore'
 
       - name: 'Deploy Authentication Authority Reference Implementation using publish profile credentials'
         uses: azure/webapps-deploy@v2
         with: 
           app-name: openactive-reference-implementation-auth
           publish-profile: ${{ secrets.AZURE_WEBAPP_AUTH_PUBLISH_PROFILE  }} # Define secret variable in repository settings as per action documentation
-          package: './Examples/BookingSystem.AspNetCore.IdentityServer/web-app-package'
+          package: './web-app-package/BookingSystem.AspNetCore.IdentityServer'

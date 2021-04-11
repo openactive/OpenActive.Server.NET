@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using src;
 
 namespace IdentityServer
@@ -16,10 +17,14 @@ namespace IdentityServer
     {
         public IWebHostEnvironment Environment { get; }
 
-        public Startup(IWebHostEnvironment environment)
+        public Startup(IWebHostEnvironment environment, IConfiguration configuration)
         {
             Environment = environment;
+            AppSettings = new AppSettings();
+            configuration.Bind(AppSettings);
         }
+
+        public AppSettings AppSettings { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -32,7 +37,7 @@ namespace IdentityServer
                 .AddInMemoryIdentityResources(Config.Ids)
                 .AddInMemoryApiResources(Config.Apis)
                 .AddClientStore<ClientStore>()
-                .AddFakeUserStore()
+                .AddFakeUserStore(AppSettings.JsonLdIdBaseUrl)
                 .AddPersistedGrantStore<AcmePersistedGrantStore>()
                 .AddProfileService<ProfileService>(); //adding a custom profile service
 
