@@ -80,10 +80,11 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          {"broker": {"outputPath": "../../output/"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/" }}
+          {"broker": {"outputPath": "../../output/"}, "integrationTests": { "outputPath": "../../output/", "conformanceCertificatePath": "../../conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
       working-directory: tests
+
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
@@ -91,19 +92,14 @@ jobs:
         name: core.${{ matrix.mode }}.${{ matrix.profile }}
         path: ./tests/output/
 
-    - name: Copy certificate for deployment to GitHub Pages (master branch for 'all-features' profile in controlled mode only)
-      run: |
-        mkdir -p ./publish/certification/
-        cp ./tests/output/certification/* ./publish/certification/
-      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
-    - name: Deploy certificate to GitHub Pages (master branch for 'all-features' profile in controlled mode only)
-      uses: peaceiris/actions-gh-pages@v3
-      if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
+    - name: Deploy conformance certificate to Azure Blob Storage (master branch for 'all-features' profile in controlled mode only)
+      uses: bacongobbler/azure-blob-storage-upload@v1.1.1
+      # if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./publish
-        force_orphan: true
-        enable_jekyll: true
+        source_dir: ./tests/conformance/
+        container_name: '$web'
+        connection_string: ${{ secrets.CONFORMANCE_CERTIFICATE_BLOB_STORAGE_CONNECTION_STRING }}
+        sync: false
 
 
   framework:
@@ -196,15 +192,28 @@ jobs:
       # Run dotnet build and publish
       - name: Install OpenActive.Server.NET dependencies
         run: dotnet restore
-      - name: Build OpenActive.Server.NET Reference Implementation
+
+      - name: Build OpenActive.Server.NET Booking Server Reference Implementation
         run: dotnet build ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-restore
-      - name: Publish OpenActive.Server.NET Reference Implementation
+      - name: Publish OpenActive.Server.NET Booking Server Reference Implementation
         run: dotnet publish ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build --output './web-app-package' 
-          
+
+      - name: Build OpenActive.Server.NET Authentication Authority Reference Implementation
+        run: dotnet build ./Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-restore
+      - name: Publish OpenActive.Server.NET Authentication Authority Reference Implementation
+        run: dotnet publish ./Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-build --output './web-app-package' 
+
       # Deploy to Azure Web apps
-      - name: 'Deploy Azure webapp using publish profile credentials'
+      - name: 'Deploy Booking Server Reference Implementation using publish profile credentials'
         uses: azure/webapps-deploy@v2
         with: 
-          app-name: openactive-reference-implementation # Replace with your app name
+          app-name: openactive-reference-implementation
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE  }} # Define secret variable in repository settings as per action documentation
           package: './Examples/BookingSystem.AspNetCore/web-app-package'
+
+      - name: 'Deploy Authentication Authority Reference Implementation using publish profile credentials'
+        uses: azure/webapps-deploy@v2
+        with: 
+          app-name: openactive-reference-implementation-auth
+          publish-profile: ${{ secrets.AZURE_WEBAPP_AUTH_PUBLISH_PROFILE  }} # Define secret variable in repository settings as per action documentation
+          package: './Examples/BookingSystem.AspNetCore.IdentityServer/web-app-package'

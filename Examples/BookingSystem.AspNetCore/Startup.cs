@@ -92,6 +92,7 @@ namespace BookingSystem.AspNetCore
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseAuthentication();
             app.UseMvc();
         }
