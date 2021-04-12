@@ -65,12 +65,7 @@ jobs:
         dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
       env:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
-
-    - name: Attempt to ping IdentityServer force it to initialise
-      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
-      continue-on-error: true
-      run: curl --insecure --show-error --silent --max-time 30 https://localhost:5003/.well-known/openid-configuration
-
+        
     - name: Install OpenActive Test Suite
       run: npm install
       working-directory: tests
