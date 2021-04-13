@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
@@ -22,10 +23,10 @@ namespace OpenActive.Server.NET
         ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
 
         // These endpoints are authenticated by seller credentials (OAuth Authorization Code Grant)
-        ResponseContent ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
-        ResponseContent ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
-        ResponseContent ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson);
-        ResponseContent ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson);
+        Task<ResponseContent> ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
+        Task<ResponseContent> ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
+        Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson);
+        Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson);
         ResponseContent DeleteOrder(string clientId, Uri sellerId, string uuid);
         ResponseContent DeleteOrderQuote(string clientId, Uri sellerId, string uuid);
         ResponseContent ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
@@ -37,6 +38,6 @@ namespace OpenActive.Server.NET
         ResponseContent TriggerTestAction(string actionJson);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
-        ResponseContent GetOrderStatus(string clientId, Uri sellerId, string uuid);
+        Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuid);
     }
 }

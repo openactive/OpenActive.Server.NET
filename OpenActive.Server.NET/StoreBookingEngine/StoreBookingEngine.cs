@@ -5,6 +5,7 @@ using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.CustomBooking;
+using System.Threading.Tasks;
 
 namespace OpenActive.Server.NET.StoreBooking
 {
@@ -330,7 +331,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected override Order ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
+        protected async override Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
         {
             // Get Order without OrderItems expanded
             var order = storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
@@ -339,7 +340,7 @@ namespace OpenActive.Server.NET.StoreBooking
             var flowContext = AugmentContextFromOrder(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.OrderStatus, order), order);
 
             // Expand OrderItems based on the flowContext
-            var (orderItemContexts, _) = GetOrderItemContexts(order.OrderedItem, flowContext, null);
+            var (orderItemContexts, _) = await GetOrderItemContexts(order.OrderedItem, flowContext, null);
 
             // Maintain IDs and OrderItemStatus from GetOrderStatus that will have been overwritten by expansion
             foreach (var ctx in orderItemContexts)
@@ -354,16 +355,16 @@ namespace OpenActive.Server.NET.StoreBooking
             return order;
         }
 
-        public override Order ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
+        public async override Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
         {
             if (!storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
             {
                 throw new OpenBookingException(new OrderProposalVersionOutdatedError());
             }
-            return ProcessGetOrderStatus(orderId, sellerId, seller);
+            return await ProcessGetOrderStatus(orderId, sellerId, seller);
         }
 
-        private (List<IOrderItemContext>, List<OrderItemContextGroup>) GetOrderItemContexts(List<OrderItem> sourceOrderItems, StoreBookingFlowContext flowContext, IStateContext stateContext)
+        private async Task<(List<IOrderItemContext>, List<OrderItemContextGroup>)> GetOrderItemContexts(List<OrderItem> sourceOrderItems, StoreBookingFlowContext flowContext, IStateContext stateContext)
         {
             // Create OrderItemContext for each OrderItem
             var orderItemContexts = sourceOrderItems.Select((orderItem, index) =>
@@ -399,13 +400,13 @@ namespace OpenActive.Server.NET.StoreBooking
             }).ToList();
 
             // Group by OpportunityType for processing
-            var orderItemGroups = orderItemContexts
+            var orderItemGroupsTasks = orderItemContexts
                 .Where(ctx => ctx.RequestBookableOpportunityOfferId != null)
                 .GroupBy(ctx => ctx.RequestBookableOpportunityOfferId.OpportunityType.Value)
 
             // Get OrderItems first, to check no conflicts exist and that all items are valid
             // Resolve the ID of each OrderItem via a store
-            .Select(orderItemContextGroup =>
+            .Select(async orderItemContextGroup =>
             {
                 var opportunityType = orderItemContextGroup.Key;
                 var orderItemContextsWithinGroup = orderItemContextGroup.ToList();
@@ -418,7 +419,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 // QUESTION: Should GetOrderItems occur within the transaction?
                 // Currently this is optimised for the transaction to have minimal query coverage (i.e. write-only)
 
-                store.GetOrderItems(orderItemContextsWithinGroup, flowContext, stateContext);
+                await store.GetOrderItems(orderItemContextsWithinGroup, flowContext, stateContext);
 
                 if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem != null))
                 {
@@ -438,7 +439,9 @@ namespace OpenActive.Server.NET.StoreBooking
                     Store = store,
                     OrderItemContexts = orderItemContextsWithinGroup
                 };
-            }).ToList();
+            });
+            var orderItemGroups = new List<OrderItemContextGroup>();
+            orderItemGroups.AddRange(await Task.WhenAll(orderItemGroupsTasks));
 
             return (orderItemContexts, orderItemGroups);
         }
@@ -507,7 +510,7 @@ namespace OpenActive.Server.NET.StoreBooking
             return context;
         }
 
-        public override TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
+        public async override Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
         {
             var context = AugmentContextFromOrder(request, order);
 
@@ -515,7 +518,7 @@ namespace OpenActive.Server.NET.StoreBooking
             // Useful for transferring state between stages of the flow
             var stateContext = storeBookingEngineSettings.OrderStore.InitialiseFlow(context);
 
-            var (orderItemContexts, orderItemGroups) = GetOrderItemContexts(order.OrderedItem, context, stateContext);
+            var (orderItemContexts, orderItemGroups) = await GetOrderItemContexts(order.OrderedItem, context, stateContext);
 
             // Create a response Order based on the original order of the OrderItems in orderItemContexts
             TOrder responseGenericOrder = new TOrder
