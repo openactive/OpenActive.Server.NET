@@ -184,12 +184,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public async static Task<bool> AddLeaseAsync(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
-        {
-            return await Task.Run(() => AddLeaseSync(clientId, uuid, brokerRole, brokerName, sellerId, customerEmail, leaseExpires, transaction));
-        }
-
-        public static bool AddLeaseSync(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
+        public static bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
         {
             var db = transaction.DatabaseConnection;
 
