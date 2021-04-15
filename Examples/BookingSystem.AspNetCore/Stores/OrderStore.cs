@@ -6,6 +6,7 @@ using ServiceStack.OrmLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BookingSystem
 {
@@ -167,7 +168,7 @@ namespace BookingSystem
             return new OrderStateContext();
         }
 
-        public override Lease CreateLease(
+        public Lease CreateLease(
             OrderQuote responseOrderQuote,
             StoreBookingFlowContext flowContext,
             OrderStateContext stateContext,
@@ -183,7 +184,7 @@ namespace BookingSystem
             // TODO: Make the lease duration configurable
             var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
 
-            var result = FakeDatabase.AddLease(
+            var result = FakeDatabase.AddLeaseSync(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker
@@ -284,11 +285,6 @@ namespace BookingSystem
                 default:
                     throw new OpenBookingException(new OpenBookingError(), $"Unexpected FakeDatabaseDeleteOrderResult: {result}");
             }
-        }
-
-        public override void UpdateLease(OrderQuote responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
-        {
-            // Runs after the transaction is committed
         }
 
         public override void UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -416,6 +412,40 @@ namespace BookingSystem
                 return false;
 
             return flowContext.Payment.AccountId != _appSettings.Payment.AccountId || flowContext.Payment.PaymentProviderId != _appSettings.Payment.PaymentProviderId;
+        }
+    }
+
+    public class AcmeOrderStoreSync : AcmeOrderStore, IOrderStoreSync
+    {
+        public AcmeOrderStoreSync(AppSettings appSettings) : base(appSettings)
+        {
+        }
+
+        public Lease CreateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            return base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
+        }
+
+        public void UpdateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            // Does nothing at the moment
+        }
+    }
+
+    public class AcmeOrderStoreAsync : AcmeOrderStore, IOrderStoreAsync
+    {
+        public AcmeOrderStoreAsync(AppSettings appSettings) : base(appSettings)
+        {
+        }
+
+        public Task<Lease> CreateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            return Task.Run(() => base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction));
+        }
+
+        public async Task UpdateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            // Does nothing at the moment
         }
     }
 }

@@ -189,6 +189,8 @@ namespace OpenActive.Server.NET.StoreBooking
                 store.Key.SetConfiguration(store.Value, settings.SellerIdTemplate);
             }
             storeBookingEngineSettings.OrderStore.SetConfiguration(settings.OrderIdTemplate, settings.SellerIdTemplate);
+
+            // TODO: Check that OrderStore and all OpportunityStores are either sync or async, not a mix
         }
 
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
@@ -557,7 +559,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         {
                             // Create the parent Order
                             var (version, orderProposalStatus) = storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
-                            responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id.ToString()}/versions/{version}");
+                            responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id}/versions/{version}");
                             responseOrderProposal.OrderProposalStatus = orderProposalStatus;
 
                             // Book the OrderItems
@@ -583,11 +585,33 @@ namespace OpenActive.Server.NET.StoreBooking
 
                             storeBookingEngineSettings.OrderStore.UpdateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
 
-                            dbTransaction.Commit();
+                            if (dbTransaction != null)
+                            {
+                                switch (dbTransaction)
+                                {
+                                    case IDatabaseTransactionSync dbTransactionSync:
+                                        dbTransactionSync.Commit();
+                                        break;
+                                    case IDatabaseTransactionAsync dbTransactionAsync:
+                                        await dbTransactionAsync.Commit();
+                                        break;
+                                }
+                            }
                         }
                         catch
                         {
-                            dbTransaction.Rollback();
+                            if (dbTransaction != null)
+                            {
+                                switch (dbTransaction)
+                                {
+                                    case IDatabaseTransactionSync dbTransactionSync:
+                                        dbTransactionSync.Rollback();
+                                        break;
+                                    case IDatabaseTransactionAsync dbTransactionAsync:
+                                        await dbTransactionAsync.Rollback();
+                                        break;
+                                }
+                            }
                             throw;
                         }
                     }
@@ -609,14 +633,33 @@ namespace OpenActive.Server.NET.StoreBooking
                     {
                         try
                         {
-                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction);
+                            switch (storeBookingEngineSettings.OrderStore)
+                            {
+                                case IOrderStoreSync orderStoreSync:
+                                    {
+                                        responseOrderQuote.Lease = orderStoreSync.CreateLeaseSync(responseOrderQuote, context, stateContext, dbTransaction);
+                                        break;
+                                    }
+                                case IOrderStoreAsync orderStoreAsync:
+                                    responseOrderQuote.Lease = await orderStoreAsync.CreateLeaseAsync(responseOrderQuote, context, stateContext, dbTransaction);
+                                    break;
+                            }
 
                             // Lease the OrderItems, if a lease exists
                             if (responseOrderQuote.Lease != null)
                             {
                                 foreach (var g in orderItemGroups)
                                 {
-                                    g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
+                                    switch (g.Store)
+                                    {
+                                        case IOpportunityStoreSync opportunityStoreSync:
+                                            opportunityStoreSync.LeaseOrderItemsSync(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
+                                            break;
+                                        case IOpportunityStoreAsync opportunityStoreAsync:
+                                            await opportunityStoreAsync.LeaseOrderItemsAsync(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
+                                            break;
+
+                                    }
                                 }
                             }
 
@@ -626,13 +669,45 @@ namespace OpenActive.Server.NET.StoreBooking
                             // Note OrderRequiresApproval is only required during C1 and C2
                             responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
 
-                            storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction);
+                            switch (storeBookingEngineSettings.OrderStore)
+                            {
+                                case IOrderStoreSync orderStoreSync:
+                                    {
+                                        orderStoreSync.UpdateLeaseSync(responseOrderQuote, context, stateContext, dbTransaction);
+                                        break;
+                                    }
+                                case IOrderStoreAsync orderStoreAsync:
+                                    await orderStoreAsync.UpdateLeaseAsync(responseOrderQuote, context, stateContext, dbTransaction);
+                                    break;
+                            }
 
-                            if (dbTransaction != null) dbTransaction.Commit();
+                            if (dbTransaction != null)
+                            {
+                                switch (dbTransaction)
+                                {
+                                    case IDatabaseTransactionSync dbTransactionSync:
+                                        dbTransactionSync.Commit();
+                                        break;
+                                    case IDatabaseTransactionAsync dbTransactionAsync:
+                                        await dbTransactionAsync.Commit();
+                                        break;
+                                }
+                            }
                         }
                         catch
                         {
-                            if (dbTransaction != null) dbTransaction.Rollback();
+                            if (dbTransaction != null)
+                            {
+                                switch (dbTransaction)
+                                {
+                                    case IDatabaseTransactionSync dbTransactionSync:
+                                        dbTransactionSync.Rollback();
+                                        break;
+                                    case IDatabaseTransactionAsync dbTransactionAsync:
+                                        await dbTransactionAsync.Rollback();
+                                        break;
+                                }
+                            }
                             throw;
                         }
                     }
@@ -680,11 +755,33 @@ namespace OpenActive.Server.NET.StoreBooking
 
                             storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction);
 
-                            dbTransaction.Commit();
+                            if (dbTransaction != null)
+                            {
+                                switch (dbTransaction)
+                                {
+                                    case IDatabaseTransactionSync dbTransactionSync:
+                                        dbTransactionSync.Commit();
+                                        break;
+                                    case IDatabaseTransactionAsync dbTransactionAsync:
+                                        await dbTransactionAsync.Commit();
+                                        break;
+                                }
+                            }
                         }
                         catch
                         {
-                            dbTransaction.Rollback();
+                            if (dbTransaction != null)
+                            {
+                                switch (dbTransaction)
+                                {
+                                    case IDatabaseTransactionSync dbTransactionSync:
+                                        dbTransactionSync.Rollback();
+                                        break;
+                                    case IDatabaseTransactionAsync dbTransactionAsync:
+                                        await dbTransactionAsync.Rollback();
+                                        break;
+                                }
+                            }
                             throw;
                         }
                     }

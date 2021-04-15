@@ -397,7 +397,7 @@ namespace BookingSystem
             }
         }
 
-        protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected void LeaseOrderItemsSync(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -647,6 +647,34 @@ namespace BookingSystem
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+    }
+
+    class SessionStoreSync : SessionStore, IOpportunityStoreSync
+    {
+
+        public SessionStoreSync(AppSettings appSettings) : base(appSettings)
+        {
+
+        }
+
+        public void LeaseOrderItemsSync(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
+        {
+            base.LeaseOrderItemsSync(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
+        }
+    }
+
+    class SessionStoreAsync : SessionStore, IOpportunityStoreAsync
+    {
+
+        public SessionStoreAsync(AppSettings appSettings) : base(appSettings)
+        {
+
+        }
+
+        public async Task LeaseOrderItemsAsync(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
+        {
+            await Task.Run(() => LeaseOrderItemsSync(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext));
         }
     }
 }
