@@ -28,7 +28,7 @@ namespace OpenActive.Server.NET.StoreBooking
         /// <returns></returns>
         IDatabaseTransaction BeginOrderTransaction(FlowStage stage);
         bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
-        bool CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
+        Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
         IStateContext InitialiseFlow(StoreBookingFlowContext flowContext);
         DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
@@ -76,7 +76,7 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
         public abstract bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
-        public abstract bool CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
+        public abstract Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
         public abstract DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         public abstract void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
         public abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents);

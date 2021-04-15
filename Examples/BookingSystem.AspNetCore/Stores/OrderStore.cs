@@ -49,7 +49,7 @@ namespace BookingSystem
         /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if OrderProposal found, False if OrderProposal not found</returns>
-        public override bool CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
+        public override async Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
         {
             return FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
         }

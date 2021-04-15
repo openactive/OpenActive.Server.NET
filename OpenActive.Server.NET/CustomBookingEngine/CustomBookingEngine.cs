@@ -483,7 +483,7 @@ namespace OpenActive.Server.NET.CustomBooking
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        public abstract void ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
+        public abstract Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
 
 
         ResponseContent IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)

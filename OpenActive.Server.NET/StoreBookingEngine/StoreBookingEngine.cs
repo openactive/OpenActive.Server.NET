@@ -263,9 +263,9 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        public override void ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
+        public async override Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
         {
-            if (!storeBookingEngineSettings.OrderStore.CustomerRejectOrderProposal(orderId, sellerId, orderIdTemplate))
+            if (!await storeBookingEngineSettings.OrderStore.CustomerRejectOrderProposal(orderId, sellerId, orderIdTemplate))
             {
                 throw new OpenBookingException(new UnknownOrderError(), "OrderProposal not found");
             }
