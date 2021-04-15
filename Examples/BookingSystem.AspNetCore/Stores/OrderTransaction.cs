@@ -4,7 +4,7 @@ using OpenActive.Server.NET.StoreBooking;
 
 namespace BookingSystem
 {
-    public sealed class OrderTransaction : IDatabaseTransaction
+    public abstract class OrderTransaction : IDatabaseTransaction
     {
         public FakeDatabaseTransaction FakeDatabaseTransaction;
 
@@ -13,16 +13,6 @@ namespace BookingSystem
             FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
         }
 
-        public void Commit()
-        {
-            FakeDatabaseTransaction.CommitTransaction();
-        }
-
-        public void Rollback()
-        {
-            FakeDatabaseTransaction.RollbackTransaction();
-        }
-
         public void Dispose()
         {
             // Note dispose pattern of checking for null first,
@@ -35,13 +25,10 @@ namespace BookingSystem
         }
     }
 
-    public sealed class OrderTransactionSync : IDatabaseTransactionSync
+    public sealed class OrderTransactionSync : OrderTransaction, IDatabaseTransactionSync
     {
-        public FakeDatabaseTransaction FakeDatabaseTransaction;
-
         public OrderTransactionSync()
         {
-            FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
         }
 
         public void Commit()
@@ -53,26 +40,12 @@ namespace BookingSystem
         {
             FakeDatabaseTransaction.RollbackTransaction();
         }
-
-        public void Dispose()
-        {
-            // Note dispose pattern of checking for null first,
-            // to ensure Dispose() is not called twice
-            if (FakeDatabaseTransaction != null)
-            {
-                FakeDatabaseTransaction.Dispose();
-                FakeDatabaseTransaction = null;
-            }
-        }
     }
 
-    public sealed class OrderTransactionAsync : IDatabaseTransactionAsync
+    public sealed class OrderTransactionAsync : OrderTransaction, IDatabaseTransactionAsync
     {
-        public FakeDatabaseTransaction FakeDatabaseTransaction;
-
         public OrderTransactionAsync()
         {
-            FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
         }
 
         public Task Commit()
@@ -83,17 +56,6 @@ namespace BookingSystem
         public Task Rollback()
         {
             return FakeDatabaseTransaction.RollbackTransactionAsync();
-        }
-
-        public void Dispose()
-        {
-            // Note dispose pattern of checking for null first,
-            // to ensure Dispose() is not called twice
-            if (FakeDatabaseTransaction != null)
-            {
-                FakeDatabaseTransaction.Dispose();
-                FakeDatabaseTransaction = null;
-            }
         }
     }
 

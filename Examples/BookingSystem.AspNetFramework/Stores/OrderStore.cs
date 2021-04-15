@@ -438,7 +438,7 @@ namespace BookingSystem
 
         public Lease CreateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
-            return base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
+            return base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransactionSync)dbTransaction);
         }
 
         public void UpdateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
@@ -466,7 +466,7 @@ namespace BookingSystem
 
         public Task<Lease> CreateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
-            return Task.Run(() => base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction));
+            return Task.Run(() => base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransactionAsync)dbTransaction));
         }
 
         public async Task UpdateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
