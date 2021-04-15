@@ -730,12 +730,32 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction);
+                            switch (storeBookingEngineSettings.OrderStore)
+                            {
+                                case IOrderStoreSync orderStoreSync:
+                                    {
+                                        orderStoreSync.CreateOrderSync(responseOrder, context, stateContext, dbTransaction);
+                                        break;
+                                    }
+                                case IOrderStoreAsync orderStoreAsync:
+                                    await orderStoreAsync.CreateOrderAsync(responseOrder, context, stateContext, dbTransaction);
+                                    break;
+                            }
+
 
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
                             {
-                                g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction);
+                                switch (g.Store)
+                                {
+                                    case IOpportunityStoreSync opportunityStoreSync:
+                                        opportunityStoreSync.BookOrderItemsSync(g.OrderItemContexts, context, stateContext, dbTransaction);
+                                        break;
+                                    case IOpportunityStoreAsync opportunityStoreAsync:
+                                        await opportunityStoreAsync.BookOrderItemsAsync(g.OrderItemContexts, context, stateContext, dbTransaction);
+                                        break;
+
+                                }
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
@@ -753,7 +773,17 @@ namespace OpenActive.Server.NET.StoreBooking
                             // Update this in case ResponseOrderItem was overwritten in Book
                             responseOrder.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
 
-                            storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction);
+                            switch (storeBookingEngineSettings.OrderStore)
+                            {
+                                case IOrderStoreSync orderStoreSync:
+                                    {
+                                        orderStoreSync.UpdateOrderSync(responseOrder, context, stateContext, dbTransaction);
+                                        break;
+                                    }
+                                case IOrderStoreAsync orderStoreAsync:
+                                    await orderStoreAsync.UpdateOrderAsync(responseOrder, context, stateContext, dbTransaction);
+                                    break;
+                            }
 
                             if (dbTransaction != null)
                             {

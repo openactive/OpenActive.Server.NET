@@ -19,13 +19,18 @@ namespace OpenActive.Server.NET.StoreBooking
     public interface IOrderStore
     {
         void SetConfiguration(OrderIdTemplate orderIdTemplate, SingleIdTemplate<SellerIdComponents> sellerIdTemplate);
+        /// <summary>
+        /// Stage is provided as it depending on the implementation (e.g. what level of leasing is applied)
+        /// it might not be appropriate to create transactions for all stages.
+        /// Null can be returned in the case that a transaction has not been created.
+        /// </summary>
+        /// <param name="stage"></param>
+        /// <returns></returns>
         IDatabaseTransaction BeginOrderTransaction(FlowStage stage);
-        void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         (string, OrderProposalStatus) CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
         bool CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
         IStateContext InitialiseFlow(StoreBookingFlowContext flowContext);
-        void UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         void UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
@@ -38,14 +43,16 @@ namespace OpenActive.Server.NET.StoreBooking
     {
         Lease CreateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         void UpdateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
-        //IDatabaseTransactionSync BeginOrderTransaction(FlowStage stage);
+        void CreateOrderSync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
+        void UpdateOrderSync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
     }
 
     public interface IOrderStoreAsync : IOrderStore
     {
         Task<Lease> CreateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         Task UpdateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
-        //IDatabaseTransactionAsync BeginOrderTransaction(FlowStage stage);
+        Task CreateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
+        Task UpdateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
 
     }
 
@@ -61,19 +68,11 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
         public abstract (string, OrderProposalStatus) CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransaction);
-        public abstract void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransaction);
-
         public abstract TStateContext Initialise(StoreBookingFlowContext flowContext);
-        public abstract void UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction);
         public abstract void UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction);
-
         public (string, OrderProposalStatus) CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return CreateOrderProposal(responseOrderProposal, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
-        }
-        public void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            CreateOrder(responseOrder, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
         }
 
         public IStateContext InitialiseFlow(StoreBookingFlowContext flowContext)
@@ -81,29 +80,10 @@ namespace OpenActive.Server.NET.StoreBooking
             return Initialise(flowContext);
         }
 
-        public void UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            UpdateOrder(responseOrder, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
-        }
         public void UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             UpdateOrderProposal(responseOrderProposal, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
         }
-
-
-        ///// <summary>
-        ///// Stage is provided as it depending on the implementation (e.g. what level of leasing is applied)
-        ///// it might not be appropriate to create transactions for all stages.
-        ///// Null can be returned in the case that a transaction has not been created.
-        ///// </summary>
-        ///// <param name="stage"></param>
-        ///// <returns></returns>
-        //protected abstract TDatabaseTransaction BeginOrderTransaction(FlowStage stage);
-
-        //IDatabaseTransaction IOrderStore.BeginOrderTransaction(FlowStage stage)
-        //{
-        //    return BeginOrderTransaction(stage);
-        //}
 
         public abstract bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
         public abstract bool CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);

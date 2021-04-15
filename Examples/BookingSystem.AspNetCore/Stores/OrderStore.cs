@@ -232,7 +232,7 @@ namespace BookingSystem
                 );
         }
 
-        public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
@@ -300,11 +300,6 @@ namespace BookingSystem
                 default:
                     throw new OpenBookingException(new OpenBookingError(), $"Unexpected FakeDatabaseDeleteOrderResult: {result}");
             }
-        }
-
-        public override void UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
-        {
-            // Runs after the transaction is committed
         }
 
         public override void UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -415,11 +410,6 @@ namespace BookingSystem
             return order;
         }
 
-        //protected override OrderTransaction BeginOrderTransaction(FlowStage stage)
-        //{
-        //    return new OrderTransaction();
-        //}
-
         private bool ReconciliationMismatch(StoreBookingFlowContext flowContext)
         {
             // MissingPaymentDetailsError is handled by OpenActive.Server.NET, so ignoring empty payment details here allows the exception to be thrown by the booking engine.
@@ -436,9 +426,19 @@ namespace BookingSystem
         {
         }
 
+        public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
+        {
+            return new OrderTransactionSync();
+        }
+
         public Lease CreateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransactionSync)dbTransaction);
+        }
+
+        public void CreateOrderSync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            base.CreateOrder(responseOrder, flowContext, (OrderStateContext)stateContext, (OrderTransactionSync)dbTransaction);
         }
 
         public void UpdateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
@@ -446,11 +446,10 @@ namespace BookingSystem
             // Does nothing at the moment
         }
 
-        public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
+        public void UpdateOrderSync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
-            return new OrderTransactionSync();
+            // Does nothing at the moment
         }
-
     }
 
     public class AcmeOrderStoreAsync : AcmeOrderStore, IOrderStoreAsync
@@ -464,9 +463,14 @@ namespace BookingSystem
             return new OrderTransactionAsync();
         }
 
-        public Task<Lease> CreateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        public async Task<Lease> CreateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
-            return Task.Run(() => base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransactionAsync)dbTransaction));
+            return base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
+        }
+
+        public async Task CreateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            base.CreateOrder(responseOrder, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
         }
 
         public async Task UpdateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
@@ -474,5 +478,9 @@ namespace BookingSystem
             // Does nothing at the moment
         }
 
+        public async Task UpdateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            // Does nothing at the moment
+        }
     }
 }

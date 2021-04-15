@@ -476,7 +476,7 @@ namespace BookingSystem
         }
 
         //TODO: This should reuse code of LeaseOrderItem
-        protected override void BookOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected void BookOrderItemsSync(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -658,6 +658,11 @@ namespace BookingSystem
 
         }
 
+        public void BookOrderItemsSync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
+        {
+            base.BookOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
+        }
+
         public void LeaseOrderItemsSync(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
             base.LeaseOrderItemsSync(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
@@ -672,9 +677,14 @@ namespace BookingSystem
 
         }
 
+        public async Task BookOrderItemsAsync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
+        {
+            base.BookOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
+        }
+
         public async Task LeaseOrderItemsAsync(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
-            await Task.Run(() => LeaseOrderItemsSync(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext));
+            base.LeaseOrderItemsSync(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
         }
     }
 }
