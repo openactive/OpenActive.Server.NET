@@ -256,7 +256,7 @@ namespace BookingSystem
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
 
-        public override (string, OrderProposalStatus) CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public (string, OrderProposalStatus) CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (!responseOrderProposal.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Price must be set on TotalPaymentDue");
@@ -300,11 +300,6 @@ namespace BookingSystem
                 default:
                     throw new OpenBookingException(new OpenBookingError(), $"Unexpected FakeDatabaseDeleteOrderResult: {result}");
             }
-        }
-
-        public override void UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
-        {
-            // Runs after the transaction is committed
         }
 
         public override bool CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
@@ -433,15 +428,25 @@ namespace BookingSystem
 
         public Lease CreateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
-            return base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransactionSync)dbTransaction);
+            return base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
+        }
+
+        public (string, OrderProposalStatus) CreateOrderProposalSync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            return base.CreateOrderProposal(responseOrderProposal, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
         }
 
         public void CreateOrderSync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
-            base.CreateOrder(responseOrder, flowContext, (OrderStateContext)stateContext, (OrderTransactionSync)dbTransaction);
+            base.CreateOrder(responseOrder, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
         }
 
         public void UpdateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            // Does nothing at the moment
+        }
+
+        public void UpdateOrderProposalSync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             // Does nothing at the moment
         }
@@ -473,12 +478,22 @@ namespace BookingSystem
             base.CreateOrder(responseOrder, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
         }
 
+        public async Task<(string, OrderProposalStatus)> CreateOrderProposalAsync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            return base.CreateOrderProposal(responseOrderProposal, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
+        }
+
         public async Task UpdateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             // Does nothing at the moment
         }
 
         public async Task UpdateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        {
+            // Does nothing at the moment
+        }
+
+        public async Task UpdateOrderProposalAsync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             // Does nothing at the moment
         }
