@@ -34,7 +34,7 @@ namespace OpenActive.Server.NET.StoreBooking
         void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
         void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents);
         Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
-        bool CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order);
+        Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order);
     }
 
     public interface IOrderStoreSync : IOrderStore
@@ -81,7 +81,7 @@ namespace OpenActive.Server.NET.StoreBooking
         public abstract void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
         public abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents);
         public abstract Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
-        public abstract bool CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order);
+        public abstract Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order);
         public abstract IDatabaseTransaction BeginOrderTransaction(FlowStage stage);
     }
 }

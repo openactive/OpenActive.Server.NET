@@ -359,7 +359,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
         public async override Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
         {
-            if (!storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
+            if (!await storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
             {
                 throw new OpenBookingException(new OrderProposalVersionOutdatedError());
             }

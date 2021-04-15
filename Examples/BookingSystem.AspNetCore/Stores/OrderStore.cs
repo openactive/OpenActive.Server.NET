@@ -302,7 +302,7 @@ namespace BookingSystem
             }
         }
 
-        public override bool CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
+        public async override Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
         {
             // TODO more elegantly extract version UUID from orderProposalVersion (probably much further up the stack?)
             var version = orderProposalVersion.ToString().Split('/').Last();
