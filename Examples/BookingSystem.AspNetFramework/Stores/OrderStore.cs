@@ -168,6 +168,24 @@ namespace BookingSystem
             return new OrderStateContext();
         }
 
+        private static BrokerRole BrokerTypeToBrokerRole(BrokerType brokerType)
+        {
+            return brokerType == BrokerType.AgentBroker
+                    ? BrokerRole.AgentBroker
+                    : brokerType == BrokerType.ResellerBroker
+                        ? BrokerRole.ResellerBroker
+                        : BrokerRole.NoBroker;
+        }
+
+        private static BrokerType BrokerRoleToBrokerType(BrokerRole brokerRole)
+        {
+            return brokerRole == BrokerRole.AgentBroker
+                    ? BrokerType.AgentBroker
+                    : brokerRole == BrokerRole.ResellerBroker
+                        ? BrokerType.ResellerBroker
+                        : BrokerType.NoBroker;
+        }
+
         public Lease CreateLease(
             OrderQuote responseOrderQuote,
             StoreBookingFlowContext flowContext,
@@ -183,15 +201,12 @@ namespace BookingSystem
 
             // TODO: Make the lease duration configurable
             var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
+            var brokerRole = BrokerTypeToBrokerRole(flowContext.BrokerRole ?? BrokerType.NoBroker);
 
             var result = FakeDatabase.AddLeaseSync(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
-                flowContext.BrokerRole == BrokerType.AgentBroker
-                    ? BrokerRole.AgentBroker
-                    : flowContext.BrokerRole == BrokerType.ResellerBroker
-                        ? BrokerRole.ResellerBroker
-                        : BrokerRole.NoBroker,
+                brokerRole,
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer?.Email,
@@ -344,60 +359,60 @@ namespace BookingSystem
             }
         }
 
-        public static Order RenderOrderFromDatabaseResult(Uri orderId, OrderTable order, List<OrderItem> orderItems)
+        public static Order RenderOrderFromDatabaseResult(Uri orderId, OrderTable dbOrder, List<OrderItem> orderItems)
         {
-            var o = CreateOrderFromOrderMode(order.OrderMode, orderId, order.ProposalVersionId, order.ProposalStatus);
-            o.Id = orderId;
-            o.Identifier = new Guid(order.OrderId);
-            o.TotalPaymentDue = new PriceSpecification
+            var order = CreateOrderFromOrderMode(dbOrder.OrderMode, orderId, dbOrder.ProposalVersionId, dbOrder.ProposalStatus);
+            order.Id = orderId;
+            order.Identifier = new Guid(dbOrder.OrderId);
+            order.TotalPaymentDue = new PriceSpecification
             {
-                Price = order.TotalOrderPrice,
+                Price = dbOrder.TotalOrderPrice,
                 PriceCurrency = "GBP"
             };
-            o.OrderedItem = orderItems;
-            return o;
+            order.OrderedItem = orderItems;
+
+            return order;
         }
 
-        public override Order GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller)
+        public async override Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
-            {
-                var order = db.Single<OrderTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid && !x.Deleted);
-                var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid);
+            var (getOrderResult, dbOrder, dbOrderItems) = await FakeBookingSystem.Database.GetOrderAndOrderItemsAsync(
+                orderId.ClientId,
+                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                orderId.uuid);
+            if (getOrderResult == FakeDatabaseGetOrderResult.OrderWasNotFound) throw new OpenBookingException(new UnknownOrderError());
 
-                var o = RenderOrderFromDatabaseResult(RenderOrderId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId), order,
-                    orderItems.Select((orderItem) => new OrderItem
-                    {
-                        Id = order.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, order.OrderId, orderItem.Id) : null,
-                        AcceptedOffer = new Offer
-                        {
-                            Id = new Uri(orderItem.OfferJsonLdId),
-                        },
-                        OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
-                        OrderItemStatus =
+            var orderIdUri = RenderOrderId(dbOrder.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : dbOrder.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, dbOrder.OrderId);
+            var orderItems = dbOrderItems.Select((orderItem) => new OrderItem
+            {
+                Id = dbOrder.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, dbOrder.OrderId, orderItem.Id) : null,
+                AcceptedOffer = new Offer
+                {
+                    Id = new Uri(orderItem.OfferJsonLdId),
+                },
+                OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
+                OrderItemStatus =
                             orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
                             orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
                             orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
                             orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended :
                             orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
-                    }).ToList());
+            }).ToList();
+            var order = RenderOrderFromDatabaseResult(orderIdUri, dbOrder, orderItems);
 
-                // These additional properties that are only available in the Order Status endpoint
-                o.Seller = new ReferenceValue<ILegalEntity>(seller);
+            // These additional properties that are only available in the Order Status endpoint
+            order.Seller = new ReferenceValue<ILegalEntity>(seller);
+            order.Broker = new Organization
+            {
+                Name = dbOrder.BrokerName
+            };
+            order.BrokerRole = BrokerRoleToBrokerType(dbOrder.BrokerRole);
+            order.Customer = new Person
+            {
+                Email = dbOrder.CustomerEmail
+            };
 
-                // Todo take these from database (and check whether Customer should be included from a GDPR point of view?!)
-                o.BrokerRole = BrokerType.AgentBroker;
-                o.Broker = new Organization
-                {
-                    Name = "Temp broker"
-                };
-                o.Customer = new Person
-                {
-                    Email = "temp@example.com"
-                };
-
-                return o;
-            }
+            return order;
         }
 
         protected override OrderTransaction BeginOrderTransaction(FlowStage stage)

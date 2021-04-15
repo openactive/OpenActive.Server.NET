@@ -105,6 +105,15 @@ namespace OpenActive.FakeDatabase.NET
     }
 
     /// <summary>
+    /// Result of getting (or attempting to get) an Order in a FakeDatabase
+    /// </summary>
+    public enum FakeDatabaseGetOrderResult
+    {
+        OrderSuccessfullyGot,
+        OrderWasNotFound
+    }
+
+    /// <summary>
     /// Result of booking (or attempting to book) an OrderProposal in a FakeDatabase
     /// </summary>
     public enum FakeDatabaseBookOrderProposalResult
@@ -566,6 +575,24 @@ namespace OpenActive.FakeDatabase.NET
                 db.Update(existingOrder);
 
                 return true;
+            }
+        }
+
+        public Task<(FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>)> GetOrderAndOrderItemsAsync(string clientId, long? sellerId, string uuid)
+        {
+            return Task.Run(() => GetOrderAndOrderItems(clientId, sellerId, uuid));
+        }
+
+        public (FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>) GetOrderAndOrderItems(string clientId, long? sellerId, string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid && !x.Deleted && (!sellerId.HasValue || x.SellerId == sellerId));
+                if (order == null) return (FakeDatabaseGetOrderResult.OrderWasNotFound, null, null);
+                var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid);
+                if (orderItems.Count == 0) return (FakeDatabaseGetOrderResult.OrderWasNotFound, null, null);
+
+                return (FakeDatabaseGetOrderResult.OrderSuccessfullyGot, order, orderItems);
             }
         }
 
@@ -1121,7 +1148,6 @@ namespace OpenActive.FakeDatabase.NET
                 }
             }
         }
-
 
         public bool RejectOrderProposal(string clientId, long? sellerId, string uuid, bool customerRejected)
         {
