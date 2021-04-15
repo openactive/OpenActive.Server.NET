@@ -1,4 +1,5 @@
-﻿using OpenActive.FakeDatabase.NET;
+﻿using System.Threading.Tasks;
+using OpenActive.FakeDatabase.NET;
 using OpenActive.Server.NET.StoreBooking;
 
 namespace BookingSystem
@@ -20,6 +21,68 @@ namespace BookingSystem
         public void Rollback()
         {
             FakeDatabaseTransaction.RollbackTransaction();
+        }
+
+        public void Dispose()
+        {
+            // Note dispose pattern of checking for null first,
+            // to ensure Dispose() is not called twice
+            if (FakeDatabaseTransaction != null)
+            {
+                FakeDatabaseTransaction.Dispose();
+                FakeDatabaseTransaction = null;
+            }
+        }
+    }
+
+    public sealed class OrderTransactionSync : IDatabaseTransactionSync
+    {
+        public FakeDatabaseTransaction FakeDatabaseTransaction;
+
+        public OrderTransactionSync()
+        {
+            FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
+        }
+
+        public void Commit()
+        {
+            FakeDatabaseTransaction.CommitTransaction();
+        }
+
+        public void Rollback()
+        {
+            FakeDatabaseTransaction.RollbackTransaction();
+        }
+
+        public void Dispose()
+        {
+            // Note dispose pattern of checking for null first,
+            // to ensure Dispose() is not called twice
+            if (FakeDatabaseTransaction != null)
+            {
+                FakeDatabaseTransaction.Dispose();
+                FakeDatabaseTransaction = null;
+            }
+        }
+    }
+
+    public sealed class OrderTransactionAsync : IDatabaseTransactionAsync
+    {
+        public FakeDatabaseTransaction FakeDatabaseTransaction;
+
+        public OrderTransactionAsync()
+        {
+            FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
+        }
+
+        public Task Commit()
+        {
+            return FakeDatabaseTransaction.CommitTransactionAsync();
+        }
+
+        public Task Rollback()
+        {
+            return FakeDatabaseTransaction.RollbackTransactionAsync();
         }
 
         public void Dispose()

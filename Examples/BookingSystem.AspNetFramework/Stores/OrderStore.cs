@@ -14,7 +14,7 @@ namespace BookingSystem
     {
     }
 
-    public class AcmeOrderStore : OrderStore<OrderTransaction, OrderStateContext>
+    public abstract class AcmeOrderStore : OrderStore<OrderTransaction, OrderStateContext>
     {
         private readonly AppSettings _appSettings;
 
@@ -203,7 +203,7 @@ namespace BookingSystem
             var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
             var brokerRole = BrokerTypeToBrokerRole(flowContext.BrokerRole ?? BrokerType.NoBroker);
 
-            var result = FakeDatabase.AddLeaseSync(
+            var result = FakeDatabase.AddLease(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 brokerRole,
@@ -415,10 +415,10 @@ namespace BookingSystem
             return order;
         }
 
-        protected override OrderTransaction BeginOrderTransaction(FlowStage stage)
-        {
-            return new OrderTransaction();
-        }
+        //protected override OrderTransaction BeginOrderTransaction(FlowStage stage)
+        //{
+        //    return new OrderTransaction();
+        //}
 
         private bool ReconciliationMismatch(StoreBookingFlowContext flowContext)
         {
@@ -445,12 +445,23 @@ namespace BookingSystem
         {
             // Does nothing at the moment
         }
+
+        public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
+        {
+            return new OrderTransactionSync();
+        }
+
     }
 
     public class AcmeOrderStoreAsync : AcmeOrderStore, IOrderStoreAsync
     {
         public AcmeOrderStoreAsync(AppSettings appSettings) : base(appSettings)
         {
+        }
+
+        public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
+        {
+            return new OrderTransactionAsync();
         }
 
         public Task<Lease> CreateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
@@ -462,5 +473,6 @@ namespace BookingSystem
         {
             // Does nothing at the moment
         }
+
     }
 }

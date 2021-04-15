@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -28,6 +29,16 @@ namespace OpenActive.FakeDatabase.NET
             transaction.Rollback();
         }
 
+        public Task CommitTransactionAsync()
+        {
+            return Task.Run(() => transaction.Commit());
+        }
+
+        public Task RollbackTransactionAsync()
+        {
+            return Task.Run(() => transaction.Rollback());
+        }
+
         public void Dispose()
         {
             // Note dispose pattern of checking for null first,
@@ -44,6 +55,8 @@ namespace OpenActive.FakeDatabase.NET
                 DatabaseConnection = null;
             }
         }
+
+
     }
 
 }

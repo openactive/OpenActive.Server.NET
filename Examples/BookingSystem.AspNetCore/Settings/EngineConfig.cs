@@ -247,13 +247,13 @@ namespace BookingSystem
                     // List of _bookable_ opportunity types and which store to route to for each
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
-                            new SessionStoreSync(appSettings), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                            new SessionStoreAsync(appSettings), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStoreSync(appSettings), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
+                            new FacilityStoreAsync(appSettings), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
                         }
                     },
-                    OrderStore = new AcmeOrderStoreSync(appSettings),
+                    OrderStore = new AcmeOrderStoreAsync(appSettings),
                     BusinessToBusinessTaxCalculation = appSettings.Payment.TaxCalculationB2B,
                     BusinessToConsumerTaxCalculation = appSettings.Payment.TaxCalculationB2C,
                 });
