@@ -30,7 +30,7 @@ namespace OpenActive.Server.NET
         ResponseContent DeleteOrder(string clientId, Uri sellerId, string uuid);
         ResponseContent DeleteOrderQuote(string clientId, Uri sellerId, string uuid);
         ResponseContent ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
-        ResponseContent ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
+        Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
 
         // These endpoints are authenticated by client credentials (OAuth Client Credentials Grant)
         ResponseContent InsertTestOpportunity(string testDatasetIdentifier, string eventJson);
