@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
@@ -274,10 +275,10 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
-        public ResponseContent GetOrderStatus(string clientId, Uri sellerId, string uuid)
+        public async Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuid)
         {
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
-            var result = ProcessGetOrderStatus(orderId, sellerIdComponents, seller);
+            var result = await ProcessGetOrderStatus(orderId, sellerIdComponents, seller);
             if (result == null)
             {
                 throw new OpenBookingException(new UnknownOrderError());
@@ -288,7 +289,7 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
-        protected abstract Order ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
+        protected abstract Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
 
 
         protected bool IsOpportunityTypeRecognised(string opportunityTypeString)
@@ -318,15 +319,15 @@ namespace OpenActive.Server.NET.CustomBooking
                 .FirstOrDefault();
         }
 
-        public ResponseContent ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
+        public async Task<ResponseContent> ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
         {
-            return ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuote);
+            return await ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuote);
         }
-        public ResponseContent ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
+        public async Task<ResponseContent> ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
         {
-            return ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C2, OrderType.OrderQuote);
+            return await ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C2, OrderType.OrderQuote);
         }
-        private ResponseContent ProcessCheckpoint(string clientId, Uri sellerId, string uuid, string orderQuoteJson, FlowStage flowStage, OrderType orderType)
+        private async Task<ResponseContent> ProcessCheckpoint(string clientId, Uri sellerId, string uuid, string orderQuoteJson, FlowStage flowStage, OrderType orderType)
         {
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
             if (orderQuote == null || orderQuote.GetType() != typeof(OrderQuote))
@@ -334,12 +335,12 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, orderType);
-            var orderResponse = ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
+            var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
             // Return a 409 status code if any OrderItem level errors exist
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
                 orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
         }
-        public ResponseContent ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson)
+        public async Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson)
         {
             // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
             // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
@@ -350,12 +351,12 @@ namespace OpenActive.Server.NET.CustomBooking
             }
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
             var response = order.OrderProposalVersion != null ?
-                 ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
-                 ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
+                 await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
+                 await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.OK);
         }
 
-        public ResponseContent ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson)
+        public async Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson)
         {
             // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
             // If C1 and C2 are used correctly, P should not fail except in very exceptional cases.
@@ -365,7 +366,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
             }
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.OrderProposal);
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
+            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
         }
 
         private SellerIdComponents GetSellerIdComponentsFromApiKey(Uri sellerId)
@@ -708,9 +709,9 @@ namespace OpenActive.Server.NET.CustomBooking
             };
         }
 
-        public abstract TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new();
+        public abstract Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new();
 
-        public abstract Order ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order);
+        public abstract Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order);
 
     }
 }

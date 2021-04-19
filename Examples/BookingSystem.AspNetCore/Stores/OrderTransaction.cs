@@ -1,25 +1,16 @@
-﻿using OpenActive.FakeDatabase.NET;
+﻿using System.Threading.Tasks;
+using OpenActive.FakeDatabase.NET;
 using OpenActive.Server.NET.StoreBooking;
 
 namespace BookingSystem
 {
-    public sealed class OrderTransaction : IDatabaseTransaction
+    public abstract class OrderTransaction : IDatabaseTransaction
     {
         public FakeDatabaseTransaction FakeDatabaseTransaction;
 
         public OrderTransaction()
         {
             FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
-        }
-
-        public void Commit()
-        {
-            FakeDatabaseTransaction.CommitTransaction();
-        }
-
-        public void Rollback()
-        {
-            FakeDatabaseTransaction.RollbackTransaction();
         }
 
         public void Dispose()
@@ -31,6 +22,40 @@ namespace BookingSystem
                 FakeDatabaseTransaction.Dispose();
                 FakeDatabaseTransaction = null;
             }
+        }
+    }
+
+    public sealed class OrderTransactionSync : OrderTransaction, IDatabaseTransactionSync
+    {
+        public OrderTransactionSync()
+        {
+        }
+
+        public void Commit()
+        {
+            FakeDatabaseTransaction.CommitTransaction();
+        }
+
+        public void Rollback()
+        {
+            FakeDatabaseTransaction.RollbackTransaction();
+        }
+    }
+
+    public sealed class OrderTransactionAsync : OrderTransaction, IDatabaseTransactionAsync
+    {
+        public OrderTransactionAsync()
+        {
+        }
+
+        public Task Commit()
+        {
+            return FakeDatabaseTransaction.CommitTransactionAsync();
+        }
+
+        public Task Rollback()
+        {
+            return FakeDatabaseTransaction.RollbackTransactionAsync();
         }
     }
 
