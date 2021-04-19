@@ -18,9 +18,9 @@ namespace OpenActive.Server.NET
     public interface IBookingEngine
     {
         // These endpoints are fully open
-        ResponseContent RenderDatasetSite();
-        ResponseContent GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber);
-        ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
+        Task<ResponseContent> RenderDatasetSite();
+        Task<ResponseContent> GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber);
+        Task<ResponseContent> GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
 
         // These endpoints are authenticated by seller credentials (OAuth Authorization Code Grant)
         Task<ResponseContent> ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
@@ -36,8 +36,8 @@ namespace OpenActive.Server.NET
         Task<ResponseContent> InsertTestOpportunity(string testDatasetIdentifier, string eventJson);
         Task<ResponseContent> DeleteTestDataset(string testDatasetIdentifier);
         Task<ResponseContent> TriggerTestAction(string actionJson);
-        ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
-        ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
+        Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
+        Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
         Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuid);
     }
 }

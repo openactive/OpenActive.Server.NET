@@ -7,6 +7,7 @@ using ServiceStack.OrmLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BookingSystem
 {
@@ -14,7 +15,7 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        protected override List<RpdeItem<ScheduledSession>> GetRpdeItems(long? afterTimestamp, long? afterId)
+        protected async override Task<List<RpdeItem<ScheduledSession>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
@@ -71,7 +72,7 @@ namespace BookingSystem
             this._useSingleSellerMode = useSingleSellerMode;
         }
 
-        protected override List<RpdeItem<SessionSeries>> GetRpdeItems(long? afterTimestamp, long? afterId)
+        protected async override Task<List<RpdeItem<SessionSeries>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {

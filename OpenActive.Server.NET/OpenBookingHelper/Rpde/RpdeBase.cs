@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
@@ -48,19 +49,19 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
     public abstract class RpdeFeedIncrementingUniqueChangeNumber<TComponents, TClass> : OpportunityDataRpdeFeedGenerator<TComponents, TClass>, IRpdeFeedIncrementingUniqueChangeNumber where TComponents : class, IBookableIdComponents, new() where TClass : Schema.NET.Thing
     {
-        protected abstract List<RpdeItem<TClass>> GetRpdeItems(long? afterChangeNumber);
+        protected abstract Task<List<RpdeItem<TClass>>> GetRpdeItems(long? afterChangeNumber);
 
-        public RpdePage GetRpdePage(long? afterChangeNumber)
+        public async Task<RpdePage> GetRpdePage(long? afterChangeNumber)
         {
-            return new RpdePage(FeedUrl, afterChangeNumber, GetRpdeItems(afterChangeNumber).ConvertAll(x => (RpdeItem)x));
+            return new RpdePage(FeedUrl, afterChangeNumber, (await GetRpdeItems(afterChangeNumber)).ConvertAll(x => (RpdeItem)x));
         }
     }
 
     public abstract class RpdeFeedModifiedTimestampAndIdLong<TComponents, TClass> : OpportunityDataRpdeFeedGenerator<TComponents, TClass>, IRpdeFeedModifiedTimestampAndIdLong where TComponents : class, IBookableIdComponents, new() where TClass : Schema.NET.Thing
     {
-        protected abstract List<RpdeItem<TClass>> GetRpdeItems(long? afterTimestamp, long? afterId);
+        protected abstract Task<List<RpdeItem<TClass>>> GetRpdeItems(long? afterTimestamp, long? afterId);
 
-        public RpdePage GetRpdePage(long? afterTimestamp, long? afterId)
+        public async Task<RpdePage> GetRpdePage(long? afterTimestamp, long? afterId)
         {
             if (!afterTimestamp.HasValue && afterId.HasValue ||
                 afterTimestamp.HasValue && !afterId.HasValue)
@@ -69,16 +70,16 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
             else
             {
-                return new RpdePage(FeedUrl, afterTimestamp, afterId, GetRpdeItems(afterTimestamp, afterId).ConvertAll(x => (RpdeItem)x));
+                return new RpdePage(FeedUrl, afterTimestamp, afterId, (await GetRpdeItems(afterTimestamp, afterId)).ConvertAll(x => (RpdeItem)x));
             }
         }
     }
 
     public abstract class RpdeFeedModifiedTimestampAndIdString<TComponents, TClass> : OpportunityDataRpdeFeedGenerator<TComponents, TClass>, IRpdeFeedModifiedTimestampAndIdString where TComponents : class, IBookableIdComponents, new() where TClass : Schema.NET.Thing
     {
-        protected abstract List<RpdeItem<TClass>> GetRpdeItems(long? afterTimestamp, string afterId);
+        protected abstract Task<List<RpdeItem<TClass>>> GetRpdeItems(long? afterTimestamp, string afterId);
 
-        public RpdePage GetRpdePage(long? afterTimestamp, string afterId)
+        public async Task<RpdePage> GetRpdePage(long? afterTimestamp, string afterId)
         {
             if ((!afterTimestamp.HasValue && !string.IsNullOrWhiteSpace(afterId)) ||
                 (afterTimestamp.HasValue && string.IsNullOrWhiteSpace(afterId)))
@@ -87,7 +88,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
             else
             {
-                return new RpdePage(FeedUrl, afterTimestamp, afterId, GetRpdeItems(afterTimestamp, afterId).ConvertAll(x => (RpdeItem)x));
+                return new RpdePage(FeedUrl, afterTimestamp, afterId, (await GetRpdeItems(afterTimestamp, afterId)).ConvertAll(x => (RpdeItem)x));
             }
         }
     }

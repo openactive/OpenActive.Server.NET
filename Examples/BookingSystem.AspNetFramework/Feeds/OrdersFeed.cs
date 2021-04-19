@@ -6,6 +6,7 @@ using OpenActive.NET.Rpde.Version1;
 using OpenActive.NET;
 using OpenActive.FakeDatabase.NET;
 using ServiceStack.OrmLite;
+using System.Threading.Tasks;
 
 namespace BookingSystem
 {
@@ -13,7 +14,7 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        protected override List<RpdeItem> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
+        protected async override Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 // using System.Web.Mvc;
@@ -25,9 +26,9 @@ namespace BookingSystem.AspNetFramework.Controllers
 
         // GET: /openactive/
         [HttpGet]
-        public HttpResponseMessage Index()
+        public async Task<HttpResponseMessage> Index()
         {
-            return _bookingEngine.RenderDatasetSite().GetContentResult();
+            return (await _bookingEngine.RenderDatasetSite()).GetContentResult();
         }
     }
 }

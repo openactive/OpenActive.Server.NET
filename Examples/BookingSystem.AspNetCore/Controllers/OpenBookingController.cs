@@ -195,7 +195,7 @@ namespace BookingSystem.AspNetCore.Controllers
         // GET api/openbooking/orders-rpde
         [HttpGet("orders-rpde")]
         [Authorize(OpenActiveScopes.OrdersFeed)]
-        public IActionResult GetOrdersFeed([FromServices] IBookingEngine bookingEngine, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public async Task<IActionResult> GetOrdersFeed([FromServices] IBookingEngine bookingEngine, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             try
             {
@@ -203,7 +203,7 @@ namespace BookingSystem.AspNetCore.Controllers
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
                 string clientId = User.GetAccessTokenOrdersFeedClaim();
-                return bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return (await bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
