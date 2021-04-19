@@ -53,7 +53,6 @@ namespace OpenActive.Server.NET.StoreBooking
         Task ProposeOrderItemsAsync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
     }
 
-
     //TODO: Remove duplication between this and RpdeBase if possible as they are using the same pattern?
     public abstract class OpportunityStore<TComponents, TDatabaseTransaction, TStateContext> : ModelSupport<TComponents>, IOpportunityStore where TComponents : class, IBookableIdComponents, new() where TDatabaseTransaction : IDatabaseTransaction where TStateContext : IStateContext
     {
@@ -111,6 +110,5 @@ namespace OpenActive.Server.NET.StoreBooking
         protected abstract Task<TComponents> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
         protected abstract Task DeleteTestDataset(string testDatasetIdentifier);
         protected abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, TComponents idComponents);
-
     }
 }

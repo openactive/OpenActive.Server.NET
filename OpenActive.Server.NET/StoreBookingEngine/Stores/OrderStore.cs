@@ -68,13 +68,11 @@ namespace OpenActive.Server.NET.StoreBooking
         {
             base.SetConfiguration(orderIdTemplate, sellerIdTemplate);
         }
-
         public abstract TStateContext Initialise(StoreBookingFlowContext flowContext);
         public IStateContext InitialiseFlow(StoreBookingFlowContext flowContext)
         {
             return Initialise(flowContext);
         }
-
         public abstract Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
         public abstract Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
         public abstract Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
