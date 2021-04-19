@@ -29,14 +29,14 @@ namespace OpenActive.FakeDatabase.NET
             transaction.Rollback();
         }
 
-        public Task CommitTransactionAsync()
+        public async Task CommitTransactionAsync()
         {
-            return Task.Run(() => transaction.Commit());
+            transaction.Commit();
         }
 
-        public Task RollbackTransactionAsync()
+        public async Task RollbackTransactionAsync()
         {
-            return Task.Run(() => transaction.Rollback());
+            transaction.Rollback();
         }
 
         public void Dispose()
