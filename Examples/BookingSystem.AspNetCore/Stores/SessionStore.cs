@@ -24,7 +24,7 @@ namespace BookingSystem
 
         Random rnd = new Random();
 
-        protected override SessionOpportunity CreateOpportunityWithinTestDataset(
+        protected async override Task<SessionOpportunity> CreateOpportunityWithinTestDataset(
             string testDatasetIdentifier,
             OpportunityType opportunityType,
             TestOpportunityCriteriaEnumeration criteria,
@@ -230,12 +230,12 @@ namespace BookingSystem
             }
         }
 
-        protected override void DeleteTestDataset(string testDatasetIdentifier)
+        protected async override Task DeleteTestDataset(string testDatasetIdentifier)
         {
             FakeBookingSystem.Database.DeleteTestClassesFromDataset(testDatasetIdentifier);
         }
 
-        protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, SessionOpportunity idComponents)
+        protected async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, SessionOpportunity idComponents)
         {
             switch (simulateAction)
             {

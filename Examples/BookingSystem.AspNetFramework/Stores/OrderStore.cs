@@ -28,7 +28,7 @@ namespace BookingSystem
         /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if Order found, False if Order not found</returns>
-        public override bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
+        public async override Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
             try
             {
@@ -54,7 +54,7 @@ namespace BookingSystem
             return FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
         }
 
-        public override void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents)
+        public async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents)
         {
             switch (simulateAction)
             {
@@ -222,7 +222,7 @@ namespace BookingSystem
             };
         }
 
-        public override void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public async override Task DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
             // Note if no lease support, simply do nothing here
             FakeBookingSystem.Database.DeleteLease(
@@ -281,7 +281,7 @@ namespace BookingSystem
             return (version, OrderProposalStatus.AwaitingSellerConfirmation);
         }
 
-        public override DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public async override Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
             var result = FakeBookingSystem.Database.DeleteOrder(
                 orderId.ClientId,

@@ -82,12 +82,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpDelete]
         [Route("order-quotes/{uuid}")]
-        public HttpResponseMessage OrderQuoteDeletion(string uuid)
+        public async Task<HttpResponseMessage> OrderQuoteDeletion(string uuid)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.DeleteOrderQuote(clientId, sellerId, uuid).GetContentResult();
+                return (await _bookingEngine.DeleteOrderQuote(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -121,12 +121,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpDelete]
         [Route("orders/{uuid}")]
-        public HttpResponseMessage OrderDeletion(string uuid)
+        public async Task<HttpResponseMessage> OrderDeletion(string uuid)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.DeleteOrder(clientId, sellerId, uuid).GetContentResult();
+                return (await _bookingEngine.DeleteOrder(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -140,12 +140,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPatch]
         [Route("orders/{uuid}")]
-        public HttpResponseMessage OrderUpdate(string uuid, [FromBody] string order)
+        public async Task<HttpResponseMessage> OrderUpdate(string uuid, [FromBody] string order)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order).GetContentResult();
+                return (await _bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -194,11 +194,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         // POST api/openbooking/test-interface/datasets/uat-ci/opportunities
         [HttpPost]
         [Route("test-interface/datasets/{testDatasetIdentifier}/opportunities")]
-        public HttpResponseMessage TestInterfaceDatasetInsert(string testDatasetIdentifier, [FromBody] string @event)
+        public async Task<HttpResponseMessage> TestInterfaceDatasetInsert(string testDatasetIdentifier, [FromBody] string @event)
         {
             try
             {
-                return _bookingEngine.InsertTestOpportunity(testDatasetIdentifier, @event).GetContentResult();
+                return (await _bookingEngine.InsertTestOpportunity(testDatasetIdentifier, @event)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -209,11 +209,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         // DELETE api/openbooking/test-interface/datasets/uat-ci
         [HttpDelete]
         [Route("test-interface/datasets/{testDatasetIdentifier}")]
-        public HttpResponseMessage TestInterfaceDatasetDelete(string testDatasetIdentifier)
+        public async Task<HttpResponseMessage> TestInterfaceDatasetDelete(string testDatasetIdentifier)
         {
             try
             {
-                return _bookingEngine.DeleteTestDataset(testDatasetIdentifier).GetContentResult();
+                return (await _bookingEngine.DeleteTestDataset(testDatasetIdentifier)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -225,11 +225,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         // POST api/openbooking/test-interface/actions
         [HttpPost]
         [Route("test-interface/actions")]
-        public HttpResponseMessage TestInterfaceAction([FromBody] string action)
+        public async Task<HttpResponseMessage> TestInterfaceAction([FromBody] string action)
         {
             try
             {
-                return _bookingEngine.TriggerTestAction(action).GetContentResult();
+                return (await _bookingEngine.TriggerTestAction(action)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

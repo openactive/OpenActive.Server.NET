@@ -27,15 +27,15 @@ namespace OpenActive.Server.NET
         Task<ResponseContent> ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
         Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson);
         Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson);
-        ResponseContent DeleteOrder(string clientId, Uri sellerId, string uuid);
-        ResponseContent DeleteOrderQuote(string clientId, Uri sellerId, string uuid);
-        ResponseContent ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
+        Task<ResponseContent> DeleteOrder(string clientId, Uri sellerId, string uuid);
+        Task<ResponseContent> DeleteOrderQuote(string clientId, Uri sellerId, string uuid);
+        Task<ResponseContent> ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
         Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
 
         // These endpoints are authenticated by client credentials (OAuth Client Credentials Grant)
-        ResponseContent InsertTestOpportunity(string testDatasetIdentifier, string eventJson);
-        ResponseContent DeleteTestDataset(string testDatasetIdentifier);
-        ResponseContent TriggerTestAction(string actionJson);
+        Task<ResponseContent> InsertTestOpportunity(string testDatasetIdentifier, string eventJson);
+        Task<ResponseContent> DeleteTestDataset(string testDatasetIdentifier);
+        Task<ResponseContent> TriggerTestAction(string actionJson);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
         Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuid);

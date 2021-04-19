@@ -379,9 +379,9 @@ namespace OpenActive.Server.NET.CustomBooking
             return sellerIdComponents;
         }
 
-        public ResponseContent DeleteOrder(string clientId, Uri sellerId, string uuid)
+        public async Task<ResponseContent> DeleteOrder(string clientId, Uri sellerId, string uuid)
         {
-            var result = ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
+            var result = await ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
             switch (result)
             {
                 case DeleteOrderResult.OrderSuccessfullyDeleted:
@@ -393,17 +393,17 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
-        protected abstract DeleteOrderResult ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
+        protected abstract Task<DeleteOrderResult> ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
 
-        public ResponseContent DeleteOrderQuote(string clientId, Uri sellerId, string uuid)
+        public async Task<ResponseContent> DeleteOrderQuote(string clientId, Uri sellerId, string uuid)
         {
-            ProcessOrderQuoteDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
+            await ProcessOrderQuoteDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
+        protected abstract Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
 
-        public ResponseContent ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson)
+        public async Task<ResponseContent> ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson)
         {
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
             SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
@@ -443,12 +443,12 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new OrderItemNotWithinOrderError());
             }
 
-            ProcessCustomerCancellation(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
+            await ProcessCustomerCancellation(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        public abstract void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
+        public abstract Task ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
 
 
         public async Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderProposalJson)
@@ -486,7 +486,7 @@ namespace OpenActive.Server.NET.CustomBooking
         public abstract Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
 
 
-        ResponseContent IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
+        async Task<ResponseContent> IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
         {
             Event genericEvent = OpenActiveSerializer.Deserialize<Event>(eventJson);
 
@@ -584,7 +584,7 @@ namespace OpenActive.Server.NET.CustomBooking
             if (sellerIdComponents == null) throw new OpenBookingException(new SellerMismatchError(), "Seller ID format was invalid");
 
             // Returns a matching Event subclass that will only include "@type" and "@id" properties
-            var createdEvent = this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, sellerIdComponents);
+            var createdEvent = await this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, sellerIdComponents);
 
             if (createdEvent.Type != genericEvent.Type)
             {
@@ -594,18 +594,18 @@ namespace OpenActive.Server.NET.CustomBooking
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(createdEvent), HttpStatusCode.OK);
         }
 
-        protected abstract Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
+        protected abstract Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
 
-        ResponseContent IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
+        async Task<ResponseContent> IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
         {
-            this.DeleteTestDataset(testDatasetIdentifier);
+            await this.DeleteTestDataset(testDatasetIdentifier);
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void DeleteTestDataset(string testDatasetIdentifier);
+        protected abstract Task DeleteTestDataset(string testDatasetIdentifier);
 
-        ResponseContent IBookingEngine.TriggerTestAction(string actionJson)
+        async Task<ResponseContent> IBookingEngine.TriggerTestAction(string actionJson)
         {
             OpenBookingSimulateAction action = OpenActiveSerializer.Deserialize<OpenBookingSimulateAction>(actionJson);
 
@@ -619,12 +619,12 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new OpenBookingError(), "Invalid OpenBookingSimulateAction object specified.");
             }
 
-            this.TriggerTestAction(action, settings.OrderIdTemplate);
+            await this.TriggerTestAction(action, settings.OrderIdTemplate);
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate);
+        protected abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate);
 
         private (OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller) ConstructIdsFromRequest(string clientId, Uri authenticationSellerId, string uuid, OrderType orderType)
         {
