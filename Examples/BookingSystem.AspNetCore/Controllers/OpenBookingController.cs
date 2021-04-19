@@ -86,12 +86,12 @@ namespace BookingSystem.AspNetCore.Controllers
         /// </summary>
         [HttpDelete("order-quotes/{uuid}")]
         [Authorize(OpenActiveScopes.OpenBooking)]
-        public IActionResult OrderQuoteDeletion([FromServices] IBookingEngine bookingEngine, string uuid)
+        public async Task<IActionResult> OrderQuoteDeletion([FromServices] IBookingEngine bookingEngine, string uuid)
         {
             try
             {
                 (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
-                return bookingEngine.DeleteOrderQuote(clientId, sellerId, uuid).GetContentResult();
+                return (await bookingEngine.DeleteOrderQuote(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -124,12 +124,12 @@ namespace BookingSystem.AspNetCore.Controllers
         /// </summary>
         [HttpDelete("orders/{uuid}")]
         [Authorize(OpenActiveScopes.OpenBooking)]
-        public IActionResult OrderDeletion([FromServices] IBookingEngine bookingEngine, string uuid)
+        public async Task<IActionResult> OrderDeletion([FromServices] IBookingEngine bookingEngine, string uuid)
         {
             try
             {
                 (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
-                return bookingEngine.DeleteOrder(clientId, sellerId, uuid).GetContentResult();
+                return (await bookingEngine.DeleteOrder(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -143,12 +143,12 @@ namespace BookingSystem.AspNetCore.Controllers
         /// </summary>
         [HttpPatch("orders/{uuid}")]
         [Authorize(OpenActiveScopes.OpenBooking)]
-        public IActionResult OrderUpdate([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
+        public async Task<IActionResult> OrderUpdate([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
         {
             try
             {
                 (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
-                return bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order).GetContentResult();
+                return (await bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -213,11 +213,11 @@ namespace BookingSystem.AspNetCore.Controllers
 
         // POST api/openbooking/test-interface/datasets/uat-ci/opportunities
         [HttpPost("test-interface/datasets/{testDatasetIdentifier}/opportunities")]
-        public IActionResult TestInterfaceDatasetInsert([FromServices] IBookingEngine bookingEngine, string testDatasetIdentifier, [FromBody] string @event)
+        public async Task<IActionResult> TestInterfaceDatasetInsert([FromServices] IBookingEngine bookingEngine, string testDatasetIdentifier, [FromBody] string @event)
         {
             try
             {
-                return bookingEngine.InsertTestOpportunity(testDatasetIdentifier, @event).GetContentResult();
+                return (await bookingEngine.InsertTestOpportunity(testDatasetIdentifier, @event)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -227,11 +227,11 @@ namespace BookingSystem.AspNetCore.Controllers
 
         // DELETE api/openbooking/test-interface/datasets/uat-ci
         [HttpDelete("test-interface/datasets/{testDatasetIdentifier}")]
-        public IActionResult TestInterfaceDatasetDelete([FromServices] IBookingEngine bookingEngine, string testDatasetIdentifier)
+        public async Task<IActionResult> TestInterfaceDatasetDelete([FromServices] IBookingEngine bookingEngine, string testDatasetIdentifier)
         {
             try
             {
-                return bookingEngine.DeleteTestDataset(testDatasetIdentifier).GetContentResult();
+                return (await bookingEngine.DeleteTestDataset(testDatasetIdentifier)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -241,11 +241,11 @@ namespace BookingSystem.AspNetCore.Controllers
 
         // POST api/openbooking/test-interface/actions
         [HttpPost("test-interface/actions")]
-        public IActionResult TestInterfaceAction([FromServices] IBookingEngine bookingEngine, [FromBody] string action)
+        public async Task<IActionResult> TestInterfaceAction([FromServices] IBookingEngine bookingEngine, [FromBody] string action)
         {
             try
             {
-                return bookingEngine.TriggerTestAction(action).GetContentResult();
+                return (await bookingEngine.TriggerTestAction(action)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

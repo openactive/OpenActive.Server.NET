@@ -196,23 +196,23 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
 
-        protected override Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
+        protected async override Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
 
-            return storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
+            return await storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
         }
 
-        protected override void DeleteTestDataset(string testDatasetIdentifier)
+        protected async override Task DeleteTestDataset(string testDatasetIdentifier)
         {
             foreach (var store in storeRouting.Values)
             {
-                store.DeleteTestDataset(testDatasetIdentifier);
+                await store.DeleteTestDataset(testDatasetIdentifier);
             }
         }
 
-        protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate)
+        protected async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate)
         {
             switch (simulateAction.Object.Value)
             {
@@ -224,7 +224,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         throw new OpenBookingException(new UnknownOrderError(), $"Order ID is not the expected format for a '{order.Type}': '{order.Id}'");
                     }
 
-                    storeBookingEngineSettings.OrderStore.TriggerTestAction(simulateAction, orderIdComponents);
+                    await storeBookingEngineSettings.OrderStore.TriggerTestAction(simulateAction, orderIdComponents);
                     break;
 
                 case Event @event:
@@ -246,7 +246,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), $"Store is not defined for {opportunityIdComponents.OpportunityType.Value}");
                     }
 
-                    store.TriggerTestAction(simulateAction, opportunityIdComponents);
+                    await store.TriggerTestAction(simulateAction, opportunityIdComponents);
                     break;
 
                 default:
@@ -255,9 +255,9 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        public override void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
+        public async override Task ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
-            if (!storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderId, sellerId, orderIdTemplate, orderItemIds))
+            if (!await storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderId, sellerId, orderIdTemplate, orderItemIds))
             {
                 throw new OpenBookingException(new UnknownOrderError(), "Order not found");
             }
@@ -271,14 +271,14 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected override DeleteOrderResult ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
+        protected async override Task<DeleteOrderResult> ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            return storeBookingEngineSettings.OrderStore.DeleteOrder(orderId, sellerId);
+            return await storeBookingEngineSettings.OrderStore.DeleteOrder(orderId, sellerId);
         }
 
-        protected override void ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
+        protected async override Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            storeBookingEngineSettings.OrderStore.DeleteLease(orderId, sellerId);
+            await storeBookingEngineSettings.OrderStore.DeleteLease(orderId, sellerId);
         }
 
         private static void CheckOrderIntegrity(Order requestOrder, Order responseOrder)
