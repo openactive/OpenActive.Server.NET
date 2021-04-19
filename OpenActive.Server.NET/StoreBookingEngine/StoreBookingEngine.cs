@@ -569,8 +569,7 @@ namespace OpenActive.Server.NET.StoreBooking
                                 case IOrderStoreAsync orderStoreAsync:
                                     (version, orderProposalStatus) = await orderStoreAsync.CreateOrderProposalAsync(responseOrderProposal, context, stateContext, dbTransaction);
                                     break;
-                                // TODO TODO TODO throw a better exception
-                                default: throw new Exception();
+                                default: throw new ArgumentException("OrderStore not configured, either sync or async OrderStore must be configured");
                             }
                             responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id}/versions/{version}");
                             responseOrderProposal.OrderProposalStatus = orderProposalStatus;

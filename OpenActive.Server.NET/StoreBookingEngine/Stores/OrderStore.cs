@@ -46,7 +46,6 @@ namespace OpenActive.Server.NET.StoreBooking
         (string, OrderProposalStatus) CreateOrderProposalSync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         void UpdateOrderProposalSync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
     }
-
     public interface IOrderStoreAsync : IOrderStore
     {
         Task<Lease> CreateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
@@ -68,13 +67,11 @@ namespace OpenActive.Server.NET.StoreBooking
         {
             base.SetConfiguration(orderIdTemplate, sellerIdTemplate);
         }
-
         public abstract TStateContext Initialise(StoreBookingFlowContext flowContext);
         public IStateContext InitialiseFlow(StoreBookingFlowContext flowContext)
         {
             return Initialise(flowContext);
         }
-
         public abstract bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
         public abstract Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
         public abstract DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
