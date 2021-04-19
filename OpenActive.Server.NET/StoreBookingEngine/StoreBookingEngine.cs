@@ -263,9 +263,9 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        public override void ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
+        public async override Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
         {
-            if (!storeBookingEngineSettings.OrderStore.CustomerRejectOrderProposal(orderId, sellerId, orderIdTemplate))
+            if (!await storeBookingEngineSettings.OrderStore.CustomerRejectOrderProposal(orderId, sellerId, orderIdTemplate))
             {
                 throw new OpenBookingException(new UnknownOrderError(), "OrderProposal not found");
             }
@@ -359,7 +359,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
         public async override Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
         {
-            if (!storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
+            if (!await storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
             {
                 throw new OpenBookingException(new OrderProposalVersionOutdatedError());
             }
@@ -558,14 +558,37 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            var (version, orderProposalStatus) = storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
+                            string version;
+                            OrderProposalStatus orderProposalStatus;
+                            switch (storeBookingEngineSettings.OrderStore)
+                            {
+                                case IOrderStoreSync orderStoreSync:
+                                    (version, orderProposalStatus) = orderStoreSync.CreateOrderProposalSync(responseOrderProposal, context, stateContext, dbTransaction);
+                                    break;
+
+                                case IOrderStoreAsync orderStoreAsync:
+                                    (version, orderProposalStatus) = await orderStoreAsync.CreateOrderProposalAsync(responseOrderProposal, context, stateContext, dbTransaction);
+                                    break;
+                                default: throw new ArgumentException("OrderStore not configured, either sync or async OrderStore must be configured");
+                            }
                             responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id}/versions/{version}");
                             responseOrderProposal.OrderProposalStatus = orderProposalStatus;
 
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
                             {
-                                g.Store.ProposeOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction);
+                                {
+                                    switch (g.Store)
+                                    {
+                                        case IOpportunityStoreSync opportunityStoreSync:
+                                            opportunityStoreSync.ProposeOrderItemsSync(g.OrderItemContexts, context, stateContext, dbTransaction);
+                                            break;
+                                        case IOpportunityStoreAsync opportunityStoreAsync:
+                                            await opportunityStoreAsync.ProposeOrderItemsAsync(g.OrderItemContexts, context, stateContext, dbTransaction);
+                                            break;
+
+                                    }
+                                }
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
@@ -583,7 +606,17 @@ namespace OpenActive.Server.NET.StoreBooking
                             // Update this in case ResponseOrderItem was overwritten in Propose
                             responseOrderProposal.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
 
-                            storeBookingEngineSettings.OrderStore.UpdateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
+                            switch (storeBookingEngineSettings.OrderStore)
+                            {
+                                case IOrderStoreSync orderStoreSync:
+                                    {
+                                        orderStoreSync.UpdateOrderProposalSync(responseOrderProposal, context, stateContext, dbTransaction);
+                                        break;
+                                    }
+                                case IOrderStoreAsync orderStoreAsync:
+                                    await orderStoreAsync.UpdateOrderProposalAsync(responseOrderProposal, context, stateContext, dbTransaction);
+                                    break;
+                            }
 
                             if (dbTransaction != null)
                             {
