@@ -159,12 +159,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPatch()]
         [Route("order-proposals/{uuid}")]
-        public HttpResponseMessage OrderProposalUpdate(string uuid, [FromBody] string order)
+        public async Task<HttpResponseMessage> OrderProposalUpdate(string uuid, [FromBody] string order)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order).GetContentResult();
+                return (await _bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

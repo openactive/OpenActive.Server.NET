@@ -247,7 +247,7 @@ namespace BookingSystem
 
         protected async override Task GetOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
-            await Task.Run(() => GetOrderItemsSync(orderItemContexts, flowContext, stateContext));
+            GetOrderItemsSync(orderItemContexts, flowContext, stateContext);
         }
 
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs

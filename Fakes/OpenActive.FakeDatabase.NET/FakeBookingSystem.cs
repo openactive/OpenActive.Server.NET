@@ -573,9 +573,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public Task<(FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>)> GetOrderAndOrderItemsAsync(string clientId, long? sellerId, string uuid)
+        public async Task<(FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>)> GetOrderAndOrderItemsAsync(string clientId, long? sellerId, string uuid)
         {
-            return Task.Run(() => GetOrderAndOrderItems(clientId, sellerId, uuid));
+            return GetOrderAndOrderItems(clientId, sellerId, uuid);
         }
 
         public (FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>) GetOrderAndOrderItems(string clientId, long? sellerId, string uuid)

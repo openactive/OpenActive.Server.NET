@@ -163,12 +163,12 @@ namespace BookingSystem.AspNetCore.Controllers
         /// </summary>
         [HttpPatch("order-proposals/{uuid}")]
         [Authorize(OpenActiveScopes.OpenBooking)]
-        public IActionResult OrderProposalUpdate([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
+        public async Task<IActionResult> OrderProposalUpdate([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
         {
             try
             {
                 (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
-                return bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order).GetContentResult();
+                return (await bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
