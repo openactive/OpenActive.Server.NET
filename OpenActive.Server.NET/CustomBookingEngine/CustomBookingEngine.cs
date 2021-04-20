@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
@@ -147,7 +148,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// Handler for Dataset Site endpoint
         /// </summary>
         /// <returns></returns>
-        public ResponseContent RenderDatasetSite()
+        public async Task<ResponseContent> RenderDatasetSite()
         {
             if (datasetSettings == null || supportedFeeds == null) throw new NotSupportedException("RenderDatasetSite is only supported if DatasetSiteGeneratorSettings are supplied to the IBookingEngine");
             // TODO add caching layer in front of dataset site rendering
@@ -164,15 +165,15 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber)
+        public async Task<ResponseContent> GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber)
         {
             return ResponseContent.RpdeResponse(
-                RouteOpenDataRPDEPageForFeed(
+                (await RouteOpenDataRPDEPageForFeed(
                     feedname,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),
                     afterId,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterChangeNumber, nameof(afterChangeNumber))
-                    ).ToString());
+                    )).ToString());
         }
 
 
@@ -186,9 +187,9 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public async Task<ResponseContent> GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse(RouteOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).ToString());
+            return ResponseContent.RpdeResponse((await RouteOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber)).ToString());
         }
 
 
@@ -203,13 +204,13 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        private RpdePage RouteOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        private async Task<RpdePage> RouteOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             if (openDataFeedBaseUrl == null) throw new NotSupportedException("GetOpenDataRPDEPageForFeed is only supported if an OpenDataFeedBaseUrl and BookingEngineSettings.OpenDataFeed is supplied to the IBookingEngine");
 
             if (feedLookup.TryGetValue(feedname, out IOpportunityDataRpdeFeedGenerator generator))
             {
-                return generator.GetRpdePage(feedname, afterTimestamp, afterId, afterChangeNumber);
+                return await generator.GetRpdePage(feedname, afterTimestamp, afterId, afterChangeNumber);
             }
             else
             {
@@ -227,7 +228,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber)
+        public async Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber)
         {
             return ResponseContent.RpdeResponse(
                 RenderOrdersRPDEPageForFeed(
@@ -247,9 +248,9 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public async Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse(RenderOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).ToString());
+            return ResponseContent.RpdeResponse((await RenderOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber)).ToString());
         }
 
         /// <summary>
@@ -260,12 +261,12 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        private RpdePage RenderOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        private async Task<RpdePage> RenderOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             if (settings.OrderFeedGenerator != null)
             {
                 // Add lookup against clientId and pass this into generator?
-                return settings.OrderFeedGenerator.GetRpdePage(clientId, afterTimestamp, afterId, afterChangeNumber);
+                return await settings.OrderFeedGenerator.GetRpdePage(clientId, afterTimestamp, afterId, afterChangeNumber);
             }
             else
             {
@@ -274,10 +275,10 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
-        public ResponseContent GetOrderStatus(string clientId, Uri sellerId, string uuid)
+        public async Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuid)
         {
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
-            var result = ProcessGetOrderStatus(orderId, sellerIdComponents, seller);
+            var result = await ProcessGetOrderStatus(orderId, sellerIdComponents, seller);
             if (result == null)
             {
                 throw new OpenBookingException(new UnknownOrderError());
@@ -288,7 +289,7 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
-        protected abstract Order ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
+        protected abstract Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
 
 
         protected bool IsOpportunityTypeRecognised(string opportunityTypeString)
@@ -318,15 +319,15 @@ namespace OpenActive.Server.NET.CustomBooking
                 .FirstOrDefault();
         }
 
-        public ResponseContent ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
+        public async Task<ResponseContent> ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
         {
-            return ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuote);
+            return await ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuote);
         }
-        public ResponseContent ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
+        public async Task<ResponseContent> ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
         {
-            return ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C2, OrderType.OrderQuote);
+            return await ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C2, OrderType.OrderQuote);
         }
-        private ResponseContent ProcessCheckpoint(string clientId, Uri sellerId, string uuid, string orderQuoteJson, FlowStage flowStage, OrderType orderType)
+        private async Task<ResponseContent> ProcessCheckpoint(string clientId, Uri sellerId, string uuid, string orderQuoteJson, FlowStage flowStage, OrderType orderType)
         {
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
             if (orderQuote == null || orderQuote.GetType() != typeof(OrderQuote))
@@ -334,12 +335,12 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, orderType);
-            var orderResponse = ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
+            var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
             // Return a 409 status code if any OrderItem level errors exist
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
                 orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
         }
-        public ResponseContent ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson)
+        public async Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson)
         {
             // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
             // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
@@ -350,12 +351,12 @@ namespace OpenActive.Server.NET.CustomBooking
             }
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
             var response = order.OrderProposalVersion != null ?
-                 ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
-                 ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
+                 await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
+                 await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.OK);
         }
 
-        public ResponseContent ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson)
+        public async Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson)
         {
             // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
             // If C1 and C2 are used correctly, P should not fail except in very exceptional cases.
@@ -365,7 +366,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
             }
             var (orderId, sellerIdComponents, seller) = ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.OrderProposal);
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
+            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
         }
 
         private SellerIdComponents GetSellerIdComponentsFromApiKey(Uri sellerId)
@@ -378,9 +379,9 @@ namespace OpenActive.Server.NET.CustomBooking
             return sellerIdComponents;
         }
 
-        public ResponseContent DeleteOrder(string clientId, Uri sellerId, string uuid)
+        public async Task<ResponseContent> DeleteOrder(string clientId, Uri sellerId, string uuid)
         {
-            var result = ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
+            var result = await ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
             switch (result)
             {
                 case DeleteOrderResult.OrderSuccessfullyDeleted:
@@ -392,17 +393,17 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
-        protected abstract DeleteOrderResult ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
+        protected abstract Task<DeleteOrderResult> ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
 
-        public ResponseContent DeleteOrderQuote(string clientId, Uri sellerId, string uuid)
+        public async Task<ResponseContent> DeleteOrderQuote(string clientId, Uri sellerId, string uuid)
         {
-            ProcessOrderQuoteDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
+            await ProcessOrderQuoteDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
+        protected abstract Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
 
-        public ResponseContent ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson)
+        public async Task<ResponseContent> ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson)
         {
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
             SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
@@ -442,15 +443,15 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new OrderItemNotWithinOrderError());
             }
 
-            ProcessCustomerCancellation(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
+            await ProcessCustomerCancellation(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        public abstract void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
+        public abstract Task ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
 
 
-        public ResponseContent ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderProposalJson)
+        public async Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderProposalJson)
         {
             OrderProposal orderProposal = OpenActiveSerializer.Deserialize<OrderProposal>(orderProposalJson);
             SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
@@ -477,15 +478,15 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerRejected' is permitted for this property.");
             }
 
-            ProcessOrderProposalCustomerRejection(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderProposal, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate);
+            await ProcessOrderProposalCustomerRejection(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderProposal, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate);
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        public abstract void ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
+        public abstract Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
 
 
-        ResponseContent IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
+        async Task<ResponseContent> IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
         {
             Event genericEvent = OpenActiveSerializer.Deserialize<Event>(eventJson);
 
@@ -583,7 +584,7 @@ namespace OpenActive.Server.NET.CustomBooking
             if (sellerIdComponents == null) throw new OpenBookingException(new SellerMismatchError(), "Seller ID format was invalid");
 
             // Returns a matching Event subclass that will only include "@type" and "@id" properties
-            var createdEvent = this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, sellerIdComponents);
+            var createdEvent = await this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, sellerIdComponents);
 
             if (createdEvent.Type != genericEvent.Type)
             {
@@ -593,18 +594,18 @@ namespace OpenActive.Server.NET.CustomBooking
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(createdEvent), HttpStatusCode.OK);
         }
 
-        protected abstract Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
+        protected abstract Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
 
-        ResponseContent IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
+        async Task<ResponseContent> IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
         {
-            this.DeleteTestDataset(testDatasetIdentifier);
+            await this.DeleteTestDataset(testDatasetIdentifier);
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void DeleteTestDataset(string testDatasetIdentifier);
+        protected abstract Task DeleteTestDataset(string testDatasetIdentifier);
 
-        ResponseContent IBookingEngine.TriggerTestAction(string actionJson)
+        async Task<ResponseContent> IBookingEngine.TriggerTestAction(string actionJson)
         {
             OpenBookingSimulateAction action = OpenActiveSerializer.Deserialize<OpenBookingSimulateAction>(actionJson);
 
@@ -618,12 +619,12 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new OpenBookingError(), "Invalid OpenBookingSimulateAction object specified.");
             }
 
-            this.TriggerTestAction(action, settings.OrderIdTemplate);
+            await this.TriggerTestAction(action, settings.OrderIdTemplate);
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate);
+        protected abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate);
 
         private (OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller) ConstructIdsFromRequest(string clientId, Uri authenticationSellerId, string uuid, OrderType orderType)
         {
@@ -708,9 +709,9 @@ namespace OpenActive.Server.NET.CustomBooking
             };
         }
 
-        public abstract TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new();
+        public abstract Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new();
 
-        public abstract Order ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order);
+        public abstract Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order);
 
     }
 }

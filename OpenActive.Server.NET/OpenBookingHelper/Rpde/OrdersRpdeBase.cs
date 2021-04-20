@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
@@ -31,19 +32,19 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
     public abstract class OrdersRPDEFeedIncrementingUniqueChangeNumber : OrdersRPDEFeedGenerator, IRpdeOrdersFeedIncrementingUniqueChangeNumber
     {
-        protected abstract List<RpdeItem> GetRPDEItems(string clientId, long? afterChangeNumber);
+        protected abstract Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterChangeNumber);
 
-        public RpdePage GetOrdersRpdePage(string clientId, long? afterChangeNumber)
+        public async Task<RpdePage> GetOrdersRpdePage(string clientId, long? afterChangeNumber)
         {
-            return new RpdePage(this.FeedUrl, afterChangeNumber, GetRPDEItems(clientId, afterChangeNumber));
+            return new RpdePage(this.FeedUrl, afterChangeNumber, await GetRPDEItems(clientId, afterChangeNumber));
         }
     }
 
     public abstract class OrdersRPDEFeedModifiedTimestampAndID : OrdersRPDEFeedGenerator, IRpdeOrdersFeedModifiedTimestampAndIdString
     {
-        protected abstract List<RpdeItem> GetRPDEItems(string clientId, long? afterTimestamp, string afterId);
+        protected abstract Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId);
 
-        public RpdePage GetOrdersRpdePage(string clientId, long? afterTimestamp, string afterId)
+        public async Task<RpdePage> GetOrdersRpdePage(string clientId, long? afterTimestamp, string afterId)
         {
             if ((!afterTimestamp.HasValue && !string.IsNullOrWhiteSpace(afterId)) ||
                 (afterTimestamp.HasValue && string.IsNullOrWhiteSpace(afterId)))
@@ -52,7 +53,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
             else
             {
-                return new RpdePage(this.FeedUrl, afterTimestamp, afterId, GetRPDEItems(clientId, afterTimestamp, afterId));
+                return new RpdePage(this.FeedUrl, afterTimestamp, afterId, await GetRPDEItems(clientId, afterTimestamp, afterId));
             }
         }
     }
