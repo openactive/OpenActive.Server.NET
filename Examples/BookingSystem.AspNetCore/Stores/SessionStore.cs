@@ -397,7 +397,8 @@ namespace BookingSystem
             }
         }
 
-        protected void LeaseOrderItemsSync(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected async override ValueTask LeaseOrderItems(
+            Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool enforceSync)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -415,7 +416,15 @@ namespace BookingSystem
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForClassOccurrence(
+                    var (result, capacityErrors, capacityLeaseErrors) = enforceSync ?
+                        FakeDatabase.LeaseOrderItemsForClassOccurrence(
+                        databaseTransaction.FakeDatabaseTransaction,
+                        flowContext.OrderId.ClientId,
+                        flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                        flowContext.OrderId.uuid,
+                        ctxGroup.Key.ScheduledSessionId.Value,
+                        ctxGroup.Count())
+                        : await FakeDatabase.LeaseOrderItemsForClassOccurrenceAsync(
                         databaseTransaction.FakeDatabaseTransaction,
                         flowContext.OrderId.ClientId,
                         flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -663,11 +672,6 @@ namespace BookingSystem
             base.BookOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
         }
 
-        public void LeaseOrderItemsSync(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
-        {
-            base.LeaseOrderItemsSync(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
-        }
-
         public void ProposeOrderItemsSync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
             base.ProposeOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
@@ -685,11 +689,6 @@ namespace BookingSystem
         public async Task BookOrderItemsAsync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
             base.BookOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
-        }
-
-        public async Task LeaseOrderItemsAsync(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
-        {
-            base.LeaseOrderItemsSync(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
         }
 
         public async Task ProposeOrderItemsAsync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)

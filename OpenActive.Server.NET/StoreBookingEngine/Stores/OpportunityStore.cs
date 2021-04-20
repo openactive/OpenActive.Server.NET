@@ -16,11 +16,12 @@ namespace OpenActive.Server.NET.StoreBooking
         Task<Event> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
         Task DeleteTestDataset(string testDatasetIdentifier);
         Task TriggerTestAction(OpenBookingSimulateAction simulateAction, IBookableIdComponents idComponents);
+
+        ValueTask LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext, bool enforceSync);
     }
 
     public interface IOpportunityStoreSync : IOpportunityStore
     {
-        void LeaseOrderItemsSync(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
         /// <summary>
         /// BookOrderItems will always succeed or throw an error on failure.
         /// Note that responseOrderItems provided by GetOrderItems are supplied for cases where Sales Invoices or other audit records
@@ -38,12 +39,6 @@ namespace OpenActive.Server.NET.StoreBooking
 
     public interface IOpportunityStoreAsync : IOpportunityStore
     {
-        Task LeaseOrderItemsAsync(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
-        /// <summary>
-        /// BookOrderItems will always succeed or throw an error on failure.
-        /// Note that responseOrderItems provided by GetOrderItems are supplied for cases where Sales Invoices or other audit records
-        /// need to be written that require prices. As GetOrderItems occurs outside of the transaction.
-        /// </summary>
         Task BookOrderItemsAsync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
         /// <summary>
         /// ProposeOrderItems will always succeed or throw an error on failure.
@@ -110,5 +105,11 @@ namespace OpenActive.Server.NET.StoreBooking
         protected abstract Task<TComponents> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
         protected abstract Task DeleteTestDataset(string testDatasetIdentifier);
         protected abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, TComponents idComponents);
+
+        protected abstract ValueTask LeaseOrderItems(Lease lease, List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransactionContext, bool enforceSync);
+        public ValueTask LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext, bool enforceSync)
+        {
+            return LeaseOrderItems(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext, (TDatabaseTransaction)databaseTransactionContext, enforceSync);
+        }
     }
 }

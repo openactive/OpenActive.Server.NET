@@ -18,6 +18,6 @@ namespace OpenActive.Server.NET.StoreBooking
         public IOrderStore OrderStore { get; set; }
         public bool BusinessToConsumerTaxCalculation { get; set; }
         public bool BusinessToBusinessTaxCalculation { get; set; }
-        public bool UseAsyncWithinOrderTransactions { get; set; }
+        public bool EnforceSyncWithinOrderTransactions { get; set; }
     }
 }

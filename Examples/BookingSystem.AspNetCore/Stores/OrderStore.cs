@@ -191,7 +191,7 @@ namespace BookingSystem
             StoreBookingFlowContext flowContext,
             OrderStateContext stateContext,
             OrderTransaction databaseTransaction,
-            bool useAsync)
+            bool enforceSync)
         {
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
@@ -204,8 +204,8 @@ namespace BookingSystem
             var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
             var brokerRole = BrokerTypeToBrokerRole(flowContext.BrokerRole ?? BrokerType.NoBroker);
 
-            var result = useAsync ?
-                await FakeDatabase.AddLeaseAsync(
+            var result = enforceSync ?
+             FakeDatabase.AddLease(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 brokerRole,
@@ -214,7 +214,7 @@ namespace BookingSystem
                 flowContext.Customer?.Email,
                 leaseExpires,
                 databaseTransaction.FakeDatabaseTransaction)
-            : FakeDatabase.AddLease(
+            : await FakeDatabase.AddLeaseAsync(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 brokerRole,
@@ -238,7 +238,7 @@ namespace BookingSystem
             StoreBookingFlowContext flowContext,
             OrderStateContext stateContext,
             OrderTransaction databaseTransaction,
-            bool useAsync)
+            bool enforceSync)
         {
             // Does nothing at the moment
         }

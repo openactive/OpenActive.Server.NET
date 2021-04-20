@@ -630,6 +630,11 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public async static Task<(ReserveOrderItemsResult, long?, long?)> LeaseOrderItemsForClassOccurrenceAsync(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, long spacesRequested)
+        {
+            return LeaseOrderItemsForClassOccurrence(transaction, clientId, sellerId, uuid, occurrenceId, spacesRequested);
+        }
+
         public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, long spacesRequested)
         {
             var db = transaction.DatabaseConnection;
@@ -674,6 +679,11 @@ namespace OpenActive.FakeDatabase.NET
             // Update number of spaces remaining for the opportunity
             RecalculateSpaces(db, thisOccurrence);
             return (ReserveOrderItemsResult.Success, null, null);
+        }
+
+        public async static Task<(ReserveOrderItemsResult, long?, long?)> LeaseOrderItemsForFacilitySlotAsync(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long spacesRequested)
+        {
+            return LeaseOrderItemsForFacilitySlot(transaction, clientId, sellerId, uuid, slotId, spacesRequested);
         }
 
         public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long spacesRequested)
