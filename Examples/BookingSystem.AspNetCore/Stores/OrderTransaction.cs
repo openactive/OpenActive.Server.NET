@@ -13,6 +13,22 @@ namespace BookingSystem
             FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
         }
 
+        public async ValueTask Commit(bool useAsync)
+        {
+            if (useAsync)
+                await FakeDatabaseTransaction.CommitTransactionAsync();
+            else
+                FakeDatabaseTransaction.CommitTransaction();
+        }
+
+        public async ValueTask Rollback(bool useAsync)
+        {
+            if (useAsync)
+                await FakeDatabaseTransaction.RollbackTransactionAsync();
+            else
+                FakeDatabaseTransaction.RollbackTransaction();
+        }
+
         public void Dispose()
         {
             // Note dispose pattern of checking for null first,
@@ -22,40 +38,6 @@ namespace BookingSystem
                 FakeDatabaseTransaction.Dispose();
                 FakeDatabaseTransaction = null;
             }
-        }
-    }
-
-    public sealed class OrderTransactionSync : OrderTransaction, IDatabaseTransactionSync
-    {
-        public OrderTransactionSync()
-        {
-        }
-
-        public void Commit()
-        {
-            FakeDatabaseTransaction.CommitTransaction();
-        }
-
-        public void Rollback()
-        {
-            FakeDatabaseTransaction.RollbackTransaction();
-        }
-    }
-
-    public sealed class OrderTransactionAsync : OrderTransaction, IDatabaseTransactionAsync
-    {
-        public OrderTransactionAsync()
-        {
-        }
-
-        public Task Commit()
-        {
-            return FakeDatabaseTransaction.CommitTransactionAsync();
-        }
-
-        public Task Rollback()
-        {
-            return FakeDatabaseTransaction.RollbackTransactionAsync();
         }
     }
 

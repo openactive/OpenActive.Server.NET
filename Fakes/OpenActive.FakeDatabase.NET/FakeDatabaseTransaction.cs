@@ -19,22 +19,22 @@ namespace OpenActive.FakeDatabase.NET
             transaction = DatabaseConnection.OpenTransaction(IsolationLevel.Serializable);
         }
 
-        public void CommitTransaction()
-        {
-            transaction.Commit();
-        }
-
-        public void RollbackTransaction()
-        {
-            transaction.Rollback();
-        }
-
         public async Task CommitTransactionAsync()
         {
             transaction.Commit();
         }
 
         public async Task RollbackTransactionAsync()
+        {
+            transaction.Rollback();
+        }
+
+        public void CommitTransaction()
+        {
+            transaction.Commit();
+        }
+
+        public void RollbackTransaction()
         {
             transaction.Rollback();
         }

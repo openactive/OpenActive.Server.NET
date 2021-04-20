@@ -597,30 +597,20 @@ namespace OpenActive.Server.NET.StoreBooking
 
                             if (dbTransaction != null)
                             {
-                                switch (dbTransaction)
-                                {
-                                    case IDatabaseTransactionSync dbTransactionSync:
-                                        dbTransactionSync.Commit();
-                                        break;
-                                    case IDatabaseTransactionAsync dbTransactionAsync:
-                                        await dbTransactionAsync.Commit();
-                                        break;
-                                }
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Commit(false).CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Commit(true);
                             }
                         }
                         catch
                         {
                             if (dbTransaction != null)
                             {
-                                switch (dbTransaction)
-                                {
-                                    case IDatabaseTransactionSync dbTransactionSync:
-                                        dbTransactionSync.Rollback();
-                                        break;
-                                    case IDatabaseTransactionAsync dbTransactionAsync:
-                                        await dbTransactionAsync.Rollback();
-                                        break;
-                                }
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Rollback(false).CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Rollback(true);
                             }
                             throw;
                         }
@@ -674,30 +664,20 @@ namespace OpenActive.Server.NET.StoreBooking
 
                             if (dbTransaction != null)
                             {
-                                switch (dbTransaction)
-                                {
-                                    case IDatabaseTransactionSync dbTransactionSync:
-                                        dbTransactionSync.Commit();
-                                        break;
-                                    case IDatabaseTransactionAsync dbTransactionAsync:
-                                        await dbTransactionAsync.Commit();
-                                        break;
-                                }
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Commit(false).CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Commit(true);
                             }
                         }
                         catch
                         {
                             if (dbTransaction != null)
                             {
-                                switch (dbTransaction)
-                                {
-                                    case IDatabaseTransactionSync dbTransactionSync:
-                                        dbTransactionSync.Rollback();
-                                        break;
-                                    case IDatabaseTransactionAsync dbTransactionAsync:
-                                        await dbTransactionAsync.Rollback();
-                                        break;
-                                }
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Rollback(false).CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Rollback(true);
                             }
                             throw;
                         }
@@ -758,30 +738,20 @@ namespace OpenActive.Server.NET.StoreBooking
 
                             if (dbTransaction != null)
                             {
-                                switch (dbTransaction)
-                                {
-                                    case IDatabaseTransactionSync dbTransactionSync:
-                                        dbTransactionSync.Commit();
-                                        break;
-                                    case IDatabaseTransactionAsync dbTransactionAsync:
-                                        await dbTransactionAsync.Commit();
-                                        break;
-                                }
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Commit(false).CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Commit(true);
                             }
                         }
                         catch
                         {
                             if (dbTransaction != null)
                             {
-                                switch (dbTransaction)
-                                {
-                                    case IDatabaseTransactionSync dbTransactionSync:
-                                        dbTransactionSync.Rollback();
-                                        break;
-                                    case IDatabaseTransactionAsync dbTransactionAsync:
-                                        await dbTransactionAsync.Rollback();
-                                        break;
-                                }
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Rollback(false).CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Rollback(true);
                             }
                             throw;
                         }
