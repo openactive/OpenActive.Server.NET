@@ -398,7 +398,7 @@ namespace BookingSystem
         }
 
         protected async override ValueTask LeaseOrderItems(
-            Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool enforceSync)
+            Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool useAsync)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -416,15 +416,15 @@ namespace BookingSystem
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    var (result, capacityErrors, capacityLeaseErrors) = enforceSync ?
-                        FakeDatabase.LeaseOrderItemsForClassOccurrence(
+                    var (result, capacityErrors, capacityLeaseErrors) = useAsync ?
+                        await FakeDatabase.LeaseOrderItemsForClassOccurrenceAsync(
                         databaseTransaction.FakeDatabaseTransaction,
                         flowContext.OrderId.ClientId,
                         flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                         flowContext.OrderId.uuid,
                         ctxGroup.Key.ScheduledSessionId.Value,
                         ctxGroup.Count())
-                        : await FakeDatabase.LeaseOrderItemsForClassOccurrenceAsync(
+                        : FakeDatabase.LeaseOrderItemsForClassOccurrence(
                         databaseTransaction.FakeDatabaseTransaction,
                         flowContext.OrderId.ClientId,
                         flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -485,7 +485,7 @@ namespace BookingSystem
         }
 
         //TODO: This should reuse code of LeaseOrderItem
-        protected async override ValueTask BookOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool enforceSync)
+        protected async override ValueTask BookOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool useAsync)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -499,8 +499,8 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, bookedOrderItemInfos) = enforceSync ?
-                    FakeDatabase.BookOrderItemsForClassOccurrence(
+                var (result, bookedOrderItemInfos) = useAsync ?
+                    await FakeDatabase.BookOrderItemsForClassOccurrenceAsync(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -512,7 +512,7 @@ namespace BookingSystem
                     ctxGroup.Count(),
                     false
                     )
-                    : await FakeDatabase.BookOrderItemsForClassOccurrenceAsync(
+                    : FakeDatabase.BookOrderItemsForClassOccurrence(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -601,7 +601,7 @@ namespace BookingSystem
         }
 
         // TODO check logic here, it's just been copied from BookOrderItems. Possibly could remove duplication here.
-        protected void ProposeOrderItemsSync(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected async override ValueTask ProposeOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool useAsync)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -615,7 +615,20 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, _) = FakeDatabase.BookOrderItemsForClassOccurrence(
+                var (result, _) = useAsync ?
+                    await FakeDatabase.BookOrderItemsForClassOccurrenceAsync(
+                    databaseTransaction.FakeDatabaseTransaction,
+                    flowContext.OrderId.ClientId,
+                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.OrderId.uuid,
+                    ctxGroup.Key.ScheduledSessionId.Value,
+                    RenderOpportunityJsonLdType(ctxGroup.Key),
+                    RenderOpportunityId(ctxGroup.Key).ToString(),
+                    RenderOfferId(ctxGroup.Key).ToString(),
+                    ctxGroup.Count(),
+                    true
+                    )
+                    : FakeDatabase.BookOrderItemsForClassOccurrence(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -669,34 +682,6 @@ namespace BookingSystem
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-        }
-    }
-
-    class SessionStoreSync : SessionStore, IOpportunityStoreSync
-    {
-
-        public SessionStoreSync(AppSettings appSettings) : base(appSettings)
-        {
-
-        }
-
-        public void ProposeOrderItemsSync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
-        {
-            base.ProposeOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
-        }
-    }
-
-    class SessionStoreAsync : SessionStore, IOpportunityStoreAsync
-    {
-
-        public SessionStoreAsync(AppSettings appSettings) : base(appSettings)
-        {
-
-        }
-
-        public async Task ProposeOrderItemsAsync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
-        {
-            base.ProposeOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
         }
     }
 }

@@ -559,37 +559,21 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            string version;
-                            OrderProposalStatus orderProposalStatus;
-                            switch (storeBookingEngineSettings.OrderStore)
-                            {
-                                case IOrderStoreSync orderStoreSync:
-                                    (version, orderProposalStatus) = orderStoreSync.CreateOrderProposalSync(responseOrderProposal, context, stateContext, dbTransaction);
-                                    break;
+                            var (version, orderProposalStatus) = storeBookingEngineSettings.EnforceSyncWithinOrderTransactions ?
+                                    storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorkedAndReturnResult()
+                                    : await storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction, true);
 
-                                case IOrderStoreAsync orderStoreAsync:
-                                    (version, orderProposalStatus) = await orderStoreAsync.CreateOrderProposalAsync(responseOrderProposal, context, stateContext, dbTransaction);
-                                    break;
-                                default: throw new ArgumentException("OrderStore not configured, either sync or async OrderStore must be configured");
-                            }
                             responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id}/versions/{version}");
                             responseOrderProposal.OrderProposalStatus = orderProposalStatus;
 
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
                             {
-                                {
-                                    switch (g.Store)
-                                    {
-                                        case IOpportunityStoreSync opportunityStoreSync:
-                                            opportunityStoreSync.ProposeOrderItemsSync(g.OrderItemContexts, context, stateContext, dbTransaction);
-                                            break;
-                                        case IOpportunityStoreAsync opportunityStoreAsync:
-                                            await opportunityStoreAsync.ProposeOrderItemsAsync(g.OrderItemContexts, context, stateContext, dbTransaction);
-                                            break;
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    g.Store.ProposeOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorked();
+                                else
+                                    await g.Store.ProposeOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction, true);
 
-                                    }
-                                }
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
@@ -606,18 +590,10 @@ namespace OpenActive.Server.NET.StoreBooking
 
                             // Update this in case ResponseOrderItem was overwritten in Propose
                             responseOrderProposal.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
-
-                            switch (storeBookingEngineSettings.OrderStore)
-                            {
-                                case IOrderStoreSync orderStoreSync:
-                                    {
-                                        orderStoreSync.UpdateOrderProposalSync(responseOrderProposal, context, stateContext, dbTransaction);
-                                        break;
-                                    }
-                                case IOrderStoreAsync orderStoreAsync:
-                                    await orderStoreAsync.UpdateOrderProposalAsync(responseOrderProposal, context, stateContext, dbTransaction);
-                                    break;
-                            }
+                            if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                storeBookingEngineSettings.OrderStore.UpdateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorked();
+                            else
+                                await storeBookingEngineSettings.OrderStore.UpdateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction, true);
 
                             if (dbTransaction != null)
                             {
@@ -669,8 +645,8 @@ namespace OpenActive.Server.NET.StoreBooking
                         {
 
                             responseOrderQuote.Lease = storeBookingEngineSettings.EnforceSyncWithinOrderTransactions ?
-                                await storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction, true)
-                                : storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorkedAndReturnResult();
+                                storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorkedAndReturnResult()
+                                : await storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction, true);
 
                             // Lease the OrderItems, if a lease exists
                             if (responseOrderQuote.Lease != null)
@@ -678,9 +654,9 @@ namespace OpenActive.Server.NET.StoreBooking
                                 foreach (var g in orderItemGroups)
                                 {
                                     if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
-                                        g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction, true).CheckSyncValueTaskWorked();
+                                        g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorked();
                                     else
-                                        await g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction, false);
+                                        await g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction, true);
                                 }
                             }
 
@@ -691,9 +667,9 @@ namespace OpenActive.Server.NET.StoreBooking
                             responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
 
                             if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
-                                await storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction, true);
-                            else
                                 storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorked();
+                            else
+                                await storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction, true);
 
 
                             if (dbTransaction != null)
@@ -746,18 +722,18 @@ namespace OpenActive.Server.NET.StoreBooking
                         {
                             // Create the parent Order
                             if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
-                                storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction, true).CheckSyncValueTaskWorked();
+                                storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorked();
                             else
-                                await storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction, false);
+                                await storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction, true);
 
 
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
                             {
                                 if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
-                                    g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction, true).CheckSyncValueTaskWorked();
+                                    g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorked();
                                 else
-                                    await g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction, false);
+                                    await g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction, true);
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
@@ -775,9 +751,9 @@ namespace OpenActive.Server.NET.StoreBooking
                             // Update this in case ResponseOrderItem was overwritten in Book
                             responseOrder.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
                             if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
-                                storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction, true).CheckSyncValueTaskWorked();
+                                storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorked();
                             else
-                                await storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction, false);
+                                await storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction, true);
 
 
                             if (dbTransaction != null)
