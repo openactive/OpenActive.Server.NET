@@ -4,6 +4,7 @@ using System.Linq;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
+using OpenActive.Server.NET.OpenBookingHelper.Extensions;
 using OpenActive.Server.NET.CustomBooking;
 using System.Threading.Tasks;
 
@@ -666,17 +667,10 @@ namespace OpenActive.Server.NET.StoreBooking
                     {
                         try
                         {
-                            switch (storeBookingEngineSettings.OrderStore)
-                            {
-                                case IOrderStoreSync orderStoreSync:
-                                    {
-                                        responseOrderQuote.Lease = orderStoreSync.CreateLeaseSync(responseOrderQuote, context, stateContext, dbTransaction);
-                                        break;
-                                    }
-                                case IOrderStoreAsync orderStoreAsync:
-                                    responseOrderQuote.Lease = await orderStoreAsync.CreateLeaseAsync(responseOrderQuote, context, stateContext, dbTransaction);
-                                    break;
-                            }
+
+                            responseOrderQuote.Lease = storeBookingEngineSettings.UseAsyncWithinOrderTransactions ?
+                                await storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction, true)
+                                : storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorkedAndReturnResult();
 
                             // Lease the OrderItems, if a lease exists
                             if (responseOrderQuote.Lease != null)
@@ -702,17 +696,11 @@ namespace OpenActive.Server.NET.StoreBooking
                             // Note OrderRequiresApproval is only required during C1 and C2
                             responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
 
-                            switch (storeBookingEngineSettings.OrderStore)
-                            {
-                                case IOrderStoreSync orderStoreSync:
-                                    {
-                                        orderStoreSync.UpdateLeaseSync(responseOrderQuote, context, stateContext, dbTransaction);
-                                        break;
-                                    }
-                                case IOrderStoreAsync orderStoreAsync:
-                                    await orderStoreAsync.UpdateLeaseAsync(responseOrderQuote, context, stateContext, dbTransaction);
-                                    break;
-                            }
+                            if (storeBookingEngineSettings.UseAsyncWithinOrderTransactions)
+                                await storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction, true);
+                            else
+                                storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction, false).CheckSyncValueTaskWorked();
+
 
                             if (dbTransaction != null)
                             {

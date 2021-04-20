@@ -14,7 +14,7 @@ namespace BookingSystem
     {
     }
 
-    public abstract class AcmeOrderStore : OrderStore<OrderTransaction, OrderStateContext>
+    public class AcmeOrderStore : OrderStore<OrderTransaction, OrderStateContext>
     {
         private readonly AppSettings _appSettings;
 
@@ -186,11 +186,12 @@ namespace BookingSystem
                         : BrokerType.NoBroker;
         }
 
-        public Lease CreateLease(
+        public async override ValueTask<Lease> CreateLease(
             OrderQuote responseOrderQuote,
             StoreBookingFlowContext flowContext,
             OrderStateContext stateContext,
-            OrderTransaction databaseTransaction)
+            OrderTransaction databaseTransaction,
+            bool useAsync)
         {
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
@@ -203,7 +204,17 @@ namespace BookingSystem
             var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
             var brokerRole = BrokerTypeToBrokerRole(flowContext.BrokerRole ?? BrokerType.NoBroker);
 
-            var result = FakeDatabase.AddLease(
+            var result = useAsync ?
+                await FakeDatabase.AddLeaseAsync(
+                flowContext.OrderId.ClientId,
+                flowContext.OrderId.uuid,
+                brokerRole,
+                flowContext.Broker.Name,
+                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
+                flowContext.Customer?.Email,
+                leaseExpires,
+                databaseTransaction.FakeDatabaseTransaction)
+            : FakeDatabase.AddLease(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 brokerRole,
@@ -220,6 +231,16 @@ namespace BookingSystem
             {
                 LeaseExpires = leaseExpires
             };
+        }
+
+        public async override ValueTask UpdateLease(
+            OrderQuote responseOrderQuote,
+            StoreBookingFlowContext flowContext,
+            OrderStateContext stateContext,
+            OrderTransaction databaseTransaction,
+            bool useAsync)
+        {
+            // Does nothing at the moment
         }
 
         public async override Task DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
@@ -413,6 +434,11 @@ namespace BookingSystem
 
             return flowContext.Payment.AccountId != _appSettings.Payment.AccountId || flowContext.Payment.PaymentProviderId != _appSettings.Payment.PaymentProviderId;
         }
+
+        public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class AcmeOrderStoreSync : AcmeOrderStore, IOrderStoreSync
@@ -424,11 +450,6 @@ namespace BookingSystem
         public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
         {
             return new OrderTransactionSync();
-        }
-
-        public Lease CreateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            return base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
         }
 
         public (string, OrderProposalStatus) CreateOrderProposalSync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
@@ -466,11 +487,6 @@ namespace BookingSystem
         public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
         {
             return new OrderTransactionAsync();
-        }
-
-        public async Task<Lease> CreateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            return base.CreateLease(responseOrderQuote, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
         }
 
         public async Task CreateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)

@@ -35,6 +35,9 @@
     <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="OpenBookingHelper\Extensions\" />
+  </ItemGroup>
   <PropertyGroup>
     <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
