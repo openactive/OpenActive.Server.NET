@@ -18,16 +18,16 @@ namespace OpenActive.Server.NET.StoreBooking
         Task TriggerTestAction(OpenBookingSimulateAction simulateAction, IBookableIdComponents idComponents);
 
         ValueTask LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext, bool enforceSync);
-    }
-
-    public interface IOpportunityStoreSync : IOpportunityStore
-    {
         /// <summary>
         /// BookOrderItems will always succeed or throw an error on failure.
         /// Note that responseOrderItems provided by GetOrderItems are supplied for cases where Sales Invoices or other audit records
         /// need to be written that require prices. As GetOrderItems occurs outside of the transaction.
         /// </summary>
-        void BookOrderItemsSync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
+        ValueTask BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext, bool enforceSync);
+    }
+
+    public interface IOpportunityStoreSync : IOpportunityStore
+    {
         /// <summary>
         /// ProposeOrderItems will always succeed or throw an error on failure.
         /// Note that responseOrderItems provided by GetOrderItems are supplied for cases where Sales Invoices or other audit records
@@ -39,7 +39,6 @@ namespace OpenActive.Server.NET.StoreBooking
 
     public interface IOpportunityStoreAsync : IOpportunityStore
     {
-        Task BookOrderItemsAsync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
         /// <summary>
         /// ProposeOrderItems will always succeed or throw an error on failure.
         /// Note that responseOrderItems provided by GetOrderItems are supplied for cases where Sales Invoices or other audit records
@@ -110,6 +109,12 @@ namespace OpenActive.Server.NET.StoreBooking
         public ValueTask LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext, bool enforceSync)
         {
             return LeaseOrderItems(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext, (TDatabaseTransaction)databaseTransactionContext, enforceSync);
+        }
+
+        protected abstract ValueTask BookOrderItems(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransactionContext, bool enforceSync);
+        public ValueTask BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext, bool enforceSync)
+        {
+            return BookOrderItems(ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext, (TDatabaseTransaction)databaseTransactionContext, enforceSync);
         }
     }
 }

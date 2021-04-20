@@ -454,7 +454,7 @@ namespace BookingSystem
         }
 
         //TODO: This should reuse code of LeaseOrderItem
-        protected void BookOrderItemsSync(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected async override ValueTask BookOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool enforceSync)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -467,7 +467,20 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForFacilitySlot(
+                var (result, bookedOrderItemInfos) = enforceSync ?
+                    FakeDatabase.BookOrderItemsForFacilitySlot(
+                    databaseTransaction.FakeDatabaseTransaction,
+                    flowContext.OrderId.ClientId,
+                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.OrderId.uuid,
+                    ctxGroup.Key.SlotId.Value,
+                    RenderOpportunityJsonLdType(ctxGroup.Key),
+                    RenderOpportunityId(ctxGroup.Key).ToString(),
+                    RenderOfferId(ctxGroup.Key).ToString(),
+                    ctxGroup.Count(),
+                    false
+                    )
+                    : await FakeDatabase.BookOrderItemsForFacilitySlotAsync(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -610,11 +623,6 @@ namespace BookingSystem
         {
         }
 
-        public void BookOrderItemsSync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
-        {
-            base.BookOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
-        }
-
         public void ProposeOrderItemsSync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
             base.ProposeOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
@@ -626,11 +634,6 @@ namespace BookingSystem
 
         public FacilityStoreAsync(AppSettings appSettings) : base(appSettings)
         {
-        }
-
-        public async Task BookOrderItemsAsync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
-        {
-            base.BookOrderItemsSync(ConvertToSpecificComponents(orderItemContexts), flowContext, (OrderStateContext)stateContext, (OrderTransaction)databaseTransactionContext);
         }
 
         public async Task ProposeOrderItemsAsync(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)

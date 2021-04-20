@@ -38,20 +38,18 @@ namespace OpenActive.Server.NET.StoreBooking
 
         ValueTask<Lease> CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction, bool enforceSync);
         ValueTask UpdateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction, bool enforceSync);
+        ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction, bool enforceSync);
+        ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction, bool enforceSync);
     }
 
     public interface IOrderStoreSync : IOrderStore
     {
-        void CreateOrderSync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
-        void UpdateOrderSync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         (string, OrderProposalStatus) CreateOrderProposalSync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         void UpdateOrderProposalSync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
     }
 
     public interface IOrderStoreAsync : IOrderStore
     {
-        Task CreateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
-        Task UpdateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         Task<(string, OrderProposalStatus)> CreateOrderProposalAsync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         Task UpdateOrderProposalAsync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
     }
@@ -92,6 +90,16 @@ namespace OpenActive.Server.NET.StoreBooking
             return UpdateLease(responseOrderQuote, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction, enforceSync);
         }
 
+        public abstract ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction, bool enforceSync);
+        public ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction, bool enforceSync)
+        {
+            return CreateOrder(responseOrder, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction, enforceSync);
+        }
 
+        public abstract ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction, bool enforceSync);
+        public ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction, bool enforceSync)
+        {
+            return UpdateOrder(responseOrder, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction, enforceSync);
+        }
     }
 }

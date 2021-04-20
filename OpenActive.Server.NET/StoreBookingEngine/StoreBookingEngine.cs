@@ -745,32 +745,19 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            switch (storeBookingEngineSettings.OrderStore)
-                            {
-                                case IOrderStoreSync orderStoreSync:
-                                    {
-                                        orderStoreSync.CreateOrderSync(responseOrder, context, stateContext, dbTransaction);
-                                        break;
-                                    }
-                                case IOrderStoreAsync orderStoreAsync:
-                                    await orderStoreAsync.CreateOrderAsync(responseOrder, context, stateContext, dbTransaction);
-                                    break;
-                            }
+                            if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction, true).CheckSyncValueTaskWorked();
+                            else
+                                await storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction, false);
 
 
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
                             {
-                                switch (g.Store)
-                                {
-                                    case IOpportunityStoreSync opportunityStoreSync:
-                                        opportunityStoreSync.BookOrderItemsSync(g.OrderItemContexts, context, stateContext, dbTransaction);
-                                        break;
-                                    case IOpportunityStoreAsync opportunityStoreAsync:
-                                        await opportunityStoreAsync.BookOrderItemsAsync(g.OrderItemContexts, context, stateContext, dbTransaction);
-                                        break;
-
-                                }
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction, true).CheckSyncValueTaskWorked();
+                                else
+                                    await g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction, false);
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
@@ -787,18 +774,11 @@ namespace OpenActive.Server.NET.StoreBooking
 
                             // Update this in case ResponseOrderItem was overwritten in Book
                             responseOrder.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
+                            if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction, true).CheckSyncValueTaskWorked();
+                            else
+                                await storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction, false);
 
-                            switch (storeBookingEngineSettings.OrderStore)
-                            {
-                                case IOrderStoreSync orderStoreSync:
-                                    {
-                                        orderStoreSync.UpdateOrderSync(responseOrder, context, stateContext, dbTransaction);
-                                        break;
-                                    }
-                                case IOrderStoreAsync orderStoreAsync:
-                                    await orderStoreAsync.UpdateOrderAsync(responseOrder, context, stateContext, dbTransaction);
-                                    break;
-                            }
 
                             if (dbTransaction != null)
                             {

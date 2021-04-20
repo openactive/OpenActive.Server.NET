@@ -253,7 +253,7 @@ namespace BookingSystem
                 );
         }
 
-        public void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public async override ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool enforceSync)
         {
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
@@ -261,7 +261,20 @@ namespace BookingSystem
             if (!responseOrder.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
 
-            var result = FakeDatabase.AddOrder(
+            var result = enforceSync ?
+                FakeDatabase.AddOrder(
+                flowContext.OrderId.ClientId,
+                flowContext.OrderId.uuid,
+                flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
+                flowContext.Broker.Name,
+                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
+                flowContext.Customer?.Email,
+                flowContext.Payment?.Identifier,
+                responseOrder.TotalPaymentDue.Price.Value,
+                databaseTransaction.FakeDatabaseTransaction,
+                null,
+                null)
+                : await FakeDatabase.AddOrderAsync(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
@@ -275,6 +288,11 @@ namespace BookingSystem
                 null);
 
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
+        }
+
+        public async override ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool enforceSync)
+        {
+            // Does nothing at the moment
         }
 
         public (string, OrderProposalStatus) CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -457,22 +475,7 @@ namespace BookingSystem
             return base.CreateOrderProposal(responseOrderProposal, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
         }
 
-        public void CreateOrderSync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            base.CreateOrder(responseOrder, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
-        }
-
-        public void UpdateLeaseSync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            // Does nothing at the moment
-        }
-
         public void UpdateOrderProposalSync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            // Does nothing at the moment
-        }
-
-        public void UpdateOrderSync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             // Does nothing at the moment
         }
@@ -489,24 +492,9 @@ namespace BookingSystem
             return new OrderTransactionAsync();
         }
 
-        public async Task CreateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            base.CreateOrder(responseOrder, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
-        }
-
         public async Task<(string, OrderProposalStatus)> CreateOrderProposalAsync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return base.CreateOrderProposal(responseOrderProposal, flowContext, (OrderStateContext)stateContext, (OrderTransaction)dbTransaction);
-        }
-
-        public async Task UpdateLeaseAsync(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            // Does nothing at the moment
-        }
-
-        public async Task UpdateOrderAsync(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
-        {
-            // Does nothing at the moment
         }
 
         public async Task UpdateOrderProposalAsync(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)

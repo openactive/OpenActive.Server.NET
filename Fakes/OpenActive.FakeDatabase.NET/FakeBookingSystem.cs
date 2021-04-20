@@ -530,6 +530,11 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public async static Task<bool> AddOrderAsync(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
+        {
+            return AddOrder(clientId, uuid, brokerRole, brokerName, sellerId, customerEmail, paymentIdentifier, totalOrderPrice, transaction, proposalVersionUuid, proposalStatus);
+        }
+
         public static bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             var db = transaction.DatabaseConnection;
@@ -744,6 +749,22 @@ namespace OpenActive.FakeDatabase.NET
             public AttendanceMode AttendanceMode { get; set; }
         }
 
+        public async static Task<(ReserveOrderItemsResult, List<BookedOrderItemInfo>)> BookOrderItemsForClassOccurrenceAsync(
+           FakeDatabaseTransaction transaction,
+           string clientId,
+           long? sellerId,
+           string uuid,
+           long occurrenceId,
+           string opportunityJsonLdType,
+           string opportunityJsonLdId,
+           string offerJsonLdId,
+           long numberOfSpaces,
+           bool proposal
+           )
+        {
+            return BookOrderItemsForClassOccurrence(transaction, clientId, sellerId, uuid, occurrenceId, opportunityJsonLdType, opportunityJsonLdId, offerJsonLdId, numberOfSpaces, proposal);
+        }
+
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
         public static (ReserveOrderItemsResult, List<BookedOrderItemInfo>) BookOrderItemsForClassOccurrence(
             FakeDatabaseTransaction transaction,
@@ -817,6 +838,22 @@ namespace OpenActive.FakeDatabase.NET
 
             RecalculateSpaces(db, thisOccurrence);
             return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
+        }
+
+        public async static Task<(ReserveOrderItemsResult, List<BookedOrderItemInfo>)> BookOrderItemsForFacilitySlotAsync(
+           FakeDatabaseTransaction transaction,
+           string clientId,
+           long? sellerId,
+           string uuid,
+           long occurrenceId,
+           string opportunityJsonLdType,
+           string opportunityJsonLdId,
+           string offerJsonLdId,
+           long numberOfSpaces,
+           bool proposal
+           )
+        {
+            return BookOrderItemsForFacilitySlot(transaction, clientId, sellerId, uuid, occurrenceId, opportunityJsonLdType, opportunityJsonLdId, offerJsonLdId, numberOfSpaces, proposal);
         }
 
         // TODO this should reuse code of LeaseOrderItemsForFacilityOccurrence
