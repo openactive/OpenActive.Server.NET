@@ -473,7 +473,7 @@ namespace BookingSystem
 
         public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
         {
-            throw new NotImplementedException();
+            return new OrderTransaction();
         }
     }
 }

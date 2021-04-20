@@ -4,7 +4,7 @@ using OpenActive.Server.NET.StoreBooking;
 
 namespace BookingSystem
 {
-    public abstract class OrderTransaction : IDatabaseTransaction
+    public sealed class OrderTransaction : IDatabaseTransaction
     {
         public FakeDatabaseTransaction FakeDatabaseTransaction;
 
