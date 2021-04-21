@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OpenActive.Server.NET;
 using BookingSystem.AspNetCore.Helpers;
+using System.Threading.Tasks;
 
 namespace BookingSystem.AspNetCore.Controllers
 {
@@ -8,9 +9,9 @@ namespace BookingSystem.AspNetCore.Controllers
     public class DatasetSiteController : Controller
     {
         // GET: /openactive/
-        public IActionResult Index([FromServices] IBookingEngine bookingEngine)
+        public async Task<IActionResult> Index([FromServices] IBookingEngine bookingEngine)
         {
-            return bookingEngine.RenderDatasetSite().GetContentResult();
+            return (await bookingEngine.RenderDatasetSite()).GetContentResult();
         }
     }
 }

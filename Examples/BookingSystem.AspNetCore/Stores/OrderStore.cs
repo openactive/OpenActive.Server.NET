@@ -6,6 +6,7 @@ using ServiceStack.OrmLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BookingSystem
 {
@@ -27,7 +28,7 @@ namespace BookingSystem
         /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if Order found, False if Order not found</returns>
-        public override bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
+        public async override Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
             try
             {
@@ -48,12 +49,12 @@ namespace BookingSystem
         /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if OrderProposal found, False if OrderProposal not found</returns>
-        public override bool CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
+        public override async Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
         {
             return FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
         }
 
-        public override void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents)
+        public async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents)
         {
             switch (simulateAction)
             {
@@ -167,7 +168,25 @@ namespace BookingSystem
             return new OrderStateContext();
         }
 
-        public override Lease CreateLease(
+        private static BrokerRole BrokerTypeToBrokerRole(BrokerType brokerType)
+        {
+            return brokerType == BrokerType.AgentBroker
+                    ? BrokerRole.AgentBroker
+                    : brokerType == BrokerType.ResellerBroker
+                        ? BrokerRole.ResellerBroker
+                        : BrokerRole.NoBroker;
+        }
+
+        private static BrokerType BrokerRoleToBrokerType(BrokerRole brokerRole)
+        {
+            return brokerRole == BrokerRole.AgentBroker
+                    ? BrokerType.AgentBroker
+                    : brokerRole == BrokerRole.ResellerBroker
+                        ? BrokerType.ResellerBroker
+                        : BrokerType.NoBroker;
+        }
+
+        public async override ValueTask<Lease> CreateLease(
             OrderQuote responseOrderQuote,
             StoreBookingFlowContext flowContext,
             OrderStateContext stateContext,
@@ -182,15 +201,12 @@ namespace BookingSystem
 
             // TODO: Make the lease duration configurable
             var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
+            var brokerRole = BrokerTypeToBrokerRole(flowContext.BrokerRole ?? BrokerType.NoBroker);
 
             var result = FakeDatabase.AddLease(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
-                flowContext.BrokerRole == BrokerType.AgentBroker
-                    ? BrokerRole.AgentBroker
-                    : flowContext.BrokerRole == BrokerType.ResellerBroker
-                        ? BrokerRole.ResellerBroker
-                        : BrokerRole.NoBroker,
+                brokerRole,
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer?.Email,
@@ -206,7 +222,16 @@ namespace BookingSystem
             };
         }
 
-        public override void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public async override ValueTask UpdateLease(
+            OrderQuote responseOrderQuote,
+            StoreBookingFlowContext flowContext,
+            OrderStateContext stateContext,
+            OrderTransaction databaseTransaction)
+        {
+            // Does nothing at the moment
+        }
+
+        public async override Task DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
             // Note if no lease support, simply do nothing here
             FakeBookingSystem.Database.DeleteLease(
@@ -216,7 +241,7 @@ namespace BookingSystem
                 );
         }
 
-        public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public async override ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
@@ -240,7 +265,12 @@ namespace BookingSystem
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
 
-        public override (string, OrderProposalStatus) CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public async override ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        {
+            // Does nothing at the moment
+        }
+
+        public async override ValueTask<(string, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (!responseOrderProposal.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Price must be set on TotalPaymentDue");
@@ -265,7 +295,12 @@ namespace BookingSystem
             return (version, OrderProposalStatus.AwaitingSellerConfirmation);
         }
 
-        public override DeleteOrderResult DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public async override ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        {
+            // Does nothing at the moment
+        }
+
+        public async override Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
             var result = FakeBookingSystem.Database.DeleteOrder(
                 orderId.ClientId,
@@ -286,22 +321,7 @@ namespace BookingSystem
             }
         }
 
-        public override void UpdateLease(OrderQuote responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
-        {
-            // Runs after the transaction is committed
-        }
-
-        public override void UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
-        {
-            // Runs after the transaction is committed
-        }
-
-        public override void UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
-        {
-            // Runs after the transaction is committed
-        }
-
-        public override bool CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
+        public async override Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
         {
             // TODO more elegantly extract version UUID from orderProposalVersion (probably much further up the stack?)
             var version = orderProposalVersion.ToString().Split('/').Last();
@@ -348,65 +368,60 @@ namespace BookingSystem
             }
         }
 
-        public static Order RenderOrderFromDatabaseResult(Uri orderId, OrderTable order, List<OrderItem> orderItems)
+        public static Order RenderOrderFromDatabaseResult(Uri orderId, OrderTable dbOrder, List<OrderItem> orderItems)
         {
-            var o = CreateOrderFromOrderMode(order.OrderMode, orderId, order.ProposalVersionId, order.ProposalStatus);
-            o.Id = orderId;
-            o.Identifier = new Guid(order.OrderId);
-            o.TotalPaymentDue = new PriceSpecification
+            var order = CreateOrderFromOrderMode(dbOrder.OrderMode, orderId, dbOrder.ProposalVersionId, dbOrder.ProposalStatus);
+            order.Id = orderId;
+            order.Identifier = new Guid(dbOrder.OrderId);
+            order.TotalPaymentDue = new PriceSpecification
             {
-                Price = order.TotalOrderPrice,
+                Price = dbOrder.TotalOrderPrice,
                 PriceCurrency = "GBP"
             };
-            o.OrderedItem = orderItems;
-            return o;
+            order.OrderedItem = orderItems;
+
+            return order;
         }
 
-        public override Order GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller)
+        public async override Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
-            {
-                var order = db.Single<OrderTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid && !x.Deleted);
-                var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == orderId.ClientId && x.OrderId == orderId.uuid);
+            var (getOrderResult, dbOrder, dbOrderItems) = FakeBookingSystem.Database.GetOrderAndOrderItems(
+                orderId.ClientId,
+                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                orderId.uuid);
+            if (getOrderResult == FakeDatabaseGetOrderResult.OrderWasNotFound) throw new OpenBookingException(new UnknownOrderError());
 
-                var o = RenderOrderFromDatabaseResult(RenderOrderId(order.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : order.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, order.OrderId), order,
-                    orderItems.Select((orderItem) => new OrderItem
-                    {
-                        Id = order.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, order.OrderId, orderItem.Id) : null,
-                        AcceptedOffer = new Offer
-                        {
-                            Id = new Uri(orderItem.OfferJsonLdId),
-                        },
-                        OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
-                        OrderItemStatus =
+            var orderIdUri = RenderOrderId(dbOrder.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : dbOrder.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, dbOrder.OrderId);
+            var orderItems = dbOrderItems.Select((orderItem) => new OrderItem
+            {
+                Id = dbOrder.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, dbOrder.OrderId, orderItem.Id) : null,
+                AcceptedOffer = new Offer
+                {
+                    Id = new Uri(orderItem.OfferJsonLdId),
+                },
+                OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
+                OrderItemStatus =
                             orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
                             orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
                             orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
                             orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended :
                             orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
-                    }).ToList());
+            }).ToList();
+            var order = RenderOrderFromDatabaseResult(orderIdUri, dbOrder, orderItems);
 
-                // These additional properties that are only available in the Order Status endpoint
-                o.Seller = new ReferenceValue<ILegalEntity>(seller);
+            // These additional properties that are only available in the Order Status endpoint
+            order.Seller = new ReferenceValue<ILegalEntity>(seller);
+            order.Broker = new Organization
+            {
+                Name = dbOrder.BrokerName
+            };
+            order.BrokerRole = BrokerRoleToBrokerType(dbOrder.BrokerRole);
+            order.Customer = new Person
+            {
+                Email = dbOrder.CustomerEmail
+            };
 
-                // Todo take these from database (and check whether Customer should be included from a GDPR point of view?!)
-                o.BrokerRole = BrokerType.AgentBroker;
-                o.Broker = new Organization
-                {
-                    Name = "Temp broker"
-                };
-                o.Customer = new Person
-                {
-                    Email = "temp@example.com"
-                };
-
-                return o;
-            }
-        }
-
-        protected override OrderTransaction BeginOrderTransaction(FlowStage stage)
-        {
-            return new OrderTransaction();
+            return order;
         }
 
         private bool ReconciliationMismatch(StoreBookingFlowContext flowContext)
@@ -416,6 +431,11 @@ namespace BookingSystem
                 return false;
 
             return flowContext.Payment.AccountId != _appSettings.Payment.AccountId || flowContext.Payment.PaymentProviderId != _appSettings.Payment.PaymentProviderId;
+        }
+
+        public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
+        {
+            return new OrderTransaction();
         }
     }
 }

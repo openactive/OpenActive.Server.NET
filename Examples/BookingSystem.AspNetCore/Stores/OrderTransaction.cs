@@ -1,4 +1,5 @@
-﻿using OpenActive.FakeDatabase.NET;
+﻿using System.Threading.Tasks;
+using OpenActive.FakeDatabase.NET;
 using OpenActive.Server.NET.StoreBooking;
 
 namespace BookingSystem
@@ -12,12 +13,12 @@ namespace BookingSystem
             FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
         }
 
-        public void Commit()
+        public async ValueTask Commit()
         {
             FakeDatabaseTransaction.CommitTransaction();
         }
 
-        public void Rollback()
+        public async ValueTask Rollback()
         {
             FakeDatabaseTransaction.RollbackTransaction();
         }

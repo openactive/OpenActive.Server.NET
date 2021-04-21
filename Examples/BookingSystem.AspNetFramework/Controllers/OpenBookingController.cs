@@ -5,6 +5,7 @@ using System;
 using System.Net.Http;
 using System.Web.Http;
 using OpenActive.NET;
+using System.Threading.Tasks;
 
 namespace BookingSystem.AspNetFramework.Controllers
 {
@@ -24,12 +25,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPut]
         [Route("order-quote-templates/{uuid}")]
-        public HttpResponseMessage OrderQuoteCreationC1(string uuid, [FromBody] string orderQuote)
+        public async Task<HttpResponseMessage> OrderQuoteCreationC1(string uuid, [FromBody] string orderQuote)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessCheckpoint1(clientId, sellerId, uuid, orderQuote).GetContentResult();
+                return (await _bookingEngine.ProcessCheckpoint1(clientId, sellerId, uuid, orderQuote)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -43,12 +44,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPut]
         [Route("order-quotes/{uuid}")]
-        public HttpResponseMessage OrderQuoteCreationC2(string uuid, [FromBody] string orderQuote)
+        public async Task<HttpResponseMessage> OrderQuoteCreationC2(string uuid, [FromBody] string orderQuote)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessCheckpoint2(clientId, sellerId, uuid, orderQuote).GetContentResult();
+                return (await _bookingEngine.ProcessCheckpoint2(clientId, sellerId, uuid, orderQuote)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -62,12 +63,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPut()]
         [Route("order-proposals/{uuid}")]
-        public HttpResponseMessage OrderProposalCreationP(string uuid, [FromBody] string orderProposal)
+        public async Task<HttpResponseMessage> OrderProposalCreationP(string uuid, [FromBody] string orderProposal)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessOrderProposalCreationP(clientId, sellerId, uuid, orderProposal).GetContentResult();
+                return (await _bookingEngine.ProcessOrderProposalCreationP(clientId, sellerId, uuid, orderProposal)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -81,12 +82,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpDelete]
         [Route("order-quotes/{uuid}")]
-        public HttpResponseMessage OrderQuoteDeletion(string uuid)
+        public async Task<HttpResponseMessage> OrderQuoteDeletion(string uuid)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.DeleteOrderQuote(clientId, sellerId, uuid).GetContentResult();
+                return (await _bookingEngine.DeleteOrderQuote(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -101,12 +102,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPut]
         [Route("orders/{uuid}")]
-        public HttpResponseMessage OrderCreationB(string uuid, [FromBody] string order)
+        public async Task<HttpResponseMessage> OrderCreationB(string uuid, [FromBody] string order)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessOrderCreationB(clientId, sellerId, uuid, order).GetContentResult();
+                return (await _bookingEngine.ProcessOrderCreationB(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -120,12 +121,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpDelete]
         [Route("orders/{uuid}")]
-        public HttpResponseMessage OrderDeletion(string uuid)
+        public async Task<HttpResponseMessage> OrderDeletion(string uuid)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.DeleteOrder(clientId, sellerId, uuid).GetContentResult();
+                return (await _bookingEngine.DeleteOrder(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -139,12 +140,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPatch]
         [Route("orders/{uuid}")]
-        public HttpResponseMessage OrderUpdate(string uuid, [FromBody] string order)
+        public async Task<HttpResponseMessage> OrderUpdate(string uuid, [FromBody] string order)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order).GetContentResult();
+                return (await _bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -158,12 +159,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPatch()]
         [Route("order-proposals/{uuid}")]
-        public HttpResponseMessage OrderProposalUpdate(string uuid, [FromBody] string order)
+        public async Task<HttpResponseMessage> OrderProposalUpdate(string uuid, [FromBody] string order)
         {
             try
             {
                 (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
-                return _bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order).GetContentResult();
+                return (await _bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -174,7 +175,7 @@ namespace BookingSystem.AspNetFramework.Controllers
         // GET api/openbooking/orders-rpde
         [HttpGet]
         [Route("orders-rpde")]
-        public HttpResponseMessage GetOrdersFeed(long? afterTimestamp = (long?)null, string afterId = null, long? afterChangeNumber = (long?)null)
+        public async Task<HttpResponseMessage> GetOrdersFeed(long? afterTimestamp = (long?)null, string afterId = null, long? afterChangeNumber = (long?)null)
         {
             try
             {
@@ -182,7 +183,7 @@ namespace BookingSystem.AspNetFramework.Controllers
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
                 string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
-                return _bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return (await _bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -193,11 +194,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         // POST api/openbooking/test-interface/datasets/uat-ci/opportunities
         [HttpPost]
         [Route("test-interface/datasets/{testDatasetIdentifier}/opportunities")]
-        public HttpResponseMessage TestInterfaceDatasetInsert(string testDatasetIdentifier, [FromBody] string @event)
+        public async Task<HttpResponseMessage> TestInterfaceDatasetInsert(string testDatasetIdentifier, [FromBody] string @event)
         {
             try
             {
-                return _bookingEngine.InsertTestOpportunity(testDatasetIdentifier, @event).GetContentResult();
+                return (await _bookingEngine.InsertTestOpportunity(testDatasetIdentifier, @event)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -208,11 +209,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         // DELETE api/openbooking/test-interface/datasets/uat-ci
         [HttpDelete]
         [Route("test-interface/datasets/{testDatasetIdentifier}")]
-        public HttpResponseMessage TestInterfaceDatasetDelete(string testDatasetIdentifier)
+        public async Task<HttpResponseMessage> TestInterfaceDatasetDelete(string testDatasetIdentifier)
         {
             try
             {
-                return _bookingEngine.DeleteTestDataset(testDatasetIdentifier).GetContentResult();
+                return (await _bookingEngine.DeleteTestDataset(testDatasetIdentifier)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -224,11 +225,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         // POST api/openbooking/test-interface/actions
         [HttpPost]
         [Route("test-interface/actions")]
-        public HttpResponseMessage TestInterfaceAction([FromBody] string action)
+        public async Task<HttpResponseMessage> TestInterfaceAction([FromBody] string action)
         {
             try
             {
-                return _bookingEngine.TriggerTestAction(action).GetContentResult();
+                return (await _bookingEngine.TriggerTestAction(action)).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

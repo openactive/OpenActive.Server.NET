@@ -4,7 +4,9 @@ using System.Linq;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
+using OpenActive.Server.NET.OpenBookingHelper.Extensions;
 using OpenActive.Server.NET.CustomBooking;
+using System.Threading.Tasks;
 
 namespace OpenActive.Server.NET.StoreBooking
 {
@@ -188,28 +190,30 @@ namespace OpenActive.Server.NET.StoreBooking
                 store.Key.SetConfiguration(store.Value, settings.SellerIdTemplate);
             }
             storeBookingEngineSettings.OrderStore.SetConfiguration(settings.OrderIdTemplate, settings.SellerIdTemplate);
+
+            // TODO: Check that OrderStore and all OpportunityStores are either sync or async, not a mix
         }
 
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
 
-        protected override Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
+        protected async override Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
 
-            return storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
+            return await storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
         }
 
-        protected override void DeleteTestDataset(string testDatasetIdentifier)
+        protected async override Task DeleteTestDataset(string testDatasetIdentifier)
         {
             foreach (var store in storeRouting.Values)
             {
-                store.DeleteTestDataset(testDatasetIdentifier);
+                await store.DeleteTestDataset(testDatasetIdentifier);
             }
         }
 
-        protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate)
+        protected async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate)
         {
             switch (simulateAction.Object.Value)
             {
@@ -221,7 +225,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         throw new OpenBookingException(new UnknownOrderError(), $"Order ID is not the expected format for a '{order.Type}': '{order.Id}'");
                     }
 
-                    storeBookingEngineSettings.OrderStore.TriggerTestAction(simulateAction, orderIdComponents);
+                    await storeBookingEngineSettings.OrderStore.TriggerTestAction(simulateAction, orderIdComponents);
                     break;
 
                 case Event @event:
@@ -243,7 +247,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), $"Store is not defined for {opportunityIdComponents.OpportunityType.Value}");
                     }
 
-                    store.TriggerTestAction(simulateAction, opportunityIdComponents);
+                    await store.TriggerTestAction(simulateAction, opportunityIdComponents);
                     break;
 
                 default:
@@ -252,30 +256,30 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        public override void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
+        public async override Task ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
-            if (!storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderId, sellerId, orderIdTemplate, orderItemIds))
+            if (!await storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderId, sellerId, orderIdTemplate, orderItemIds))
             {
                 throw new OpenBookingException(new UnknownOrderError(), "Order not found");
             }
         }
 
-        public override void ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
+        public async override Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
         {
-            if (!storeBookingEngineSettings.OrderStore.CustomerRejectOrderProposal(orderId, sellerId, orderIdTemplate))
+            if (!await storeBookingEngineSettings.OrderStore.CustomerRejectOrderProposal(orderId, sellerId, orderIdTemplate))
             {
                 throw new OpenBookingException(new UnknownOrderError(), "OrderProposal not found");
             }
         }
 
-        protected override DeleteOrderResult ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
+        protected async override Task<DeleteOrderResult> ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            return storeBookingEngineSettings.OrderStore.DeleteOrder(orderId, sellerId);
+            return await storeBookingEngineSettings.OrderStore.DeleteOrder(orderId, sellerId);
         }
 
-        protected override void ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
+        protected async override Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            storeBookingEngineSettings.OrderStore.DeleteLease(orderId, sellerId);
+            await storeBookingEngineSettings.OrderStore.DeleteLease(orderId, sellerId);
         }
 
         private static void CheckOrderIntegrity(Order requestOrder, Order responseOrder)
@@ -330,16 +334,16 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected override Order ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
+        protected async override Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
         {
             // Get Order without OrderItems expanded
-            var order = storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
+            var order = await storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
 
             // Get flowContext from resulting Order, treating it like a request (which also validates it like a request)
             var flowContext = AugmentContextFromOrder(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.OrderStatus, order), order);
 
             // Expand OrderItems based on the flowContext
-            var (orderItemContexts, _) = GetOrderItemContexts(order.OrderedItem, flowContext, null);
+            var (orderItemContexts, _) = await GetOrderItemContexts(order.OrderedItem, flowContext, null);
 
             // Maintain IDs and OrderItemStatus from GetOrderStatus that will have been overwritten by expansion
             foreach (var ctx in orderItemContexts)
@@ -354,16 +358,16 @@ namespace OpenActive.Server.NET.StoreBooking
             return order;
         }
 
-        public override Order ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
+        public async override Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
         {
-            if (!storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
+            if (!await storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
             {
                 throw new OpenBookingException(new OrderProposalVersionOutdatedError());
             }
-            return ProcessGetOrderStatus(orderId, sellerId, seller);
+            return await ProcessGetOrderStatus(orderId, sellerId, seller);
         }
 
-        private (List<IOrderItemContext>, List<OrderItemContextGroup>) GetOrderItemContexts(List<OrderItem> sourceOrderItems, StoreBookingFlowContext flowContext, IStateContext stateContext)
+        private async Task<(List<IOrderItemContext>, List<OrderItemContextGroup>)> GetOrderItemContexts(List<OrderItem> sourceOrderItems, StoreBookingFlowContext flowContext, IStateContext stateContext)
         {
             // Create OrderItemContext for each OrderItem
             var orderItemContexts = sourceOrderItems.Select((orderItem, index) =>
@@ -399,13 +403,13 @@ namespace OpenActive.Server.NET.StoreBooking
             }).ToList();
 
             // Group by OpportunityType for processing
-            var orderItemGroups = orderItemContexts
+            var orderItemGroupsTasks = orderItemContexts
                 .Where(ctx => ctx.RequestBookableOpportunityOfferId != null)
                 .GroupBy(ctx => ctx.RequestBookableOpportunityOfferId.OpportunityType.Value)
 
             // Get OrderItems first, to check no conflicts exist and that all items are valid
             // Resolve the ID of each OrderItem via a store
-            .Select(orderItemContextGroup =>
+            .Select(async orderItemContextGroup =>
             {
                 var opportunityType = orderItemContextGroup.Key;
                 var orderItemContextsWithinGroup = orderItemContextGroup.ToList();
@@ -418,7 +422,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 // QUESTION: Should GetOrderItems occur within the transaction?
                 // Currently this is optimised for the transaction to have minimal query coverage (i.e. write-only)
 
-                store.GetOrderItems(orderItemContextsWithinGroup, flowContext, stateContext);
+                await store.GetOrderItems(orderItemContextsWithinGroup, flowContext, stateContext);
 
                 if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem != null))
                 {
@@ -438,7 +442,9 @@ namespace OpenActive.Server.NET.StoreBooking
                     Store = store,
                     OrderItemContexts = orderItemContextsWithinGroup
                 };
-            }).ToList();
+            });
+            var orderItemGroups = new List<OrderItemContextGroup>();
+            orderItemGroups.AddRange(await Task.WhenAll(orderItemGroupsTasks));
 
             return (orderItemContexts, orderItemGroups);
         }
@@ -507,7 +513,7 @@ namespace OpenActive.Server.NET.StoreBooking
             return context;
         }
 
-        public override TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
+        public async override Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
         {
             var context = AugmentContextFromOrder(request, order);
 
@@ -515,7 +521,7 @@ namespace OpenActive.Server.NET.StoreBooking
             // Useful for transferring state between stages of the flow
             var stateContext = storeBookingEngineSettings.OrderStore.InitialiseFlow(context);
 
-            var (orderItemContexts, orderItemGroups) = GetOrderItemContexts(order.OrderedItem, context, stateContext);
+            var (orderItemContexts, orderItemGroups) = await GetOrderItemContexts(order.OrderedItem, context, stateContext);
 
             // Create a response Order based on the original order of the OrderItems in orderItemContexts
             TOrder responseGenericOrder = new TOrder
@@ -553,14 +559,21 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            var (version, orderProposalStatus) = storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
-                            responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id.ToString()}/versions/{version}");
+                            var (version, orderProposalStatus) = storeBookingEngineSettings.EnforceSyncWithinOrderTransactions ?
+                                    storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction).CheckSyncValueTaskWorkedAndReturnResult()
+                                    : await storeBookingEngineSettings.OrderStore.CreateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
+
+                            responseOrderProposal.OrderProposalVersion = new Uri($"{responseOrderProposal.Id}/versions/{version}");
                             responseOrderProposal.OrderProposalStatus = orderProposalStatus;
 
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
                             {
-                                g.Store.ProposeOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction);
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    g.Store.ProposeOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction).CheckSyncValueTaskWorked();
+                                else
+                                    await g.Store.ProposeOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction);
+
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
@@ -577,14 +590,28 @@ namespace OpenActive.Server.NET.StoreBooking
 
                             // Update this in case ResponseOrderItem was overwritten in Propose
                             responseOrderProposal.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
+                            if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                storeBookingEngineSettings.OrderStore.UpdateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction).CheckSyncValueTaskWorked();
+                            else
+                                await storeBookingEngineSettings.OrderStore.UpdateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
 
-                            storeBookingEngineSettings.OrderStore.UpdateOrderProposal(responseOrderProposal, context, stateContext, dbTransaction);
-
-                            dbTransaction.Commit();
+                            if (dbTransaction != null)
+                            {
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Commit().CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Commit();
+                            }
                         }
                         catch
                         {
-                            dbTransaction.Rollback();
+                            if (dbTransaction != null)
+                            {
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Rollback().CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Rollback();
+                            }
                             throw;
                         }
                     }
@@ -606,14 +633,20 @@ namespace OpenActive.Server.NET.StoreBooking
                     {
                         try
                         {
-                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction);
+
+                            responseOrderQuote.Lease = storeBookingEngineSettings.EnforceSyncWithinOrderTransactions ?
+                                storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction).CheckSyncValueTaskWorkedAndReturnResult()
+                                : await storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction);
 
                             // Lease the OrderItems, if a lease exists
                             if (responseOrderQuote.Lease != null)
                             {
                                 foreach (var g in orderItemGroups)
                                 {
-                                    g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
+                                    if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                        g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction).CheckSyncValueTaskWorked();
+                                    else
+                                        await g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
                                 }
                             }
 
@@ -623,13 +656,29 @@ namespace OpenActive.Server.NET.StoreBooking
                             // Note OrderRequiresApproval is only required during C1 and C2
                             responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
 
-                            storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction);
+                            if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction).CheckSyncValueTaskWorked();
+                            else
+                                await storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction);
 
-                            if (dbTransaction != null) dbTransaction.Commit();
+
+                            if (dbTransaction != null)
+                            {
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Commit().CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Commit();
+                            }
                         }
                         catch
                         {
-                            if (dbTransaction != null) dbTransaction.Rollback();
+                            if (dbTransaction != null)
+                            {
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Rollback().CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Rollback();
+                            }
                             throw;
                         }
                     }
@@ -652,12 +701,19 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction);
+                            if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction).CheckSyncValueTaskWorked();
+                            else
+                                await storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction);
+
 
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
                             {
-                                g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction);
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction).CheckSyncValueTaskWorked();
+                                else
+                                    await g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction);
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
@@ -674,14 +730,29 @@ namespace OpenActive.Server.NET.StoreBooking
 
                             // Update this in case ResponseOrderItem was overwritten in Book
                             responseOrder.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
+                            if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction).CheckSyncValueTaskWorked();
+                            else
+                                await storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction);
 
-                            storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction);
 
-                            dbTransaction.Commit();
+                            if (dbTransaction != null)
+                            {
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Commit().CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Commit();
+                            }
                         }
                         catch
                         {
-                            dbTransaction.Rollback();
+                            if (dbTransaction != null)
+                            {
+                                if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
+                                    dbTransaction.Rollback().CheckSyncValueTaskWorked();
+                                else
+                                    await dbTransaction.Rollback();
+                            }
                             throw;
                         }
                     }

@@ -8,6 +8,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
+using System.Threading.Tasks;
 
 namespace BookingSystem
 {
@@ -23,7 +24,7 @@ namespace BookingSystem
 
         Random rnd = new Random();
 
-        protected override SessionOpportunity CreateOpportunityWithinTestDataset(
+        protected async override Task<SessionOpportunity> CreateOpportunityWithinTestDataset(
             string testDatasetIdentifier,
             OpportunityType opportunityType,
             TestOpportunityCriteriaEnumeration criteria,
@@ -229,12 +230,12 @@ namespace BookingSystem
             }
         }
 
-        protected override void DeleteTestDataset(string testDatasetIdentifier)
+        protected async override Task DeleteTestDataset(string testDatasetIdentifier)
         {
             FakeBookingSystem.Database.DeleteTestClassesFromDataset(testDatasetIdentifier);
         }
 
-        protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, SessionOpportunity idComponents)
+        protected async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, SessionOpportunity idComponents)
         {
             switch (simulateAction)
             {
@@ -262,9 +263,8 @@ namespace BookingSystem
 
         }
 
-
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
-        protected override void GetOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
+        protected async override Task GetOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
             // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
 
@@ -392,7 +392,8 @@ namespace BookingSystem
             }
         }
 
-        protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected async override ValueTask LeaseOrderItems(
+            Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -471,7 +472,7 @@ namespace BookingSystem
         }
 
         //TODO: This should reuse code of LeaseOrderItem
-        protected override void BookOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected async override ValueTask BookOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -574,7 +575,7 @@ namespace BookingSystem
         }
 
         // TODO check logic here, it's just been copied from BookOrderItems. Possibly could remove duplication here.
-        protected override void ProposeOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected async override ValueTask ProposeOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity

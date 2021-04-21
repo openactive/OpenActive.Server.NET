@@ -1,32 +1,33 @@
 ﻿using OpenActive.NET.Rpde.Version1;
 using System;
+using System.Threading.Tasks;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
 
     public interface IRpdeFeedIncrementingUniqueChangeNumber : IRpdeFeedGenerator
     {
-        RpdePage GetRpdePage(long? afterChangeNumber);
+        Task<RpdePage> GetRpdePage(long? afterChangeNumber);
     }
 
     public interface IRpdeFeedModifiedTimestampAndIdLong : IRpdeFeedGenerator
     {
-        RpdePage GetRpdePage(long? afterTimestamp, long? afterId);
+        Task<RpdePage> GetRpdePage(long? afterTimestamp, long? afterId);
     }
 
     public interface IRpdeFeedModifiedTimestampAndIdString : IRpdeFeedGenerator
     {
-        RpdePage GetRpdePage(long? afterTimestamp, string afterId);
+        Task<RpdePage> GetRpdePage(long? afterTimestamp, string afterId);
     }
 
     public interface IRpdeOrdersFeedIncrementingUniqueChangeNumber : IRpdeFeedGenerator
     {
-        RpdePage GetOrdersRpdePage(string clientId, long? afterChangeNumber);
+        Task<RpdePage> GetOrdersRpdePage(string clientId, long? afterChangeNumber);
     }
 
     public interface IRpdeOrdersFeedModifiedTimestampAndIdString : IRpdeFeedGenerator
     {
-        RpdePage GetOrdersRpdePage(string clientId, long? afterTimestamp, string afterId);
+        Task<RpdePage> GetOrdersRpdePage(string clientId, long? afterTimestamp, string afterId);
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1040:Avoid empty interfaces", Justification = "<Pending>")]
@@ -44,21 +45,21 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <param name="afterId"></param>
         /// <param name="afterChangeNumber"></param>
         /// <returns></returns>
-        public static RpdePage GetRpdePage(this IRpdeFeedGenerator generator, string feedidentifier, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public async static Task<RpdePage> GetRpdePage(this IRpdeFeedGenerator generator, string feedidentifier, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             switch (generator)
             {
                 case IRpdeFeedIncrementingUniqueChangeNumber changeNumberGenerator:
-                    return changeNumberGenerator.GetRpdePage(afterChangeNumber);
+                    return await changeNumberGenerator.GetRpdePage(afterChangeNumber);
 
                 case IRpdeFeedModifiedTimestampAndIdLong timestampAndIdGeneratorLong:
                     if (long.TryParse(afterId, out long afterIdLong))
                     {
-                        return timestampAndIdGeneratorLong.GetRpdePage(afterTimestamp, afterIdLong);
+                        return await timestampAndIdGeneratorLong.GetRpdePage(afterTimestamp, afterIdLong);
                     }
                     else if (string.IsNullOrWhiteSpace(afterId))
                     {
-                        return timestampAndIdGeneratorLong.GetRpdePage(afterTimestamp, null);
+                        return await timestampAndIdGeneratorLong.GetRpdePage(afterTimestamp, null);
                     }
                     else
                     {
@@ -66,13 +67,13 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                     }
 
                 case IRpdeFeedModifiedTimestampAndIdString timestampAndIdGeneratorString:
-                    return timestampAndIdGeneratorString.GetRpdePage(afterTimestamp, afterId);
+                    return await timestampAndIdGeneratorString.GetRpdePage(afterTimestamp, afterId);
 
                 case IRpdeOrdersFeedIncrementingUniqueChangeNumber ordersFeedIncrementingUniqueChangeNumber:
-                    return ordersFeedIncrementingUniqueChangeNumber.GetOrdersRpdePage(feedidentifier, afterChangeNumber);
+                    return await ordersFeedIncrementingUniqueChangeNumber.GetOrdersRpdePage(feedidentifier, afterChangeNumber);
 
                 case IRpdeOrdersFeedModifiedTimestampAndIdString ordersFeedModifiedTimestampAndIdString:
-                    return ordersFeedModifiedTimestampAndIdString.GetOrdersRpdePage(feedidentifier, afterTimestamp, afterId);
+                    return await ordersFeedModifiedTimestampAndIdString.GetOrdersRpdePage(feedidentifier, afterTimestamp, afterId);
 
                 default:
                     throw new InvalidCastException($"RPDEFeedGenerator for '{feedidentifier}' not recognised - check the generic template for RPDEFeedModifiedTimestampAndID uses either <string> or <long?>");

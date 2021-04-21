@@ -10,6 +10,7 @@ using OpenActive.FakeDatabase.NET.Helpers;
 using ServiceStack.OrmLite;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -100,6 +101,15 @@ namespace OpenActive.FakeDatabase.NET
     {
         OrderWasAlreadyDeleted,
         OrderSuccessfullyDeleted,
+        OrderWasNotFound
+    }
+
+    /// <summary>
+    /// Result of getting (or attempting to get) an Order in a FakeDatabase
+    /// </summary>
+    public enum FakeDatabaseGetOrderResult
+    {
+        OrderSuccessfullyGot,
         OrderWasNotFound
     }
 
@@ -560,6 +570,19 @@ namespace OpenActive.FakeDatabase.NET
                 db.Update(existingOrder);
 
                 return true;
+            }
+        }
+
+        public (FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>) GetOrderAndOrderItems(string clientId, long? sellerId, string uuid)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid && !x.Deleted && (!sellerId.HasValue || x.SellerId == sellerId));
+                if (order == null) return (FakeDatabaseGetOrderResult.OrderWasNotFound, null, null);
+                var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid);
+                if (orderItems.Count == 0) return (FakeDatabaseGetOrderResult.OrderWasNotFound, null, null);
+
+                return (FakeDatabaseGetOrderResult.OrderSuccessfullyGot, order, orderItems);
             }
         }
 
@@ -1115,7 +1138,6 @@ namespace OpenActive.FakeDatabase.NET
                 }
             }
         }
-
 
         public bool RejectOrderProposal(string clientId, long? sellerId, string uuid, bool customerRejected)
         {

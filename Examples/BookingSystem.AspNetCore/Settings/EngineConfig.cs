@@ -256,6 +256,7 @@ namespace BookingSystem
                     OrderStore = new AcmeOrderStore(appSettings),
                     BusinessToBusinessTaxCalculation = appSettings.Payment.TaxCalculationB2B,
                     BusinessToConsumerTaxCalculation = appSettings.Payment.TaxCalculationB2C,
+                    EnforceSyncWithinOrderTransactions = false,
                 });
         }
     }
