@@ -184,11 +184,6 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public async static Task<bool> AddLeaseAsync(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
-        {
-            return AddLease(clientId, uuid, brokerRole, brokerName, sellerId, customerEmail, leaseExpires, transaction);
-        }
-
         public static bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
         {
             var db = transaction.DatabaseConnection;
@@ -530,11 +525,6 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public async static Task<bool> AddOrderAsync(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
-        {
-            return AddOrder(clientId, uuid, brokerRole, brokerName, sellerId, customerEmail, paymentIdentifier, totalOrderPrice, transaction, proposalVersionUuid, proposalStatus);
-        }
-
         public static bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             var db = transaction.DatabaseConnection;
@@ -581,11 +571,6 @@ namespace OpenActive.FakeDatabase.NET
 
                 return true;
             }
-        }
-
-        public async Task<(FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>)> GetOrderAndOrderItemsAsync(string clientId, long? sellerId, string uuid)
-        {
-            return GetOrderAndOrderItems(clientId, sellerId, uuid);
         }
 
         public (FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>) GetOrderAndOrderItems(string clientId, long? sellerId, string uuid)
@@ -635,11 +620,6 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public async static Task<(ReserveOrderItemsResult, long?, long?)> LeaseOrderItemsForClassOccurrenceAsync(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, long spacesRequested)
-        {
-            return LeaseOrderItemsForClassOccurrence(transaction, clientId, sellerId, uuid, occurrenceId, spacesRequested);
-        }
-
         public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, long spacesRequested)
         {
             var db = transaction.DatabaseConnection;
@@ -684,11 +664,6 @@ namespace OpenActive.FakeDatabase.NET
             // Update number of spaces remaining for the opportunity
             RecalculateSpaces(db, thisOccurrence);
             return (ReserveOrderItemsResult.Success, null, null);
-        }
-
-        public async static Task<(ReserveOrderItemsResult, long?, long?)> LeaseOrderItemsForFacilitySlotAsync(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long spacesRequested)
-        {
-            return LeaseOrderItemsForFacilitySlot(transaction, clientId, sellerId, uuid, slotId, spacesRequested);
         }
 
         public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long spacesRequested)
@@ -747,22 +722,6 @@ namespace OpenActive.FakeDatabase.NET
             public string MeetingId { get; set; }
             public string MeetingPassword { get; set; }
             public AttendanceMode AttendanceMode { get; set; }
-        }
-
-        public async static Task<(ReserveOrderItemsResult, List<BookedOrderItemInfo>)> BookOrderItemsForClassOccurrenceAsync(
-           FakeDatabaseTransaction transaction,
-           string clientId,
-           long? sellerId,
-           string uuid,
-           long occurrenceId,
-           string opportunityJsonLdType,
-           string opportunityJsonLdId,
-           string offerJsonLdId,
-           long numberOfSpaces,
-           bool proposal
-           )
-        {
-            return BookOrderItemsForClassOccurrence(transaction, clientId, sellerId, uuid, occurrenceId, opportunityJsonLdType, opportunityJsonLdId, offerJsonLdId, numberOfSpaces, proposal);
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
@@ -838,22 +797,6 @@ namespace OpenActive.FakeDatabase.NET
 
             RecalculateSpaces(db, thisOccurrence);
             return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
-        }
-
-        public async static Task<(ReserveOrderItemsResult, List<BookedOrderItemInfo>)> BookOrderItemsForFacilitySlotAsync(
-           FakeDatabaseTransaction transaction,
-           string clientId,
-           long? sellerId,
-           string uuid,
-           long occurrenceId,
-           string opportunityJsonLdType,
-           string opportunityJsonLdId,
-           string offerJsonLdId,
-           long numberOfSpaces,
-           bool proposal
-           )
-        {
-            return BookOrderItemsForFacilitySlot(transaction, clientId, sellerId, uuid, occurrenceId, opportunityJsonLdType, opportunityJsonLdId, offerJsonLdId, numberOfSpaces, proposal);
         }
 
         // TODO this should reuse code of LeaseOrderItemsForFacilityOccurrence

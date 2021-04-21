@@ -190,8 +190,7 @@ namespace BookingSystem
             OrderQuote responseOrderQuote,
             StoreBookingFlowContext flowContext,
             OrderStateContext stateContext,
-            OrderTransaction databaseTransaction,
-            bool useAsync)
+            OrderTransaction databaseTransaction)
         {
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
@@ -204,17 +203,7 @@ namespace BookingSystem
             var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
             var brokerRole = BrokerTypeToBrokerRole(flowContext.BrokerRole ?? BrokerType.NoBroker);
 
-            var result = useAsync ?
-            await FakeDatabase.AddLeaseAsync(
-                flowContext.OrderId.ClientId,
-                flowContext.OrderId.uuid,
-                brokerRole,
-                flowContext.Broker.Name,
-                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer?.Email,
-                leaseExpires,
-                databaseTransaction.FakeDatabaseTransaction)
-             : FakeDatabase.AddLease(
+            var result = FakeDatabase.AddLease(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 brokerRole,
@@ -237,8 +226,7 @@ namespace BookingSystem
             OrderQuote responseOrderQuote,
             StoreBookingFlowContext flowContext,
             OrderStateContext stateContext,
-            OrderTransaction databaseTransaction,
-            bool useAsync)
+            OrderTransaction databaseTransaction)
         {
             // Does nothing at the moment
         }
@@ -253,7 +241,7 @@ namespace BookingSystem
                 );
         }
 
-        public async override ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool useAsync)
+        public async override ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
@@ -261,20 +249,7 @@ namespace BookingSystem
             if (!responseOrder.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
 
-            var result = useAsync ?
-                await FakeDatabase.AddOrderAsync(
-                flowContext.OrderId.ClientId,
-                flowContext.OrderId.uuid,
-                flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
-                flowContext.Broker.Name,
-                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer?.Email,
-                flowContext.Payment?.Identifier,
-                responseOrder.TotalPaymentDue.Price.Value,
-                databaseTransaction.FakeDatabaseTransaction,
-                null,
-                null)
-                : FakeDatabase.AddOrder(
+            var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
@@ -290,31 +265,18 @@ namespace BookingSystem
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
 
-        public async override ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool useAsync)
+        public async override ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Does nothing at the moment
         }
 
-        public async override ValueTask<(string, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool useAsync)
+        public async override ValueTask<(string, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (!responseOrderProposal.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Price must be set on TotalPaymentDue");
 
             var version = Guid.NewGuid().ToString();
-            var result = useAsync ?
-                await FakeDatabase.AddOrderAsync(
-                flowContext.OrderId.ClientId,
-                flowContext.OrderId.uuid,
-                flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
-                flowContext.Broker.Name,
-                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer?.Email,
-                flowContext.Payment?.Identifier,
-                responseOrderProposal.TotalPaymentDue.Price.Value,
-                databaseTransaction.FakeDatabaseTransaction,
-                version,
-                ProposalStatus.AwaitingSellerConfirmation)
-                : FakeDatabase.AddOrder(
+            var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
@@ -333,7 +295,7 @@ namespace BookingSystem
             return (version, OrderProposalStatus.AwaitingSellerConfirmation);
         }
 
-        public async override ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction, bool useAsync)
+        public async override ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Does nothing at the moment
         }
@@ -423,7 +385,7 @@ namespace BookingSystem
 
         public async override Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller)
         {
-            var (getOrderResult, dbOrder, dbOrderItems) = await FakeBookingSystem.Database.GetOrderAndOrderItemsAsync(
+            var (getOrderResult, dbOrder, dbOrderItems) = FakeBookingSystem.Database.GetOrderAndOrderItems(
                 orderId.ClientId,
                 sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid);

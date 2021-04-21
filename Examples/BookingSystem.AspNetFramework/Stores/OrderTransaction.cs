@@ -13,20 +13,14 @@ namespace BookingSystem
             FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
         }
 
-        public async ValueTask Commit(bool useAsync)
+        public async ValueTask Commit()
         {
-            if (useAsync)
-                await FakeDatabaseTransaction.CommitTransactionAsync();
-            else
-                FakeDatabaseTransaction.CommitTransaction();
+            FakeDatabaseTransaction.CommitTransaction();
         }
 
-        public async ValueTask Rollback(bool useAsync)
+        public async ValueTask Rollback()
         {
-            if (useAsync)
-                await FakeDatabaseTransaction.RollbackTransactionAsync();
-            else
-                FakeDatabaseTransaction.RollbackTransaction();
+            FakeDatabaseTransaction.RollbackTransaction();
         }
 
         public void Dispose()
