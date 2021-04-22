@@ -374,14 +374,14 @@ namespace OpenActive.Server.NET.StoreBooking
             // Create OrderItemContext for each OrderItem
             var orderItemContexts = sourceOrderItems.Select((orderItem, index) =>
             {
+                var orderedItemId = orderItem.OrderedItem.Object != null ? orderItem.OrderedItem.Object.Id : orderItem.OrderedItem.IdReference;
+                var acceptedOfferId = orderItem.AcceptedOffer.Object != null ? orderItem.AcceptedOffer.Object.Id : orderItem.AcceptedOffer.IdReference;
+                var idComponents = base.ResolveOpportunityID(orderedItemId, acceptedOfferId);
 
-                var idComponents = orderItem.OrderedItem.Object != null ?
-                    base.ResolveOpportunityID(orderItem.OrderedItem.Object.Id, orderItem.AcceptedOffer.Object.Id)
-                    : base.ResolveOpportunityID(orderItem.OrderedItem.IdReference, orderItem.AcceptedOffer.IdReference);
                 if (idComponents == null)
                 {
                     return new UnknownOrderItemContext(index, orderItem,
-                        new InvalidOpportunityOrOfferIdError(), $"Opportunity and Offer ID pair are not in the expected format: '{orderItem.OrderedItem.IdReference}' and '{orderItem.AcceptedOffer.IdReference}'");
+                        new InvalidOpportunityOrOfferIdError(), $"Opportunity and Offer ID pair are not in the expected format: '{orderedItemId}' and '{acceptedOfferId}'");
                 }
 
                 if (idComponents.OpportunityType == null)
