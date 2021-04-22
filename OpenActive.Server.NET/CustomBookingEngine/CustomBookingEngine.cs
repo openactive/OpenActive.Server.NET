@@ -298,13 +298,37 @@ namespace OpenActive.Server.NET.CustomBooking
         }
 
         // Note this is not a helper as it relies on engine settings state
-        protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId, Uri offerId)
+        protected IBookableIdComponents ResolveOpportunityID(Uri opportunityId, Uri offerId)
         {
             // Return the first matching ID combination for the opportunityId and offerId provided.
             // TODO: Make this more efficient?
-            return this.idConfigurationLookup[opportunityTypeString]
-                .Select(x => x.GetOpportunityReference(opportunityId, offerId))
-                .Where(x => x != null)
+            return this.idConfigurationLookup
+                .Select(x => x.Value)
+                .Select(x =>
+                {
+                    return x.Select(y => y.GetOpportunityReference(opportunityId, offerId)) // Somehow opportunityID is null?!?!
+                   .Where(y => y != null);
+                })
+                .Where(x => x.Any())
+                .FirstOrDefault()
+                .FirstOrDefault();
+        }
+
+        // Note this is not a helper as it relies on engine settings state
+        protected IBookableIdComponents ResolveOpportunityID(Uri opportunityId)
+        {
+            // Return the first matching ID combination for the opportunityId and offerId provided.
+            // TODO: Make this more efficient?
+            return this.idConfigurationLookup
+                .Select(x => x.Value)
+                .Select(x =>
+                {
+                    return x
+                    .Select(y => y.GetOpportunityBookableIdComponents(opportunityId))
+                        .Where(y => y != null);
+                })
+                .Where(x => x.Any())
+                .FirstOrDefault()
                 .FirstOrDefault();
         }
 
