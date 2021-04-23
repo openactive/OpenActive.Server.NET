@@ -69,9 +69,8 @@ namespace OpenActive.FakeDatabase.NET
     public class OrderItemsTable : Table
     {
         public string ClientId { get; internal set; }
-        public string OpportunityJsonLdType { get; set; }
-        public string OpportunityJsonLdId { get; set; }
-        public string OfferJsonLdId { get; set; }
+        public Uri OpportunityJsonLdId { get; set; }
+        public Uri OfferJsonLdId { get; set; }
         [Reference]
         public OrderTable OrderTable { get; set; }
         [ForeignKey(typeof(OrderTable), OnDelete = "CASCADE")]

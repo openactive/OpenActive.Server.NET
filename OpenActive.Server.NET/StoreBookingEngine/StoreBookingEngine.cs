@@ -106,23 +106,28 @@ namespace OpenActive.Server.NET.StoreBooking
             ResponseOrderItem = new OrderItem
             {
                 Position = RequestOrderItem?.Position,
-                AcceptedOffer = new Offer
-                {
-                    Id = RequestOrderItem?.AcceptedOffer.Object?.Id
-                },
-                OrderedItem = OrderCalculations.RenderOpportunityWithOnlyId(RequestOrderItem?.OrderedItem.Object?.Type, RequestOrderItem?.OrderedItem.Object?.Id)
+                AcceptedOffer = RequestOrderItem.AcceptedOffer,
+                OrderedItem = RequestOrderItem.OrderedItem
             };
         }
 
         public void SetResponseOrderItem(OrderItem item, SellerIdComponents sellerId, StoreBookingFlowContext flowContext)
         {
             if (item == null) throw new ArgumentNullException(nameof(item));
-            var requestOrderItemId = RequestOrderItem?.OrderedItem.Object != null ? RequestOrderItem.OrderedItem.Object.Id : RequestOrderItem?.OrderedItem.IdReference;
+            var requestOrderItemId = RequestOrderItem?.OrderedItem.IdReference;
+            if (requestOrderItemId == null)
+            {
+                throw new OpenBookingException(new InternalLibraryError(), "Request must include an orderedItem for the OrderItem");
+            }
             if (item?.OrderedItem.Object?.Id != requestOrderItemId)
             {
                 throw new ArgumentException("The Opportunity ID within the response OrderItem must match the request OrderItem");
             }
-            var requestAcceptedOfferId = RequestOrderItem?.AcceptedOffer.Object != null ? RequestOrderItem.AcceptedOffer.Object.Id : RequestOrderItem?.AcceptedOffer.IdReference;
+            var requestAcceptedOfferId = RequestOrderItem?.AcceptedOffer.IdReference;
+            if (requestAcceptedOfferId == null)
+            {
+                throw new OpenBookingException(new InternalLibraryError(), "Request must include an acceptedOffer for the OrderItem");
+            }
             if (item?.AcceptedOffer.Object?.Id != requestAcceptedOfferId)
             {
                 throw new ArgumentException("The Offer ID within the response OrderItem must match the request OrderItem");
@@ -374,8 +379,8 @@ namespace OpenActive.Server.NET.StoreBooking
             // Create OrderItemContext for each OrderItem
             var orderItemContexts = sourceOrderItems.Select((orderItem, index) =>
             {
-                var orderedItemId = orderItem.OrderedItem.Object != null ? orderItem.OrderedItem.Object.Id : orderItem.OrderedItem.IdReference;
-                var acceptedOfferId = orderItem.AcceptedOffer.Object != null ? orderItem.AcceptedOffer.Object.Id : orderItem.AcceptedOffer.IdReference;
+                var orderedItemId = orderItem.OrderedItem.IdReference;
+                var acceptedOfferId = orderItem.AcceptedOffer.IdReference;
                 var idComponents = base.ResolveOpportunityID(orderedItemId, acceptedOfferId);
 
                 if (idComponents == null)

@@ -322,16 +322,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 throw new ArgumentOutOfRangeException(nameof(opportunityType), "OpportunityType was not found within this template. Please check it is appropriate for this feed or OrderItem.");
         }
 
-        public string RenderOpportunityJsonLdType(TBookableIdComponents components)
-        {
-            if (components == null || !components.OpportunityType.HasValue)
-            {
-                throw new ArgumentNullException("OpportunityType must be set on IBookableIdComponents");
-            }
-            // TODO: Create an extra prop in DatasetSite lib so that we don't need to parse the URL here
-            return OpportunityTypes.Configurations[components.OpportunityType.Value].SameAs.AbsolutePath.Trim('/');
-        }
-
         public Uri RenderOfferId(TBookableIdComponents components)
         {
             // If inheritance is available on the IdComponent, ensure that it is respected (i.e. the correct offer is rendered, even if on the parent)
