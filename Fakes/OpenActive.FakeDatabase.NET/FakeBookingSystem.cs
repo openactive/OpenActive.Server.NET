@@ -158,7 +158,7 @@ namespace OpenActive.FakeDatabase.NET
             Randomizer.Seed = new Random((int)(DateTime.Today - new DateTime(1970, 1, 1)).TotalDays);
         }
 
-        private const int OpportunityCount = 1000;
+        private const int OpportunityCount = 2000;
 
         /// <summary>
         /// TODO: Call this on a schedule from both .NET Core and .NET Framework reference implementations
@@ -1254,7 +1254,7 @@ namespace OpenActive.FakeDatabase.NET
                     Id = seed.Id,
                     Deleted = false,
                     Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
-                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
+                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5  
                 })
                 .ToList();
 
@@ -1286,7 +1286,7 @@ namespace OpenActive.FakeDatabase.NET
                             RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
                             RequiresAdditionalDetails = requiresAdditionalDetails,
                             RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
-                            RequiresApproval = Faker.Random.Bool(),
+                            RequiresApproval = seed.RequiresApproval,
                             ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                             LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                             AllowCustomerCancellationFullRefund = Faker.Random.Bool()
@@ -1307,7 +1307,8 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     seed.Id,
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
-                    ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate()
+                    ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
+                    seed.RequiresApproval
                 })
                 .Select((@class) =>
                 {
@@ -1324,7 +1325,7 @@ namespace OpenActive.FakeDatabase.NET
                         RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
                         RequiresAdditionalDetails = requiresAdditionalDetails,
                         RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
-                        RequiresApproval = Faker.Random.Bool(),
+                        RequiresApproval = @class.RequiresApproval,
                         LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                         SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                         ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
@@ -1789,21 +1790,34 @@ namespace OpenActive.FakeDatabase.NET
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
         }
-        private static readonly (Bounds, Bounds?)[] BucketDefinitions =
+        private static readonly (Bounds, Bounds?, bool)[] BucketDefinitions =
         {
+            // Approval not required
             // in next 0-10 days, no validFromBeforeStartDate
-            (new Bounds(0, 10), null),
-            (new Bounds(0, 10), null),
+            (new Bounds(0, 10), null, false),
+            (new Bounds(0, 10), null, false),
             // in next 0-10 days, validFromBeforeStartDate between 10-15 days (all bookable)
-            (new Bounds(0, 10), new Bounds(10, 15)),
-            (new Bounds(0, 10), new Bounds(10, 15)),
+            (new Bounds(0, 10), new Bounds(10, 15), false),
+            (new Bounds(0, 10), new Bounds(10, 15), false),
             // in next -2-+6 days, validFromBeforeStartDate 0-4 days (over half likely bookable, some likely bookable but in the past)
-            (new Bounds(-2, 6), new Bounds(0, 4)),
+            (new Bounds(-2, 6), new Bounds(0, 4), false),
             // in next 5-10 days, validFromBeforeStartDate between 0-4 days (none bookable)
-            (new Bounds(5, 10), new Bounds(0, 4)),
+            (new Bounds(5, 10), new Bounds(0, 4), false),
+
+            // Approval  required
+            // in next 0-10 days, no validFromBeforeStartDate
+            (new Bounds(0, 10), null, true),
+            (new Bounds(0, 10), null, true),
+            // in next 0-10 days, validFromBeforeStartDate between 10-15 days (all bookable)
+            (new Bounds(0, 10), new Bounds(10, 15), true),
+            (new Bounds(0, 10), new Bounds(10, 15), true),
+            // in next -2-+6 days, validFromBeforeStartDate 0-4 days (over half likely bookable, some likely bookable but in the past)
+            (new Bounds(-2, 6), new Bounds(0, 4), true),
+            // in next 5-10 days, validFromBeforeStartDate between 0-4 days (none bookable)
+            (new Bounds(5, 10), new Bounds(0, 4), true),
         };
 
-        private static OpportunitySeed GenerateRandomOpportunityData(Faker faker, int index, (Bounds startDateRange, Bounds? validFromBeforeStartDateRange) input)
+        private static OpportunitySeed GenerateRandomOpportunityData(Faker faker, int index, (Bounds startDateRange, Bounds? validFromBeforeStartDateRange, bool requiresApproval) input)
         {
             return new OpportunitySeed
             {
@@ -1811,6 +1825,7 @@ namespace OpenActive.FakeDatabase.NET
                 Id = index + 1,
                 StartDateBounds = BoundsDaysToMinutes(input.startDateRange).Value,
                 ValidFromBeforeStartDateBounds = !input.validFromBeforeStartDateRange.HasValue ? (Bounds?)null : BoundsDaysToMinutes(input.validFromBeforeStartDateRange).Value,
+                RequiresApproval = input.requiresApproval,
             };
         }
 
@@ -1840,6 +1855,7 @@ namespace OpenActive.FakeDatabase.NET
             public TimeSpan? RandomValidFromBeforeStartDate() => ValidFromBeforeStartDateBounds.HasValue
                 ? TimeSpan.FromMinutes(this.Faker.Random.Int(ValidFromBeforeStartDateBounds.Value))
                 : (TimeSpan?)null;
+            public bool RequiresApproval { get; set; }
         }
 
         private static TimeSpan? RandomLatestCancellationBeforeStartDate()
