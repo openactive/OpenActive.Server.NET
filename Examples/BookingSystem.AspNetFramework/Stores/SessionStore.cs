@@ -294,7 +294,7 @@ namespace BookingSystem
                                          Price = classes.Price,
                                          PriceCurrency = "GBP",
                                          LatestCancellationBeforeStartDate = classes.LatestCancellationBeforeStartDate,
-                                         Prepayment = classes.Prepayment.Convert(),
+                                         OpenBookingPrepayment = classes.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate,
                                          AllowCustomerCancellationFullRefund = classes.AllowCustomerCancellationFullRefund,
                                      },

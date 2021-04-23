@@ -313,15 +313,15 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // If no payment provided by broker, prepayment must either be required, or not specified with a nonzero price
             if (requestOrder.Payment == null && (
-                    responseOrder.TotalPaymentDue?.Prepayment == RequiredStatusType.Required ||
-                    responseOrder.TotalPaymentDue?.Price > 0 && responseOrder.TotalPaymentDue?.Prepayment == null))
+                    responseOrder.TotalPaymentDue?.OpenBookingPrepayment == RequiredStatusType.Required ||
+                    responseOrder.TotalPaymentDue?.Price > 0 && responseOrder.TotalPaymentDue?.OpenBookingPrepayment == null))
             {
                 throw new OpenBookingException(new MissingPaymentDetailsError(), "Orders with prepayment must have nonzero price.");
             }
 
             // If payment provided by broker, prepayment must not be unavailable and price must not be zero
             if (requestOrder.Payment != null && (
-                    responseOrder.TotalPaymentDue?.Prepayment == RequiredStatusType.Unavailable ||
+                    responseOrder.TotalPaymentDue?.OpenBookingPrepayment == RequiredStatusType.Unavailable ||
                     responseOrder.TotalPaymentDue?.Price == 0))
             {
                 throw new OpenBookingException(new UnnecessaryPaymentDetailsError(), "Orders without prepayment must have zero price.");

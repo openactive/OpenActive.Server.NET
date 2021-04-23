@@ -50,7 +50,8 @@ namespace BookingSystem
                             Url = new Uri("https://example.com/privacy.html"),
                             RequiresExplicitConsent = false
                         }
-                    }
+                    },
+                    IsOpenBookingAllowed = true,
                 };
             }
 
@@ -76,7 +77,8 @@ namespace BookingSystem
                         AddressRegion = "Oxfordshire",
                         PostalCode = "OX1 1AA",
                         AddressCountry = "GB"
-                    }
+                    },
+                    IsOpenBookingAllowed = true,
                 } : (ILegalEntity)new Organization
                 {
                     Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
@@ -99,7 +101,8 @@ namespace BookingSystem
                             Url = new Uri("https://example.com/privacy.html"),
                             RequiresExplicitConsent = false
                         }
-                    }
+                    },
+                    IsOpenBookingAllowed = true,
                 };
 
             }
