@@ -55,7 +55,7 @@ namespace OpenActive.Server.NET.StoreBooking
         async Task<Event> IOpportunityStore.CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
         {
             var components = await CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
-            return OrderCalculations.RenderOpportunityWithOnlyId(RenderOpportunityJsonLdType(components), RenderOpportunityId(components));
+            return OrderCalculations.RenderOpportunityWithOnlyId(opportunityType, RenderOpportunityId(components));
         }
 
         async Task IOpportunityStore.DeleteTestDataset(string testDatasetIdentifier)

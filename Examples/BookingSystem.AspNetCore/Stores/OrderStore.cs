@@ -395,11 +395,8 @@ namespace BookingSystem
             var orderItems = dbOrderItems.Select((orderItem) => new OrderItem
             {
                 Id = dbOrder.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, dbOrder.OrderId, orderItem.Id) : null,
-                AcceptedOffer = new Offer
-                {
-                    Id = new Uri(orderItem.OfferJsonLdId),
-                },
-                OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
+                AcceptedOffer = orderItem.OfferJsonLdId,
+                OrderedItem = orderItem.OpportunityJsonLdId,
                 OrderItemStatus =
                             orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
                             orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
