@@ -157,7 +157,7 @@ jobs:
         NODE_CONFIG: |
           {"broker": {"outputPath": "../../output/"}, "integrationTests": {"outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/"}}
         NODE_ENV: .example.${{ matrix.profile }}
-        NODE_APP_INSTANCE: ci-framework
+        NODE_APP_INSTANCE: framework
       working-directory: tests
       
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
