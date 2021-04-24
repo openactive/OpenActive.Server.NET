@@ -155,9 +155,9 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://localhost:5000/openactive"}, "integrationTests": {"outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/"}, "sellers": { "primary": {"@id": "http://localhost:5000/api/identifiers/sellers/1", "authentication": { "loginCredentials": null, "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/1" } } }, "secondary": { "@id": "http://localhost:5000/api/identifiers/sellers/2", "authentication": { "loginCredentials": null, "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/2" } } } }}
+          {"broker": {"outputPath": "../../output/"}, "integrationTests": {"outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/"}}
         NODE_ENV: .example.${{ matrix.profile }}
-        NODE_APP_INSTANCE: ci
+        NODE_APP_INSTANCE: ci-framework
       working-directory: tests
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
       uses: actions/upload-artifact@v2
