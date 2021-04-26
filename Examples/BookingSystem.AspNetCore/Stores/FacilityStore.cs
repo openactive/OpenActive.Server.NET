@@ -285,7 +285,7 @@ namespace BookingSystem
                                          Price = slot.Price,
                                          PriceCurrency = "GBP",
                                          LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
-                                         Prepayment = slot.Prepayment.Convert(),
+                                         OpenBookingPrepayment = slot.Prepayment.Convert(),
                                          ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate,
                                          AllowCustomerCancellationFullRefund = slot.AllowCustomerCancellationFullRefund,
                                      },

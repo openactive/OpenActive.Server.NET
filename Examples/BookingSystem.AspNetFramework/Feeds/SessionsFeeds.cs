@@ -119,12 +119,14 @@ namespace BookingSystem
                                         Url = new Uri("https://example.com/privacy.html"),
                                         RequiresExplicitConsent = false
                                     }
-                                }
+                                },
+                                IsOpenBookingAllowed = true,
                             } : result.Item2.IsIndividual ? (ILegalEntity)new Person
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
-                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet
+                                TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
+                                IsOpenBookingAllowed = true,
                             } : (ILegalEntity)new Organization
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
@@ -138,7 +140,8 @@ namespace BookingSystem
                                         Url = new Uri("https://example.com/privacy.html"),
                                         RequiresExplicitConsent = false
                                     }
-                                }
+                                },
+                                IsOpenBookingAllowed = true,
                             },
                             Offers = new List<Offer> { new Offer
                                 {
@@ -150,14 +153,10 @@ namespace BookingSystem
                                     }),
                                     Price = result.Item1.Price,
                                     PriceCurrency = "GBP",
-                                    AvailableChannel = new List<AvailableChannelType>
-                                    {
-                                        AvailableChannelType.OpenBookingPrepayment
-                                    },
                                     OpenBookingFlowRequirement = OpenBookingFlowRequirement(result.Item1),
                                     ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = result.Item1.LatestCancellationBeforeStartDate,
-                                    Prepayment = result.Item1.Prepayment.Convert(),
+                                    OpenBookingPrepayment = result.Item1.Prepayment.Convert(),
                                     AllowCustomerCancellationFullRefund = result.Item1.AllowCustomerCancellationFullRefund
                                 }
                             },
