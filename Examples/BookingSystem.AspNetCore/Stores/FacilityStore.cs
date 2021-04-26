@@ -28,6 +28,7 @@ namespace BookingSystem
             string testDatasetIdentifier,
             OpportunityType opportunityType,
             TestOpportunityCriteriaEnumeration criteria,
+            TestOpenBookingFlowEnumeration openBookingFlow,
             SellerIdComponents seller)
         {
             if (!_appSettings.FeatureFlags.SingleSeller && !seller.SellerIdLong.HasValue)

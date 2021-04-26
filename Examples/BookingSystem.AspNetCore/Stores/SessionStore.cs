@@ -28,12 +28,14 @@ namespace BookingSystem
             string testDatasetIdentifier,
             OpportunityType opportunityType,
             TestOpportunityCriteriaEnumeration criteria,
+            TestOpenBookingFlowEnumeration openBookingFlow,
             SellerIdComponents seller)
         {
             if (!_appSettings.FeatureFlags.SingleSeller && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
 
             long? sellerId = _appSettings.FeatureFlags.SingleSeller ? null : seller.SellerIdLong;
+            var requiresApproval = openBookingFlow == TestOpenBookingFlowEnumeration.OpenBookingApprovalFlow;
 
             switch (opportunityType)
             {
@@ -47,7 +49,8 @@ namespace BookingSystem
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Event",
                                 rnd.Next(2) == 0 ? 0M : 14.99M,
-                                10);
+                                10,
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFree:
@@ -57,7 +60,8 @@ namespace BookingSystem
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event",
                                 14.99M,
-                                10);
+                                10,
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
@@ -69,6 +73,7 @@ namespace BookingSystem
                                     $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Window",
                                     14.99M,
                                     10,
+                                    requiresApproval,
                                     validFromStartDate: isValid);
                             }
                             break;
@@ -82,6 +87,7 @@ namespace BookingSystem
                                     $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Cancellation Window",
                                     14.99M,
                                     10,
+                                    requiresApproval,
                                     latestCancellationBeforeStartDate: isValid);
                             }
                             break;
@@ -92,6 +98,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Optional",
                                 10M,
                                 10,
+                                requiresApproval,
                                 prepayment: RequiredStatusType.Optional);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
@@ -101,6 +108,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Unavailable",
                                 10M,
                                 10,
+                                requiresApproval,
                                 prepayment: RequiredStatusType.Unavailable);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
@@ -110,6 +118,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Required",
                                 10M,
                                 10,
+                                requiresApproval,
                                 prepayment: RequiredStatusType.Required);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
@@ -118,7 +127,8 @@ namespace BookingSystem
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event",
                                 0M,
-                                10);
+                                10,
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -126,7 +136,8 @@ namespace BookingSystem
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event No Spaces",
                                 14.99M,
-                                0);
+                                0,
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -134,7 +145,8 @@ namespace BookingSystem
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Five Spaces",
                                 14.99M,
-                                5);
+                                5,
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -151,7 +163,8 @@ namespace BookingSystem
                                 2,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Net",
                                 14.99M,
-                                10);
+                                10,
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxGross:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -159,7 +172,8 @@ namespace BookingSystem
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
                                 14.99M,
-                                10);
+                                10,
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableSellerTermsOfService:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -167,7 +181,8 @@ namespace BookingSystem
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Seller Terms Of Service",
                                 14.99M,
-                                10);
+                                10,
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
@@ -176,6 +191,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Requires Attendee Details",
                                 10M,
                                 10,
+                                requiresApproval,
                                 requiresAttendeeValidation: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAdditionalDetails:
@@ -185,6 +201,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Requires Additional Details",
                                 10M,
                                 10,
+                                requiresApproval,
                                 requiresAdditionalDetails: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityOnlineBookable:
@@ -194,6 +211,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Virtual Event",
                                 10M,
                                 10,
+                                requiresApproval,
                                 isOnlineOrMixedAttendanceMode: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
@@ -203,6 +221,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Offline Event",
                                 10M,
                                 10,
+                                requiresApproval,
                                 isOnlineOrMixedAttendanceMode: false);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
@@ -212,6 +231,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Does Not Allow Full Refund",
                                 10M,
                                 10,
+                                requiresApproval,
                                 allowCustomerCancellationFullRefund: false);
                             break;
                         default:

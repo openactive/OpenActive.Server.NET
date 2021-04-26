@@ -13,7 +13,7 @@ namespace OpenActive.Server.NET.StoreBooking
     {
         void SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SellerIdComponents> sellerTemplate);
         Task GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext);
-        Task<Event> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
+        Task<Event> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller);
         Task DeleteTestDataset(string testDatasetIdentifier);
         Task TriggerTestAction(OpenBookingSimulateAction simulateAction, IBookableIdComponents idComponents);
 
@@ -52,9 +52,9 @@ namespace OpenActive.Server.NET.StoreBooking
             return GetOrderItems(ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext);
         }
 
-        async Task<Event> IOpportunityStore.CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
+        async Task<Event> IOpportunityStore.CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller)
         {
-            var components = await CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
+            var components = await CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, openBookingFlow, seller);
             return OrderCalculations.RenderOpportunityWithOnlyId(opportunityType, RenderOpportunityId(components));
         }
 
@@ -86,7 +86,7 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
         protected abstract Task GetOrderItems(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext);
-        protected abstract Task<TComponents> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
+        protected abstract Task<TComponents> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller);
         protected abstract Task DeleteTestDataset(string testDatasetIdentifier);
         protected abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, TComponents idComponents);
 
