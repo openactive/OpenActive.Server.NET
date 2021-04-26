@@ -68,7 +68,8 @@ namespace BookingSystem
                                         Url = new Uri("https://example.com/privacy.html"),
                                         RequiresExplicitConsent = false
                                     }
-                                }
+                                },
+                                IsOpenBookingAllowed = true,
                             } : new Organization
                             {
                                 Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
@@ -82,7 +83,8 @@ namespace BookingSystem
                                         Url = new Uri("https://example.com/privacy.html"),
                                         RequiresExplicitConsent = false
                                     }
-                                }
+                                },
+                                IsOpenBookingAllowed = true,
                             },
                             Location = new Place
                             {
@@ -173,14 +175,10 @@ namespace BookingSystem
                                     }),
                                     Price = x.Price,
                                     PriceCurrency = "GBP",
-                                    AvailableChannel = new List<AvailableChannelType>
-                                    {
-                                        AvailableChannelType.OpenBookingPrepayment
-                                    },
                                     OpenBookingFlowRequirement = OpenBookingFlowRequirement(x),
                                     ValidFromBeforeStartDate = x.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = x.LatestCancellationBeforeStartDate,
-                                    Prepayment = x.Prepayment.Convert(),
+                                    OpenBookingPrepayment = x.Prepayment.Convert(),
                                     AllowCustomerCancellationFullRefund = x.AllowCustomerCancellationFullRefund,
                                 }
                             },
