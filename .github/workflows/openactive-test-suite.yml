@@ -89,7 +89,7 @@ jobs:
 
     - name: Deploy conformance certificate to Azure Blob Storage (master branch for 'all-features' profile in controlled mode only)
       uses: bacongobbler/azure-blob-storage-upload@v1.1.1
-      # if: ${{ github.ref == 'refs/heads/master' && matrix.profile == 'all-features' && matrix.mode == 'controlled' }}
+      if: ${{ github.ref == 'refs/heads/master' }}
       with:
         source_dir: ./tests/conformance/
         container_name: '$web'
@@ -155,10 +155,11 @@ jobs:
       env:
         FORCE_COLOR: 1
         NODE_CONFIG: |
-          {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://localhost:5000/openactive"}, "integrationTests": {"outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/"}, "sellers": { "primary": {"@id": "http://localhost:5000/api/identifiers/sellers/1", "authentication": { "loginCredentials": null, "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/1" } } }, "secondary": { "@id": "http://localhost:5000/api/identifiers/sellers/2", "authentication": { "loginCredentials": null, "requestHeaders": { "X-OpenActive-Test-Client-Id": "test", "X-OpenActive-Test-Seller-Id": "http://localhost:5000/api/identifiers/sellers/2" } } } }}
+          {"broker": {"outputPath": "../../output/"}, "integrationTests": {"outputPath": "../../output/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://openactive.io/OpenActive.Server.NET/certification/"}}
         NODE_ENV: .example.${{ matrix.profile }}
-        NODE_APP_INSTANCE: ci
+        NODE_APP_INSTANCE: framework
       working-directory: tests
+      
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}

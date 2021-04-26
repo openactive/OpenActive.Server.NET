@@ -731,9 +731,8 @@ namespace OpenActive.FakeDatabase.NET
             long? sellerId,
             string uuid,
             long occurrenceId,
-            string opportunityJsonLdType,
-            string opportunityJsonLdId,
-            string offerJsonLdId,
+            Uri opportunityJsonLdId,
+            Uri offerJsonLdId,
             long numberOfSpaces,
             bool proposal
             )
@@ -770,7 +769,6 @@ namespace OpenActive.FakeDatabase.NET
                     OrderId = uuid,
                     Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
                     OccurrenceId = occurrenceId,
-                    OpportunityJsonLdType = opportunityJsonLdType,
                     OpportunityJsonLdId = opportunityJsonLdId,
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
@@ -806,9 +804,8 @@ namespace OpenActive.FakeDatabase.NET
             long? sellerId,
             string uuid,
             long slotId,
-            string opportunityJsonLdType,
-            string opportunityJsonLdId,
-            string offerJsonLdId,
+            Uri opportunityJsonLdId,
+            Uri offerJsonLdId,
             long numberOfSpaces,
             bool proposal
             )
@@ -845,7 +842,6 @@ namespace OpenActive.FakeDatabase.NET
                     OrderId = uuid,
                     Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
                     SlotId = slotId,
-                    OpportunityJsonLdType = opportunityJsonLdType,
                     OpportunityJsonLdId = opportunityJsonLdId,
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
@@ -1015,10 +1011,10 @@ namespace OpenActive.FakeDatabase.NET
                     var slot = db.Select(slotQuery).Single();
 
                     // Hack to replace JSON LD Ids
-                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"facility-uses/{oldSlot.FacilityUseId}", $"facility-uses/{slot.FacilityUseId}");
-                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"facility-use-slots/{oldSlot.Id}", $"facility-use-slots/{slot.Id}");
-                    orderItem.OfferJsonLdId = orderItem.OfferJsonLdId.Replace($"facility-uses/{oldSlot.FacilityUseId}", $"facility-uses/{slot.FacilityUseId}");
-                    orderItem.OfferJsonLdId = orderItem.OfferJsonLdId.Replace($"facility-uses-slots/{oldSlot.Id}", $"facility-uses-slots/{slot.Id}");
+                    orderItem.OpportunityJsonLdId = new Uri(orderItem.OpportunityJsonLdId.ToString().Replace($"facility-uses/{oldSlot.FacilityUseId}", $"facility-uses/{slot.FacilityUseId}"));
+                    orderItem.OpportunityJsonLdId = new Uri(orderItem.OpportunityJsonLdId.ToString().Replace($"facility-use-slots/{oldSlot.Id}", $"facility-use-slots/{slot.Id}"));
+                    orderItem.OfferJsonLdId = new Uri(orderItem.OfferJsonLdId.ToString().Replace($"facility-uses/{oldSlot.FacilityUseId}", $"facility-uses/{slot.FacilityUseId}"));
+                    orderItem.OfferJsonLdId = new Uri(orderItem.OfferJsonLdId.ToString().Replace($"facility-uses-slots/{oldSlot.Id}", $"facility-uses-slots/{slot.Id}"));
 
                     orderItem.SlotId = slot.Id;
                 }
@@ -1036,9 +1032,9 @@ namespace OpenActive.FakeDatabase.NET
                                             .Take(1);
                     var occurrence = db.Select(occurrenceQuery).Single();
                     // Hack to replace JSON LD Ids
-                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"scheduled-sessions/{oldOccurrence.ClassId}", $"scheduled-sessions/{occurrence.ClassId}");
-                    orderItem.OpportunityJsonLdId = orderItem.OpportunityJsonLdId.Replace($"events/{orderItem.OccurrenceId}", $"events/{occurrence.Id}");
-                    orderItem.OfferJsonLdId = orderItem.OfferJsonLdId.Replace($"session-series/{oldOccurrence.ClassId}", $"session-series/{occurrence.ClassId}");
+                    orderItem.OpportunityJsonLdId = new Uri(orderItem.OpportunityJsonLdId.ToString().Replace($"scheduled-sessions/{oldOccurrence.ClassId}", $"scheduled-sessions/{occurrence.ClassId}"));
+                    orderItem.OpportunityJsonLdId = new Uri(orderItem.OpportunityJsonLdId.ToString().Replace($"events/{orderItem.OccurrenceId}", $"events/{occurrence.Id}"));
+                    orderItem.OfferJsonLdId = new Uri(orderItem.OfferJsonLdId.ToString().Replace($"session-series/{oldOccurrence.ClassId}", $"session-series/{occurrence.ClassId}"));
 
                     orderItem.OccurrenceId = occurrence.Id;
                 }

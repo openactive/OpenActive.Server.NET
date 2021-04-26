@@ -466,9 +466,8 @@ namespace BookingSystem
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
                     ctxGroup.Key.SlotId.Value,
-                    RenderOpportunityJsonLdType(ctxGroup.Key),
-                    RenderOpportunityId(ctxGroup.Key).ToString(),
-                    RenderOfferId(ctxGroup.Key).ToString(),
+                    RenderOpportunityId(ctxGroup.Key),
+                    RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
                     false
                     );
@@ -545,9 +544,8 @@ namespace BookingSystem
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
                     ctxGroup.Key.SlotId.Value,
-                    RenderOpportunityJsonLdType(ctxGroup.Key),
-                    RenderOpportunityId(ctxGroup.Key).ToString(),
-                    RenderOfferId(ctxGroup.Key).ToString(),
+                    RenderOpportunityId(ctxGroup.Key),
+                    RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
                     true
                     );
