@@ -148,15 +148,6 @@ namespace BookingSystem
                                 5,
                                 requiresApproval);
                             break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFlowRequirementOnlyApproval:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Approval",
-                                14.99M,
-                                10,
-                                requiresApproval: true);
-                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,
