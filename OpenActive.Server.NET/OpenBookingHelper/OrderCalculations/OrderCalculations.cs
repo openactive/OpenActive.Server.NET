@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using OpenActive.Server.NET.StoreBooking;
+using OpenActive.DatasetSite.NET;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
@@ -134,9 +135,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return validationErrorArray;
         }
 
-        public static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)
+        public static Event RenderOpportunityWithOnlyId(OpportunityType opportunityType, Uri id)
         {
-            switch (jsonLdType)
+            // TODO: Create an extra prop in DatasetSite lib so that we don't need to parse the URL here
+            switch (OpportunityTypes.Configurations[opportunityType].SameAs.AbsolutePath.Trim('/'))
             {
                 case nameof(Event):
                     return new Event { Id = id };

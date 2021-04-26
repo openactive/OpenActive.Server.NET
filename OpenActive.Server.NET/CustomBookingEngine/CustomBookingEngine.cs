@@ -298,25 +298,22 @@ namespace OpenActive.Server.NET.CustomBooking
         }
 
         // Note this is not a helper as it relies on engine settings state
-        protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId, Uri offerId)
+        protected IBookableIdComponents ResolveOpportunityID(Uri opportunityId, Uri offerId)
         {
             // Return the first matching ID combination for the opportunityId and offerId provided.
-            // TODO: Make this more efficient?
-            return this.idConfigurationLookup[opportunityTypeString]
+            return this.idConfigurationLookup
+                .SelectMany(x => x.Value)
                 .Select(x => x.GetOpportunityReference(opportunityId, offerId))
-                .Where(x => x != null)
-                .FirstOrDefault();
+                .FirstOrDefault(x => x != null);
         }
 
         // Note this is not a helper as it relies on engine settings state
         protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId)
         {
             // Return the first matching ID combination for the opportunityId and offerId provided.
-            // TODO: Make this more efficient?
             return this.idConfigurationLookup[opportunityTypeString]
                 .Select(x => x.GetOpportunityBookableIdComponents(opportunityId))
-                .Where(x => x != null)
-                .FirstOrDefault();
+                .FirstOrDefault(x => x != null);
         }
 
         public async Task<ResponseContent> ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
@@ -652,7 +649,7 @@ namespace OpenActive.Server.NET.CustomBooking
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
         protected BookingFlowContext ValidateFlowRequest<TOrder>(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller, FlowStage stage, TOrder order) where TOrder : Order, new()
         {
-            if (order?.Seller.Object?.Id != null && seller?.Id != order?.Seller.Object?.Id)
+            if (order?.Seller.IdReference != null && seller?.Id != order?.Seller.IdReference)
             {
                 throw new OpenBookingException(new SellerMismatchError());
             }

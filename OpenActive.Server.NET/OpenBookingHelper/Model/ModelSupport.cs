@@ -32,16 +32,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// </summary>
         /// <param name="components"></param>
         /// <returns></returns>
-        protected string RenderOpportunityJsonLdType(TComponents components)
-        {
-            return IdTemplate.RenderOpportunityJsonLdType(components);
-        }
-
-        /// <summary>
-        /// Use OpportunityType from components
-        /// </summary>
-        /// <param name="components"></param>
-        /// <returns></returns>
         protected Uri RenderOpportunityId(TComponents components)
         {
             return IdTemplate.RenderOpportunityId(components);

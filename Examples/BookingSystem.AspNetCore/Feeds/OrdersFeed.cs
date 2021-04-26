@@ -52,11 +52,11 @@ namespace BookingSystem
                                     Id = result.OrderTable.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id) : null,
                                     AcceptedOffer = new Offer
                                     {
-                                        Id = new Uri(orderItem.OfferJsonLdId),
+                                        Id = orderItem.OfferJsonLdId,
                                         Price = orderItem.Price,
                                         PriceCurrency = "GBP"
                                     },
-                                    OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
+                                    OrderedItem = orderItem.OpportunityJsonLdId,
                                     AccessChannel = orderItem.MeetingUrl != null ? new VirtualLocation()
                                     {
                                         Name = "Zoom Video Chat",

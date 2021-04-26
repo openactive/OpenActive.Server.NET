@@ -41,10 +41,5 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             return this.SellerIdTemplate.RenderId(new SellerIdComponents());
         }
-
-        protected static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)
-        {
-            return OrderCalculations.RenderOpportunityWithOnlyId(jsonLdType, id);
-        }
     }
 }

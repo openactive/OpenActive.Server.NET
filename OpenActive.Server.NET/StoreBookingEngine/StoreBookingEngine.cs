@@ -106,22 +106,29 @@ namespace OpenActive.Server.NET.StoreBooking
             ResponseOrderItem = new OrderItem
             {
                 Position = RequestOrderItem?.Position,
-                AcceptedOffer = new Offer
-                {
-                    Id = RequestOrderItem?.AcceptedOffer.Object?.Id
-                },
-                OrderedItem = OrderCalculations.RenderOpportunityWithOnlyId(RequestOrderItem?.OrderedItem.Object?.Type, RequestOrderItem?.OrderedItem.Object?.Id)
+                AcceptedOffer = RequestOrderItem.AcceptedOffer,
+                OrderedItem = RequestOrderItem.OrderedItem
             };
         }
 
         public void SetResponseOrderItem(OrderItem item, SellerIdComponents sellerId, StoreBookingFlowContext flowContext)
         {
             if (item == null) throw new ArgumentNullException(nameof(item));
-            if (item?.OrderedItem.Object?.Id != RequestOrderItem?.OrderedItem.Object?.Id)
+            var requestOrderItemId = RequestOrderItem?.OrderedItem.IdReference;
+            if (requestOrderItemId == null)
+            {
+                throw new OpenBookingException(new InternalLibraryError(), "Request must include an orderedItem for the OrderItem");
+            }
+            if (item?.OrderedItem.Object?.Id != requestOrderItemId)
             {
                 throw new ArgumentException("The Opportunity ID within the response OrderItem must match the request OrderItem");
             }
-            if (item?.AcceptedOffer.Object?.Id != RequestOrderItem?.AcceptedOffer.Object?.Id)
+            var requestAcceptedOfferId = RequestOrderItem?.AcceptedOffer.IdReference;
+            if (requestAcceptedOfferId == null)
+            {
+                throw new OpenBookingException(new InternalLibraryError(), "Request must include an acceptedOffer for the OrderItem");
+            }
+            if (item?.AcceptedOffer.Object?.Id != requestAcceptedOfferId)
             {
                 throw new ArgumentException("The Offer ID within the response OrderItem must match the request OrderItem");
             }
@@ -372,18 +379,14 @@ namespace OpenActive.Server.NET.StoreBooking
             // Create OrderItemContext for each OrderItem
             var orderItemContexts = sourceOrderItems.Select((orderItem, index) =>
             {
-                // Error if this group of types is not recognised
-                if (!base.IsOpportunityTypeRecognised(orderItem.OrderedItem.Object.Type))
-                {
-                    return new UnknownOrderItemContext(index, orderItem,
-                        new UnknownOpportunityError(), $"The type of opportunity specified is not recognised: '{orderItem.OrderedItem.Object.Type}'.");
-                }
+                var orderedItemId = orderItem.OrderedItem.IdReference;
+                var acceptedOfferId = orderItem.AcceptedOffer.IdReference;
+                var idComponents = base.ResolveOpportunityID(orderedItemId, acceptedOfferId);
 
-                var idComponents = base.ResolveOpportunityID(orderItem.OrderedItem.Object.Type, orderItem.OrderedItem.Object.Id, orderItem.AcceptedOffer.Object.Id);
                 if (idComponents == null)
                 {
                     return new UnknownOrderItemContext(index, orderItem,
-                        new InvalidOpportunityOrOfferIdError(), $"Opportunity and Offer ID pair are not in the expected format for a '{orderItem.OrderedItem.Object.Type}': '{orderItem.OrderedItem.Object.Id}' and '{orderItem.AcceptedOffer.Object.Id}'");
+                        new InvalidOpportunityOrOfferIdError(), $"Opportunity and Offer ID pair are not in the expected format: '{orderedItemId}' and '{acceptedOfferId}'");
                 }
 
                 if (idComponents.OpportunityType == null)
@@ -484,7 +487,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
 
             // Throw error on Incomplete Order Item Error if OrderedItem or AcceptedOffer is null or their Urls don't match.
-            if ((context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2 || context.Stage == FlowStage.B) && order.OrderedItem.Any(orderItem => orderItem.OrderedItem.Object == null || orderItem.AcceptedOffer.Object == null || orderItem.OrderedItem.Object.Url != orderItem.AcceptedOffer.Object.Url))
+            if ((context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2 || context.Stage == FlowStage.B) && order.OrderedItem.Any(orderItem => orderItem.OrderedItem.IdReference == null || orderItem.AcceptedOffer.IdReference == null))
             {
                 throw new OpenBookingException(new IncompleteOrderItemError());
             }
