@@ -575,13 +575,17 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new OpenBookingError(), "test:testOpportunityCriteria must be supplied.");
             }
+            if (!genericEvent.TestOpenBookingFlow.HasValue)
+            {
+                throw new OpenBookingException(new OpenBookingError(), "test:testOpenBookingFlow must be supplied.");
+            }
 
             if (seller?.Id == null) throw new OpenBookingException(new SellerMismatchError(), "No seller ID was specified");
             var sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(seller.Id);
             if (sellerIdComponents == null) throw new OpenBookingException(new SellerMismatchError(), "Seller ID format was invalid");
 
             // Returns a matching Event subclass that will only include "@type" and "@id" properties
-            var createdEvent = await this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, sellerIdComponents);
+            var createdEvent = await this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, genericEvent.TestOpenBookingFlow.Value, sellerIdComponents);
 
             if (createdEvent.Type != genericEvent.Type)
             {
@@ -591,7 +595,7 @@ namespace OpenActive.Server.NET.CustomBooking
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(createdEvent), HttpStatusCode.OK);
         }
 
-        protected abstract Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
+        protected abstract Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller);
 
         async Task<ResponseContent> IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
         {

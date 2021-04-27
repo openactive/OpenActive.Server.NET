@@ -204,12 +204,12 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
 
-        protected async override Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
+        protected async override Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
 
-            return await storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
+            return await storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, openBookingFlow, seller);
         }
 
         protected async override Task DeleteTestDataset(string testDatasetIdentifier)
