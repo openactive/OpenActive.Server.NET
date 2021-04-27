@@ -269,7 +269,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             };
         }
 
-        private static RequiredStatusType? GetRequiredStatusType(IReadOnlyCollection<OrderItem> orderItems)
+        public static RequiredStatusType? GetRequiredStatusType(IReadOnlyCollection<OrderItem> orderItems)
         {
             if (orderItems.Any(x => x.AcceptedOffer.Object.OpenBookingPrepayment == RequiredStatusType.Required ||
                                              x.AcceptedOffer.Object.Price != 0 && x.AcceptedOffer.Object.OpenBookingPrepayment == null))
