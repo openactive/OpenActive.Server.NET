@@ -90,7 +90,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         [EnumMember(Value = "order-quotes")]
         OrderQuote,
 
-        [EnumMember(Value = "order-proposals")]
+        [EnumMember(Value = "orders")]
         OrderProposal,
 
         [EnumMember(Value = "orders")]
