@@ -94,7 +94,7 @@ namespace OpenActive.Server.NET.StoreBooking
             ResponseOrderItemId = new OrderIdComponents
             {
                 uuid = flowContext.OrderId.uuid,
-                OrderType = flowContext.OrderId.OrderType,
+                OrderType = OrderType.Order, // All OrderItems that have an @id are of canonical type Order
                 OrderItemIdString = orderItemIdString,
                 OrderItemIdLong = orderItemIdLong
             };
