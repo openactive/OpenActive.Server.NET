@@ -49,7 +49,7 @@ namespace BookingSystem
                             AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
                                 result.OrderItemsTable.Select(orderItem => new OrderItem
                                 {
-                                    Id = result.OrderTable.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id) : null,
+                                    Id = RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id),
                                     AcceptedOffer = new Offer
                                     {
                                         Id = orderItem.OfferJsonLdId,
