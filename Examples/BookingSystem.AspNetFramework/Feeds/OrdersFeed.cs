@@ -23,7 +23,7 @@ namespace BookingSystem
                 .OrderBy(x => x.Modified)
                 .ThenBy(x => x.OrderId)
                 .Where(x =>
-                    x.VisibleInFeed && x.ClientId == clientId && (
+                    x.VisibleInFeed != FeedVisibility.None && x.ClientId == clientId && (
                         !afterTimestamp.HasValue ||
                         x.Modified > afterTimestamp ||
                         x.Modified == afterTimestamp &&
@@ -44,8 +44,8 @@ namespace BookingSystem
                         Kind = RpdeKind.Order,
                         Id = result.OrderTable.OrderId,
                         Modified = result.OrderTable.Modified,
-                        State = result.OrderTable.Deleted ? RpdeState.Deleted : RpdeState.Updated,
-                        Data = result.OrderTable.Deleted ? null :
+                        State = result.OrderTable.Deleted || result.OrderTable.VisibleInFeed == FeedVisibility.Archived ? RpdeState.Deleted : RpdeState.Updated,
+                        Data = result.OrderTable.Deleted || result.OrderTable.VisibleInFeed == FeedVisibility.Archived ? null :
                             AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
                                 result.OrderItemsTable.Select(orderItem => new OrderItem
                                 {

@@ -11,6 +11,8 @@ namespace OpenActive.FakeDatabase.NET
 
     public enum ProposalStatus { AwaitingSellerConfirmation, SellerAccepted, SellerRejected, CustomerRejected }
 
+    public enum FeedVisibility { None, Visible, Archived }
+
     public enum OrderMode { Lease, Proposal, Booking }
 
     public enum RequiredStatusType { Required, Optional, Unavailable }
@@ -117,7 +119,7 @@ namespace OpenActive.FakeDatabase.NET
         public decimal TotalOrderPrice { get; set; }
         public OrderMode OrderMode { get; set; }
         public DateTime LeaseExpires { get; set; }
-        public bool VisibleInFeed { get; set; }
+        public FeedVisibility VisibleInFeed { get; set; }
         public ProposalStatus? ProposalStatus { get; set; }
         public string ProposalVersionId { get; set; }
     }
