@@ -395,7 +395,7 @@ namespace BookingSystem
             var orderIdUri = RenderOrderId(dbOrder.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : dbOrder.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, dbOrder.OrderId);
             var orderItems = dbOrderItems.Select((orderItem) => new OrderItem
             {
-                Id = dbOrder.OrderMode == !OrderMode.Lease ? RenderOrderItemId(OrderType.Order, dbOrder.OrderId, orderItem.Id) : null,
+                Id = dbOrder.OrderMode != OrderMode.Lease ? RenderOrderItemId(OrderType.Order, dbOrder.OrderId, orderItem.Id) : null,
                 AcceptedOffer = new Offer
                 {
                     Id = orderItem.OfferJsonLdId,
