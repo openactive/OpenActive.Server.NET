@@ -547,7 +547,7 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, _) = FakeDatabase.BookOrderItemsForFacilitySlot(
+                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForFacilitySlot(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -562,7 +562,10 @@ namespace BookingSystem
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
-                        // Do nothing
+                        foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
+                        {
+                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+                        }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
                         throw new OpenBookingException(new SellerMismatchError(), "An OrderItem SellerID did not match");
