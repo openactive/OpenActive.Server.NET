@@ -51,6 +51,7 @@ namespace OpenActive.FakeDatabase.NET
         public decimal LocationLat { get; set; }
         public decimal LocationLng { get; set; }
         public AttendanceMode AttendanceMode { get; set; }
+        public bool AllowsProposalAmendment { get; set; }
     }
 
     public class OccurrenceTable : Table
@@ -121,7 +122,7 @@ namespace OpenActive.FakeDatabase.NET
         public DateTime LeaseExpires { get; set; }
         public FeedVisibility VisibleInFeed { get; set; }
         public ProposalStatus? ProposalStatus { get; set; }
-        public string ProposalVersionId { get; set; }
+        public Guid? ProposalVersionId { get; set; }
     }
 
     public class SellerTable
@@ -169,6 +170,7 @@ namespace OpenActive.FakeDatabase.NET
         public List<AdditionalDetailTypes> RequiredAdditionalDetails { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
         public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
+        public bool AllowsProposalAmendment { get; set; }
     }
 
     public class FacilityUseTable : Table
