@@ -9,6 +9,7 @@ using OpenActive.FakeDatabase.NET;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 using System.Threading.Tasks;
+using static OpenActive.FakeDatabase.NET.FakeDatabase;
 
 namespace BookingSystem
 {
@@ -283,82 +284,71 @@ namespace BookingSystem
 
             // Response OrderItems must be updated into supplied orderItemContexts (including duplicates for multi-party booking)
 
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            var query = orderItemContexts.Select((orderItemContext) =>
             {
-                var occurrenceTable = db.Select<OccurrenceTable>();
-                var classTable = db.Select<ClassTable>();
-
-                var query = (from orderItemContext in orderItemContexts
-                             join occurrences in occurrenceTable on orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId equals occurrences.Id
-                             join classes in classTable on occurrences.ClassId equals classes.Id
-                             // and offers.id = opportunityOfferId.OfferId
-                             select occurrences == null ? null : new
-                             {
-                                 OrderItem = new OrderItem
-                                 {
-                                     // TODO: The static example below should come from the database (which doesn't currently support tax)
-                                     UnitTaxSpecification = GetUnitTaxSpecification(flowContext, classes),
-                                     AcceptedOffer = new Offer
-                                     {
-                                         // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
-                                         Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
-                                         Price = classes.Price,
-                                         PriceCurrency = "GBP",
-                                         LatestCancellationBeforeStartDate = classes.LatestCancellationBeforeStartDate,
-                                         OpenBookingPrepayment = classes.Prepayment.Convert(),
-                                         ValidFromBeforeStartDate = classes.ValidFromBeforeStartDate,
-                                         AllowCustomerCancellationFullRefund = classes.AllowCustomerCancellationFullRefund,
-                                     },
-                                     OrderedItem = new ScheduledSession
-                                     {
-                                         // Note this should always be driven from the database, with new SessionOpportunity's instantiated
-                                         Id = RenderOpportunityId(new SessionOpportunity
-                                         {
-                                             OpportunityType = OpportunityType.ScheduledSession,
-                                             SessionSeriesId = occurrences.ClassId,
-                                             ScheduledSessionId = occurrences.Id
-                                         }),
-                                         SuperEvent = new SessionSeries
-                                         {
-                                             Id = RenderOpportunityId(new SessionOpportunity
-                                             {
-                                                 OpportunityType = OpportunityType.SessionSeries,
-                                                 SessionSeriesId = occurrences.ClassId
-                                             }),
-                                             Name = classes.Title,
-                                             Url = new Uri("https://example.com/events/" + occurrences.ClassId),
-                                             Location = new Place
-                                             {
-                                                 Name = "Fake fitness studio",
-                                                 Geo = new GeoCoordinates
-                                                 {
-                                                     Latitude = 51.6201M,
-                                                     Longitude = 0.302396M
-                                                 }
-                                             },
-                                             Activity = new List<Concept>
-                                             {
-                                                 new Concept
-                                                 {
-                                                     Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
-                                                     PrefLabel = "Rave Fitness",
-                                                     InScheme = new Uri("https://openactive.io/activity-list")
-                                                 }
-                                             }
-                                         },
-                                         StartDate = (DateTimeOffset)occurrences.Start,
-                                         EndDate = (DateTimeOffset)occurrences.End,
-                                         MaximumAttendeeCapacity = occurrences.TotalSpaces,
-                                         // Exclude current Order from the returned lease count
-                                         RemainingAttendeeCapacity = occurrences.RemainingSpaces - db.Count<OrderItemsTable>(
-                                            x => x.OrderTable.OrderMode != OrderMode.Booking &&
-                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
-                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
-                                                 x.OccurrenceId == occurrences.Id &&
-                                                 x.OrderId != flowContext.OrderId.uuid)
-                                     },
-                                     Attendee = orderItemContext.RequestOrderItem.Attendee,
-                                     AttendeeDetailsRequired = classes.RequiresAttendeeValidation
+                var (@class, occurrence, bookedOrderItemInfo) = FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoIfRelevantByOccurrenceId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
+                return new
+                {
+                    OrderItem = new OrderItem
+                    {
+                        // TODO: The static example below should come from the database (which doesn't currently support tax)
+                        UnitTaxSpecification = GetUnitTaxSpecification(flowContext, @class),
+                        AcceptedOffer = new Offer
+                        {
+                            // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
+                            Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
+                            Price = @class.Price,
+                            PriceCurrency = "GBP",
+                            LatestCancellationBeforeStartDate = @class.LatestCancellationBeforeStartDate,
+                            OpenBookingPrepayment = @class.Prepayment.Convert(),
+                            ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
+                            AllowCustomerCancellationFullRefund = @class.AllowCustomerCancellationFullRefund,
+                        },
+                        OrderedItem = new ScheduledSession
+                        {
+                            // Note this should always be driven from the database, with new SessionOpportunity's instantiated
+                            Id = RenderOpportunityId(new SessionOpportunity
+                            {
+                                OpportunityType = OpportunityType.ScheduledSession,
+                                SessionSeriesId = occurrence.ClassId,
+                                ScheduledSessionId = occurrence.Id
+                            }),
+                            SuperEvent = new SessionSeries
+                            {
+                                Id = RenderOpportunityId(new SessionOpportunity
+                                {
+                                    OpportunityType = OpportunityType.SessionSeries,
+                                    SessionSeriesId = occurrence.ClassId
+                                }),
+                                Name = @class.Title,
+                                Url = new Uri("https://example.com/events/" + occurrence.ClassId),
+                                Location = new Place
+                                {
+                                    Name = "Fake fitness studio",
+                                    Geo = new GeoCoordinates
+                                    {
+                                        Latitude = 51.6201M,
+                                        Longitude = 0.302396M
+                                    }
+                                },
+                                Activity = new List<Concept>
+                                {
+                                    new Concept
+                                    {
+                                        Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
+                                        PrefLabel = "Rave Fitness",
+                                        InScheme = new Uri("https://openactive.io/activity-list")
+                                    }
+                                }
+                            },
+                            StartDate = (DateTimeOffset)occurrence.Start,
+                            EndDate = (DateTimeOffset)occurrence.End,
+                            MaximumAttendeeCapacity = occurrence.TotalSpaces,
+                            // Exclude current Order from the returned lease count
+                            RemainingAttendeeCapacity = occurrence.RemainingSpaces
+                        },
+                        Attendee = orderItemContext.RequestOrderItem.Attendee,
+                        AttendeeDetailsRequired = @class.RequiresAttendeeValidation
                                          ? new List<PropertyEnumeration>
                                          {
                                              PropertyEnumeration.GivenName,
@@ -367,40 +357,98 @@ namespace BookingSystem
                                              PropertyEnumeration.Telephone,
                                          }
                                          : null,
-                                     OrderItemIntakeForm = classes.RequiresAdditionalDetails
-                                     ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(classes.RequiredAdditionalDetails)
+                        OrderItemIntakeForm = @class.RequiresAdditionalDetails
+                                     ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(@class.RequiredAdditionalDetails)
                                      : null,
-                                     OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse
-                                 },
-                                 SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = classes.SellerId },
-                                 classes.RequiresApproval
-                             }).ToArray();
+                        OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse,
+                        AccessChannel = AddAccessChannel(bookedOrderItemInfo),
+                        AccessCode = AddAccessCode(bookedOrderItemInfo),
+                        AccessPass = AddAccessPass(bookedOrderItemInfo)
+                    },
+                    SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = @class.SellerId },
+                    @class.RequiresApproval
+                };
+            });
 
-                // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
-                foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
+
+            // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
+            foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
+            {
+                if (item == null)
                 {
-                    if (item == null)
-                    {
-                        ctx.SetResponseOrderItemAsSkeleton();
-                        ctx.AddError(new UnknownOpportunityError());
-                    }
-                    else
-                    {
-                        ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
+                    ctx.SetResponseOrderItemAsSkeleton();
+                    ctx.AddError(new UnknownOpportunityError());
+                }
+                else
+                {
+                    ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
-                        if (item.RequiresApproval)
-                            ctx.SetRequiresApproval();
+                    if (item.RequiresApproval)
+                        ctx.SetRequiresApproval();
 
-                        if (item.OrderItem.OrderedItem.Object.RemainingAttendeeCapacity == 0)
-                            ctx.AddError(new OpportunityIsFullError());
+                    if (item.OrderItem.OrderedItem.Object.RemainingAttendeeCapacity == 0)
+                        ctx.AddError(new OpportunityIsFullError());
 
-                        // Add validation errors to the OrderItem if either attendee details or additional details are required but not provided
-                        var validationErrors = ctx.ValidateDetails(flowContext.Stage);
-                        if (validationErrors.Count > 0)
-                            ctx.AddErrors(validationErrors);
-                    }
+                    // Add validation errors to the OrderItem if either attendee details or additional details are required but not provided
+                    var validationErrors = ctx.ValidateDetails(flowContext.Stage);
+                    if (validationErrors.Count > 0)
+                        ctx.AddErrors(validationErrors);
                 }
             }
+        }
+
+        private static VirtualLocation AddAccessChannel(BookedOrderItemInfo bookedOrderItemInfo)
+        {
+            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Online || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
+            {
+                return new VirtualLocation()
+                {
+                    Name = "Zoom Video Chat",
+                    Url = bookedOrderItemInfo.MeetingUrl,
+                    AccessId = bookedOrderItemInfo.MeetingId,
+                    AccessCode = bookedOrderItemInfo.MeetingPassword,
+                    Description = "Please log into Zoom a few minutes before the event"
+                };
+            }
+            return null;
+        }
+
+        private static List<PropertyValue> AddAccessCode(BookedOrderItemInfo bookedOrderItemInfo)
+        {
+            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
+            {
+                return new List<PropertyValue>
+                    {
+                        new PropertyValue()
+                        {
+                            Name = "Pin Code",
+                            Description = bookedOrderItemInfo.PinCode,
+                            Value = "defaultValue"
+                        }
+                    };
+            }
+            return null;
+        }
+
+        private static List<ImageObject> AddAccessPass(BookedOrderItemInfo bookedOrderItemInfo)
+        {
+            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
+            {
+                return new List<ImageObject>
+                        {
+                            new ImageObject()
+                            {
+                                Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                            },
+                            new Barcode()
+                            {
+                                Url = new Uri(bookedOrderItemInfo.ImageUrl),
+                                Text = bookedOrderItemInfo.BarCodeText,
+                                CodeType = "code128"
+                            }
+                        };
+            }
+            return null;
         }
 
         protected async override ValueTask LeaseOrderItems(
@@ -518,44 +566,12 @@ namespace BookingSystem
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
                             // Setting the access code and access pass after booking.
                             // If online session, add accessChannel
-                            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Online || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
-                            {
-                                ctx.ResponseOrderItem.AccessChannel = new VirtualLocation()
-                                {
-                                    Name = "Zoom Video Chat",
-                                    Url = bookedOrderItemInfo.MeetingUrl,
-                                    AccessId = bookedOrderItemInfo.MeetingId,
-                                    AccessCode = bookedOrderItemInfo.MeetingPassword,
-                                    Description = "Please log into Zoom a few minutes before the event"
-                                };
-                            }
+                            ctx.ResponseOrderItem.AccessChannel = AddAccessChannel(bookedOrderItemInfo);
 
                             // If offline session, add accessCode and accessPass
-                            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
-                            {
-                                ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
-                                {
-                                    new PropertyValue()
-                                    {
-                                        Name = "Pin Code",
-                                        Description = bookedOrderItemInfo.PinCode,
-                                        Value = "defaultValue"
-                                    }
-                                };
-                                ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
-                                {
-                                    new ImageObject()
-                                    {
-                                        Url = new Uri(bookedOrderItemInfo.ImageUrl)
-                                    },
-                                    new Barcode()
-                                    {
-                                        Url = new Uri(bookedOrderItemInfo.ImageUrl),
-                                        Text = bookedOrderItemInfo.BarCodeText,
-                                        CodeType = "code128"
-                                    }
-                                };
-                            }
+                            ctx.ResponseOrderItem.AccessCode = AddAccessCode(bookedOrderItemInfo);
+                            ctx.ResponseOrderItem.AccessPass = AddAccessPass(bookedOrderItemInfo);
+
                             // The request OrderItem can include an AccessPass if it is a Broker provided access pass
                             // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
                             var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();

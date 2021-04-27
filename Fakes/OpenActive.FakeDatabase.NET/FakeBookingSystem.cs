@@ -586,6 +586,62 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public (ClassTable, OccurrenceTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoIfRelevantByOccurrenceId(string uuid, long? occurrenceId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OrderItemsTable>()
+                    .LeftJoin<OrderItemsTable, OccurrenceTable>()
+                    .LeftJoin<OccurrenceTable, ClassTable>()
+                    .Where((x) => x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+                var (orderItem, thisClass, occurrence) = db.SelectMulti<OrderItemsTable, ClassTable, OccurrenceTable>(query)
+                    .FirstOrDefault();
+
+                return (
+                    thisClass,
+                    occurrence,
+                    new BookedOrderItemInfo
+                    {
+                        OrderItemId = orderItem.Id,
+                        PinCode = orderItem.PinCode,
+                        ImageUrl = orderItem.ImageUrl,
+                        BarCodeText = orderItem.BarCodeText,
+                        MeetingId = orderItem.MeetingId,
+                        MeetingPassword = orderItem.MeetingPassword,
+                        AttendanceMode = thisClass.AttendanceMode,
+                    }
+                );
+            }
+        }
+
+        public (FacilityUseTable, SlotTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoIfRelevantBySlotId(string uuid, long? slotId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OrderItemsTable>()
+                    .LeftJoin<OrderItemsTable, SlotTable>()
+                    .LeftJoin<SlotTable, FacilityUseTable>()
+                    .Where((x) => x.OrderId == uuid && x.SlotId == slotId);
+                var (orderItem, facilityUse, slot) = db.SelectMulti<OrderItemsTable, FacilityUseTable, SlotTable>(query)
+                    .FirstOrDefault();
+
+                return (
+                    facilityUse,
+                    slot,
+                    new BookedOrderItemInfo
+                    {
+                        OrderItemId = orderItem.Id,
+                        PinCode = orderItem.PinCode,
+                        ImageUrl = orderItem.ImageUrl,
+                        BarCodeText = orderItem.BarCodeText,
+                        MeetingId = orderItem.MeetingId,
+                        MeetingPassword = orderItem.MeetingPassword,
+                        AttendanceMode = facilityUse.AttendanceMode,
+                    }
+                );
+            }
+        }
+
         public FakeDatabaseDeleteOrderResult DeleteOrder(string clientId, string uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())
@@ -786,10 +842,7 @@ namespace OpenActive.FakeDatabase.NET
                     OrderItemId = orderItem.Id,
                     PinCode = orderItem.PinCode,
                     ImageUrl = orderItem.ImageUrl,
-                    BarCodeText = orderItem.BarCodeText,
-                    MeetingId = orderItem.MeetingId,
-                    MeetingPassword = orderItem.MeetingPassword,
-                    AttendanceMode = thisClass.AttendanceMode,
+                    BarCodeText = orderItem.BarCodeText
                 });
             }
 
