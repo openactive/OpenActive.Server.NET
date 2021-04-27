@@ -121,7 +121,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
             if (item?.OrderedItem.Object?.Id != requestOrderItemId)
             {
-                throw new ArgumentException("The Opportunity ID within the response OrderItem must match the request OrderItem");
+                throw new OpenBookingException(new InternalLibraryError(), "The Opportunity ID within the response OrderItem must match the request OrderItem");
             }
             var requestAcceptedOfferId = RequestOrderItem?.AcceptedOffer.IdReference;
             if (requestAcceptedOfferId == null)
@@ -130,7 +130,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
             if (item?.AcceptedOffer.Object?.Id != requestAcceptedOfferId)
             {
-                throw new ArgumentException("The Offer ID within the response OrderItem must match the request OrderItem");
+                throw new OpenBookingException(new InternalLibraryError(), "The Offer ID within the response OrderItem must match the request OrderItem");
             }
 
             if (sellerId != flowContext.SellerId)
@@ -583,7 +583,7 @@ namespace OpenActive.Server.NET.StoreBooking
                                     // Check that OrderItem Id was added
                                     if (ctx.ResponseOrderItemId == null || ctx.ResponseOrderItem.Id == null)
                                     {
-                                        throw new ArgumentException("SetOrderItemId must be called for each OrderItemContext in ProposeOrderItems");
+                                        throw new OpenBookingException(new InternalLibraryError(), "SetOrderItemId must be called for each OrderItemContext in ProposeOrderItems");
                                     }
 
                                     // Set the orderItemStatus to be https://openactive.io/OrderItemProposed (as it must always be so in the response of P)
@@ -723,7 +723,7 @@ namespace OpenActive.Server.NET.StoreBooking
                                     // Check that OrderItem Id was added
                                     if (ctx.ResponseOrderItemId == null || ctx.ResponseOrderItem.Id == null)
                                     {
-                                        throw new ArgumentException("SetOrderItemId must be called for each OrderItemContext in BookOrderItems");
+                                        throw new OpenBookingException(new InternalLibraryError(), "SetOrderItemId must be called for each OrderItemContext in BookOrderItems");
                                     }
 
                                     // Set the orderItemStatus to be https://openactive.io/OrderConfirmed (as it must always be so in the response of B)
