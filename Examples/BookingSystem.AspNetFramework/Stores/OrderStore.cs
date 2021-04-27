@@ -376,7 +376,8 @@ namespace BookingSystem
             order.TotalPaymentDue = new PriceSpecification
             {
                 Price = dbOrder.TotalOrderPrice,
-                PriceCurrency = "GBP"
+                PriceCurrency = "GBP",
+                OpenBookingPrepayment = OrderCalculations.GetRequiredStatusType(orderItems)
             };
             order.OrderedItem = orderItems;
 
@@ -395,7 +396,11 @@ namespace BookingSystem
             var orderItems = dbOrderItems.Select((orderItem) => new OrderItem
             {
                 Id = dbOrder.OrderMode == OrderMode.Booking ? RenderOrderItemId(OrderType.Order, dbOrder.OrderId, orderItem.Id) : null,
-                AcceptedOffer = orderItem.OfferJsonLdId,
+                AcceptedOffer = new Offer
+                {
+                    Id = orderItem.OfferJsonLdId,
+                    Price = orderItem.Price
+                },
                 OrderedItem = orderItem.OpportunityJsonLdId,
                 OrderItemStatus =
                             orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
@@ -405,6 +410,16 @@ namespace BookingSystem
                             orderItem.Status == BookingStatus.Proposed ? OrderItemStatus.OrderItemProposed : (OrderItemStatus?)null
             }).ToList();
             var order = RenderOrderFromDatabaseResult(orderIdUri, dbOrder, orderItems);
+
+            // Map AcceptedOffer from object to IdReference
+            var mappedOrderItems = order.OrderedItem.Select((orderItem) => new OrderItem
+            {
+                Id = orderItem.Id,
+                AcceptedOffer = orderItem.AcceptedOffer.Object.Id,
+                OrderedItem = orderItem.OrderedItem,
+                OrderItemStatus = orderItem.OrderItemStatus
+            }).ToList();
+            order.OrderedItem = mappedOrderItems;
 
             // These additional properties that are only available in the Order Status endpoint
             order.Seller = new ReferenceValue<ILegalEntity>(seller);
