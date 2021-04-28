@@ -346,11 +346,10 @@ namespace BookingSystem
                                      ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(slot.RequiredAdditionalDetails)
                                      : null,
                         OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse,
-                        AccessCode = AddAccessCode(bookedOrderItemInfo),
-                        AccessPass = AddAccessPass(bookedOrderItemInfo)
                     },
                     SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
-                    slot.RequiresApproval
+                    slot.RequiresApproval,
+                    BookedOrderItemInfo = bookedOrderItemInfo,
                 };
             });
 
@@ -367,6 +366,11 @@ namespace BookingSystem
                 {
                     ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
+                    if (item.BookedOrderItemInfo != null)
+                    {
+                        AddPropertiesToBookedOrderItem(ctx, item.BookedOrderItemInfo, flowContext);
+                    }
+
                     if (item.RequiresApproval)
                         ctx.SetRequiresApproval();
 
@@ -381,42 +385,33 @@ namespace BookingSystem
             }
         }
 
-        private static List<PropertyValue> AddAccessCode(BookedOrderItemInfo bookedOrderItemInfo)
+        private static void AddPropertiesToBookedOrderItem(OrderItemContext<FacilityOpportunity> ctx, BookedOrderItemInfo bookedOrderItemInfo, StoreBookingFlowContext flowContext)
         {
-            if (bookedOrderItemInfo != null && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
-            {
-                return new List<PropertyValue>
+            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+            // Setting the access code and access pass after booking
+            ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
+                {
+                    new PropertyValue()
                     {
-                        new PropertyValue()
-                        {
-                            Name = "Pin Code",
-                            Description = bookedOrderItemInfo.PinCode,
-                            Value = "defaultValue"
-                        }
-                    };
-            }
-            return null;
-        }
+                        Name = "Pin Code",
+                        Description = bookedOrderItemInfo.PinCode,
+                        Value = "defaultValue"
+                    }
+                };
+            ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
+                {
+                    new ImageObject()
+                    {
+                        Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                    },
+                    new Barcode()
+                    {
+                        Url = new Uri(bookedOrderItemInfo.ImageUrl),
+                        Text = bookedOrderItemInfo.BarCodeText,
+                        CodeType = "code128"
+                    }
+                };
 
-        private static List<ImageObject> AddAccessPass(BookedOrderItemInfo bookedOrderItemInfo)
-        {
-            if (bookedOrderItemInfo != null && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
-            {
-                return new List<ImageObject>
-                        {
-                            new ImageObject()
-                            {
-                                Url = new Uri(bookedOrderItemInfo.ImageUrl)
-                            },
-                            new Barcode()
-                            {
-                                Url = new Uri(bookedOrderItemInfo.ImageUrl),
-                                Text = bookedOrderItemInfo.BarCodeText,
-                                CodeType = "code128"
-                            }
-                        };
-            }
-            return null;
         }
 
         protected async override ValueTask LeaseOrderItems(Lease lease, List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -520,14 +515,11 @@ namespace BookingSystem
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
-                        // Set OrderItemId for each orderItemContext
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
-                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+                            // Set OrderItemId and access properties for each orderItemContext
+                            AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo, flowContext);
 
-                            // Setting the access code and access pass after booking.
-                            ctx.ResponseOrderItem.AccessCode = AddAccessCode(bookedOrderItemInfo);
-                            ctx.ResponseOrderItem.AccessPass = AddAccessPass(bookedOrderItemInfo);
                             // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
                             var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
                             if (requestBarcodes?.Count > 0)

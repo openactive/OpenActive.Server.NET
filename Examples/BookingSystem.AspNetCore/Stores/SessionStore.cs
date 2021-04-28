@@ -560,9 +560,9 @@ namespace BookingSystem
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
-                        // Set OrderItemId and access properties for each orderItemContext
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
+                            // Set OrderItemId and access properties for each orderItemContext
                             AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo, flowContext);
 
                             // The request OrderItem can include an AccessPass if it is a Broker provided access pass
