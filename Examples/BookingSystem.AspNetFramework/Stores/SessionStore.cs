@@ -367,12 +367,10 @@ namespace BookingSystem
                                      ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(@class.RequiredAdditionalDetails)
                                      : null,
                         OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse,
-                        AccessChannel = AddAccessChannel(bookedOrderItemInfo),
-                        AccessCode = AddAccessCode(bookedOrderItemInfo),
-                        AccessPass = AddAccessPass(bookedOrderItemInfo)
                     },
                     SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = @class.SellerId },
-                    @class.RequiresApproval
+                    @class.RequiresApproval,
+                    BookedOrderItemInfo = bookedOrderItemInfo,
                 };
             });
 
@@ -389,6 +387,11 @@ namespace BookingSystem
                 {
                     ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
+                    if (item.BookedOrderItemInfo != null)
+                    {
+                        AddPropertiesToBookedOrderItem(ctx, item.BookedOrderItemInfo, flowContext);
+                    }
+
                     if (item.RequiresApproval)
                         ctx.SetRequiresApproval();
 
@@ -403,12 +406,14 @@ namespace BookingSystem
             }
         }
 
-        private static VirtualLocation AddAccessChannel(BookedOrderItemInfo bookedOrderItemInfo)
+        private static void AddPropertiesToBookedOrderItem(OrderItemContext<SessionOpportunity> ctx, BookedOrderItemInfo bookedOrderItemInfo, StoreBookingFlowContext flowContext)
         {
-            if (bookedOrderItemInfo != null
-                && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Online || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
+            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+            // Setting the access code and access pass after booking.
+            // If online session, add accessChannel
+            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Online || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
             {
-                return new VirtualLocation()
+                ctx.ResponseOrderItem.AccessChannel = new VirtualLocation()
                 {
                     Name = "Zoom Video Chat",
                     Url = bookedOrderItemInfo.MeetingUrl,
@@ -417,47 +422,33 @@ namespace BookingSystem
                     Description = "Please log into Zoom a few minutes before the event"
                 };
             }
-            return null;
-        }
 
-        private static List<PropertyValue> AddAccessCode(BookedOrderItemInfo bookedOrderItemInfo)
-        {
-            if (bookedOrderItemInfo != null
-                && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
+            // If offline session, add accessCode and accessPass
+            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
             {
-                return new List<PropertyValue>
-                    {
-                        new PropertyValue()
-                        {
-                            Name = "Pin Code",
-                            Description = bookedOrderItemInfo.PinCode,
-                            Value = "defaultValue"
-                        }
-                    };
+                ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
+                                {
+                                    new PropertyValue()
+                                    {
+                                        Name = "Pin Code",
+                                        Description = bookedOrderItemInfo.PinCode,
+                                        Value = "defaultValue"
+                                    }
+                                };
+                ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
+                                {
+                                    new ImageObject()
+                                    {
+                                        Url = new Uri(bookedOrderItemInfo.ImageUrl)
+                                    },
+                                    new Barcode()
+                                    {
+                                        Url = new Uri(bookedOrderItemInfo.ImageUrl),
+                                        Text = bookedOrderItemInfo.BarCodeText,
+                                        CodeType = "code128"
+                                    }
+                                };
             }
-            return null;
-        }
-
-        private static List<ImageObject> AddAccessPass(BookedOrderItemInfo bookedOrderItemInfo)
-        {
-            if (bookedOrderItemInfo != null
-                && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
-            {
-                return new List<ImageObject>
-                        {
-                            new ImageObject()
-                            {
-                                Url = new Uri(bookedOrderItemInfo.ImageUrl)
-                            },
-                            new Barcode()
-                            {
-                                Url = new Uri(bookedOrderItemInfo.ImageUrl),
-                                Text = bookedOrderItemInfo.BarCodeText,
-                                CodeType = "code128"
-                            }
-                        };
-            }
-            return null;
         }
 
         protected async override ValueTask LeaseOrderItems(
@@ -569,17 +560,10 @@ namespace BookingSystem
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
-                        // Set OrderItemId for each orderItemContext
+                        // Set OrderItemId and access properties for each orderItemContext
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
-                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-                            // Setting the access code and access pass after booking.
-                            // If online session, add accessChannel
-                            ctx.ResponseOrderItem.AccessChannel = AddAccessChannel(bookedOrderItemInfo);
-
-                            // If offline session, add accessCode and accessPass
-                            ctx.ResponseOrderItem.AccessCode = AddAccessCode(bookedOrderItemInfo);
-                            ctx.ResponseOrderItem.AccessPass = AddAccessPass(bookedOrderItemInfo);
+                            AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo, flowContext);
 
                             // The request OrderItem can include an AccessPass if it is a Broker provided access pass
                             // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
@@ -624,7 +608,7 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, _) = FakeDatabase.BookOrderItemsForClassOccurrence(
+                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForClassOccurrence(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -639,7 +623,11 @@ namespace BookingSystem
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
-                        // Do nothing
+                        // Set OrderItemId for each orderItemContext
+                        foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
+                        {
+                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId, true);
+                        }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
                         throw new OpenBookingException(new SellerMismatchError(), "An OrderItem SellerID did not match");

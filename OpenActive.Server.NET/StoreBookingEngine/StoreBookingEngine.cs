@@ -77,24 +77,28 @@ namespace OpenActive.Server.NET.StoreBooking
             AddError(openBookingError);
         }
 
-        public void SetOrderItemId(StoreBookingFlowContext flowContext, string orderItemId)
+        public void SetOrderItemId(StoreBookingFlowContext flowContext, string orderItemId, bool belongsToOrderProposal = false)
         {
-            SetOrderItemId(flowContext, null, orderItemId);
+            SetOrderItemId(flowContext, null, orderItemId, belongsToOrderProposal);
         }
 
-        public void SetOrderItemId(StoreBookingFlowContext flowContext, long orderItemId)
+        public void SetOrderItemId(StoreBookingFlowContext flowContext, long orderItemId, bool belongsToOrderProposal = false)
         {
-            SetOrderItemId(flowContext, orderItemId, null);
+            SetOrderItemId(flowContext, orderItemId, null, belongsToOrderProposal);
         }
 
-        private void SetOrderItemId(StoreBookingFlowContext flowContext, long? orderItemIdLong, string orderItemIdString)
+        private void SetOrderItemId(StoreBookingFlowContext flowContext, long? orderItemIdLong, string orderItemIdString, bool belongsToOrderProposal = false)
         {
             if (flowContext == null) throw new ArgumentNullException(nameof(flowContext));
             if (ResponseOrderItem == null) throw new NotSupportedException("SetOrderItemId cannot be used before SetResponseOrderItem.");
+
             ResponseOrderItemId = new OrderIdComponents
             {
                 uuid = flowContext.OrderId.uuid,
-                OrderType = flowContext.OrderId.OrderType,
+                // If the OrderItem belongs to an OrderProposal, it's ID must be consistent between P and B.
+                // In order to achieve this, the ID that is constructed must be order/{orderId}#/orderedItem/{orderItemId}
+                // not order-proposal/{orderId}#/orderedItem/{orderItemId}
+                OrderType = belongsToOrderProposal == false ? flowContext.OrderId.OrderType : OrderType.Order,
                 OrderItemIdString = orderItemIdString,
                 OrderItemIdLong = orderItemIdLong
             };
@@ -580,12 +584,6 @@ namespace OpenActive.Server.NET.StoreBooking
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
-                                    // Remove OrderItem Id that may have been added
-                                    if (ctx.ResponseOrderItemId != null || ctx.ResponseOrderItem.Id != null)
-                                    {
-                                        throw new ArgumentException("SetOrderItemId must not be called for any OrderItemContext in ProposeOrderItems");
-                                    }
-
                                     // Set the orderItemStatus to be https://openactive.io/OrderItemProposed (as it must always be so in the response of P)
                                     ctx.ResponseOrderItem.OrderItemStatus = OrderItemStatus.OrderItemProposed;
                                 }
