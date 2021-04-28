@@ -114,15 +114,6 @@ namespace OpenActive.FakeDatabase.NET
     }
 
     /// <summary>
-    /// Result of getting (or attempting to get) an OrderItem in a FakeDatabase
-    /// </summary>
-    public enum FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult
-    {
-        OccurrenceAndBookedOrderItemInfoSuccessfullyGot,
-        OccurrenceWasNotFound
-    }
-
-    /// <summary>
     /// Result of booking (or attempting to book) an OrderProposal in a FakeDatabase
     /// </summary>
     public enum FakeDatabaseBookOrderProposalResult
@@ -595,7 +586,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult, ClassTable, OccurrenceTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoIfRelevantByOccurrenceId(string uuid, long? occurrenceId)
+        public (bool, ClassTable, OccurrenceTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(string uuid, long? occurrenceId)
         {
             using (var db = Mem.Database.Open())
             {
@@ -603,9 +594,10 @@ namespace OpenActive.FakeDatabase.NET
                     .LeftJoin<OccurrenceTable, ClassTable>()
                     .Where((x) => x.Id == occurrenceId);
                 var rows = db.SelectMulti<OccurrenceTable, ClassTable>(query);
+                var hasFoundOccurrence = false;
                 if (!rows.Any())
                 {
-                    return (FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceWasNotFound, null, null, null);
+                    return (hasFoundOccurrence, null, null, null);
                 }
                 var (occurrence, thisClass) = rows.FirstOrDefault();
 
@@ -623,9 +615,9 @@ namespace OpenActive.FakeDatabase.NET
                      }
                      : null;
 
-
+                hasFoundOccurrence = true;
                 return (
-                    FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceAndBookedOrderItemInfoSuccessfullyGot,
+                    hasFoundOccurrence,
                     thisClass,
                     occurrence,
                     bookedOrderItemInfo
@@ -633,7 +625,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult, FacilityUseTable, SlotTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoIfRelevantBySlotId(string uuid, long? slotId)
+        public (bool, FacilityUseTable, SlotTable, BookedOrderItemInfo) GetSlotAndBookedOrderItemInfoBySlotId(string uuid, long? slotId)
         {
             using (var db = Mem.Database.Open())
             {
@@ -641,9 +633,10 @@ namespace OpenActive.FakeDatabase.NET
                     .LeftJoin<SlotTable, FacilityUseTable>()
                     .Where((x) => x.Id == slotId);
                 var rows = db.SelectMulti<SlotTable, FacilityUseTable>(query);
+                var hasFoundOccurrence = false;
                 if (!rows.Any())
                 {
-                    return (FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceWasNotFound, null, null, null);
+                    return (hasFoundOccurrence, null, null, null);
                 }
                 var (slot, facilityUse) = rows.FirstOrDefault();
                 var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid && x.SlotId == slotId);
@@ -654,13 +647,12 @@ namespace OpenActive.FakeDatabase.NET
                          PinCode = orderItem.PinCode,
                          ImageUrl = orderItem.ImageUrl,
                          BarCodeText = orderItem.BarCodeText,
-                         MeetingId = orderItem.MeetingId,
-                         MeetingPassword = orderItem.MeetingPassword,
                      }
                      : null;
 
+                hasFoundOccurrence = true;
                 return (
-                    FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceAndBookedOrderItemInfoSuccessfullyGot,
+                    hasFoundOccurrence,
                     facilityUse,
                     slot,
                     bookedOrderItemInfo
@@ -1214,6 +1206,30 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     return FakeDatabaseBookOrderProposalResult.OrderWasNotFound;
                 }
+            }
+        }
+
+        public long GetNumberOfOtherLeaseForOccurrence(string uuid, long? occurrenceId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Count<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
+                                                 x.OccurrenceId == occurrenceId &&
+                                                 x.OrderId != uuid);
+            }
+        }
+
+        public long GetNumberOfOtherLeasesForSlot(string uuid, long? slotId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Count<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
+                                                 x.SlotId == slotId &&
+                                                 x.OrderId != uuid);
             }
         }
 

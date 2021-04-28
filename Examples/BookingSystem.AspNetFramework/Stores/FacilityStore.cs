@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BookingSystem.AspNetCore.Extensions;
 using OpenActive.DatasetSite.NET;
 using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
@@ -266,12 +267,14 @@ namespace BookingSystem
 
             var query = orderItemContexts.Select((orderItemContext) =>
             {
-                var getOccurrenceInfoResult = FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoIfRelevantBySlotId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
-                if (getOccurrenceInfoResult.Item1 == FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceWasNotFound)
+                var getOccurrenceInfoResult = FakeBookingSystem.Database.GetSlotAndBookedOrderItemInfoBySlotId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
+                var (hasFoundOccurrence, facility, slot, bookedOrderItemInfo) = getOccurrenceInfoResult;
+                if (hasFoundOccurrence == false)
                 {
                     return null;
                 }
-                var (getResult, facility, slot, bookedOrderItemInfo) = getOccurrenceInfoResult;
+                var remainingUsesIncludingOtherLeases = FakeBookingSystem.Database.GetNumberOfOtherLeasesForSlot(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
+
                 return new
                 {
                     OrderItem = new OrderItem
@@ -330,7 +333,7 @@ namespace BookingSystem
                             EndDate = (DateTimeOffset)slot.End,
                             MaximumUses = slot.MaximumUses,
                             // Exclude current Order from the returned lease count
-                            RemainingUses = slot.RemainingUses
+                            RemainingUses = slot.RemainingUses - remainingUsesIncludingOtherLeases
                         },
                         Attendee = orderItemContext.RequestOrderItem.Attendee,
                         AttendeeDetailsRequired = slot.RequiresAttendeeValidation
@@ -368,7 +371,7 @@ namespace BookingSystem
 
                     if (item.BookedOrderItemInfo != null)
                     {
-                        AddPropertiesToBookedOrderItem(ctx, item.BookedOrderItemInfo, flowContext);
+                        BookedOrderItemHelper.AddPropertiesToBookedOrderItem(ctx, item.BookedOrderItemInfo);
                     }
 
                     if (item.RequiresApproval)
@@ -383,35 +386,6 @@ namespace BookingSystem
                         ctx.AddErrors(validationErrors);
                 }
             }
-        }
-
-        private static void AddPropertiesToBookedOrderItem(OrderItemContext<FacilityOpportunity> ctx, BookedOrderItemInfo bookedOrderItemInfo, StoreBookingFlowContext flowContext)
-        {
-            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-            // Setting the access code and access pass after booking
-            ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
-                {
-                    new PropertyValue()
-                    {
-                        Name = "Pin Code",
-                        Description = bookedOrderItemInfo.PinCode,
-                        Value = "defaultValue"
-                    }
-                };
-            ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
-                {
-                    new ImageObject()
-                    {
-                        Url = new Uri(bookedOrderItemInfo.ImageUrl)
-                    },
-                    new Barcode()
-                    {
-                        Url = new Uri(bookedOrderItemInfo.ImageUrl),
-                        Text = bookedOrderItemInfo.BarCodeText,
-                        CodeType = "code128"
-                    }
-                };
-
         }
 
         protected async override ValueTask LeaseOrderItems(Lease lease, List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -518,12 +492,8 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             // Set OrderItemId and access properties for each orderItemContext
-                            AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo, flowContext);
-
-                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
-                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
-                            if (requestBarcodes?.Count > 0)
-                                ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
+                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+                            BookedOrderItemHelper.AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

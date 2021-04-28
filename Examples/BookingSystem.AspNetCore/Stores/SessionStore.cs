@@ -10,6 +10,7 @@ using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 using System.Threading.Tasks;
 using static OpenActive.FakeDatabase.NET.FakeDatabase;
+using BookingSystem.AspNetCore.Extensions;
 
 namespace BookingSystem
 {
@@ -286,13 +287,15 @@ namespace BookingSystem
 
             var query = orderItemContexts.Select((orderItemContext) =>
             {
-                var getOccurrenceResultAndRows = FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoIfRelevantByOccurrenceId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
-                if (getOccurrenceResultAndRows.Item1 == FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceWasNotFound)
+                var getOccurrenceResultAndRows = FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
+                var (hasFoundOccurrence, @class, occurrence, bookedOrderItemInfo) = getOccurrenceResultAndRows;
+
+                if (hasFoundOccurrence == false)
                 {
                     return null;
                 }
+                var remainingUsesIncludingOtherLeases = FakeBookingSystem.Database.GetNumberOfOtherLeaseForOccurrence(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
 
-                var (getResult, @class, occurrence, bookedOrderItemInfo) = getOccurrenceResultAndRows;
                 return new
                 {
                     OrderItem = new OrderItem
@@ -351,7 +354,7 @@ namespace BookingSystem
                             EndDate = (DateTimeOffset)occurrence.End,
                             MaximumAttendeeCapacity = occurrence.TotalSpaces,
                             // Exclude current Order from the returned lease count
-                            RemainingAttendeeCapacity = occurrence.RemainingSpaces
+                            RemainingAttendeeCapacity = occurrence.RemainingSpaces - remainingUsesIncludingOtherLeases
                         },
                         Attendee = orderItemContext.RequestOrderItem.Attendee,
                         AttendeeDetailsRequired = @class.RequiresAttendeeValidation
@@ -389,7 +392,7 @@ namespace BookingSystem
 
                     if (item.BookedOrderItemInfo != null)
                     {
-                        AddPropertiesToBookedOrderItem(ctx, item.BookedOrderItemInfo, flowContext);
+                        BookedOrderItemHelper.AddPropertiesToBookedOrderItem(ctx, item.BookedOrderItemInfo);
                     }
 
                     if (item.RequiresApproval)
@@ -406,50 +409,6 @@ namespace BookingSystem
             }
         }
 
-        private static void AddPropertiesToBookedOrderItem(OrderItemContext<SessionOpportunity> ctx, BookedOrderItemInfo bookedOrderItemInfo, StoreBookingFlowContext flowContext)
-        {
-            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-            // Setting the access code and access pass after booking.
-            // If online session, add accessChannel
-            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Online || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
-            {
-                ctx.ResponseOrderItem.AccessChannel = new VirtualLocation()
-                {
-                    Name = "Zoom Video Chat",
-                    Url = bookedOrderItemInfo.MeetingUrl,
-                    AccessId = bookedOrderItemInfo.MeetingId,
-                    AccessCode = bookedOrderItemInfo.MeetingPassword,
-                    Description = "Please log into Zoom a few minutes before the event"
-                };
-            }
-
-            // If offline session, add accessCode and accessPass
-            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
-            {
-                ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
-                                {
-                                    new PropertyValue()
-                                    {
-                                        Name = "Pin Code",
-                                        Description = bookedOrderItemInfo.PinCode,
-                                        Value = "defaultValue"
-                                    }
-                                };
-                ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
-                                {
-                                    new ImageObject()
-                                    {
-                                        Url = new Uri(bookedOrderItemInfo.ImageUrl)
-                                    },
-                                    new Barcode()
-                                    {
-                                        Url = new Uri(bookedOrderItemInfo.ImageUrl),
-                                        Text = bookedOrderItemInfo.BarCodeText,
-                                        CodeType = "code128"
-                                    }
-                                };
-            }
-        }
 
         protected async override ValueTask LeaseOrderItems(
             Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -563,20 +522,8 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             // Set OrderItemId and access properties for each orderItemContext
-                            AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo, flowContext);
-
-                            // The request OrderItem can include an AccessPass if it is a Broker provided access pass
-                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
-                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
-                            if (requestBarcodes?.Count > 0)
-                            {
-                                if (ctx.ResponseOrderItem.AccessPass == null)
-                                {
-                                    ctx.ResponseOrderItem.AccessPass = new List<ImageObject>();
-
-                                }
-                                ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
-                            }
+                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+                            BookedOrderItemHelper.AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
