@@ -77,17 +77,17 @@ namespace OpenActive.Server.NET.StoreBooking
             AddError(openBookingError);
         }
 
-        public void SetOrderItemId(StoreBookingFlowContext flowContext, string orderItemId, bool belongsToOrderProposal = false)
+        public void SetOrderItemId(StoreBookingFlowContext flowContext, string orderItemId)
         {
-            SetOrderItemId(flowContext, null, orderItemId, belongsToOrderProposal);
+            SetOrderItemId(flowContext, null, orderItemId);
         }
 
-        public void SetOrderItemId(StoreBookingFlowContext flowContext, long orderItemId, bool belongsToOrderProposal = false)
+        public void SetOrderItemId(StoreBookingFlowContext flowContext, long orderItemId)
         {
-            SetOrderItemId(flowContext, orderItemId, null, belongsToOrderProposal);
+            SetOrderItemId(flowContext, orderItemId, null);
         }
 
-        private void SetOrderItemId(StoreBookingFlowContext flowContext, long? orderItemIdLong, string orderItemIdString, bool belongsToOrderProposal = false)
+        private void SetOrderItemId(StoreBookingFlowContext flowContext, long? orderItemIdLong, string orderItemIdString)
         {
             if (flowContext == null) throw new ArgumentNullException(nameof(flowContext));
             if (ResponseOrderItem == null) throw new NotSupportedException("SetOrderItemId cannot be used before SetResponseOrderItem.");
@@ -95,10 +95,7 @@ namespace OpenActive.Server.NET.StoreBooking
             ResponseOrderItemId = new OrderIdComponents
             {
                 uuid = flowContext.OrderId.uuid,
-                // If the OrderItem belongs to an OrderProposal, it's ID must be consistent between P and B.
-                // In order to achieve this, the ID that is constructed must be order/{orderId}#/orderedItem/{orderItemId}
-                // not order-proposal/{orderId}#/orderedItem/{orderItemId}
-                OrderType = belongsToOrderProposal == false ? flowContext.OrderId.OrderType : OrderType.Order,
+                OrderType = OrderType.Order, // All OrderItems that have an @id are of canonical type Order
                 OrderItemIdString = orderItemIdString,
                 OrderItemIdLong = orderItemIdLong
             };
@@ -125,7 +122,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
             if (item?.OrderedItem.Object?.Id != requestOrderItemId)
             {
-                throw new ArgumentException("The Opportunity ID within the response OrderItem must match the request OrderItem");
+                throw new OpenBookingException(new InternalLibraryError(), "The Opportunity ID within the response OrderItem must match the request OrderItem");
             }
             var requestAcceptedOfferId = RequestOrderItem?.AcceptedOffer.IdReference;
             if (requestAcceptedOfferId == null)
@@ -134,7 +131,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
             if (item?.AcceptedOffer.Object?.Id != requestAcceptedOfferId)
             {
-                throw new ArgumentException("The Offer ID within the response OrderItem must match the request OrderItem");
+                throw new OpenBookingException(new InternalLibraryError(), "The Offer ID within the response OrderItem must match the request OrderItem");
             }
 
             if (sellerId != flowContext.SellerId)
@@ -584,6 +581,12 @@ namespace OpenActive.Server.NET.StoreBooking
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
+                                    // Check that OrderItem Id was added
+                                    if (ctx.ResponseOrderItemId == null || ctx.ResponseOrderItem.Id == null)
+                                    {
+                                        throw new OpenBookingException(new InternalLibraryError(), "SetOrderItemId must be called for each OrderItemContext in ProposeOrderItems");
+                                    }
+
                                     // Set the orderItemStatus to be https://openactive.io/OrderItemProposed (as it must always be so in the response of P)
                                     ctx.ResponseOrderItem.OrderItemStatus = OrderItemStatus.OrderItemProposed;
                                 }
@@ -721,7 +724,7 @@ namespace OpenActive.Server.NET.StoreBooking
                                     // Check that OrderItem Id was added
                                     if (ctx.ResponseOrderItemId == null || ctx.ResponseOrderItem.Id == null)
                                     {
-                                        throw new ArgumentException("SetOrderItemId must be called for each OrderItemContext in BookOrderItems");
+                                        throw new OpenBookingException(new InternalLibraryError(), "SetOrderItemId must be called for each OrderItemContext in BookOrderItems");
                                     }
 
                                     // Set the orderItemStatus to be https://openactive.io/OrderConfirmed (as it must always be so in the response of B)

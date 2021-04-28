@@ -626,7 +626,7 @@ namespace BookingSystem
                         // Set OrderItemId for each orderItemContext
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
-                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId, true);
+                            ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
