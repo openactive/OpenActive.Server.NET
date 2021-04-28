@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BookingSystem.AspNetCore.Extensions;
 using OpenActive.DatasetSite.NET;
 using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
-using static OpenActive.FakeDatabase.NET.FakeDatabase;
+using BookingSystem.AspNetFramework.Extensions;
+
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 
 namespace BookingSystem
