@@ -940,9 +940,7 @@ namespace OpenActive.FakeDatabase.NET
                     OrderItemId = orderItem.Id,
                     PinCode = orderItem.PinCode,
                     ImageUrl = orderItem.ImageUrl,
-                    BarCodeText = orderItem.BarCodeText,
-                    MeetingId = orderItem.MeetingId,
-                    MeetingPassword = orderItem.MeetingPassword,
+                    BarCodeText = orderItem.BarCodeText
                 });
             }
 
