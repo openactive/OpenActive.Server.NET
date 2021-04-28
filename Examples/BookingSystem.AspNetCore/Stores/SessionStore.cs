@@ -286,7 +286,13 @@ namespace BookingSystem
 
             var query = orderItemContexts.Select((orderItemContext) =>
             {
-                var (@class, occurrence, bookedOrderItemInfo) = FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoIfRelevantByOccurrenceId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
+                var getOccurrenceResultAndRows = FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoIfRelevantByOccurrenceId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
+                if (getOccurrenceResultAndRows.Item1 == FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceWasNotFound)
+                {
+                    return null;
+                }
+
+                var (getResult, @class, occurrence, bookedOrderItemInfo) = getOccurrenceResultAndRows;
                 return new
                 {
                     OrderItem = new OrderItem
@@ -399,7 +405,8 @@ namespace BookingSystem
 
         private static VirtualLocation AddAccessChannel(BookedOrderItemInfo bookedOrderItemInfo)
         {
-            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Online || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
+            if (bookedOrderItemInfo != null
+                && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Online || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
             {
                 return new VirtualLocation()
                 {
@@ -415,7 +422,8 @@ namespace BookingSystem
 
         private static List<PropertyValue> AddAccessCode(BookedOrderItemInfo bookedOrderItemInfo)
         {
-            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
+            if (bookedOrderItemInfo != null
+                && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
             {
                 return new List<PropertyValue>
                     {
@@ -432,7 +440,8 @@ namespace BookingSystem
 
         private static List<ImageObject> AddAccessPass(BookedOrderItemInfo bookedOrderItemInfo)
         {
-            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
+            if (bookedOrderItemInfo != null
+                && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
             {
                 return new List<ImageObject>
                         {

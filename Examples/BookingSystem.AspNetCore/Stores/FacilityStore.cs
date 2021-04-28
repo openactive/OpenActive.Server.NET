@@ -266,7 +266,12 @@ namespace BookingSystem
 
             var query = orderItemContexts.Select((orderItemContext) =>
             {
-                var (facility, slot, bookedOrderItemInfo) = FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoIfRelevantBySlotId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
+                var getOccurrenceInfoResult = FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoIfRelevantBySlotId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
+                if (getOccurrenceInfoResult.Item1 == FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceWasNotFound)
+                {
+                    return null;
+                }
+                var (getResult, facility, slot, bookedOrderItemInfo) = getOccurrenceInfoResult;
                 return new
                 {
                     OrderItem = new OrderItem
@@ -378,7 +383,7 @@ namespace BookingSystem
 
         private static List<PropertyValue> AddAccessCode(BookedOrderItemInfo bookedOrderItemInfo)
         {
-            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
+            if (bookedOrderItemInfo != null && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
             {
                 return new List<PropertyValue>
                     {
@@ -395,7 +400,7 @@ namespace BookingSystem
 
         private static List<ImageObject> AddAccessPass(BookedOrderItemInfo bookedOrderItemInfo)
         {
-            if (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed)
+            if (bookedOrderItemInfo != null && (bookedOrderItemInfo.AttendanceMode == AttendanceMode.Offline || bookedOrderItemInfo.AttendanceMode == AttendanceMode.Mixed))
             {
                 return new List<ImageObject>
                         {

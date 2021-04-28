@@ -114,6 +114,15 @@ namespace OpenActive.FakeDatabase.NET
     }
 
     /// <summary>
+    /// Result of getting (or attempting to get) an OrderItem in a FakeDatabase
+    /// </summary>
+    public enum FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult
+    {
+        OccurrenceAndBookedOrderItemInfoSuccessfullyGot,
+        OccurrenceWasNotFound
+    }
+
+    /// <summary>
     /// Result of booking (or attempting to book) an OrderProposal in a FakeDatabase
     /// </summary>
     public enum FakeDatabaseBookOrderProposalResult
@@ -586,58 +595,75 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (ClassTable, OccurrenceTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoIfRelevantByOccurrenceId(string uuid, long? occurrenceId)
+        public (FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult, ClassTable, OccurrenceTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoIfRelevantByOccurrenceId(string uuid, long? occurrenceId)
         {
             using (var db = Mem.Database.Open())
             {
-                var query = db.From<OrderItemsTable>()
-                    .LeftJoin<OrderItemsTable, OccurrenceTable>()
+                var query = db.From<OccurrenceTable>()
                     .LeftJoin<OccurrenceTable, ClassTable>()
-                    .Where((x) => x.OrderId == uuid && x.OccurrenceId == occurrenceId);
-                var (orderItem, thisClass, occurrence) = db.SelectMulti<OrderItemsTable, ClassTable, OccurrenceTable>(query)
-                    .FirstOrDefault();
+                    .Where((x) => x.Id == occurrenceId);
+                var rows = db.SelectMulti<OccurrenceTable, ClassTable>(query);
+                if (!rows.Any())
+                {
+                    return (FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceWasNotFound, null, null, null);
+                }
+                var (occurrence, thisClass) = rows.FirstOrDefault();
+
+                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+                var bookedOrderItemInfo = (orderItem != null && orderItem.Status == BookingStatus.Confirmed) ?
+                     new BookedOrderItemInfo
+                     {
+                         OrderItemId = orderItem.Id,
+                         PinCode = orderItem.PinCode,
+                         ImageUrl = orderItem.ImageUrl,
+                         BarCodeText = orderItem.BarCodeText,
+                         MeetingId = orderItem.MeetingId,
+                         MeetingPassword = orderItem.MeetingPassword,
+                         AttendanceMode = thisClass.AttendanceMode,
+                     }
+                     : null;
+
 
                 return (
+                    FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceAndBookedOrderItemInfoSuccessfullyGot,
                     thisClass,
                     occurrence,
-                    new BookedOrderItemInfo
-                    {
-                        OrderItemId = orderItem.Id,
-                        PinCode = orderItem.PinCode,
-                        ImageUrl = orderItem.ImageUrl,
-                        BarCodeText = orderItem.BarCodeText,
-                        MeetingId = orderItem.MeetingId,
-                        MeetingPassword = orderItem.MeetingPassword,
-                        AttendanceMode = thisClass.AttendanceMode,
-                    }
+                    bookedOrderItemInfo
                 );
             }
         }
 
-        public (FacilityUseTable, SlotTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoIfRelevantBySlotId(string uuid, long? slotId)
+        public (FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult, FacilityUseTable, SlotTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoIfRelevantBySlotId(string uuid, long? slotId)
         {
             using (var db = Mem.Database.Open())
             {
-                var query = db.From<OrderItemsTable>()
-                    .LeftJoin<OrderItemsTable, SlotTable>()
+                var query = db.From<SlotTable>()
                     .LeftJoin<SlotTable, FacilityUseTable>()
-                    .Where((x) => x.OrderId == uuid && x.SlotId == slotId);
-                var (orderItem, facilityUse, slot) = db.SelectMulti<OrderItemsTable, FacilityUseTable, SlotTable>(query)
-                    .FirstOrDefault();
+                    .Where((x) => x.Id == slotId);
+                var rows = db.SelectMulti<SlotTable, FacilityUseTable>(query);
+                if (!rows.Any())
+                {
+                    return (FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceWasNotFound, null, null, null);
+                }
+                var (slot, facilityUse) = rows.FirstOrDefault();
+                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid && x.SlotId == slotId);
+                var bookedOrderItemInfo = (orderItem != null && orderItem.Status == BookingStatus.Confirmed) ?
+                     new BookedOrderItemInfo
+                     {
+                         OrderItemId = orderItem.Id,
+                         PinCode = orderItem.PinCode,
+                         ImageUrl = orderItem.ImageUrl,
+                         BarCodeText = orderItem.BarCodeText,
+                         MeetingId = orderItem.MeetingId,
+                         MeetingPassword = orderItem.MeetingPassword,
+                     }
+                     : null;
 
                 return (
+                    FakeDatabaseGetOccurrenceAndBookedOrderItemInfoResult.OccurrenceAndBookedOrderItemInfoSuccessfullyGot,
                     facilityUse,
                     slot,
-                    new BookedOrderItemInfo
-                    {
-                        OrderItemId = orderItem.Id,
-                        PinCode = orderItem.PinCode,
-                        ImageUrl = orderItem.ImageUrl,
-                        BarCodeText = orderItem.BarCodeText,
-                        MeetingId = orderItem.MeetingId,
-                        MeetingPassword = orderItem.MeetingPassword,
-                        AttendanceMode = facilityUse.AttendanceMode,
-                    }
+                    bookedOrderItemInfo
                 );
             }
         }
@@ -768,7 +794,7 @@ namespace OpenActive.FakeDatabase.NET
             return (ReserveOrderItemsResult.Success, null, null);
         }
 
-        public struct BookedOrderItemInfo
+        public class BookedOrderItemInfo
         {
             public long OrderItemId { get; set; }
             public string PinCode { get; set; }
@@ -842,7 +868,10 @@ namespace OpenActive.FakeDatabase.NET
                     OrderItemId = orderItem.Id,
                     PinCode = orderItem.PinCode,
                     ImageUrl = orderItem.ImageUrl,
-                    BarCodeText = orderItem.BarCodeText
+                    BarCodeText = orderItem.BarCodeText,
+                    MeetingId = orderItem.MeetingId,
+                    MeetingPassword = orderItem.MeetingPassword,
+                    AttendanceMode = thisClass.AttendanceMode,
                 });
             }
 
@@ -911,7 +940,9 @@ namespace OpenActive.FakeDatabase.NET
                     OrderItemId = orderItem.Id,
                     PinCode = orderItem.PinCode,
                     ImageUrl = orderItem.ImageUrl,
-                    BarCodeText = orderItem.BarCodeText
+                    BarCodeText = orderItem.BarCodeText,
+                    MeetingId = orderItem.MeetingId,
+                    MeetingPassword = orderItem.MeetingPassword,
                 });
             }
 
