@@ -92,8 +92,9 @@ namespace OpenActive.Server.NET.CustomBooking
             }
 
             // Note that this library does not currently support custom Orders Feed URLs
-            var ordersFeedUrl = new Uri(openBookingAPIBaseUrl.ToString() + "/orders-rpde");
-            settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, ordersFeedUrl);
+            var ordersFeedBaseUrl = openBookingAPIBaseUrl;
+            settings.OrdersFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, ordersFeedBaseUrl, OrderType.Order);
+            if (settings.OrderProposalsFeedGenerator != null) settings.OrderProposalsFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, ordersFeedBaseUrl, OrderType.OrderProposal);
 
             settings.SellerStore.SetConfiguration(settings.SellerIdTemplate);
 
@@ -220,7 +221,6 @@ namespace OpenActive.Server.NET.CustomBooking
 
         /// <summary>
         /// Handler for an Orders RPDE endpoint (separate to the open data endpoint for security) - string only version
-        /// Designed to be used on a single controller method with a "feedname" parameter,
         /// for uses in situations where the framework does not automatically validate numeric values
         /// </summary>
         /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
@@ -231,12 +231,13 @@ namespace OpenActive.Server.NET.CustomBooking
         public async Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber)
         {
             return ResponseContent.RpdeResponse(
-                RenderOrdersRPDEPageForFeed(
+                (await RenderOrdersRPDEPageForFeed(
+                    OrderType.Order,
                     clientId,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),
                     afterId,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterChangeNumber, nameof(afterChangeNumber))
-                    ).ToString());
+                    )).ToString());
         }
 
         /// <summary>
@@ -250,28 +251,77 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <returns></returns>
         public async Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse((await RenderOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber)).ToString());
+            return ResponseContent.RpdeResponse((await RenderOrdersRPDEPageForFeed(OrderType.Order, clientId, afterTimestamp, afterId, afterChangeNumber)).ToString());
         }
 
         /// <summary>
-        /// Handler for Orders RPDE endpoint
+        /// Handler for an Order Proposals RPDE endpoint (separate to the open data endpoint for security) - string only version
+        /// for uses in situations where the framework does not automatically validate numeric values
         /// </summary>
         /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
         /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        private async Task<RpdePage> RenderOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public async Task<ResponseContent> GetOrderProposalsRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber)
         {
-            if (settings.OrderFeedGenerator != null)
+            return ResponseContent.RpdeResponse(
+                (await GetOrderProposalsRPDEPageForFeed(
+                    clientId,
+                    RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),
+                    afterId,
+                    RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterChangeNumber, nameof(afterChangeNumber))
+                    )).ToString());
+        }
+
+        /// <summary>
+        /// Handler for an Order Proposals RPDE endpoint (separate to the open data endpoint for security)
+        /// For uses in situations where the framework does not automatically validate numeric values
+        /// </summary>
+        /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
+        /// <param name="afterId">The "afterId" parameter from the URL</param>
+        /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
+        /// <returns></returns>
+        public async Task<ResponseContent> GetOrderProposalsRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        {
+            return ResponseContent.RpdeResponse((await RenderOrdersRPDEPageForFeed(OrderType.OrderProposal, clientId, afterTimestamp, afterId, afterChangeNumber)).ToString());
+        }
+
+        /// <summary>
+        /// Handler for Orders RPDE endpoint
+        /// </summary>
+        /// <param name="feedType">Type of feed to render</param>
+        /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
+        /// <param name="afterId">The "afterId" parameter from the URL</param>
+        /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
+        /// <returns></returns>
+        private async Task<RpdePage> RenderOrdersRPDEPageForFeed(OrderType feedType, string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        {
+            // Add lookup against clientId and pass this into generator?
+            switch (feedType)
             {
-                // Add lookup against clientId and pass this into generator?
-                return await settings.OrderFeedGenerator.GetRpdePage(clientId, afterTimestamp, afterId, afterChangeNumber);
-            }
-            else
-            {
-                // TODO: Change to Not Authorised Error
-                throw new OpenBookingException(new NotFoundError(), $"Access to this endpoint is not authorised.");
+                case OrderType.OrderProposal:
+                    if (settings.OrderProposalsFeedGenerator != null)
+                    {
+                        return await settings.OrderProposalsFeedGenerator.GetRpdePage(clientId, afterTimestamp, afterId, afterChangeNumber);
+                    }
+                    else
+                    {
+                        throw new OpenBookingException(new NotFoundError(), "This endpoint is not available in this implementation.");
+                    }
+                case OrderType.Order:
+                    if (settings.OrdersFeedGenerator != null)
+                    {
+                        return await settings.OrdersFeedGenerator.GetRpdePage(clientId, afterTimestamp, afterId, afterChangeNumber);
+                    }
+                    else
+                    {
+                        throw new OpenBookingException(new NotFoundError(), "This endpoint is not available in this implementation.");
+                    }
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(feedType));
             }
         }
 
