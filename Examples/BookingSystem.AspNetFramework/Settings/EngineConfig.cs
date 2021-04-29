@@ -157,7 +157,7 @@ namespace BookingSystem
                         "{+BaseUrl}/{OrderType}/{uuid}",
                         "{+BaseUrl}/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"),
 
-                    OrderFeedGenerator = new AcmeOrdersFeedRpdeGenerator()
+                    OrdersFeedGenerator = new AcmeOrdersFeedRpdeGenerator()
                 },
                 new DatasetSiteGeneratorSettings
                 {
