@@ -14,14 +14,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         protected Uri FeedUrl { get; private set; }
 
-        internal void SetConfiguration(int rpdePageSize, OrderIdTemplate orderIdTemplate, SingleIdTemplate<SellerIdComponents> sellerIdTemplate, Uri offersFeedUrl)
+        internal void SetConfiguration(int rpdePageSize, OrderIdTemplate orderIdTemplate, SingleIdTemplate<SellerIdComponents> sellerIdTemplate, Uri ordersFeedBaseUrl, OrderType feedType)
         {
             base.SetConfiguration(orderIdTemplate, sellerIdTemplate);
 
             this.RPDEPageSize = rpdePageSize;
 
             // Allow these to be overridden by implementations if customisation is required
-            this.FeedUrl = offersFeedUrl;
+            this.FeedUrl = new Uri(ordersFeedBaseUrl.ToString() + "/" + (feedType == OrderType.Order ? "orders" : "order-proposals") + "-rpde");
         }
 
         /// <summary>
