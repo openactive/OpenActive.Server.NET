@@ -589,8 +589,8 @@ namespace OpenActive.Server.NET.StoreBooking
                                         throw new OpenBookingException(new InternalLibraryError(), "SetOrderItemId must be called for each OrderItemContext in ProposeOrderItems");
                                     }
 
-                                    // Set the orderItemStatus to be https://openactive.io/OrderItemProposed (as it must always be so in the response of P)
-                                    ctx.ResponseOrderItem.OrderItemStatus = OrderItemStatus.OrderItemProposed;
+                                    // Set the orderItemStatus to null (as it must always be so in the response of P)
+                                    ctx.ResponseOrderItem.OrderItemStatus = null;
                                 }
                             }
 

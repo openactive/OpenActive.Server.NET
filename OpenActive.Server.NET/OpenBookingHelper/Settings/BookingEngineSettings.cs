@@ -26,7 +26,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> OpenDataFeeds { get; set; }
         public int RPDEPageSize { get; set; } = 500;
         public Uri JsonLdIdBaseUrl { get; set; }
-        public OrdersRPDEFeedGenerator OrderFeedGenerator { get; set; }
+        public OrdersRPDEFeedGenerator OrdersFeedGenerator { get; set; }
+        public OrdersRPDEFeedGenerator OrderProposalsFeedGenerator { get; set; }
         public SellerStore SellerStore { get; set; }
         public bool HasSingleSeller { get; set; }
     }

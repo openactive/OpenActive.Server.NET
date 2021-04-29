@@ -38,6 +38,8 @@ namespace OpenActive.Server.NET
         Task<ResponseContent> TriggerTestAction(string actionJson);
         Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
         Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
+        Task<ResponseContent> GetOrderProposalsRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
+        Task<ResponseContent> GetOrderProposalsRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
         Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuid);
     }
 }

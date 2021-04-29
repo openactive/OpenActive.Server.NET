@@ -211,6 +211,25 @@ namespace BookingSystem.AspNetCore.Controllers
             }
         }
 
+        // GET api/openbooking/order-proposals-rpde
+        [HttpGet("order-proposals-rpde")]
+        [Authorize(OpenActiveScopes.OrdersFeed)]
+        public async Task<IActionResult> GetOrderProposalsFeed([FromServices] IBookingEngine bookingEngine, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        {
+            try
+            {
+                // Note only a subset of these parameters will be supplied when this endpoints is called
+                // They are all provided here for the bookingEngine to choose the correct endpoint
+                // The auth token must also be provided from the associated authentication method
+                string clientId = User.GetAccessTokenOrdersFeedClaim();
+                return (await bookingEngine.GetOrderProposalsRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber)).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+
         // POST api/openbooking/test-interface/datasets/uat-ci/opportunities
         [HttpPost("test-interface/datasets/{testDatasetIdentifier}/opportunities")]
         public async Task<IActionResult> TestInterfaceDatasetInsert([FromServices] IBookingEngine bookingEngine, string testDatasetIdentifier, [FromBody] string @event)
