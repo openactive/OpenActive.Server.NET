@@ -525,7 +525,11 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
+        public static bool AddOrder(
+            string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId,
+            string customerEmail, string customerIdentifier, string customerGivenName, string customerFamilyName, string customerTelephone,
+            string paymentIdentifier, string paymentProviderId, string paymentAccountId,
+            decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             var db = transaction.DatabaseConnection;
 
@@ -541,7 +545,13 @@ namespace OpenActive.FakeDatabase.NET
                     BrokerName = brokerName,
                     SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
+                    CustomerIdentifier = customerIdentifier,
+                    CustomerGivenName = customerGivenName,
+                    CustomerFamilyName = customerFamilyName,
+                    CustomerTelephone = customerTelephone,
                     PaymentIdentifier = paymentIdentifier,
+                    PaymentProviderId = paymentProviderId,
+                    PaymentAccountId = paymentAccountId,
                     TotalOrderPrice = totalOrderPrice,
                     OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking,
                     VisibleInFeed = FeedVisibility.None,
@@ -562,7 +572,13 @@ namespace OpenActive.FakeDatabase.NET
                 existingOrder.BrokerName = brokerName;
                 existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
+                existingOrder.CustomerIdentifier = customerIdentifier;
+                existingOrder.CustomerGivenName = customerGivenName;
+                existingOrder.CustomerFamilyName = customerFamilyName;
+                existingOrder.CustomerTelephone = customerTelephone;
                 existingOrder.PaymentIdentifier = paymentIdentifier;
+                existingOrder.PaymentProviderId = paymentProviderId;
+                existingOrder.PaymentAccountId = paymentAccountId;
                 existingOrder.TotalOrderPrice = totalOrderPrice;
                 existingOrder.OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking;
                 existingOrder.ProposalVersionId = proposalVersionUuid;

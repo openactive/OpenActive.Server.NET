@@ -115,7 +115,13 @@ namespace OpenActive.FakeDatabase.NET
         public BrokerRole BrokerRole { get; set; }
         public string BrokerName { get; set; }
         public string CustomerEmail { get; set; }
+        public string CustomerIdentifier { get; set; }
+        public string CustomerGivenName { get; set; }
+        public string CustomerFamilyName { get; set; }
+        public string CustomerTelephone { get; set; }
         public string PaymentIdentifier { get; set; }
+        public string PaymentProviderId { get; set; }
+        public string PaymentAccountId { get; set; }
         public decimal TotalOrderPrice { get; set; }
         public OrderMode OrderMode { get; set; }
         public DateTime LeaseExpires { get; set; }

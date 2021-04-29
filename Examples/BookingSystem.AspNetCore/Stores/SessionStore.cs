@@ -9,8 +9,7 @@ using OpenActive.FakeDatabase.NET;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 using System.Threading.Tasks;
-using static OpenActive.FakeDatabase.NET.FakeDatabase;
-using BookingSystem.AspNetCore.Extensions;
+
 
 namespace BookingSystem
 {

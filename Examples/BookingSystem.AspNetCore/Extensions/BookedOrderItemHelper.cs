@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
-using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
 using static OpenActive.FakeDatabase.NET.FakeDatabase;
 
-namespace BookingSystem.AspNetCore.Extensions
+namespace BookingSystem
 {
     public static class BookedOrderItemHelper
     {

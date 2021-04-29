@@ -361,6 +361,10 @@ namespace OpenActive.Server.NET.StoreBooking
             }
             order.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
 
+            // Add totals to the resulting Order
+            OrderCalculations.AugmentOrderWithTotals(
+                order, flowContext, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation);
+
             // TODO: Should other properties be extracted from the flowContext for consistency, or do we trust the internals not to create excessive props?
             order.BookingService = flowContext.BookingService;
             return order;

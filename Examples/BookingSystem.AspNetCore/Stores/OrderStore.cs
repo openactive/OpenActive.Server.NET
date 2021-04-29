@@ -256,7 +256,13 @@ namespace BookingSystem
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer?.Email,
+                flowContext.Customer?.Identifier.Value.ToString(),
+                flowContext.Customer?.GivenName,
+                flowContext.Customer?.FamilyName,
+                flowContext.Customer?.Telephone,
                 flowContext.Payment?.Identifier,
+                flowContext.Payment?.PaymentProviderId,
+                flowContext.Payment?.AccountId,
                 responseOrder.TotalPaymentDue.Price.Value,
                 databaseTransaction.FakeDatabaseTransaction,
                 null,
@@ -283,7 +289,13 @@ namespace BookingSystem
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer?.Email,
+                flowContext.Customer?.Identifier.Value.ToString(),
+                flowContext.Customer?.GivenName,
+                flowContext.Customer?.FamilyName,
+                flowContext.Customer?.Telephone,
                 flowContext.Payment?.Identifier,
+                flowContext.Payment?.PaymentProviderId,
+                flowContext.Payment?.AccountId,
                 responseOrderProposal.TotalPaymentDue.Price.Value,
                 databaseTransaction.FakeDatabaseTransaction,
                 version,
@@ -430,7 +442,17 @@ namespace BookingSystem
             order.BrokerRole = BrokerRoleToBrokerType(dbOrder.BrokerRole);
             order.Customer = new Person
             {
-                Email = dbOrder.CustomerEmail
+                Email = dbOrder.CustomerEmail,
+                Identifier = dbOrder.CustomerIdentifier,
+                GivenName = dbOrder.CustomerGivenName,
+                FamilyName = dbOrder.CustomerFamilyName,
+                Telephone = dbOrder.CustomerTelephone,
+            };
+            order.Payment = new Payment
+            {
+                Identifier = dbOrder.PaymentIdentifier,
+                PaymentProviderId = dbOrder.PaymentProviderId,
+                AccountId = dbOrder.PaymentAccountId,
             };
 
             return order;
