@@ -1094,8 +1094,8 @@ namespace OpenActive.FakeDatabase.NET
                     {
                         // Update the status and modified date of the OrderProposal to update the feed
                         order.ProposalVersionId = version;
-                        order.VisibleInFeed = FeedVisibility.Visible;
-                        order.Modified = DateTimeOffset.Now.UtcTicks;
+                        order.VisibleInOrderProposalsFeed = FeedVisibility.Visible;
+                        order.OrderProposalModified = DateTimeOffset.Now.UtcTicks;
                         db.Update(order);
                     }
                     return true;
