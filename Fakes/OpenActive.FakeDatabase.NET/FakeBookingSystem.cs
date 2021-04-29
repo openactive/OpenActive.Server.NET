@@ -202,7 +202,7 @@ namespace OpenActive.FakeDatabase.NET
                     CustomerEmail = customerEmail,
                     OrderMode = OrderMode.Lease,
                     LeaseExpires = leaseExpires.DateTime,
-                    VisibleInFeed = FeedVisibility.None
+                    VisibleInOrdersFeed = FeedVisibility.None
                 });
                 return true;
             }
@@ -428,8 +428,8 @@ namespace OpenActive.FakeDatabase.NET
                         }
                     }
 
-                    order.Modified = DateTimeOffset.Now.UtcTicks;
-                    order.VisibleInFeed = FeedVisibility.Visible;
+                    order.OrderModified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInOrdersFeed = FeedVisibility.Visible;
                     db.Update(order);
 
                     return true;
@@ -461,8 +461,8 @@ namespace OpenActive.FakeDatabase.NET
                         }
                     }
 
-                    order.Modified = DateTimeOffset.Now.UtcTicks;
-                    order.VisibleInFeed = FeedVisibility.Visible;
+                    order.OrderModified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInOrdersFeed = FeedVisibility.Visible;
                     db.Update(order);
 
                     return true;
@@ -492,8 +492,8 @@ namespace OpenActive.FakeDatabase.NET
                         }
                     }
 
-                    order.Modified = DateTimeOffset.Now.UtcTicks;
-                    order.VisibleInFeed = FeedVisibility.Visible;
+                    order.OrderModified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInOrdersFeed = FeedVisibility.Visible;
                     db.Update(order);
 
                     return true;
@@ -554,7 +554,7 @@ namespace OpenActive.FakeDatabase.NET
                     PaymentAccountId = paymentAccountId,
                     TotalOrderPrice = totalOrderPrice,
                     OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking,
-                    VisibleInFeed = FeedVisibility.None,
+                    VisibleInOrdersFeed = FeedVisibility.None,
                     ProposalVersionId = proposalVersionUuid,
                     ProposalStatus = proposalStatus
                 });
@@ -696,7 +696,7 @@ namespace OpenActive.FakeDatabase.NET
                 }
                 order.Deleted = true;
                 order.CustomerEmail = null;
-                order.Modified = DateTimeOffset.Now.UtcTicks;
+                order.OrderModified = DateTimeOffset.Now.UtcTicks;
                 db.Update(order);
 
                 var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
@@ -1053,8 +1053,8 @@ namespace OpenActive.FakeDatabase.NET
                         (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
 
                     order.TotalOrderPrice = totalPrice;
-                    order.VisibleInFeed = FeedVisibility.Visible;
-                    order.Modified = DateTimeOffset.Now.UtcTicks;
+                    order.VisibleInOrdersFeed = FeedVisibility.Visible;
+                    order.OrderModified = DateTimeOffset.Now.UtcTicks;
                     db.Update(order);
 
                     // Note an actual implementation would need to handle different opportunity types here
@@ -1136,8 +1136,8 @@ namespace OpenActive.FakeDatabase.NET
                 db.Update(orderItem);
 
                 order.TotalOrderPrice = orderItems.Sum(x => x.Price); ;
-                order.VisibleInFeed = FeedVisibility.Visible;
-                order.Modified = DateTimeOffset.Now.UtcTicks;
+                order.VisibleInOrdersFeed = FeedVisibility.Visible;
+                order.OrderModified = DateTimeOffset.Now.UtcTicks;
                 db.Update(order);
 
                 // Note an actual implementation would need to handle different opportunity types here
@@ -1160,8 +1160,8 @@ namespace OpenActive.FakeDatabase.NET
                     {
                         // Update the status and modified date of the OrderProposal to update the feed
                         order.ProposalStatus = ProposalStatus.SellerAccepted;
-                        order.VisibleInFeed = FeedVisibility.Visible;
-                        order.Modified = DateTimeOffset.Now.UtcTicks;
+                        order.VisibleInOrderProposalsFeed = FeedVisibility.Visible;
+                        order.OrderProposalModified = DateTimeOffset.Now.UtcTicks;
                         db.Update(order);
                     }
                     return true;
@@ -1208,8 +1208,8 @@ namespace OpenActive.FakeDatabase.NET
                     if (updatedOrderItems.Count > 0 || order.OrderMode != OrderMode.Booking)
                     {
                         order.OrderMode = OrderMode.Booking;
-                        order.VisibleInFeed = FeedVisibility.Archived;
-                        order.Modified = DateTimeOffset.Now.UtcTicks;
+                        order.VisibleInOrderProposalsFeed = FeedVisibility.Archived;
+                        order.OrderProposalModified = DateTimeOffset.Now.UtcTicks;
                         db.Update(order);
                         // Note an actual implementation would need to handle different opportunity types here
                         // Update the number of spaces available as a result of cancellation
@@ -1264,8 +1264,8 @@ namespace OpenActive.FakeDatabase.NET
                     if (order.ProposalStatus != ProposalStatus.CustomerRejected && order.ProposalStatus != ProposalStatus.SellerRejected)
                     {
                         order.ProposalStatus = customerRejected ? ProposalStatus.CustomerRejected : ProposalStatus.SellerRejected;
-                        order.VisibleInFeed = FeedVisibility.Visible;
-                        order.Modified = DateTimeOffset.Now.UtcTicks;
+                        order.VisibleInOrderProposalsFeed = FeedVisibility.Visible;
+                        order.OrderProposalModified = DateTimeOffset.Now.UtcTicks;
                         db.Update(order);
                         // Note an actual implementation would need to handle different opportunity types here
                         // Update the number of spaces available as a result of cancellation

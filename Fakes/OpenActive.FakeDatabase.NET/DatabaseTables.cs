@@ -97,14 +97,16 @@ namespace OpenActive.FakeDatabase.NET
         public string MeetingPassword { get; set; }
     }
 
-    [CompositeIndex(nameof(Modified), nameof(OrderId))]
+    [CompositeIndex(nameof(OrderModified), nameof(OrderId))]
+    [CompositeIndex(nameof(OrderProposalModified), nameof(OrderId))]
     public class OrderTable
     {
         [PrimaryKey]
         public string OrderId { get; set; }
 
         public bool Deleted { get; set; }
-        public long Modified { get; set; } = DateTimeOffset.Now.UtcTicks;
+        public long OrderModified { get; set; } = DateTimeOffset.Now.UtcTicks;
+        public long OrderProposalModified { get; set; } = DateTimeOffset.Now.UtcTicks;
         public string ClientId { get; set; }
 
         [Reference]
@@ -125,7 +127,8 @@ namespace OpenActive.FakeDatabase.NET
         public decimal TotalOrderPrice { get; set; }
         public OrderMode OrderMode { get; set; }
         public DateTime LeaseExpires { get; set; }
-        public FeedVisibility VisibleInFeed { get; set; }
+        public FeedVisibility VisibleInOrdersFeed { get; set; }
+        public FeedVisibility VisibleInOrderProposalsFeed { get; set; }
         public ProposalStatus? ProposalStatus { get; set; }
         public string ProposalVersionId { get; set; }
     }
