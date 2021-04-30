@@ -5,7 +5,7 @@ using OpenActive.NET;
 using OpenActive.Server.NET.StoreBooking;
 using static OpenActive.FakeDatabase.NET.FakeDatabase;
 
-namespace BookingSystem.AspNetFramework.Extensions
+namespace BookingSystem
 {
     public static class BookedOrderItemHelper
     {

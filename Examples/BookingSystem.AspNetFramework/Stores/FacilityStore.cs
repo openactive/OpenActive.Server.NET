@@ -8,8 +8,6 @@ using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
-using BookingSystem.AspNetFramework.Extensions;
-
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 
 namespace BookingSystem

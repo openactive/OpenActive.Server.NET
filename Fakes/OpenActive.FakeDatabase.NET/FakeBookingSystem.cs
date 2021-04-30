@@ -135,6 +135,13 @@ namespace OpenActive.FakeDatabase.NET
         OpportunityOfferPairNotBookable,
         NotEnoughCapacity
     }
+
+    public enum CustomerType
+    {
+        Organization,
+        Person,
+        None
+    }
     public class BookingPartnerAdministratorTable
     {
         public string SubjectId { get; set; }
@@ -525,7 +532,12 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, Guid? proposalVersionUuid, ProposalStatus? proposalStatus)
+        public static bool AddOrder(
+            string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId,
+            string customerEmail, CustomerType customerType, string customerOrganizationName,
+            string customerIdentifier, string customerGivenName, string customerFamilyName, string customerTelephone,
+            string paymentIdentifier, string paymentName, string paymentProviderId, string paymentAccountId,
+            decimal totalOrderPrice, FakeDatabaseTransaction transaction, Guid? proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             var db = transaction.DatabaseConnection;
 
@@ -541,7 +553,16 @@ namespace OpenActive.FakeDatabase.NET
                     BrokerName = brokerName,
                     SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
+                    CustomerType = customerType,
+                    CustomerOrganizationName = customerOrganizationName,
+                    CustomerIdentifier = customerIdentifier,
+                    CustomerGivenName = customerGivenName,
+                    CustomerFamilyName = customerFamilyName,
+                    CustomerTelephone = customerTelephone,
                     PaymentIdentifier = paymentIdentifier,
+                    PaymentName = paymentName,
+                    PaymentProviderId = paymentProviderId,
+                    PaymentAccountId = paymentAccountId,
                     TotalOrderPrice = totalOrderPrice,
                     OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking,
                     VisibleInOrdersFeed = FeedVisibility.None,
@@ -562,7 +583,16 @@ namespace OpenActive.FakeDatabase.NET
                 existingOrder.BrokerName = brokerName;
                 existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
+                existingOrder.CustomerType = customerType;
+                existingOrder.CustomerOrganizationName = customerOrganizationName;
+                existingOrder.CustomerIdentifier = customerIdentifier;
+                existingOrder.CustomerGivenName = customerGivenName;
+                existingOrder.CustomerFamilyName = customerFamilyName;
+                existingOrder.CustomerTelephone = customerTelephone;
                 existingOrder.PaymentIdentifier = paymentIdentifier;
+                existingOrder.PaymentName = paymentName;
+                existingOrder.PaymentProviderId = paymentProviderId;
+                existingOrder.PaymentAccountId = paymentAccountId;
                 existingOrder.TotalOrderPrice = totalOrderPrice;
                 existingOrder.OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking;
                 existingOrder.ProposalVersionId = proposalVersionUuid;
