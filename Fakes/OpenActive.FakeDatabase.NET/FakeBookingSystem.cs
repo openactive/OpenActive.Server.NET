@@ -527,8 +527,9 @@ namespace OpenActive.FakeDatabase.NET
 
         public static bool AddOrder(
             string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId,
-            string customerEmail, string customerIdentifier, string customerGivenName, string customerFamilyName, string customerTelephone,
-            string paymentIdentifier, string paymentProviderId, string paymentAccountId,
+            string customerEmail, bool customerIsOrganization, string customerOrganizationName,
+            string customerIdentifier, string customerGivenName, string customerFamilyName, string customerTelephone,
+            string paymentIdentifier, string paymentName, string paymentProviderId, string paymentAccountId,
             decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             var db = transaction.DatabaseConnection;
@@ -545,11 +546,14 @@ namespace OpenActive.FakeDatabase.NET
                     BrokerName = brokerName,
                     SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
+                    CustomerIsOrganization = customerIsOrganization,
+                    CustomerOrganizationName = customerOrganizationName,
                     CustomerIdentifier = customerIdentifier,
                     CustomerGivenName = customerGivenName,
                     CustomerFamilyName = customerFamilyName,
                     CustomerTelephone = customerTelephone,
                     PaymentIdentifier = paymentIdentifier,
+                    PaymentName = paymentName,
                     PaymentProviderId = paymentProviderId,
                     PaymentAccountId = paymentAccountId,
                     TotalOrderPrice = totalOrderPrice,
@@ -572,11 +576,14 @@ namespace OpenActive.FakeDatabase.NET
                 existingOrder.BrokerName = brokerName;
                 existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
+                existingOrder.CustomerIsOrganization = customerIsOrganization;
+                existingOrder.CustomerOrganizationName = customerOrganizationName;
                 existingOrder.CustomerIdentifier = customerIdentifier;
                 existingOrder.CustomerGivenName = customerGivenName;
                 existingOrder.CustomerFamilyName = customerFamilyName;
                 existingOrder.CustomerTelephone = customerTelephone;
                 existingOrder.PaymentIdentifier = paymentIdentifier;
+                existingOrder.PaymentName = paymentName;
                 existingOrder.PaymentProviderId = paymentProviderId;
                 existingOrder.PaymentAccountId = paymentAccountId;
                 existingOrder.TotalOrderPrice = totalOrderPrice;

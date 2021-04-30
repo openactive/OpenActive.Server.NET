@@ -121,7 +121,9 @@ namespace OpenActive.FakeDatabase.NET
         public string CustomerGivenName { get; set; }
         public string CustomerFamilyName { get; set; }
         public string CustomerTelephone { get; set; }
+        public string CustomerOrganizationName { get; set; }
         public string PaymentIdentifier { get; set; }
+        public string PaymentName { get; set; }
         public string PaymentProviderId { get; set; }
         public string PaymentAccountId { get; set; }
         public decimal TotalOrderPrice { get; set; }

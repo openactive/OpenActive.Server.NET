@@ -256,11 +256,14 @@ namespace BookingSystem
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer?.Email,
-                flowContext.Customer?.Identifier.Value.ToString(),
+                flowContext.Customer.GetType() == typeof(Organization),
+                flowContext.Customer.Name,
+                (flowContext.Customer?.Identifier.HasValue == null ? false : flowContext.Customer.Identifier.HasValue) ? flowContext.Customer?.Identifier.Value.ToString() : null,
                 flowContext.Customer?.GivenName,
                 flowContext.Customer?.FamilyName,
                 flowContext.Customer?.Telephone,
                 flowContext.Payment?.Identifier,
+                flowContext.Payment?.Name,
                 flowContext.Payment?.PaymentProviderId,
                 flowContext.Payment?.AccountId,
                 responseOrder.TotalPaymentDue.Price.Value,
@@ -282,6 +285,7 @@ namespace BookingSystem
                 throw new OpenBookingException(new OpenBookingError(), "Price must be set on TotalPaymentDue");
 
             var version = Guid.NewGuid().ToString();
+            var isCustomerOrganization = flowContext.Customer.GetType() == typeof(Organization);
             var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
@@ -289,11 +293,14 @@ namespace BookingSystem
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer?.Email,
-                flowContext.Customer?.Identifier.Value.ToString(),
-                flowContext.Customer?.GivenName,
-                flowContext.Customer?.FamilyName,
-                flowContext.Customer?.Telephone,
+                isCustomerOrganization,
+                isCustomerOrganization ? flowContext.Customer.Name : null,
+                (flowContext.Customer?.Identifier.HasValue == null ? false : flowContext.Customer.Identifier.HasValue) ? flowContext.Customer?.Identifier.Value.ToString() : null,
+                isCustomerOrganization ? null : flowContext.Customer?.GivenName,
+                isCustomerOrganization ? null : flowContext.Customer?.FamilyName,
+                isCustomerOrganization ? null : flowContext.Customer?.Telephone,
                 flowContext.Payment?.Identifier,
+                flowContext.Payment?.Name,
                 flowContext.Payment?.PaymentProviderId,
                 flowContext.Payment?.AccountId,
                 responseOrderProposal.TotalPaymentDue.Price.Value,
@@ -432,27 +439,44 @@ namespace BookingSystem
             }).ToList();
             order.OrderedItem = mappedOrderItems;
 
-            // These additional properties that are only available in the Order Status endpoint
+            // These additional properties that are only available in the Order Status endpoint or B after P+A
             order.Seller = new ReferenceValue<ILegalEntity>(seller);
             order.Broker = new Organization
             {
                 Name = dbOrder.BrokerName
             };
             order.BrokerRole = BrokerRoleToBrokerType(dbOrder.BrokerRole);
-            order.Customer = new Person
+            if (dbOrder.CustomerIsOrganization)
             {
-                Email = dbOrder.CustomerEmail,
-                Identifier = dbOrder.CustomerIdentifier,
-                GivenName = dbOrder.CustomerGivenName,
-                FamilyName = dbOrder.CustomerFamilyName,
-                Telephone = dbOrder.CustomerTelephone,
-            };
-            order.Payment = new Payment
+                order.Customer = new Organization
+                {
+                    Email = dbOrder.CustomerEmail,
+                    Name = dbOrder.CustomerOrganizationName,
+                };
+            }
+            else
             {
-                Identifier = dbOrder.PaymentIdentifier,
-                PaymentProviderId = dbOrder.PaymentProviderId,
-                AccountId = dbOrder.PaymentAccountId,
-            };
+                order.Customer = new Person
+                {
+                    Email = dbOrder.CustomerEmail,
+                    Identifier = dbOrder.CustomerIdentifier,
+                    GivenName = dbOrder.CustomerGivenName,
+                    FamilyName = dbOrder.CustomerFamilyName,
+                    Telephone = dbOrder.CustomerTelephone,
+                };
+
+            }
+            // Payment Identifier is mandatory for non-free sessions
+            if (dbOrder.PaymentIdentifier != null)
+            {
+                order.Payment = new Payment
+                {
+                    Identifier = dbOrder.PaymentIdentifier,
+                    PaymentProviderId = dbOrder.PaymentProviderId,
+                    AccountId = dbOrder.PaymentAccountId,
+                    Name = dbOrder.PaymentName
+                };
+            }
 
             return order;
         }
