@@ -260,19 +260,20 @@ namespace BookingSystem
             if (!responseOrder.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
 
+            var customerType = flowContext.Customer == null ? CustomerType.None : (flowContext.Customer.GetType() == typeof(Organization) ? CustomerType.Organization : CustomerType.Person);
             var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer?.Email,
-                flowContext.Customer.GetType() == typeof(Organization),
-                flowContext.Customer.Name,
-                (flowContext.Customer?.Identifier.HasValue == null ? false : flowContext.Customer.Identifier.HasValue) ? flowContext.Customer?.Identifier.Value.ToString() : null,
-                flowContext.Customer?.GivenName,
-                flowContext.Customer?.FamilyName,
-                flowContext.Customer?.Telephone,
+                customerType == CustomerType.None ? null : flowContext.Customer.Email,
+                customerType,
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? flowContext.Customer.Name : null),
+                customerType == CustomerType.None ? null : flowContext.Customer.Identifier.HasValue ? flowContext.Customer.Identifier.Value.ToString() : null,
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.GivenName),
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.FamilyName),
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.Telephone),
                 flowContext.Payment?.Identifier,
                 flowContext.Payment?.Name,
                 flowContext.Payment?.PaymentProviderId,
@@ -295,21 +296,21 @@ namespace BookingSystem
             if (!responseOrderProposal.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Price must be set on TotalPaymentDue");
 
-            var version = Guid.NewGuid().ToString();
-            var isCustomerOrganization = flowContext.Customer.GetType() == typeof(Organization);
+            var version = Guid.NewGuid();
+            var customerType = flowContext.Customer == null ? CustomerType.None : (flowContext.Customer.GetType() == typeof(Organization) ? CustomerType.Organization : CustomerType.Person);
             var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer?.Email,
-                isCustomerOrganization,
-                isCustomerOrganization ? flowContext.Customer.Name : null,
-                (flowContext.Customer?.Identifier.HasValue == null ? false : flowContext.Customer.Identifier.HasValue) ? flowContext.Customer?.Identifier.Value.ToString() : null,
-                isCustomerOrganization ? null : flowContext.Customer?.GivenName,
-                isCustomerOrganization ? null : flowContext.Customer?.FamilyName,
-                isCustomerOrganization ? null : flowContext.Customer?.Telephone,
+                customerType == CustomerType.None ? null : flowContext.Customer.Email,
+                customerType,
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? flowContext.Customer.Name : null),
+                customerType == CustomerType.None ? null : flowContext.Customer.Identifier.HasValue ? flowContext.Customer.Identifier.Value.ToString() : null,
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.GivenName),
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.FamilyName),
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.Telephone),
                 flowContext.Payment?.Identifier,
                 flowContext.Payment?.Name,
                 flowContext.Payment?.PaymentProviderId,
@@ -322,7 +323,7 @@ namespace BookingSystem
             if (!result)
                 throw new OpenBookingException(new OrderAlreadyExistsError());
 
-            return (new Guid(version), OrderProposalStatus.AwaitingSellerConfirmation);
+            return (version, OrderProposalStatus.AwaitingSellerConfirmation);
         }
 
         public async override ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -457,7 +458,7 @@ namespace BookingSystem
                 Name = dbOrder.BrokerName
             };
             order.BrokerRole = BrokerRoleToBrokerType(dbOrder.BrokerRole);
-            if (dbOrder.CustomerIsOrganization)
+            if (dbOrder.CustomerType == CustomerType.Organization)
             {
                 order.Customer = new Organization
                 {
@@ -465,7 +466,7 @@ namespace BookingSystem
                     Name = dbOrder.CustomerOrganizationName,
                 };
             }
-            else
+            else if (dbOrder.CustomerType == CustomerType.Person)
             {
                 order.Customer = new Person
                 {

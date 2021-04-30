@@ -135,6 +135,13 @@ namespace OpenActive.FakeDatabase.NET
         OpportunityOfferPairNotBookable,
         NotEnoughCapacity
     }
+
+    public enum CustomerType
+    {
+        Organization,
+        Person,
+        None
+    }
     public class BookingPartnerAdministratorTable
     {
         public string SubjectId { get; set; }
@@ -527,10 +534,10 @@ namespace OpenActive.FakeDatabase.NET
 
         public static bool AddOrder(
             string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId,
-            string customerEmail, bool customerIsOrganization, string customerOrganizationName,
+            string customerEmail, CustomerType customerType, string customerOrganizationName,
             string customerIdentifier, string customerGivenName, string customerFamilyName, string customerTelephone,
             string paymentIdentifier, string paymentName, string paymentProviderId, string paymentAccountId,
-            decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
+            decimal totalOrderPrice, FakeDatabaseTransaction transaction, Guid? proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             var db = transaction.DatabaseConnection;
 
@@ -546,7 +553,7 @@ namespace OpenActive.FakeDatabase.NET
                     BrokerName = brokerName,
                     SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
-                    CustomerIsOrganization = customerIsOrganization,
+                    CustomerType = customerType,
                     CustomerOrganizationName = customerOrganizationName,
                     CustomerIdentifier = customerIdentifier,
                     CustomerGivenName = customerGivenName,
@@ -559,7 +566,7 @@ namespace OpenActive.FakeDatabase.NET
                     TotalOrderPrice = totalOrderPrice,
                     OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking,
                     VisibleInOrdersFeed = FeedVisibility.None,
-                    ProposalVersionId = new Guid(proposalVersionUuid),
+                    ProposalVersionId = proposalVersionUuid,
                     ProposalStatus = proposalStatus
                 });
                 return true;
@@ -576,7 +583,7 @@ namespace OpenActive.FakeDatabase.NET
                 existingOrder.BrokerName = brokerName;
                 existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
-                existingOrder.CustomerIsOrganization = customerIsOrganization;
+                existingOrder.CustomerType = customerType;
                 existingOrder.CustomerOrganizationName = customerOrganizationName;
                 existingOrder.CustomerIdentifier = customerIdentifier;
                 existingOrder.CustomerGivenName = customerGivenName;
@@ -588,7 +595,7 @@ namespace OpenActive.FakeDatabase.NET
                 existingOrder.PaymentAccountId = paymentAccountId;
                 existingOrder.TotalOrderPrice = totalOrderPrice;
                 existingOrder.OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking;
-                existingOrder.ProposalVersionId = new Guid(proposalVersionUuid);
+                existingOrder.ProposalVersionId = proposalVersionUuid;
                 existingOrder.ProposalStatus = proposalStatus;
                 db.Update(existingOrder);
 
