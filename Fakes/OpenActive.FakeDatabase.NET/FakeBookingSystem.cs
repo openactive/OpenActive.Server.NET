@@ -525,7 +525,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, string proposalVersionUuid, ProposalStatus? proposalStatus)
+        public static bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, Guid? proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             var db = transaction.DatabaseConnection;
 
@@ -1156,8 +1156,32 @@ namespace OpenActive.FakeDatabase.NET
                 }
             }
         }
+        public bool AmendOrderProposal(string uuid, Guid version)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var order = db.Single<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid && !x.Deleted);
+                if (order != null)
+                {
+                    // This makes the call idempotent
+                    if (order.ProposalVersionId != version)
+                    {
+                        // Update the status and modified date of the OrderProposal to update the feed
+                        order.ProposalVersionId = version;
+                        order.VisibleInOrderProposalsFeed = FeedVisibility.Visible;
+                        order.OrderProposalModified = DateTimeOffset.Now.UtcTicks;
+                        db.Update(order);
+                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
 
-        public FakeDatabaseBookOrderProposalResult BookOrderProposal(string clientId, long? sellerId, string uuid, string proposalVersionUuid)
+        public FakeDatabaseBookOrderProposalResult BookOrderProposal(string clientId, long? sellerId, string uuid, Guid? proposalVersionUuid)
         {
             using (var db = Mem.Database.Open())
             {
@@ -1381,6 +1405,7 @@ namespace OpenActive.FakeDatabase.NET
                             RequiresAdditionalDetails = requiresAdditionalDetails,
                             RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
                             RequiresApproval = seed.RequiresApproval,
+                            AllowsProposalAmendment = seed.RequiresApproval ? Faker.Random.Bool() : false,
                             ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                             LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                             AllowCustomerCancellationFullRefund = Faker.Random.Bool()
@@ -1420,6 +1445,7 @@ namespace OpenActive.FakeDatabase.NET
                         RequiresAdditionalDetails = requiresAdditionalDetails,
                         RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
                         RequiresApproval = @class.RequiresApproval,
+                        AllowsProposalAmendment = @class.RequiresApproval ? Faker.Random.Bool() : false,
                         LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                         SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                         ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
@@ -1741,7 +1767,8 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresAdditionalDetails = false,
             decimal locationLat = 0.1m,
             decimal locationLng = 0.1m,
-            bool isOnlineOrMixedAttendanceMode = false)
+            bool isOnlineOrMixedAttendanceMode = false,
+            bool allowProposalAmendment = false)
 
         {
             var startTime = DateTime.Now.AddDays(1);
@@ -1768,6 +1795,7 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresAttendeeValidation = requiresAttendeeValidation,
                     RequiresAdditionalDetails = requiresAdditionalDetails,
                     RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
+                    AllowsProposalAmendment = allowProposalAmendment,
                     LocationLat = locationLat,
                     LocationLng = locationLng,
                     AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
@@ -1809,7 +1837,8 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresAttendeeValidation = false,
             bool requiresAdditionalDetails = false,
             decimal locationLat = 0.1m,
-            decimal locationLng = 0.1m)
+            decimal locationLng = 0.1m,
+            bool allowProposalAmendment = false)
         {
             var startTime = DateTime.Now.AddDays(1);
             var endTime = DateTime.Now.AddDays(1).AddHours(1);
@@ -1850,6 +1879,7 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresAttendeeValidation = requiresAttendeeValidation,
                     RequiresAdditionalDetails = requiresAdditionalDetails,
                     RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
+                    AllowsProposalAmendment = allowProposalAmendment,
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
                     Modified = DateTimeOffset.Now.UtcTicks
                 };

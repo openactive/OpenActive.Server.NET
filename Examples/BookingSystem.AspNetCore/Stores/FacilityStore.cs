@@ -198,6 +198,16 @@ namespace BookingSystem
                                 requiresApproval,
                                 requiresAdditionalDetails: true);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithNegotiation:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility That Allows Proposal Amendment",
+                                10M,
+                                10,
+                                requiresApproval,
+                                allowProposalAmendment: true);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,

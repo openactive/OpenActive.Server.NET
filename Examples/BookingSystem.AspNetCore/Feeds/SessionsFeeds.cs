@@ -233,6 +233,11 @@ namespace BookingSystem
                 openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingIntakeForm);
             }
 
+            if (@class.AllowsProposalAmendment)
+            {
+                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
+                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingNegotiation);
+            }
             return openBookingFlowRequirement;
         }
 
