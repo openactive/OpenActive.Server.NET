@@ -216,6 +216,16 @@ namespace BookingSystem
                                 requiresApproval,
                                 isOnlineOrMixedAttendanceMode: false);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithNegotiation:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Allows Proposal Amendment",
+                                10M,
+                                10,
+                                requiresApproval,
+                                allowProposalAmendment: true);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
                             (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
                                 testDatasetIdentifier,

@@ -264,9 +264,18 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             order.TotalPaymentDue = new PriceSpecification
             {
                 Price = totalPaymentDuePrice,
-                PriceCurrency = totalPaymentDueCurrency,
-                OpenBookingPrepayment = GetRequiredStatusType(order.OrderedItem)
+                PriceCurrency = totalPaymentDueCurrency
             };
+
+            OrderCalculations.AugmentOrderWithCalculations(
+                order, context, businessToConsumerTaxCalculation, businessToBusinessTaxCalculation);
+        }
+
+        public static void AugmentOrderWithCalculations<TOrder>(
+            TOrder order, StoreBookingFlowContext context, bool businessToConsumerTaxCalculation, bool businessToBusinessTaxCalculation)
+            where TOrder : Order
+        {
+            order.TotalPaymentDue.OpenBookingPrepayment = GetRequiredStatusType(order.OrderedItem);
         }
 
         public static RequiredStatusType? GetRequiredStatusType(IReadOnlyCollection<OrderItem> orderItems)

@@ -68,6 +68,17 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
+                case SellerAmendOrderProposalSimulateAction _:
+                    if (idComponents.OrderType != OrderType.OrderProposal)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
+                    }
+                    var version = Guid.NewGuid();
+                    if (!FakeBookingSystem.Database.AmendOrderProposal(idComponents.uuid, version))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
                 case SellerRejectOrderProposalSimulateAction _:
                     if (idComponents.OrderType != OrderType.OrderProposal)
                     {
@@ -279,7 +290,7 @@ namespace BookingSystem
             // Does nothing at the moment
         }
 
-        public async override ValueTask<(string, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public async override ValueTask<(Guid, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (!responseOrderProposal.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Price must be set on TotalPaymentDue");
@@ -311,7 +322,7 @@ namespace BookingSystem
             if (!result)
                 throw new OpenBookingException(new OrderAlreadyExistsError());
 
-            return (version, OrderProposalStatus.AwaitingSellerConfirmation);
+            return (new Guid(version), OrderProposalStatus.AwaitingSellerConfirmation);
         }
 
         public async override ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
@@ -343,7 +354,7 @@ namespace BookingSystem
         public async override Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
         {
             // TODO more elegantly extract version UUID from orderProposalVersion (probably much further up the stack?)
-            var version = orderProposalVersion.ToString().Split('/').Last();
+            var version = new Guid(orderProposalVersion.ToString().Split('/').Last());
 
             var result = FakeBookingSystem.Database.BookOrderProposal(
                 orderId.ClientId,
@@ -366,7 +377,7 @@ namespace BookingSystem
             }
         }
 
-        public static Order CreateOrderFromOrderMode(OrderMode orderMode, Uri orderId, string proposalVersionId, ProposalStatus? proposalStatus)
+        public static Order CreateOrderFromOrderMode(OrderMode orderMode, Uri orderId, Guid? proposalVersionId, ProposalStatus? proposalStatus)
         {
             switch (orderMode)
             {
@@ -376,7 +387,7 @@ namespace BookingSystem
                     return new OrderQuote();
                 case OrderMode.Proposal:
                     var o = new OrderProposal();
-                    o.OrderProposalVersion = new Uri($"{orderId}/versions/{proposalVersionId}");
+                    o.OrderProposalVersion = new Uri($"{orderId}/versions/{proposalVersionId.ToString()}");
                     o.OrderProposalStatus = proposalStatus == ProposalStatus.AwaitingSellerConfirmation ? OrderProposalStatus.AwaitingSellerConfirmation :
                         proposalStatus == ProposalStatus.CustomerRejected ? OrderProposalStatus.CustomerRejected :
                         proposalStatus == ProposalStatus.SellerAccepted ? OrderProposalStatus.SellerAccepted :
