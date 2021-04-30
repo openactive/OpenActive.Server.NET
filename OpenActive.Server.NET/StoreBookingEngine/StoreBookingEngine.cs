@@ -87,10 +87,11 @@ namespace OpenActive.Server.NET.StoreBooking
             SetOrderItemId(flowContext, orderItemId, null);
         }
 
-        private void SetOrderItemId(StoreBookingFlowContext flowContext, long? orderItemIdLong, string orderItemIdString)
+        private void SetOrderItemId(StoreBookingFlowContext flowContext, long? orderItemIdLong, string orderItemIdString, bool belongsToOrderProposal = false)
         {
             if (flowContext == null) throw new ArgumentNullException(nameof(flowContext));
             if (ResponseOrderItem == null) throw new NotSupportedException("SetOrderItemId cannot be used before SetResponseOrderItem.");
+
             ResponseOrderItemId = new OrderIdComponents
             {
                 uuid = flowContext.OrderId.uuid,

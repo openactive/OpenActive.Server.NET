@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BookingSystem.AspNetCore.Extensions;
 using OpenActive.DatasetSite.NET;
 using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
+using static OpenActive.FakeDatabase.NET.FakeDatabase;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 
 namespace BookingSystem
@@ -273,60 +275,61 @@ namespace BookingSystem
 
             // Response OrderItems must be updated into supplied orderItemContexts (including duplicates for multi-party booking)
 
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            var query = orderItemContexts.Select((orderItemContext) =>
             {
-                var slotTable = db.Select<SlotTable>();
-                var facilityTable = db.Select<FacilityUseTable>();
+                var getOccurrenceInfoResult = FakeBookingSystem.Database.GetSlotAndBookedOrderItemInfoBySlotId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
+                var (hasFoundOccurrence, facility, slot, bookedOrderItemInfo) = getOccurrenceInfoResult;
+                if (hasFoundOccurrence == false)
+                {
+                    return null;
+                }
+                var remainingUsesIncludingOtherLeases = FakeBookingSystem.Database.GetNumberOfOtherLeasesForSlot(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
 
-                var query = (from orderItemContext in orderItemContexts
-                             join slot in slotTable on orderItemContext.RequestBookableOpportunityOfferId.SlotId equals slot.Id
-                             join facility in facilityTable on slot.FacilityUseId equals facility.Id
-                             // and offers.id = opportunityOfferId.OfferId
-                             select slot == null ? null : new
-                             {
-                                 OrderItem = new OrderItem
-                                 {
-                                     // TODO: The static example below should come from the database (which doesn't currently support tax)
-                                     UnitTaxSpecification = GetUnitTaxSpecification(flowContext, slot),
-                                     AcceptedOffer = new Offer
-                                     {
-                                         // Note this should always use RenderOfferId with the supplied SessionFacilityOpportunity, to take into account inheritance and OfferType
-                                         Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
-                                         Price = slot.Price,
-                                         PriceCurrency = "GBP",
-                                         LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
-                                         OpenBookingPrepayment = slot.Prepayment.Convert(),
-                                         ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate,
-                                         AllowCustomerCancellationFullRefund = slot.AllowCustomerCancellationFullRefund,
-                                     },
-                                     OrderedItem = new Slot
-                                     {
-                                         // Note this should always be driven from the database, with new FacilityOpportunity's instantiated
-                                         Id = RenderOpportunityId(new FacilityOpportunity
-                                         {
-                                             OpportunityType = OpportunityType.FacilityUseSlot,
-                                             FacilityUseId = slot.FacilityUseId,
-                                             SlotId = slot.Id
-                                         }),
-                                         FacilityUse = new FacilityUse
-                                         {
-                                             Id = RenderOpportunityId(new FacilityOpportunity
-                                             {
-                                                 OpportunityType = OpportunityType.FacilityUse,
-                                                 FacilityUseId = slot.FacilityUseId
-                                             }),
-                                             Name = facility.Name,
-                                             Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
-                                             Location = new Place
-                                             {
-                                                 Name = "Fake fitness studio",
-                                                 Geo = new GeoCoordinates
-                                                 {
-                                                     Latitude = facility.LocationLat,
-                                                     Longitude = facility.LocationLng,
-                                                 }
-                                             },
-                                             Activity = new List<Concept>
+                return new
+                {
+                    OrderItem = new OrderItem
+                    {
+                        // TODO: The static example below should come from the database (which doesn't currently support tax)
+                        UnitTaxSpecification = GetUnitTaxSpecification(flowContext, slot),
+                        AcceptedOffer = new Offer
+                        {
+                            // Note this should always use RenderOfferId with the supplied SessionFacilityOpportunity, to take into account inheritance and OfferType
+                            Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
+                            Price = slot.Price,
+                            PriceCurrency = "GBP",
+                            LatestCancellationBeforeStartDate = slot.LatestCancellationBeforeStartDate,
+                            OpenBookingPrepayment = slot.Prepayment.Convert(),
+                            ValidFromBeforeStartDate = slot.ValidFromBeforeStartDate,
+                            AllowCustomerCancellationFullRefund = slot.AllowCustomerCancellationFullRefund,
+                        },
+                        OrderedItem = new Slot
+                        {
+                            // Note this should always be driven from the database, with new FacilityOpportunity's instantiated
+                            Id = RenderOpportunityId(new FacilityOpportunity
+                            {
+                                OpportunityType = OpportunityType.FacilityUseSlot,
+                                FacilityUseId = slot.FacilityUseId,
+                                SlotId = slot.Id
+                            }),
+                            FacilityUse = new FacilityUse
+                            {
+                                Id = RenderOpportunityId(new FacilityOpportunity
+                                {
+                                    OpportunityType = OpportunityType.FacilityUse,
+                                    FacilityUseId = slot.FacilityUseId
+                                }),
+                                Name = facility.Name,
+                                Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
+                                Location = new Place
+                                {
+                                    Name = "Fake fitness studio",
+                                    Geo = new GeoCoordinates
+                                    {
+                                        Latitude = facility.LocationLat,
+                                        Longitude = facility.LocationLng,
+                                    }
+                                },
+                                Activity = new List<Concept>
                                              {
                                                  new Concept
                                                  {
@@ -335,20 +338,15 @@ namespace BookingSystem
                                                      InScheme = new Uri("https://openactive.io/activity-list")
                                                  }
                                              },
-                                         },
-                                         StartDate = (DateTimeOffset)slot.Start,
-                                         EndDate = (DateTimeOffset)slot.End,
-                                         MaximumUses = slot.MaximumUses,
-                                         // Exclude current Order from the returned lease count
-                                         RemainingUses = slot.RemainingUses - db.Count<OrderItemsTable>(
-                                            x => x.OrderTable.OrderMode != OrderMode.Booking &&
-                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
-                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
-                                                 x.SlotId == slot.Id &&
-                                                 x.OrderId != flowContext.OrderId.uuid)
-                                     },
-                                     Attendee = orderItemContext.RequestOrderItem.Attendee,
-                                     AttendeeDetailsRequired = slot.RequiresAttendeeValidation
+                            },
+                            StartDate = (DateTimeOffset)slot.Start,
+                            EndDate = (DateTimeOffset)slot.End,
+                            MaximumUses = slot.MaximumUses,
+                            // Exclude current Order from the returned lease count
+                            RemainingUses = slot.RemainingUses - remainingUsesIncludingOtherLeases
+                        },
+                        Attendee = orderItemContext.RequestOrderItem.Attendee,
+                        AttendeeDetailsRequired = slot.RequiresAttendeeValidation
                                         ? new List<PropertyEnumeration>
                                          {
                                              PropertyEnumeration.GivenName,
@@ -357,38 +355,45 @@ namespace BookingSystem
                                              PropertyEnumeration.Telephone,
                                          }
                                         : null,
-                                     OrderItemIntakeForm = slot.RequiresAdditionalDetails
+                        OrderItemIntakeForm = slot.RequiresAdditionalDetails
                                      ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(slot.RequiredAdditionalDetails)
                                      : null,
-                                     OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse,
-                                 },
-                                 SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
-                                 slot.RequiresApproval
-                             }).ToArray();
+                        OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse,
+                    },
+                    SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
+                    slot.RequiresApproval,
+                    BookedOrderItemInfo = bookedOrderItemInfo,
+                };
+            });
 
-                // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
-                foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
+
+            // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
+            foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
+            {
+                if (item == null)
                 {
-                    if (item == null)
+                    ctx.SetResponseOrderItemAsSkeleton();
+                    ctx.AddError(new UnknownOpportunityError());
+                }
+                else
+                {
+                    ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
+
+                    if (item.BookedOrderItemInfo != null)
                     {
-                        ctx.SetResponseOrderItemAsSkeleton();
-                        ctx.AddError(new UnknownOpportunityError());
+                        BookedOrderItemHelper.AddPropertiesToBookedOrderItem(ctx, item.BookedOrderItemInfo);
                     }
-                    else
-                    {
-                        ctx.SetResponseOrderItem(item.OrderItem, item.SellerId, flowContext);
 
-                        if (item.RequiresApproval)
-                            ctx.SetRequiresApproval();
+                    if (item.RequiresApproval)
+                        ctx.SetRequiresApproval();
 
-                        if (((Slot)item.OrderItem.OrderedItem.Object).RemainingUses == 0)
-                            ctx.AddError(new OpportunityIsFullError());
+                    if (((Slot)item.OrderItem.OrderedItem.Object).RemainingUses == 0)
+                        ctx.AddError(new OpportunityIsFullError());
 
-                        // Add validation errors to the OrderItem if either attendee details or additional details are required but not provided
-                        var validationErrors = ctx.ValidateDetails(flowContext.Stage);
-                        if (validationErrors.Count > 0)
-                            ctx.AddErrors(validationErrors);
-                    }
+                    // Add validation errors to the OrderItem if either attendee details or additional details are required but not provided
+                    var validationErrors = ctx.ValidateDetails(flowContext.Stage);
+                    if (validationErrors.Count > 0)
+                        ctx.AddErrors(validationErrors);
                 }
             }
         }
@@ -494,38 +499,11 @@ namespace BookingSystem
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
-                        // Set OrderItemId for each orderItemContext
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
+                            // Set OrderItemId and access properties for each orderItemContext
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
-
-                            // Setting the access code and access pass after booking.
-                            ctx.ResponseOrderItem.AccessCode = new List<PropertyValue>
-                            {
-                                new PropertyValue
-                                {
-                                    Name = "Pin Code",
-                                    Description = bookedOrderItemInfo.PinCode,
-                                    Value = "defaultValue"
-                                }
-                            };
-                            ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
-                            {
-                                new ImageObject
-                                {
-                                    Url = new Uri(bookedOrderItemInfo.ImageUrl)
-                                },
-                                new Barcode
-                                {
-                                    Url = new Uri(bookedOrderItemInfo.ImageUrl),
-                                    Text = bookedOrderItemInfo.BarCodeText,
-                                    CodeType = "code128"
-                                }
-                            };
-                            // In OrderItem, accessPass is an Image[], so needs to be cast to Barcode where applicable
-                            var requestBarcodes = ctx.RequestOrderItem.AccessPass?.OfType<Barcode>().ToList();
-                            if (requestBarcodes?.Count > 0)
-                                ctx.ResponseOrderItem.AccessPass.AddRange(requestBarcodes);
+                            BookedOrderItemHelper.AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

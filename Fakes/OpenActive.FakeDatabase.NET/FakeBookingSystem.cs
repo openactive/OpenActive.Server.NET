@@ -586,6 +586,80 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public (bool, ClassTable, OccurrenceTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(string uuid, long? occurrenceId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OccurrenceTable>()
+                    .LeftJoin<OccurrenceTable, ClassTable>()
+                    .Where((x) => x.Id == occurrenceId);
+                var rows = db.SelectMulti<OccurrenceTable, ClassTable>(query);
+                var hasFoundOccurrence = false;
+                if (!rows.Any())
+                {
+                    return (hasFoundOccurrence, null, null, null);
+                }
+                var (occurrence, thisClass) = rows.FirstOrDefault();
+
+                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+                var bookedOrderItemInfo = (orderItem != null && orderItem.Status == BookingStatus.Confirmed) ?
+                     new BookedOrderItemInfo
+                     {
+                         OrderItemId = orderItem.Id,
+                         PinCode = orderItem.PinCode,
+                         ImageUrl = orderItem.ImageUrl,
+                         BarCodeText = orderItem.BarCodeText,
+                         MeetingId = orderItem.MeetingId,
+                         MeetingPassword = orderItem.MeetingPassword,
+                         AttendanceMode = thisClass.AttendanceMode,
+                     }
+                     : null;
+
+                hasFoundOccurrence = true;
+                return (
+                    hasFoundOccurrence,
+                    thisClass,
+                    occurrence,
+                    bookedOrderItemInfo
+                );
+            }
+        }
+
+        public (bool, FacilityUseTable, SlotTable, BookedOrderItemInfo) GetSlotAndBookedOrderItemInfoBySlotId(string uuid, long? slotId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<SlotTable>()
+                    .LeftJoin<SlotTable, FacilityUseTable>()
+                    .Where((x) => x.Id == slotId);
+                var rows = db.SelectMulti<SlotTable, FacilityUseTable>(query);
+                var hasFoundOccurrence = false;
+                if (!rows.Any())
+                {
+                    return (hasFoundOccurrence, null, null, null);
+                }
+                var (slot, facilityUse) = rows.FirstOrDefault();
+                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid && x.SlotId == slotId);
+                var bookedOrderItemInfo = (orderItem != null && orderItem.Status == BookingStatus.Confirmed) ?
+                     new BookedOrderItemInfo
+                     {
+                         OrderItemId = orderItem.Id,
+                         PinCode = orderItem.PinCode,
+                         ImageUrl = orderItem.ImageUrl,
+                         BarCodeText = orderItem.BarCodeText,
+                     }
+                     : null;
+
+                hasFoundOccurrence = true;
+                return (
+                    hasFoundOccurrence,
+                    facilityUse,
+                    slot,
+                    bookedOrderItemInfo
+                );
+            }
+        }
+
         public FakeDatabaseDeleteOrderResult DeleteOrder(string clientId, string uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())
@@ -712,7 +786,7 @@ namespace OpenActive.FakeDatabase.NET
             return (ReserveOrderItemsResult.Success, null, null);
         }
 
-        public struct BookedOrderItemInfo
+        public class BookedOrderItemInfo
         {
             public long OrderItemId { get; set; }
             public string PinCode { get; set; }
@@ -1156,6 +1230,30 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     return FakeDatabaseBookOrderProposalResult.OrderWasNotFound;
                 }
+            }
+        }
+
+        public long GetNumberOfOtherLeaseForOccurrence(string uuid, long? occurrenceId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Count<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
+                                                 x.OccurrenceId == occurrenceId &&
+                                                 x.OrderId != uuid);
+            }
+        }
+
+        public long GetNumberOfOtherLeasesForSlot(string uuid, long? slotId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Count<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
+                                                 x.SlotId == slotId &&
+                                                 x.OrderId != uuid);
             }
         }
 
