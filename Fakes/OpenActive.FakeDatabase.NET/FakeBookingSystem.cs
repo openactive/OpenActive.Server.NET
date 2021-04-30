@@ -184,7 +184,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
+        public static bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
         {
             var db = transaction.DatabaseConnection;
 
@@ -198,6 +198,8 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
+                    BrokerUrl = brokerUrl,
+                    BrokerTelephone = brokerTelephone,
                     SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
                     OrderMode = OrderMode.Lease,
@@ -216,6 +218,8 @@ namespace OpenActive.FakeDatabase.NET
             {
                 existingOrder.BrokerRole = brokerRole;
                 existingOrder.BrokerName = brokerName;
+                existingOrder.BrokerUrl = brokerUrl;
+                existingOrder.BrokerTelephone = brokerTelephone;
                 existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
                 existingOrder.OrderMode = OrderMode.Lease;
@@ -525,7 +529,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, Guid? proposalVersionUuid, ProposalStatus? proposalStatus)
+        public static bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction, Guid? proposalVersionUuid, ProposalStatus? proposalStatus)
         {
             var db = transaction.DatabaseConnection;
 
@@ -539,6 +543,8 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
+                    BrokerUrl = brokerUrl,
+                    BrokerTelephone = brokerTelephone,
                     SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
                     PaymentIdentifier = paymentIdentifier,
@@ -560,6 +566,8 @@ namespace OpenActive.FakeDatabase.NET
             {
                 existingOrder.BrokerRole = brokerRole;
                 existingOrder.BrokerName = brokerName;
+                existingOrder.BrokerUrl = brokerUrl;
+                existingOrder.BrokerTelephone = brokerTelephone;
                 existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
                 existingOrder.PaymentIdentifier = paymentIdentifier;

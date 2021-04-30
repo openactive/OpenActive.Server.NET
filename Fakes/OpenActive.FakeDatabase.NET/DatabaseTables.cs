@@ -117,6 +117,8 @@ namespace OpenActive.FakeDatabase.NET
         public bool CustomerIsOrganization { get; set; }
         public BrokerRole BrokerRole { get; set; }
         public string BrokerName { get; set; }
+        public Uri BrokerUrl { get; set; }
+        public string BrokerTelephone { get; set; }
         public string CustomerEmail { get; set; }
         public string PaymentIdentifier { get; set; }
         public decimal TotalOrderPrice { get; set; }
