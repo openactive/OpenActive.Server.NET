@@ -262,6 +262,7 @@ namespace BookingSystem
             if (!responseOrder.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
 
+            var customerType = flowContext.Customer == null ? CustomerType.None : (flowContext.Customer.GetType() == typeof(Organization) ? CustomerType.Organization : CustomerType.Person);
             var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
@@ -270,8 +271,17 @@ namespace BookingSystem
                 flowContext.Broker.Url,
                 flowContext.Broker.Telephone,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer?.Email,
+                customerType == CustomerType.None ? null : flowContext.Customer.Email,
+                customerType,
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? flowContext.Customer.Name : null),
+                customerType == CustomerType.None ? null : flowContext.Customer.Identifier.HasValue ? flowContext.Customer.Identifier.Value.ToString() : null,
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.GivenName),
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.FamilyName),
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.Telephone),
                 flowContext.Payment?.Identifier,
+                flowContext.Payment?.Name,
+                flowContext.Payment?.PaymentProviderId,
+                flowContext.Payment?.AccountId,
                 responseOrder.TotalPaymentDue.Price.Value,
                 databaseTransaction.FakeDatabaseTransaction,
                 null,
@@ -291,6 +301,7 @@ namespace BookingSystem
                 throw new OpenBookingException(new OpenBookingError(), "Price must be set on TotalPaymentDue");
 
             var version = Guid.NewGuid();
+            var customerType = flowContext.Customer == null ? CustomerType.None : (flowContext.Customer.GetType() == typeof(Organization) ? CustomerType.Organization : CustomerType.Person);
             var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
@@ -299,8 +310,17 @@ namespace BookingSystem
                 flowContext.Broker.Url,
                 flowContext.Broker.Telephone,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
-                flowContext.Customer?.Email,
+                customerType == CustomerType.None ? null : flowContext.Customer.Email,
+                customerType,
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? flowContext.Customer.Name : null),
+                customerType == CustomerType.None ? null : flowContext.Customer.Identifier.HasValue ? flowContext.Customer.Identifier.Value.ToString() : null,
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.GivenName),
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.FamilyName),
+                customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? null : flowContext.Customer.Telephone),
                 flowContext.Payment?.Identifier,
+                flowContext.Payment?.Name,
+                flowContext.Payment?.PaymentProviderId,
+                flowContext.Payment?.AccountId,
                 responseOrderProposal.TotalPaymentDue.Price.Value,
                 databaseTransaction.FakeDatabaseTransaction,
                 version,
@@ -437,7 +457,7 @@ namespace BookingSystem
             }).ToList();
             order.OrderedItem = mappedOrderItems;
 
-            // These additional properties that are only available in the Order Status endpoint
+            // These additional properties that are only available in the Order Status endpoint or B after P+A
             order.Seller = new ReferenceValue<ILegalEntity>(seller);
             order.BrokerRole = BrokerRoleToBrokerType(dbOrder.BrokerRole);
             order.Broker = order.BrokerRole == BrokerType.NoBroker ? null : new Organization
@@ -446,10 +466,38 @@ namespace BookingSystem
                 Url = dbOrder.BrokerUrl,
                 Telephone = dbOrder.BrokerTelephone
             };
-            order.Customer = new Person
+            order.BrokerRole = BrokerRoleToBrokerType(dbOrder.BrokerRole);
+            if (dbOrder.CustomerType == CustomerType.Organization)
             {
-                Email = dbOrder.CustomerEmail
-            };
+                order.Customer = new Organization
+                {
+                    Email = dbOrder.CustomerEmail,
+                    Name = dbOrder.CustomerOrganizationName,
+                };
+            }
+            else if (dbOrder.CustomerType == CustomerType.Person)
+            {
+                order.Customer = new Person
+                {
+                    Email = dbOrder.CustomerEmail,
+                    Identifier = dbOrder.CustomerIdentifier,
+                    GivenName = dbOrder.CustomerGivenName,
+                    FamilyName = dbOrder.CustomerFamilyName,
+                    Telephone = dbOrder.CustomerTelephone,
+                };
+
+            }
+            // Payment Identifier is mandatory for non-free sessions
+            if (dbOrder.PaymentIdentifier != null)
+            {
+                order.Payment = new Payment
+                {
+                    Identifier = dbOrder.PaymentIdentifier,
+                    PaymentProviderId = dbOrder.PaymentProviderId,
+                    AccountId = dbOrder.PaymentAccountId,
+                    Name = dbOrder.PaymentName
+                };
+            }
 
             return order;
         }

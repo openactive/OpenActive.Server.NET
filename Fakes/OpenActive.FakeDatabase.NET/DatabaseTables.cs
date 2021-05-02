@@ -114,13 +114,22 @@ namespace OpenActive.FakeDatabase.NET
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; }
-        public bool CustomerIsOrganization { get; set; }
+        public bool? CustomerIsOrganization { get; set; }
+        public CustomerType CustomerType { get; set; }
         public BrokerRole BrokerRole { get; set; }
         public string BrokerName { get; set; }
         public Uri BrokerUrl { get; set; }
         public string BrokerTelephone { get; set; }
         public string CustomerEmail { get; set; }
+        public string CustomerIdentifier { get; set; }
+        public string CustomerGivenName { get; set; }
+        public string CustomerFamilyName { get; set; }
+        public string CustomerTelephone { get; set; }
+        public string CustomerOrganizationName { get; set; }
         public string PaymentIdentifier { get; set; }
+        public string PaymentName { get; set; }
+        public string PaymentProviderId { get; set; }
+        public string PaymentAccountId { get; set; }
         public decimal TotalOrderPrice { get; set; }
         public OrderMode OrderMode { get; set; }
         public DateTime LeaseExpires { get; set; }

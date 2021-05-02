@@ -87,10 +87,11 @@ namespace OpenActive.Server.NET.StoreBooking
             SetOrderItemId(flowContext, orderItemId, null);
         }
 
-        private void SetOrderItemId(StoreBookingFlowContext flowContext, long? orderItemIdLong, string orderItemIdString)
+        private void SetOrderItemId(StoreBookingFlowContext flowContext, long? orderItemIdLong, string orderItemIdString, bool belongsToOrderProposal = false)
         {
             if (flowContext == null) throw new ArgumentNullException(nameof(flowContext));
             if (ResponseOrderItem == null) throw new NotSupportedException("SetOrderItemId cannot be used before SetResponseOrderItem.");
+
             ResponseOrderItemId = new OrderIdComponents
             {
                 uuid = flowContext.OrderId.uuid,
@@ -360,7 +361,8 @@ namespace OpenActive.Server.NET.StoreBooking
             }
             order.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
 
-            OrderCalculations.AugmentOrderWithCalculations(
+            // Add totals to the resulting Order
+            OrderCalculations.AugmentOrderWithTotals(
                 order, flowContext, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation);
 
             // TODO: Should other properties be extracted from the flowContext for consistency, or do we trust the internals not to create excessive props?
