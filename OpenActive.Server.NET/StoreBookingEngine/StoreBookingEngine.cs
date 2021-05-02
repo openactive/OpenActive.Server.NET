@@ -386,12 +386,25 @@ namespace OpenActive.Server.NET.StoreBooking
             {
                 var orderedItemId = orderItem.OrderedItem.IdReference;
                 var acceptedOfferId = orderItem.AcceptedOffer.IdReference;
+
+                if (orderedItemId == null)
+                {
+                    return new UnknownOrderItemContext(index, orderItem,
+                        new IncompleteOrderItemError(), "orderedItem @id was not provided");
+                }
+
+                if (acceptedOfferId == null)
+                {
+                    return new UnknownOrderItemContext(index, orderItem,
+                        new IncompleteOrderItemError(), "acceptedOffer @id was not provided");
+                }
+
                 var idComponents = base.ResolveOpportunityID(orderedItemId, acceptedOfferId);
 
                 if (idComponents == null)
                 {
                     return new UnknownOrderItemContext(index, orderItem,
-                        new InvalidOpportunityOrOfferIdError(), $"Opportunity and Offer ID pair are not in the expected format: '{orderedItemId}' and '{acceptedOfferId}'");
+                        new InvalidOpportunityOrOfferIdError(), $"Opportunity @id and Offer @id pair are not in the expected format: '{orderedItemId}' and '{acceptedOfferId}'");
                 }
 
                 if (idComponents.OpportunityType == null)
@@ -489,12 +502,6 @@ namespace OpenActive.Server.NET.StoreBooking
             if (order.BrokerRole != BrokerType.NoBroker && (order.Broker == null || string.IsNullOrWhiteSpace(order.Broker.Name)))
             {
                 throw new OpenBookingException(new IncompleteBrokerDetailsError());
-            }
-
-            // Throw error on Incomplete Order Item Error if OrderedItem or AcceptedOffer is null or their Urls don't match.
-            if ((context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2 || context.Stage == FlowStage.B) && order.OrderedItem.Any(orderItem => orderItem.OrderedItem.IdReference == null || orderItem.AcceptedOffer.IdReference == null))
-            {
-                throw new OpenBookingException(new IncompleteOrderItemError());
             }
 
             // Throw error on incomplete customer details if C2, P or B if Broker type is not ResellerBroker
