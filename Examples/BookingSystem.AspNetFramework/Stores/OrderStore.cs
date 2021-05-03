@@ -219,6 +219,8 @@ namespace BookingSystem
                 flowContext.OrderId.uuid,
                 brokerRole,
                 flowContext.Broker.Name,
+                flowContext.Broker.Url,
+                flowContext.Broker.Telephone,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer?.Email,
                 leaseExpires,
@@ -266,6 +268,8 @@ namespace BookingSystem
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
+                flowContext.Broker.Url,
+                flowContext.Broker.Telephone,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 customerType == CustomerType.None ? null : flowContext.Customer.Email,
                 customerType,
@@ -303,6 +307,8 @@ namespace BookingSystem
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
+                flowContext.Broker.Url,
+                flowContext.Broker.Telephone,
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 customerType == CustomerType.None ? null : flowContext.Customer.Email,
                 customerType,
@@ -453,9 +459,12 @@ namespace BookingSystem
 
             // These additional properties that are only available in the Order Status endpoint or B after P+A
             order.Seller = new ReferenceValue<ILegalEntity>(seller);
-            order.Broker = new Organization
+            order.BrokerRole = BrokerRoleToBrokerType(dbOrder.BrokerRole);
+            order.Broker = order.BrokerRole == BrokerType.NoBroker ? null : new Organization
             {
-                Name = dbOrder.BrokerName
+                Name = dbOrder.BrokerName,
+                Url = dbOrder.BrokerUrl,
+                Telephone = dbOrder.BrokerTelephone
             };
             order.BrokerRole = BrokerRoleToBrokerType(dbOrder.BrokerRole);
             if (dbOrder.CustomerType == CustomerType.Organization)

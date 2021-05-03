@@ -280,18 +280,18 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public static RequiredStatusType? GetRequiredStatusType(IReadOnlyCollection<OrderItem> orderItems)
         {
-            if (orderItems.Any(x => x.AcceptedOffer.Object.OpenBookingPrepayment == RequiredStatusType.Required ||
-                                             x.AcceptedOffer.Object.Price != 0 && x.AcceptedOffer.Object.OpenBookingPrepayment == null))
+            if (orderItems.Any(x => x.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Required ||
+                                             x.AcceptedOffer.Object?.Price != 0 && x.AcceptedOffer.Object?.OpenBookingPrepayment == null))
                 return RequiredStatusType.Required;
 
-            if (orderItems.Any(x => x.AcceptedOffer.Object.OpenBookingPrepayment == RequiredStatusType.Optional) &&
-                orderItems.All(x => x.AcceptedOffer.Object.OpenBookingPrepayment == RequiredStatusType.Optional ||
-                                             x.AcceptedOffer.Object.OpenBookingPrepayment == RequiredStatusType.Unavailable ||
-                                             x.AcceptedOffer.Object.Price == 0 && x.AcceptedOffer.Object.OpenBookingPrepayment == null))
+            if (orderItems.Any(x => x.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Optional) &&
+                orderItems.All(x => x.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Optional ||
+                                             x.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Unavailable ||
+                                             x.AcceptedOffer.Object?.Price == 0 && x.AcceptedOffer.Object?.OpenBookingPrepayment == null))
                 return RequiredStatusType.Optional;
 
-            if (orderItems.All(x => x.AcceptedOffer.Object.OpenBookingPrepayment == RequiredStatusType.Unavailable ||
-                                             x.AcceptedOffer.Object.Price == 0))
+            if (orderItems.All(x => x.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Unavailable ||
+                                             x.AcceptedOffer.Object?.Price == 0))
                 return RequiredStatusType.Unavailable;
 
             return null;

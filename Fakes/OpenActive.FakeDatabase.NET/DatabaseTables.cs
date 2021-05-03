@@ -118,6 +118,8 @@ namespace OpenActive.FakeDatabase.NET
         public CustomerType CustomerType { get; set; }
         public BrokerRole BrokerRole { get; set; }
         public string BrokerName { get; set; }
+        public Uri BrokerUrl { get; set; }
+        public string BrokerTelephone { get; set; }
         public string CustomerEmail { get; set; }
         public string CustomerIdentifier { get; set; }
         public string CustomerGivenName { get; set; }

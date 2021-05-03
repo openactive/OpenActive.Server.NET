@@ -191,7 +191,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
+        public static bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
         {
             var db = transaction.DatabaseConnection;
 
@@ -205,6 +205,8 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
+                    BrokerUrl = brokerUrl,
+                    BrokerTelephone = brokerTelephone,
                     SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
                     OrderMode = OrderMode.Lease,
@@ -223,6 +225,8 @@ namespace OpenActive.FakeDatabase.NET
             {
                 existingOrder.BrokerRole = brokerRole;
                 existingOrder.BrokerName = brokerName;
+                existingOrder.BrokerUrl = brokerUrl;
+                existingOrder.BrokerTelephone = brokerTelephone;
                 existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
                 existingOrder.OrderMode = OrderMode.Lease;
@@ -533,7 +537,7 @@ namespace OpenActive.FakeDatabase.NET
         }
 
         public static bool AddOrder(
-            string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId,
+            string clientId, string uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId,
             string customerEmail, CustomerType customerType, string customerOrganizationName,
             string customerIdentifier, string customerGivenName, string customerFamilyName, string customerTelephone,
             string paymentIdentifier, string paymentName, string paymentProviderId, string paymentAccountId,
@@ -551,6 +555,8 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
+                    BrokerUrl = brokerUrl,
+                    BrokerTelephone = brokerTelephone,
                     SellerId = sellerId ?? 1,
                     CustomerEmail = customerEmail,
                     CustomerType = customerType,
@@ -581,6 +587,8 @@ namespace OpenActive.FakeDatabase.NET
             {
                 existingOrder.BrokerRole = brokerRole;
                 existingOrder.BrokerName = brokerName;
+                existingOrder.BrokerUrl = brokerUrl;
+                existingOrder.BrokerTelephone = brokerTelephone;
                 existingOrder.SellerId = sellerId ?? 1;
                 existingOrder.CustomerEmail = customerEmail;
                 existingOrder.CustomerType = customerType;
