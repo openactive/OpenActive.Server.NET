@@ -233,6 +233,10 @@ namespace OpenActive.FakeDatabase.NET
                 existingOrder.LeaseExpires = leaseExpires.DateTime;
                 db.Update(existingOrder);
 
+                // TODO: Remove this and improve leasing logic to add/update rather than delete/replace
+                // Remove previous lease
+                db.Delete<OrderItemsTable>(x => x.OrderId == existingOrder.OrderId);
+
                 return true;
             }
         }
