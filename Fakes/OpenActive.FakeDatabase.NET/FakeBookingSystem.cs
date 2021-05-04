@@ -1107,9 +1107,6 @@ namespace OpenActive.FakeDatabase.NET
                     return false;
                 var order = orderItemsAndOrder.First().Item2;
                 var orderItems = orderItemsAndOrder.Select(x => x.Item1);
-                // This makes the call idempotent
-                if (orderItemsAndOrder.First().Item2.ProposalStatus == ProposalStatus.SellerAccepted)
-                    return true;
 
                 var index = Faker.Random.Int(0, orderItemsAndOrder.Count - 1);
                 var orderItem = orderItemsAndOrder[index].Item1;
