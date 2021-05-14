@@ -80,10 +80,9 @@ namespace BookingSystem
                         AddressCountry = "GB"
                     },
                     IsOpenBookingAllowed = true,
-                }
-                : (ILegalEntity) new Organization
+                } : (ILegalEntity) new Organization
                 {
-                    Id = RenderSellerId(new SellerIdComponents {SellerIdLong = seller.Id}),
+                    Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
                     Name = seller.Name,
                     TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
                     LegalName = seller.Name,
@@ -106,7 +105,9 @@ namespace BookingSystem
                     },
                     IsOpenBookingAllowed = true,
                 };
+                
             }
         }
     }
+    
 }

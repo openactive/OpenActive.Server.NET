@@ -34,5 +34,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         }
 
         protected abstract ValueTask<ILegalEntity> GetSeller(SellerIdComponents sellerId);
+        
     }
 }
