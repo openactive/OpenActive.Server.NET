@@ -30,9 +30,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         internal ValueTask<ILegalEntity> GetSellerById(SellerIdComponents sellerIdComponents)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            return GetSellerAsync(sellerIdComponents);
+            return GetSeller(sellerIdComponents);
         }
 
-        protected abstract ValueTask<ILegalEntity> GetSellerAsync(SellerIdComponents sellerId);
+        protected abstract ValueTask<ILegalEntity> GetSeller(SellerIdComponents sellerId);
     }
 }

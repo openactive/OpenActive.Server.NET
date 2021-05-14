@@ -23,7 +23,7 @@ namespace BookingSystem
         }
 
         // If the Seller is not found, simply return null to generate the correct Open Booking error
-        protected async override ValueTask<ILegalEntity> GetSellerAsync(SellerIdComponents sellerIdComponents)
+        protected async override ValueTask<ILegalEntity> GetSeller(SellerIdComponents sellerIdComponents)
         {
             // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required for an actual implementation.
             if (_useSingleSellerMode)
@@ -65,49 +65,47 @@ namespace BookingSystem
                     return null;
                 }
 
-                return 
-                    seller.IsIndividual
-                    ? new Person
+                return seller.IsIndividual ? new Person
+                {
+                    Id = RenderSellerId(new SellerIdComponents {SellerIdLong = seller.Id}),
+                    Name = seller.Name,
+                    TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
+                    LegalName = seller.Name,
+                    Address = new PostalAddress
                     {
-                        Id = RenderSellerId(new SellerIdComponents {SellerIdLong = seller.Id}),
-                        Name = seller.Name,
-                        TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
-                        LegalName = seller.Name,
-                        Address = new PostalAddress
-                        {
-                            StreetAddress = "1 Fake Place",
-                            AddressLocality = "Faketown",
-                            AddressRegion = "Oxfordshire",
-                            PostalCode = "OX1 1AA",
-                            AddressCountry = "GB"
-                        },
-                        IsOpenBookingAllowed = true,
-                    }
-                    : (ILegalEntity) new Organization
+                        StreetAddress = "1 Fake Place",
+                        AddressLocality = "Faketown",
+                        AddressRegion = "Oxfordshire",
+                        PostalCode = "OX1 1AA",
+                        AddressCountry = "GB"
+                    },
+                    IsOpenBookingAllowed = true,
+                }
+                : (ILegalEntity) new Organization
+                {
+                    Id = RenderSellerId(new SellerIdComponents {SellerIdLong = seller.Id}),
+                    Name = seller.Name,
+                    TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
+                    LegalName = seller.Name,
+                    Address = new PostalAddress
                     {
-                        Id = RenderSellerId(new SellerIdComponents {SellerIdLong = seller.Id}),
-                        Name = seller.Name,
-                        TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
-                        LegalName = seller.Name,
-                        Address = new PostalAddress
+                        StreetAddress = "1 Hidden Gem",
+                        AddressLocality = "Another town",
+                        AddressRegion = "Oxfordshire",
+                        PostalCode = "OX1 1AA",
+                        AddressCountry = "GB"
+                    },
+                    TermsOfService = new List<Terms>
+                    {
+                        new PrivacyPolicy
                         {
-                            StreetAddress = "1 Hidden Gem",
-                            AddressLocality = "Another town",
-                            AddressRegion = "Oxfordshire",
-                            PostalCode = "OX1 1AA",
-                            AddressCountry = "GB"
-                        },
-                        TermsOfService = new List<Terms>
-                        {
-                            new PrivacyPolicy
-                            {
-                                Name = "Privacy Policy",
-                                Url = new Uri("https://example.com/privacy.html"),
-                                RequiresExplicitConsent = false
-                            }
-                        },
-                        IsOpenBookingAllowed = true,
-                    };
+                            Name = "Privacy Policy",
+                            Url = new Uri("https://example.com/privacy.html"),
+                            RequiresExplicitConsent = false
+                        }
+                    },
+                    IsOpenBookingAllowed = true,
+                };
             }
         }
     }
