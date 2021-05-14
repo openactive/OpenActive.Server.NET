@@ -27,13 +27,13 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return this.IdTemplate.RenderId(new SellerIdComponents());
         }
 
-        internal ValueTask<ILegalEntity> GetSellerById(SellerIdComponents sellerIdComponents)
+        internal async ValueTask<ILegalEntity> GetSellerById(SellerIdComponents sellerIdComponents)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            return GetSeller(sellerIdComponents);
+            return await GetSeller(sellerIdComponents);
         }
 
         protected abstract ValueTask<ILegalEntity> GetSeller(SellerIdComponents sellerId);
-        
+
     }
 }
