@@ -327,7 +327,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuid)
         {
-            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequestAsync(clientId, sellerId, uuid, OrderType.Order);
+            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
             var result = await ProcessGetOrderStatus(orderId, sellerIdComponents, seller);
             if (result == null)
             {
@@ -381,7 +381,7 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
-            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequestAsync(clientId, sellerId, uuid, orderType);
+            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, orderType);
             var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
             // Return a 409 status code if any OrderItem level errors exist
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
@@ -396,7 +396,7 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for B");
             }
-            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequestAsync(clientId, sellerId, uuid, OrderType.Order);
+            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
             var response = order.OrderProposalVersion != null ?
                  await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
                  await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
@@ -412,7 +412,7 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
             }
-            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequestAsync(clientId, sellerId, uuid, OrderType.OrderProposal);
+            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.OrderProposal);
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
         }
 
@@ -677,7 +677,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         protected abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate);
 
-        private async Task<(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)> ConstructIdsFromRequestAsync(string clientId, Uri authenticationSellerId, string uuid, OrderType orderType)
+        private async Task<(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)> ConstructIdsFromRequest(string clientId, Uri authenticationSellerId, string uuid, OrderType orderType)
         {
             var orderId = new OrderIdComponents
             {
@@ -690,7 +690,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(authenticationSellerId);
 
-            ILegalEntity seller = await settings.SellerStore.GetSellerByIdAsync(sellerIdComponents);
+            ILegalEntity seller = await settings.SellerStore.GetSellerById(sellerIdComponents);
 
             if (seller == null)
             {

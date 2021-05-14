@@ -23,13 +23,13 @@ namespace BookingSystem
         }
 
         // If the Seller is not found, simply return null to generate the correct Open Booking error
-        protected override ValueTask<ILegalEntity> GetSellerAsync(SellerIdComponents sellerIdComponents)
+        protected override async ValueTask<ILegalEntity> GetSellerAsync(SellerIdComponents sellerIdComponents)
         {
             // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required for an actual implementation.
             if (_useSingleSellerMode)
             {
                 // For Single Seller booking systems, no ID will be available from sellerIdComponents, and this data should instead come from your configuration table
-                return new ValueTask<ILegalEntity>(new Organization
+                return new Organization
                 {
                     Id = RenderSingleSellerId(),
                     Name = "Test Seller",
@@ -53,7 +53,7 @@ namespace BookingSystem
                         }
                     },
                     IsOpenBookingAllowed = true,
-                });
+                };
             }
 
             // Otherwise it may be looked up based on supplied sellerIdComponents which are extracted from the sellerId.
@@ -62,11 +62,10 @@ namespace BookingSystem
                 var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
                 if (seller == null)
                 {
-                    return new ValueTask<ILegalEntity>((ILegalEntity) null);
+                    return null;
                 }
 
-                return new ValueTask<ILegalEntity>(
-                    seller.IsIndividual
+                return seller.IsIndividual
                     ? new Person
                     {
                         Id = RenderSellerId(new SellerIdComponents {SellerIdLong = seller.Id}),
@@ -107,7 +106,7 @@ namespace BookingSystem
                             }
                         },
                         IsOpenBookingAllowed = true,
-                    });
+                    };
             }
         }
     }
