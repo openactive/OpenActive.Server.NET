@@ -3,6 +3,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 
 namespace OpenActive.Server.NET.OpenBookingHelper
@@ -26,13 +27,13 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return this.IdTemplate.RenderId(new SellerIdComponents());
         }
 
-        internal ILegalEntity GetSellerById(SellerIdComponents sellerIdComponents)
+        internal async ValueTask<ILegalEntity> GetSellerById(SellerIdComponents sellerIdComponents)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            return GetSeller(sellerIdComponents);
+            return await GetSeller(sellerIdComponents);
         }
 
-        protected abstract ILegalEntity GetSeller(SellerIdComponents sellerId);
+        protected abstract ValueTask<ILegalEntity> GetSeller(SellerIdComponents sellerId);
 
     }
 }
