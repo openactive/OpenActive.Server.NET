@@ -511,9 +511,12 @@ namespace BookingSystem
             return flowContext.Payment.AccountId != _appSettings.Payment.AccountId || flowContext.Payment.PaymentProviderId != _appSettings.Payment.PaymentProviderId;
         }
 
-        public override IDatabaseTransaction BeginOrderTransaction(FlowStage stage)
+        public override ValueTask<IDatabaseTransaction> BeginOrderTransaction(FlowStage stage)
         {
-            return new OrderTransaction();
+            // Returning new ValueTask<IDatabaseTransaction>() for sync completion
+            return new ValueTask<IDatabaseTransaction>(new OrderTransaction());
+
+            // Note that this method can also be made async for async completion
         }
     }
 }
