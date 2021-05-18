@@ -71,11 +71,11 @@ namespace OpenActive.Server.NET.CustomBooking
             // Create a lookup of each IdTemplate to pass into the appropriate RpdeGenerator
             // TODO: Output better error if there is a feed assigned across two templates
             // (there should never be, as each template represents everyting you need in one feed)
-            this.feedAssignedTemplates = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
+            this.feedAssignedTemplates = settings.IdConfiguration.SelectMany(t => t.IdConfigurations.Select(x => new
             {
                 assignedFeed = x.AssignedFeed,
                 bookablePairIdTemplate = t
-            })).SelectMany(x => x.ToList()).ToDictionary(k => k.assignedFeed, v => v.bookablePairIdTemplate);
+            })).Distinct().ToDictionary(k => k.assignedFeed, v => v.bookablePairIdTemplate);
 
             // Create a lookup for the purposes of finding arbitary IdConfigurations, for use in the store
             // TODO: Pull this and the above into a function?

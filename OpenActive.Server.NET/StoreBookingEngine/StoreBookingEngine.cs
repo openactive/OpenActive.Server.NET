@@ -564,7 +564,9 @@ namespace OpenActive.Server.NET.StoreBooking
                     CheckOrderIntegrity(order, responseOrderProposal);
 
                     // Proposal creation is atomic
-                    using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
+                    using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.EnforceSyncWithinOrderTransactions
+                        ? storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage).CheckSyncValueTaskWorkedAndReturnResult()
+                        : await storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
                     {
                         if (dbTransaction == null)
                         {
@@ -644,7 +646,9 @@ namespace OpenActive.Server.NET.StoreBooking
 
                     // Note behaviour here is to lease those items that are available to be leased, and return errors for everything else
                     // Leasing is optimistic, booking is atomic
-                    using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
+                    using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.EnforceSyncWithinOrderTransactions
+                        ? storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage).CheckSyncValueTaskWorkedAndReturnResult()
+                        : await storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
                     {
                         try
                         {
@@ -706,7 +710,9 @@ namespace OpenActive.Server.NET.StoreBooking
                     CheckOrderIntegrity(order, responseOrder);
 
                     // Booking is atomic
-                    using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
+                    using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.EnforceSyncWithinOrderTransactions
+                        ? storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage).CheckSyncValueTaskWorkedAndReturnResult()
+                        : await storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
                     {
                         if (dbTransaction == null)
                         {

@@ -26,7 +26,7 @@ namespace OpenActive.Server.NET.StoreBooking
         /// </summary>
         /// <param name="stage"></param>
         /// <returns></returns>
-        IDatabaseTransaction BeginOrderTransaction(FlowStage stage);
+        ValueTask<IDatabaseTransaction> BeginOrderTransaction(FlowStage stage);
         Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
         Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
         IStateContext InitialiseFlow(StoreBookingFlowContext flowContext);
@@ -66,7 +66,7 @@ namespace OpenActive.Server.NET.StoreBooking
         public abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents);
         public abstract Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
         public abstract Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order);
-        public abstract IDatabaseTransaction BeginOrderTransaction(FlowStage stage);
+        public abstract ValueTask<IDatabaseTransaction> BeginOrderTransaction(FlowStage stage);
 
         public abstract ValueTask<Lease> CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction);
         public ValueTask<Lease> CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
