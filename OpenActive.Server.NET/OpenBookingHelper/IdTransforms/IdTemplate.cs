@@ -529,6 +529,22 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                             throw new ArgumentException($"An integer in the template for binding {binding.Key} failed to parse.");
                         }
                     }
+                    else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(Guid?))
+                    {
+                        if (Guid.TryParse(binding.Value.Value as string, out Guid newValue))
+                        {
+                            var existingValue = componentsType.GetProperty(binding.Key).GetValue(components) as Guid?;
+                            if (existingValue != newValue && existingValue != null)
+                            {
+                                throw new BookableOpportunityAndOfferMismatchException($"Supplied Ids do not match on component '{binding.Value.Key}'");
+                            }
+                            componentsType.GetProperty(binding.Key).SetValue(components, newValue);
+                        }
+                        else
+                        {
+                            throw new ArgumentException($"A Guid in the template for binding {binding.Key} failed to parse.");
+                        }
+                    }
                     else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(string))
                     {
                         var newValue = binding.Value.Value as string;
@@ -572,7 +588,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                     }
                     else
                     {
-                        throw new ArgumentException("Only types long?, Uri, enum? and string are supported within the component class used for IdTemplate.");
+                        throw new ArgumentException("Only types long?, Uri, enum?, Guid? and string are supported within the component class used for IdTemplate.");
                     }
                 }
             }
