@@ -176,18 +176,21 @@ namespace OpenActive.FakeDatabase.NET
             {
                 var occurrenceIds = new List<long>();
                 var slotIds = new List<long>();
+                var eventIds = new List<long>();
 
                 foreach (var order in db.Select<OrderTable>(x => x.LeaseExpires < DateTimeOffset.Now))
                 {
                     // ReSharper disable twice PossibleInvalidOperationException
                     occurrenceIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value));
                     slotIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.SlotId.HasValue).Select(x => x.SlotId.Value));
+                    eventIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.EventId.HasValue).Select(x => x.EventId.Value));
                     db.Delete<OrderItemsTable>(x => x.OrderId == order.OrderId);
                     db.Delete<OrderTable>(x => x.OrderId == order.OrderId);
                 }
 
                 RecalculateSpaces(db, occurrenceIds.Distinct());
                 RecalculateSlotUses(db, slotIds.Distinct());
+                RecalculateEventSpaces(db, eventIds.Distinct());
             }
         }
 
@@ -322,28 +325,73 @@ namespace OpenActive.FakeDatabase.NET
         }
 
         /// <summary>
-        /// Update name logistics data for SessionSeries to trigger logistics change notification
+        /// Update time based logistics data for ScheduledSession to trigger logistics change notification
         /// </summary>
-        /// <param name="occurrenceId"></param>
-        /// <param name="newTitle"></param>
+        /// <param name="eventId"></param>
+        /// <param name="numberOfMins"></param>
         /// <returns></returns>
-        public bool UpdateClassTitle(long occurrenceId, string newTitle)
+        public bool UpdateEventStartAndEndTimeByPeriodInMins(long eventId, int numberOfMins)
         {
             using (var db = Mem.Database.Open())
             {
-                var query = db.From<OccurrenceTable>()
-                            .LeftJoin<OccurrenceTable, ClassTable>()
-                            .Where(x => x.Id == occurrenceId)
-                            .And<ClassTable>(y => !y.Deleted);
-                var classInstance = db.Select<ClassTable>(query).Single();
-                if (classInstance == null)
+                var @event = db.Single<ClassTable>(x => x.Id == eventId && !x.Deleted);
+                if (@event == null)
                 {
                     return false;
                 }
 
-                classInstance.Title = newTitle;
-                classInstance.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(classInstance);
+                @event.Start.AddMinutes(numberOfMins);
+                @event.End.AddMinutes(numberOfMins);
+                @event.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(@event);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update location based logistics data for an Event to trigger logistics change notification
+        /// </summary>
+        /// <param name="eventId"></param>
+        /// <param name="newLat"></param>
+        /// <param name="newLng"></param>
+        /// <returns></returns>
+        public bool UpdateEventLocationLatLng(long eventId, decimal newLat, decimal newLng)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var @event = db.Single<ClassTable>(x => x.Id == eventId && !x.Deleted);
+                if (@event == null)
+                {
+                    return false;
+                }
+
+                @event.LocationLat = newLat;
+                @event.LocationLng = newLng;
+                @event.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(@event);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update name logistics data for an Event to trigger logistics change notification
+        /// </summary>
+        /// <param name="eventId"></param>
+        /// <param name="newTitle"></param>
+        /// <returns></returns>
+        public bool UpdateEventTitle(long eventId, string newTitle)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var @event = db.Single<ClassTable>(x => x.Id == eventId && !x.Deleted);
+                if (@event == null)
+                {
+                    return false;
+                }
+
+                @event.Title = newTitle;
+                @event.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(@event);
                 return true;
             }
         }
@@ -395,6 +443,33 @@ namespace OpenActive.FakeDatabase.NET
 
                 classInstance.LocationLat = newLat;
                 classInstance.LocationLng = newLng;
+                classInstance.Modified = DateTimeOffset.Now.UtcTicks;
+                db.Update(classInstance);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Update name logistics data for SessionSeries to trigger logistics change notification
+        /// </summary>
+        /// <param name="occurrenceId"></param>
+        /// <param name="newTitle"></param>
+        /// <returns></returns>
+        public bool UpdateClassTitle(long occurrenceId, string newTitle)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var query = db.From<OccurrenceTable>()
+                            .LeftJoin<OccurrenceTable, ClassTable>()
+                            .Where(x => x.Id == occurrenceId)
+                            .And<ClassTable>(y => !y.Deleted);
+                var classInstance = db.Select<ClassTable>(query).Single();
+                if (classInstance == null)
+                {
+                    return false;
+                }
+
+                classInstance.Title = newTitle;
                 classInstance.Modified = DateTimeOffset.Now.UtcTicks;
                 db.Update(classInstance);
                 return true;
@@ -530,12 +605,14 @@ namespace OpenActive.FakeDatabase.NET
                     // ReSharper disable twice PossibleInvalidOperationException
                     var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
                     var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
+                    var eventIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.EventId.HasValue).Select(x => x.EventId.Value).Distinct();
 
                     db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid);
                     db.Delete<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid);
 
                     RecalculateSpaces(db, occurrenceIds);
                     RecalculateSlotUses(db, slotIds);
+                    RecalculateEventSpaces(db, eventIds);
                 }
             }
         }
@@ -702,6 +779,38 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public (bool, ClassTable, BookedOrderItemInfo) GetEventAndBookedOrderItemInfoByEventId(string uuid, long? eventId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                var @event = db.Single<ClassTable>(x => x.Id == eventId);
+
+                var hasFoundOccurrence = false;
+                if (@event == null)
+                {
+                    return (hasFoundOccurrence, null, null);
+                }
+
+                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid && x.EventId == eventId);
+                var bookedOrderItemInfo = (orderItem != null && orderItem.Status == BookingStatus.Confirmed) ?
+                     new BookedOrderItemInfo
+                     {
+                         OrderItemId = orderItem.Id,
+                         PinCode = orderItem.PinCode,
+                         ImageUrl = orderItem.ImageUrl,
+                         BarCodeText = orderItem.BarCodeText,
+                     }
+                     : null;
+
+                hasFoundOccurrence = true;
+                return (
+                    hasFoundOccurrence,
+                    @event,
+                    bookedOrderItemInfo
+                );
+            }
+        }
+
         public FakeDatabaseDeleteOrderResult DeleteOrder(string clientId, string uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())
@@ -727,10 +836,12 @@ namespace OpenActive.FakeDatabase.NET
 
                 var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
                 var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
+                var eventIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.EventId.HasValue).Select(x => x.EventId.Value).Distinct();
                 db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId);
 
                 RecalculateSpaces(db, occurrenceIds);
                 RecalculateSlotUses(db, slotIds);
+                RecalculateEventSpaces(db, eventIds);
 
                 return FakeDatabaseDeleteOrderResult.OrderSuccessfullyDeleted;
             }
@@ -825,6 +936,51 @@ namespace OpenActive.FakeDatabase.NET
 
             // Update number of spaces remaining for the opportunity
             RecalculateSlotUses(db, thisSlot);
+            return (ReserveOrderItemsResult.Success, null, null);
+        }
+
+        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForEvent(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long eventId, long spacesRequested)
+        {
+            var db = transaction.DatabaseConnection;
+            var thisEvent = db.Single<ClassTable>(x => x.Id == eventId && !x.Deleted);
+
+            if (thisEvent == null)
+                return (ReserveOrderItemsResult.OpportunityNotFound, null, null);
+
+            if (sellerId.HasValue && thisEvent.SellerId != sellerId)
+                return (ReserveOrderItemsResult.SellerIdMismatch, null, null);
+
+            if (thisEvent.ValidFromBeforeStartDate.HasValue && DateTime.Now < thisEvent.Start - thisEvent.ValidFromBeforeStartDate)
+                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null, null);
+
+            // Remove existing leases
+            // Note a real implementation would likely maintain existing leases instead of removing and recreating them
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == eventId);
+            RecalculateEventSpaces(db, thisEvent);
+
+            // Only lease if all spaces requested are available
+            if (thisEvent.RemainingSpaces - thisEvent.LeasedSpaces < spacesRequested)
+            {
+                var notionalRemainingSpaces = thisEvent.RemainingSpaces - thisEvent.LeasedSpaces;
+                var totalCapacityErrors = Math.Max(0, spacesRequested - notionalRemainingSpaces);
+                var capacityErrorsCausedByLeasing = Math.Min(totalCapacityErrors, thisEvent.LeasedSpaces);
+                return (ReserveOrderItemsResult.NotEnoughCapacity, totalCapacityErrors - capacityErrorsCausedByLeasing, capacityErrorsCausedByLeasing);
+            }
+
+            for (var i = 0; i < spacesRequested; i++)
+            {
+                db.Insert(new OrderItemsTable
+                {
+                    ClientId = clientId,
+                    Deleted = false,
+                    OrderId = uuid,
+                    EventId = eventId,
+                    Status = BookingStatus.None
+                });
+            }
+
+            // Update number of spaces remaining for the opportunity
+            RecalculateEventSpaces(db, thisEvent);
             return (ReserveOrderItemsResult.Success, null, null);
         }
 
@@ -982,6 +1138,74 @@ namespace OpenActive.FakeDatabase.NET
             return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
         }
 
+        // TODO this should reuse code of LeaseOrderItemsForEvent
+        public static (ReserveOrderItemsResult, List<BookedOrderItemInfo>) BookOrderItemsForEvent(
+            FakeDatabaseTransaction transaction,
+            string clientId,
+            long? sellerId,
+            string uuid,
+            long eventId,
+            Uri opportunityJsonLdId,
+            Uri offerJsonLdId,
+            long numberOfSpaces,
+            bool proposal
+            )
+        {
+            var db = transaction.DatabaseConnection;
+            var thisEvent = db.Single<ClassTable>(x => x.Id == eventId && !x.Deleted);
+
+            if (thisEvent == null)
+                return (ReserveOrderItemsResult.OpportunityNotFound, null);
+
+            if (sellerId.HasValue && thisEvent.SellerId != sellerId)
+                return (ReserveOrderItemsResult.SellerIdMismatch, null);
+
+            if (thisEvent.ValidFromBeforeStartDate.HasValue && DateTime.Now < thisEvent.Start - thisEvent.ValidFromBeforeStartDate)
+                return (ReserveOrderItemsResult.OpportunityOfferPairNotBookable, null);
+
+            // Remove existing leases
+            // Note a real implementation would likely maintain existing leases instead of removing and recreating them
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.EventId == eventId);
+            RecalculateEventSpaces(db, thisEvent);
+
+            // Only lease if all spaces requested are available
+            if (thisEvent.RemainingSpaces - thisEvent.LeasedSpaces < numberOfSpaces)
+                return (ReserveOrderItemsResult.NotEnoughCapacity, null);
+
+            var bookedOrderItemInfos = new List<BookedOrderItemInfo>();
+            for (var i = 0; i < numberOfSpaces; i++)
+            {
+                var orderItem = new OrderItemsTable
+                {
+                    ClientId = clientId,
+                    Deleted = false,
+                    OrderId = uuid,
+                    Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
+                    EventId = eventId,
+                    OpportunityJsonLdId = opportunityJsonLdId,
+                    OfferJsonLdId = offerJsonLdId,
+                    // Include the price locked into the OrderItem as the opportunity price may change
+                    Price = thisEvent.Price.Value,
+                    PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9'),
+                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
+                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
+                };
+
+                db.Save(orderItem);
+
+                bookedOrderItemInfos.Add(new BookedOrderItemInfo
+                {
+                    OrderItemId = orderItem.Id,
+                    PinCode = orderItem.PinCode,
+                    ImageUrl = orderItem.ImageUrl,
+                    BarCodeText = orderItem.BarCodeText
+                });
+            }
+
+            RecalculateEventSpaces(db, thisEvent);
+            return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
+        }
+
         public bool CancelOrderItems(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled, bool includeCancellationMessage = false)
         {
             using (var db = Mem.Database.Open())
@@ -1026,7 +1250,6 @@ namespace OpenActive.FakeDatabase.NET
                             transaction.Rollback();
                             throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the slot");
                         }
-
                         if (occurrence.Id != 0 &&
                             @class?.LatestCancellationBeforeStartDate != null &&
                             occurrence.Start - @class.LatestCancellationBeforeStartDate < now)
@@ -1034,6 +1257,14 @@ namespace OpenActive.FakeDatabase.NET
                             transaction.Rollback();
                             throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the session");
                         }
+                        if (@class.Id != 0 && @class.IsEvent && @class.LatestCancellationBeforeStartDate != null &&
+                            @class.Start - @class.LatestCancellationBeforeStartDate < now)
+                        {
+                            transaction.Rollback();
+                            throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the event");
+                        }
+
+
                         if (slot.Id != 0 && slot.AllowCustomerCancellationFullRefund == false)
                         {
                             transaction.Rollback();
@@ -1044,6 +1275,11 @@ namespace OpenActive.FakeDatabase.NET
                         {
                             transaction.Rollback();
                             throw new InvalidOperationException("Customer cancellation not permitted on this session");
+                        }
+                        if (@class.Id != 0 && @class.IsEvent && @class.AllowCustomerCancellationFullRefund == false)
+                        {
+                            transaction.Rollback();
+                            throw new InvalidOperationException("Customer cancellation not permitted on this event");
                         }
 
                         if (orderItem.Status == BookingStatus.CustomerCancelled)
@@ -1087,6 +1323,8 @@ namespace OpenActive.FakeDatabase.NET
                     // Update the number of spaces available as a result of cancellation
                     RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
                     RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                    RecalculateEventSpaces(db, updatedOrderItems.Where(x => x.EventId.HasValue).Select(x => x.EventId.Value).Distinct());
+
                 }
 
                 transaction.Commit();
@@ -1151,6 +1389,16 @@ namespace OpenActive.FakeDatabase.NET
 
                     orderItem.OccurrenceId = occurrence.Id;
                 }
+                else if (orderItem.EventId.HasValue)
+                {
+                    var oldEvent = db.Single<ClassTable>(c => c.Id == orderItem.EventId.Value);
+                    var newEvent = db.Single<ClassTable>(c => c.Id != orderItem.EventId.Value && c.Price <= orderItem.Price && c.IsEvent);
+
+                    // Hack to replace JSON LD Ids
+                    orderItem.OpportunityJsonLdId = new Uri(orderItem.OpportunityJsonLdId.ToString().Replace($"events/{oldEvent.Id}", $"events/{newEvent.Id}"));
+                    orderItem.OfferJsonLdId = new Uri(orderItem.OfferJsonLdId.ToString().Replace($"events/{oldEvent.Id}", $"events/{newEvent.Id}"));
+
+                }
                 else
                 {
                     return false;
@@ -1167,6 +1415,7 @@ namespace OpenActive.FakeDatabase.NET
                 // Update the number of spaces available as a result of cancellation
                 RecalculateSpaces(db, orderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
                 RecalculateSlotUses(db, orderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                RecalculateEventSpaces(db, orderItems.Where(x => x.EventId.HasValue).Select(x => x.EventId.Value).Distinct());
                 return true;
             }
         }
@@ -1262,6 +1511,7 @@ namespace OpenActive.FakeDatabase.NET
                         // Update the number of spaces available as a result of cancellation
                         RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
                         RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                        RecalculateEventSpaces(db, updatedOrderItems.Where(x => x.EventId.HasValue).Select(x => x.EventId.Value).Distinct());
                     }
                     return FakeDatabaseBookOrderProposalResult.OrderSuccessfullyBooked;
                 }
@@ -1296,6 +1546,18 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public long GetNumberOfOtherLeasesForEvent(string uuid, long? eventId)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                return db.Count<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
+                                                 x.EventId == eventId &&
+                                                 x.OrderId != uuid);
+            }
+        }
+
         public bool RejectOrderProposal(string clientId, long? sellerId, string uuid, bool customerRejected)
         {
             using (var db = Mem.Database.Open())
@@ -1319,6 +1581,7 @@ namespace OpenActive.FakeDatabase.NET
                         List<OrderItemsTable> updatedOrderItems = db.Select<OrderItemsTable>(x => (clientId == null || x.ClientId == clientId) && x.OrderId == order.OrderId).ToList();
                         RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
                         RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                        RecalculateEventSpaces(db, updatedOrderItems.Where(x => x.EventId.HasValue).Select(x => x.EventId.Value).Distinct());
                     }
                     return true;
                 }
@@ -1384,6 +1647,33 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public static void RecalculateEventSpaces(IDbConnection db, IEnumerable<long> eventIds)
+        {
+            foreach (var eventId in eventIds)
+            {
+                var thisEvent = db.Single<ClassTable>(x => x.Id == eventId && !x.Deleted);
+                RecalculateEventSpaces(db, thisEvent);
+            }
+        }
+
+        public static void RecalculateEventSpaces(IDbConnection db, ClassTable @event)
+        {
+            if (@event == null)
+                return;
+
+            // Update number of leased spaces remaining for the opportunity
+            var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == @event.Id).Count();
+            @event.LeasedSpaces = leasedSpaces;
+
+            // Update number of actual spaces remaining for the opportunity
+            var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == @event.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+            @event.RemainingSpaces = @event.TotalSpaces - totalSpacesTaken;
+
+            // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
+            @event.Modified = DateTimeOffset.Now.UtcTicks;
+            db.Update(@event);
+        }
+
         public static FakeDatabase GetPrepopulatedFakeDatabase()
         {
             var database = new FakeDatabase();
@@ -1395,10 +1685,55 @@ namespace OpenActive.FakeDatabase.NET
                 CreateSellerUsers(db);
                 CreateFakeClasses(db);
                 CreateFakeFacilitiesAndSlots(db);
+                CreateFakeEvents(db);
                 CreateBookingPartners(db);
                 transaction.Commit();
             }
             return database;
+        }
+
+        private static void CreateFakeEvents(IDbConnection db)
+        {
+            var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
+
+            var events = opportunitySeeds
+                .Select(seed => Enumerable.Range(0, 10)
+                    .Select((_) =>
+                {
+                    var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
+                    var price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20));
+                    var startTime = seed.RandomStartDate();
+                    var totalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3);
+
+                    return new ClassTable
+                    {
+                        Id = seed.Id,
+                        Deleted = false,
+                        Title = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping")}",
+                        Price = price,
+                        Prepayment = price == 0
+                            ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
+                            : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                        RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
+                        RequiresAdditionalDetails = requiresAdditionalDetails,
+                        RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
+                        RequiresApproval = seed.RequiresApproval,
+                        AllowsProposalAmendment = seed.RequiresApproval ? Faker.Random.Bool() : false,
+                        LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
+                        SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
+                        ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
+                        AttendanceMode = Faker.PickRandom<AttendanceMode>(),
+                        AllowCustomerCancellationFullRefund = Faker.Random.Bool(),
+                        Start = startTime,
+                        End = startTime + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                        TotalSpaces = totalSpaces,
+                        RemainingSpaces = totalSpaces,
+                        IsEvent = true
+                    };
+                })
+            ).SelectMany(os => os);
+
+            db.InsertAll(events);
         }
 
         private static void CreateFakeFacilitiesAndSlots(IDbConnection db)
@@ -1489,7 +1824,8 @@ namespace OpenActive.FakeDatabase.NET
                         SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                         ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
                         AttendanceMode = Faker.PickRandom<AttendanceMode>(),
-                        AllowCustomerCancellationFullRefund = Faker.Random.Bool()
+                        AllowCustomerCancellationFullRefund = Faker.Random.Bool(),
+                        IsEvent = false
                     };
                 })
                 .ToList();
@@ -1791,6 +2127,69 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public int AddEvent(
+            string testDatasetIdentifier,
+            long? sellerId,
+            string title,
+            decimal? price,
+            long totalSpaces,
+            bool requiresApproval = false,
+            bool? validFromStartDate = null,
+            bool? latestCancellationBeforeStartDate = null,
+            bool allowCustomerCancellationFullRefund = true,
+            RequiredStatusType? prepayment = null,
+            bool requiresAttendeeValidation = false,
+            bool requiresAdditionalDetails = false,
+            decimal locationLat = 0.1m,
+            decimal locationLng = 0.1m,
+            bool isOnlineOrMixedAttendanceMode = false,
+            bool allowProposalAmendment = false)
+
+        {
+            var startTime = DateTime.Now.AddDays(1);
+            var endTime = DateTime.Now.AddDays(1).AddHours(1);
+
+            using (var db = Mem.Database.Open())
+            using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
+            {
+                var @event = new ClassTable
+                {
+                    TestDatasetIdentifier = testDatasetIdentifier,
+                    Deleted = false,
+                    Title = title,
+                    Price = price,
+                    Prepayment = prepayment,
+                    SellerId = sellerId ?? 1,
+                    RequiresApproval = requiresApproval,
+                    ValidFromBeforeStartDate = validFromStartDate.HasValue
+                        ? TimeSpan.FromHours(validFromStartDate.Value ? 48 : 4)
+                        : (TimeSpan?)null,
+                    LatestCancellationBeforeStartDate = latestCancellationBeforeStartDate.HasValue
+                        ? TimeSpan.FromHours(latestCancellationBeforeStartDate.Value ? 4 : 48)
+                        : (TimeSpan?)null,
+                    RequiresAttendeeValidation = requiresAttendeeValidation,
+                    RequiresAdditionalDetails = requiresAdditionalDetails,
+                    RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
+                    AllowsProposalAmendment = allowProposalAmendment,
+                    LocationLat = locationLat,
+                    LocationLng = locationLng,
+                    AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
+                    AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
+                    Start = startTime,
+                    End = endTime,
+                    TotalSpaces = totalSpaces,
+                    RemainingSpaces = totalSpaces,
+                    Modified = DateTimeOffset.Now.UtcTicks,
+                    IsEvent = true
+                };
+                db.Save(@event);
+
+                transaction.Commit();
+
+                return (int)@event.Id;
+            }
+        }
+
         public (int, int) AddClass(
             string testDatasetIdentifier,
             long? sellerId,
@@ -1839,7 +2238,8 @@ namespace OpenActive.FakeDatabase.NET
                     LocationLng = locationLng,
                     AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
-                    Modified = DateTimeOffset.Now.UtcTicks
+                    Modified = DateTimeOffset.Now.UtcTicks,
+                    IsEvent = false
                 };
                 db.Save(@class);
 
@@ -1953,6 +2353,16 @@ namespace OpenActive.FakeDatabase.NET
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
         }
+
+        public void DeleteTestEventsFromDataset(string testDatasetIdentifier)
+        {
+            using (var db = Mem.Database.Open())
+            {
+                db.UpdateOnly(() => new ClassTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
+                    where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted && x.IsEvent);
+            }
+        }
+
         private static readonly (Bounds, Bounds?, bool)[] BucketDefinitions =
         {
             // Approval not required

@@ -52,6 +52,13 @@ namespace OpenActive.FakeDatabase.NET
         public decimal LocationLng { get; set; }
         public AttendanceMode AttendanceMode { get; set; }
         public bool AllowsProposalAmendment { get; set; }
+
+        public bool IsEvent { get; set; }
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public long TotalSpaces { get; set; }
+        public long LeasedSpaces { get; set; }
+        public long RemainingSpaces { get; set; }
     }
 
     public class OccurrenceTable : Table
@@ -67,7 +74,6 @@ namespace OpenActive.FakeDatabase.NET
         public long LeasedSpaces { get; set; }
         public long RemainingSpaces { get; set; }
     }
-
 
     public class OrderItemsTable : Table
     {
@@ -86,6 +92,10 @@ namespace OpenActive.FakeDatabase.NET
         public SlotTable SlotTable { get; set; }
         [ForeignKey(typeof(SlotTable), OnDelete = "CASCADE")]
         public long? SlotId { get; set; }
+        [Reference]
+        public ClassTable EventTable { get; set; }
+        [ForeignKey(typeof(ClassTable), OnDelete = "CASCADE")]
+        public long? EventId { get; set; }
         public BookingStatus Status { get; set; }
         public string CancellationMessage { get; set; }
         public decimal Price { get; set; }

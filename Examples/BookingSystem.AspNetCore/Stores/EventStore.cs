@@ -1,36 +1,35 @@
-﻿using OpenActive.NET;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using OpenActive.DatasetSite.NET;
-using OpenActive.Server.NET.StoreBooking;
-using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
+using OpenActive.NET;
+using OpenActive.Server.NET.OpenBookingHelper;
+using OpenActive.Server.NET.StoreBooking;
 using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
-using System.Threading.Tasks;
-
 
 namespace BookingSystem
 {
-    class SessionStore : OpportunityStore<SessionOpportunity, OrderTransaction, OrderStateContext>
+    class EventStore : OpportunityStore<EventOpportunity, OrderTransaction, OrderStateContext>
     {
         private readonly AppSettings _appSettings;
 
         // Example constructor that can set state from EngineConfig. This is not required for an actual implementation.
-        public SessionStore(AppSettings appSettings)
+        public EventStore(AppSettings appSettings)
         {
             _appSettings = appSettings;
         }
 
         Random rnd = new Random();
 
-        protected async override Task<SessionOpportunity> CreateOpportunityWithinTestDataset(
+        protected async override Task<EventOpportunity> CreateOpportunityWithinTestDataset(
             string testDatasetIdentifier,
             OpportunityType opportunityType,
             TestOpportunityCriteriaEnumeration criteria,
             TestOpenBookingFlowEnumeration openBookingFlow,
-            SellerIdComponents seller)
+              SellerIdComponents seller)
         {
             if (!_appSettings.FeatureFlags.SingleSeller && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
@@ -40,27 +39,37 @@ namespace BookingSystem
 
             switch (opportunityType)
             {
-                case OpportunityType.ScheduledSession:
-                    int classId, occurrenceId;
+                case OpportunityType.Event:
+                    int eventId;
                     switch (criteria)
                     {
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Event",
-                                rnd.Next(2) == 0 ? 0M : 14.99M,
+                                 rnd.Next(2) == 0 ? 0M : 14.99M,
                                 10,
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFree:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableUsingPayment:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
+                            eventId = FakeBookingSystem.Database.AddEvent(
+                             testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event",
                                 14.99M,
+                                10,
+                                requiresApproval);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
+                            eventId = FakeBookingSystem.Database.AddEvent(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event",
+                                0M,
                                 10,
                                 requiresApproval);
                             break;
@@ -68,7 +77,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
                             {
                                 var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
-                                (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                eventId = FakeBookingSystem.Database.AddEvent(
                                     testDatasetIdentifier,
                                     sellerId,
                                     $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Window",
@@ -82,7 +91,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableOutsideWindow:
                             {
                                 var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow;
-                                (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                eventId = FakeBookingSystem.Database.AddEvent(
                                     testDatasetIdentifier,
                                     sellerId,
                                     $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Cancellation Window",
@@ -93,46 +102,37 @@ namespace BookingSystem
                             }
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Optional",
-                                10M,
+                                14.99M,
                                 10,
                                 requiresApproval,
                                 prepayment: RequiredStatusType.Optional);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Unavailable",
-                                10M,
+                                14.99M,
                                 10,
                                 requiresApproval,
                                 prepayment: RequiredStatusType.Unavailable);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Required",
-                                10M,
+                                14.99M,
                                 10,
                                 requiresApproval,
                                 prepayment: RequiredStatusType.Required);
                             break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event",
-                                0M,
-                                10,
-                                requiresApproval);
-                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event No Spaces",
@@ -141,7 +141,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Five Spaces",
@@ -150,7 +150,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 2,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Net",
@@ -159,7 +159,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxGross:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
@@ -168,7 +168,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableSellerTermsOfService:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Seller Terms Of Service",
@@ -177,17 +177,17 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Requires Attendee Details",
-                                10M,
+                                1,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event That Requires Attendee Details",
+                                14.99M,
                                 10,
                                 requiresApproval,
                                 requiresAttendeeValidation: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAdditionalDetails:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Requires Additional Details",
@@ -196,28 +196,8 @@ namespace BookingSystem
                                 requiresApproval,
                                 requiresAdditionalDetails: true);
                             break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityOnlineBookable:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Virtual Event",
-                                10M,
-                                10,
-                                requiresApproval,
-                                isOnlineOrMixedAttendanceMode: true);
-                            break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Offline Event",
-                                10M,
-                                10,
-                                requiresApproval,
-                                isOnlineOrMixedAttendanceMode: false);
-                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithNegotiation:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Allows Proposal Amendment",
@@ -227,10 +207,10 @@ namespace BookingSystem
                                 allowProposalAmendment: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
-                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                            eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Does Not Allow Full Refund",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event Paid That Does Not Allow Full Refund",
                                 10M,
                                 10,
                                 requiresApproval,
@@ -240,13 +220,11 @@ namespace BookingSystem
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
 
-                    return new SessionOpportunity
+                    return new EventOpportunity
                     {
                         OpportunityType = opportunityType,
-                        SessionSeriesId = classId,
-                        ScheduledSessionId = occurrenceId
+                        EventId = eventId
                     };
-
                 default:
                     throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
             }
@@ -254,27 +232,27 @@ namespace BookingSystem
 
         protected async override Task DeleteTestDataset(string testDatasetIdentifier)
         {
-            FakeBookingSystem.Database.DeleteTestClassesFromDataset(testDatasetIdentifier);
+            FakeBookingSystem.Database.DeleteTestEventsFromDataset(testDatasetIdentifier);
         }
 
-        protected async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, SessionOpportunity idComponents)
+        protected async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, EventOpportunity idComponents)
         {
             switch (simulateAction)
             {
                 case ChangeOfLogisticsTimeSimulateAction _:
-                    if (!FakeBookingSystem.Database.UpdateScheduledSessionStartAndEndTimeByPeriodInMins(idComponents.ScheduledSessionId.Value, 60))
+                    if (!FakeBookingSystem.Database.UpdateEventStartAndEndTimeByPeriodInMins(idComponents.EventId.Value, 60))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
                     return;
                 case ChangeOfLogisticsNameSimulateAction _:
-                    if (!FakeBookingSystem.Database.UpdateClassTitle(idComponents.ScheduledSessionId.Value, "Updated Class Title"))
+                    if (!FakeBookingSystem.Database.UpdateEventTitle(idComponents.EventId.Value, "Updated Event Title"))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
                     return;
                 case ChangeOfLogisticsLocationSimulateAction _:
-                    if (!FakeBookingSystem.Database.UpdateSessionSeriesLocationLatLng(idComponents.ScheduledSessionId.Value, 0.2m, 0.3m))
+                    if (!FakeBookingSystem.Database.UpdateEventLocationLatLng(idComponents.EventId.Value, 0.2m, 0.3m))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
@@ -286,7 +264,7 @@ namespace BookingSystem
         }
 
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
-        protected async override Task GetOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
+        protected async override Task GetOrderItems(List<OrderItemContext<EventOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
             // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
 
@@ -296,92 +274,83 @@ namespace BookingSystem
 
             var query = orderItemContexts.Select((orderItemContext) =>
             {
-                var getOccurrenceResultAndRows = FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
-                var (hasFoundOccurrence, @class, occurrence, bookedOrderItemInfo) = getOccurrenceResultAndRows;
-
+                var getOccurrenceInfoResult = FakeBookingSystem.Database.GetEventAndBookedOrderItemInfoByEventId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.EventId);
+                var (hasFoundOccurrence, @event, bookedOrderItemInfo) = getOccurrenceInfoResult;
                 if (hasFoundOccurrence == false)
                 {
                     return null;
                 }
-                var remainingUsesIncludingOtherLeases = FakeBookingSystem.Database.GetNumberOfOtherLeaseForOccurrence(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
+                var remainingUsesIncludingOtherLeases = FakeBookingSystem.Database.GetNumberOfOtherLeasesForEvent(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.EventId);
 
                 return new
                 {
                     OrderItem = new OrderItem
                     {
                         // TODO: The static example below should come from the database (which doesn't currently support tax)
-                        UnitTaxSpecification = StoreHelper.GetUnitTaxSpecification(flowContext, _appSettings, @class.Price),
+                        UnitTaxSpecification = StoreHelper.GetUnitTaxSpecification(flowContext, _appSettings, @event.Price),
                         AcceptedOffer = new Offer
                         {
-                            // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
+                            // Note this should always use RenderOfferId with the supplied SessionFacilityOpportunity, to take into account inheritance and OfferType
                             Id = RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
-                            Price = @class.Price,
+                            Price = @event.Price,
                             PriceCurrency = "GBP",
-                            LatestCancellationBeforeStartDate = @class.LatestCancellationBeforeStartDate,
-                            OpenBookingPrepayment = @class.Prepayment.Convert(),
-                            ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
-                            AllowCustomerCancellationFullRefund = @class.AllowCustomerCancellationFullRefund,
+                            LatestCancellationBeforeStartDate = @event.LatestCancellationBeforeStartDate,
+                            OpenBookingPrepayment = @event.Prepayment.Convert(),
+                            ValidFromBeforeStartDate = @event.ValidFromBeforeStartDate,
+                            AllowCustomerCancellationFullRefund = @event.AllowCustomerCancellationFullRefund,
                         },
-                        OrderedItem = new ScheduledSession
+                        OrderedItem = new Event
                         {
-                            // Note this should always be driven from the database, with new SessionOpportunity's instantiated
-                            Id = RenderOpportunityId(new SessionOpportunity
+                            // Note this should always be driven from the database, with new FacilityOpportunity's instantiated
+                            Id = RenderOpportunityId(new EventOpportunity
                             {
-                                OpportunityType = OpportunityType.ScheduledSession,
-                                SessionSeriesId = occurrence.ClassId,
-                                ScheduledSessionId = occurrence.Id
+                                OpportunityType = OpportunityType.Event,
+                                EventId = @event.Id,
+
                             }),
-                            SuperEvent = new SessionSeries
+                            Name = @event.Title,
+                            Url = new Uri("https://example.com/events/" + @event.Id),
+                            Location = new Place
                             {
-                                Id = RenderOpportunityId(new SessionOpportunity
+                                Name = "Fake event",
+                                Geo = new GeoCoordinates
                                 {
-                                    OpportunityType = OpportunityType.SessionSeries,
-                                    SessionSeriesId = occurrence.ClassId
-                                }),
-                                Name = @class.Title,
-                                Url = new Uri("https://example.com/events/" + occurrence.ClassId),
-                                Location = new Place
-                                {
-                                    Name = "Fake fitness studio",
-                                    Geo = new GeoCoordinates
-                                    {
-                                        Latitude = 51.6201M,
-                                        Longitude = 0.302396M
-                                    }
-                                },
-                                Activity = new List<Concept>
-                                {
-                                    new Concept
-                                    {
-                                        Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
-                                        PrefLabel = "Rave Fitness",
-                                        InScheme = new Uri("https://openactive.io/activity-list")
-                                    }
+                                    Latitude = @event.LocationLat,
+                                    Longitude = @event.LocationLng,
                                 }
                             },
-                            StartDate = (DateTimeOffset)occurrence.Start,
-                            EndDate = (DateTimeOffset)occurrence.End,
-                            MaximumAttendeeCapacity = occurrence.TotalSpaces,
+                            Activity = new List<Concept>
+                            {
+                                new Concept
+                                {
+                                    Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
+                                    PrefLabel = "Rave Fitness",
+                                    InScheme = new Uri("https://openactive.io/activity-list")
+                                }
+                            },
+                            StartDate = (DateTimeOffset)@event.Start,
+                            EndDate = (DateTimeOffset)@event.End,
+                            MaximumAttendeeCapacity = @event.TotalSpaces,
                             // Exclude current Order from the returned lease count
-                            RemainingAttendeeCapacity = occurrence.RemainingSpaces - remainingUsesIncludingOtherLeases
+                            RemainingAttendeeCapacity = @event.RemainingSpaces - remainingUsesIncludingOtherLeases
                         },
                         Attendee = orderItemContext.RequestOrderItem.Attendee,
-                        AttendeeDetailsRequired = @class.RequiresAttendeeValidation
-                                         ? new List<PropertyEnumeration>
+                        AttendeeDetailsRequired = @event.RequiresAttendeeValidation
+                                        ? new List<PropertyEnumeration>
                                          {
                                              PropertyEnumeration.GivenName,
                                              PropertyEnumeration.FamilyName,
                                              PropertyEnumeration.Email,
                                              PropertyEnumeration.Telephone,
                                          }
-                                         : null,
-                        OrderItemIntakeForm = @class.RequiresAdditionalDetails
-                                     ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(@class.RequiredAdditionalDetails)
+                                        : null,
+                        OrderItemIntakeForm = @event.RequiresAdditionalDetails
+                                     ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(@event.RequiredAdditionalDetails)
                                      : null,
                         OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse,
                     },
-                    SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = @class.SellerId },
-                    @class.RequiresApproval,
+                    SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = @event.SellerId },
+                    @event.RequiresApproval,
                     BookedOrderItemInfo = bookedOrderItemInfo,
                 };
             });
@@ -418,9 +387,8 @@ namespace BookingSystem
             }
         }
 
-
         protected async override ValueTask LeaseOrderItems(
-            Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+            Lease lease, List<OrderItemContext<EventOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -428,7 +396,7 @@ namespace BookingSystem
             foreach (var ctxGroup in orderItemContexts.GroupBy(x => x.RequestBookableOpportunityOfferId))
             {
                 // Check that the Opportunity ID and type are as expected for the store 
-                if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
+                if (ctxGroup.Key.OpportunityType != OpportunityType.Event || !ctxGroup.Key.EventId.HasValue)
                 {
                     foreach (var ctx in ctxGroup)
                     {
@@ -438,12 +406,12 @@ namespace BookingSystem
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForClassOccurrence(
+                    var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForEvent(
                         databaseTransaction.FakeDatabaseTransaction,
                         flowContext.OrderId.ClientId,
                         flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                         flowContext.OrderId.uuid,
-                        ctxGroup.Key.ScheduledSessionId.Value,
+                        ctxGroup.Key.EventId.Value,
                         ctxGroup.Count());
 
                     switch (result)
@@ -499,26 +467,25 @@ namespace BookingSystem
         }
 
         //TODO: This should reuse code of LeaseOrderItem
-        protected async override ValueTask BookOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected async override ValueTask BookOrderItems(List<OrderItemContext<EventOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
-
             foreach (var ctxGroup in orderItemContexts.GroupBy(x => x.RequestBookableOpportunityOfferId))
             {
                 // Check that the Opportunity ID and type are as expected for the store 
-                if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
+                if (ctxGroup.Key.OpportunityType != OpportunityType.Event || !ctxGroup.Key.EventId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the SessionStore, during booking");
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the EventStore, during booking");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForClassOccurrence(
+                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForEvent(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
-                    ctxGroup.Key.ScheduledSessionId.Value,
+                    ctxGroup.Key.EventId.Value,
                     RenderOpportunityId(ctxGroup.Key),
                     RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
@@ -550,7 +517,7 @@ namespace BookingSystem
         }
 
         // TODO check logic here, it's just been copied from BookOrderItems. Possibly could remove duplication here.
-        protected async override ValueTask ProposeOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected async override ValueTask ProposeOrderItems(List<OrderItemContext<EventOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -558,18 +525,18 @@ namespace BookingSystem
             foreach (var ctxGroup in orderItemContexts.GroupBy(x => x.RequestBookableOpportunityOfferId))
             {
                 // Check that the Opportunity ID and type are as expected for the store 
-                if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
+                if (ctxGroup.Key.OpportunityType != OpportunityType.Event || !ctxGroup.Key.EventId.HasValue)
                 {
-                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the SessionStore, during proposal");
+                    throw new OpenBookingException(new UnableToProcessOrderItemError(), "Opportunity ID and type are as not expected for the EventStore, during proposal");
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForClassOccurrence(
+                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForEvent(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
-                    ctxGroup.Key.ScheduledSessionId.Value,
+                    ctxGroup.Key.EventId.Value,
                     RenderOpportunityId(ctxGroup.Key),
                     RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
@@ -579,7 +546,6 @@ namespace BookingSystem
                 switch (result)
                 {
                     case ReserveOrderItemsResult.Success:
-                        // Set OrderItemId for each orderItemContext
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
@@ -598,5 +564,10 @@ namespace BookingSystem
                 }
             }
         }
+
+
     }
+
+
+
 }
