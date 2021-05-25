@@ -958,7 +958,7 @@ namespace OpenActive.FakeDatabase.NET
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == eventId);
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.EventId == eventId);
             RecalculateEventSpaces(db, thisEvent);
 
             // Only lease if all spaces requested are available
