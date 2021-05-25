@@ -1685,11 +1685,11 @@ namespace OpenActive.FakeDatabase.NET
                 return;
 
             // Update number of leased spaces remaining for the opportunity
-            var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == @event.Id).Count();
+            var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.EventId == @event.Id).Count();
             @event.LeasedSpaces = leasedSpaces;
 
             // Update number of actual spaces remaining for the opportunity
-            var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == @event.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+            var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.EventId == @event.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
             @event.RemainingSpaces = @event.TotalSpaces - totalSpacesTaken;
 
             // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
