@@ -53,7 +53,9 @@ namespace OpenActive.FakeDatabase.NET
         public AttendanceMode AttendanceMode { get; set; }
         public bool AllowsProposalAmendment { get; set; }
 
-        public bool IsEvent { get; set; }
+        // Due to ORMLite free tier limit, we can only have 10 tables
+        // So instead of having a separate EventTable, Events are just Classes with time-specific info
+        public bool IsEvent { get; set; } = false;
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
         public long TotalSpaces { get; set; }

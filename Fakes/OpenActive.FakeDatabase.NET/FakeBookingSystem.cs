@@ -799,6 +799,9 @@ namespace OpenActive.FakeDatabase.NET
                          PinCode = orderItem.PinCode,
                          ImageUrl = orderItem.ImageUrl,
                          BarCodeText = orderItem.BarCodeText,
+                         MeetingId = orderItem.MeetingId,
+                         MeetingPassword = orderItem.MeetingPassword,
+                         AttendanceMode = @event.AttendanceMode,
                      }
                      : null;
 
@@ -1186,19 +1189,23 @@ namespace OpenActive.FakeDatabase.NET
                     OfferJsonLdId = offerJsonLdId,
                     // Include the price locked into the OrderItem as the opportunity price may change
                     Price = thisEvent.Price.Value,
-                    PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9'),
-                    ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
-                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
+                    PinCode = thisEvent.AttendanceMode != AttendanceMode.Online ? Faker.Random.String(length: 6, minChar: '0', maxChar: '9') : null,
+                    ImageUrl = thisEvent.AttendanceMode != AttendanceMode.Online ? Faker.Image.PlaceholderUrl(width: 25, height: 25) : null,
+                    BarCodeText = thisEvent.AttendanceMode != AttendanceMode.Online ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
+                    MeetingUrl = thisEvent.AttendanceMode != AttendanceMode.Offline ? new Uri(Faker.Internet.Url()) : null,
+                    MeetingId = thisEvent.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
+                    MeetingPassword = thisEvent.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null
                 };
-
                 db.Save(orderItem);
-
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
                     OrderItemId = orderItem.Id,
                     PinCode = orderItem.PinCode,
                     ImageUrl = orderItem.ImageUrl,
-                    BarCodeText = orderItem.BarCodeText
+                    BarCodeText = orderItem.BarCodeText,
+                    MeetingId = orderItem.MeetingId,
+                    MeetingPassword = orderItem.MeetingPassword,
+                    AttendanceMode = thisEvent.AttendanceMode,
                 });
             }
 
@@ -1227,7 +1234,7 @@ namespace OpenActive.FakeDatabase.NET
                 var query = db.From<OrderItemsTable>()
                               .LeftJoin<OrderItemsTable, SlotTable>()
                               .LeftJoin<OrderItemsTable, OccurrenceTable>()
-                              .LeftJoin<OccurrenceTable, ClassTable>()
+                              .LeftJoin<OrderItemsTable, ClassTable>()
                               .Where(whereClause);
                 var orderItems = db
                     .SelectMulti<OrderItemsTable, SlotTable, OccurrenceTable, ClassTable>(query)
@@ -1236,7 +1243,7 @@ namespace OpenActive.FakeDatabase.NET
 
 
                 var updatedOrderItems = new List<OrderItemsTable>();
-                foreach (var (orderItem, slot, occurrence, @class) in orderItems)
+                foreach (var (orderItem, slot, occurrence, @event) in orderItems)
                 {
                     var now = DateTime.Now;
 
@@ -1244,42 +1251,58 @@ namespace OpenActive.FakeDatabase.NET
                     // If it's the seller cancelling, this restriction does not apply.
                     if (customerCancelled)
                     {
-                        if (slot.Id != 0 && slot.LatestCancellationBeforeStartDate != null &&
+                        if (slot.Id != 0)
+                        {
+                            if (slot.LatestCancellationBeforeStartDate != null &&
                             slot.Start - slot.LatestCancellationBeforeStartDate < now)
-                        {
-                            transaction.Rollback();
-                            throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the slot");
+                            {
+                                transaction.Rollback();
+                                throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the slot");
+
+                            }
+
+                            if (slot.AllowCustomerCancellationFullRefund == false)
+                            {
+                                transaction.Rollback();
+                                throw new InvalidOperationException("Customer cancellation not permitted on this slot");
+                            }
                         }
-                        if (occurrence.Id != 0 &&
-                            @class?.LatestCancellationBeforeStartDate != null &&
+
+                        if (occurrence.Id != 0)
+                        {
+                            var classQuery = db.From<OccurrenceTable>()
+                                           .LeftJoin<ClassTable>()
+                                           .Where(x => x.Id == occurrence.Id);
+                            var @class = db.Single<ClassTable>(classQuery);
+
+                            if (@class?.LatestCancellationBeforeStartDate != null &&
                             occurrence.Start - @class.LatestCancellationBeforeStartDate < now)
-                        {
-                            transaction.Rollback();
-                            throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the session");
-                        }
-                        if (@class.Id != 0 && @class.IsEvent && @class.LatestCancellationBeforeStartDate != null &&
-                            @class.Start - @class.LatestCancellationBeforeStartDate < now)
-                        {
-                            transaction.Rollback();
-                            throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the event");
+                            {
+                                transaction.Rollback();
+                                throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the session");
+                            }
+                            if (@class.AllowCustomerCancellationFullRefund == false)
+                            {
+                                transaction.Rollback();
+                                throw new InvalidOperationException("Customer cancellation not permitted on this session");
+                            }
                         }
 
+                        if (@event.Id != 0)
+                        {
+                            if (@event.IsEvent && @event.LatestCancellationBeforeStartDate != null &&
+                                @event.Start - @event.LatestCancellationBeforeStartDate < now)
+                            {
+                                transaction.Rollback();
+                                throw new InvalidOperationException("Customer cancellation not permitted as outside the refund window for the event");
+                            }
 
-                        if (slot.Id != 0 && slot.AllowCustomerCancellationFullRefund == false)
-                        {
-                            transaction.Rollback();
-                            throw new InvalidOperationException("Customer cancellation not permitted on this slot");
-                        }
-                        if (occurrence.Id != 0 &&
-                            @class.AllowCustomerCancellationFullRefund == false)
-                        {
-                            transaction.Rollback();
-                            throw new InvalidOperationException("Customer cancellation not permitted on this session");
-                        }
-                        if (@class.Id != 0 && @class.IsEvent && @class.AllowCustomerCancellationFullRefund == false)
-                        {
-                            transaction.Rollback();
-                            throw new InvalidOperationException("Customer cancellation not permitted on this event");
+
+                            if (@event.IsEvent && @event.AllowCustomerCancellationFullRefund == false)
+                            {
+                                transaction.Rollback();
+                                throw new InvalidOperationException("Customer cancellation not permitted on this event");
+                            }
                         }
 
                         if (orderItem.Status == BookingStatus.CustomerCancelled)

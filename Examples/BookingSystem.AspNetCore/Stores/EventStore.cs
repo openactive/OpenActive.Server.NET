@@ -29,7 +29,7 @@ namespace BookingSystem
             OpportunityType opportunityType,
             TestOpportunityCriteriaEnumeration criteria,
             TestOpenBookingFlowEnumeration openBookingFlow,
-              SellerIdComponents seller)
+            SellerIdComponents seller)
         {
             if (!_appSettings.FeatureFlags.SingleSeller && !seller.SellerIdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
@@ -39,17 +39,16 @@ namespace BookingSystem
 
             switch (opportunityType)
             {
-                case OpportunityType.Event:
+                case OpportunityType.ScheduledSession:
                     int eventId;
                     switch (criteria)
                     {
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
                             eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Event",
-                                 rnd.Next(2) == 0 ? 0M : 14.99M,
+                                rnd.Next(2) == 0 ? 0M : 14.99M,
                                 10,
                                 requiresApproval);
                             break;
@@ -57,19 +56,10 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFree:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableUsingPayment:
                             eventId = FakeBookingSystem.Database.AddEvent(
-                             testDatasetIdentifier,
+                                testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event",
                                 14.99M,
-                                10,
-                                requiresApproval);
-                            break;
-                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                            eventId = FakeBookingSystem.Database.AddEvent(
-                                testDatasetIdentifier,
-                                sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event",
-                                0M,
                                 10,
                                 requiresApproval);
                             break;
@@ -106,7 +96,7 @@ namespace BookingSystem
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Optional",
-                                14.99M,
+                                10M,
                                 10,
                                 requiresApproval,
                                 prepayment: RequiredStatusType.Optional);
@@ -116,7 +106,7 @@ namespace BookingSystem
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Unavailable",
-                                14.99M,
+                                10M,
                                 10,
                                 requiresApproval,
                                 prepayment: RequiredStatusType.Unavailable);
@@ -126,10 +116,19 @@ namespace BookingSystem
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Required",
-                                14.99M,
+                                10M,
                                 10,
                                 requiresApproval,
                                 prepayment: RequiredStatusType.Required);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
+                            eventId = FakeBookingSystem.Database.AddEvent(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event",
+                                0M,
+                                10,
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
                             eventId = FakeBookingSystem.Database.AddEvent(
@@ -179,9 +178,9 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
                             eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
-                                1,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event That Requires Attendee Details",
-                                14.99M,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Requires Attendee Details",
+                                10M,
                                 10,
                                 requiresApproval,
                                 requiresAttendeeValidation: true);
@@ -195,6 +194,26 @@ namespace BookingSystem
                                 10,
                                 requiresApproval,
                                 requiresAdditionalDetails: true);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOnlineBookable:
+                            eventId = FakeBookingSystem.Database.AddEvent(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Virtual Event",
+                                10M,
+                                10,
+                                requiresApproval,
+                                isOnlineOrMixedAttendanceMode: true);
+                            break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
+                            eventId = FakeBookingSystem.Database.AddEvent(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Offline Event",
+                                10M,
+                                10,
+                                requiresApproval,
+                                isOnlineOrMixedAttendanceMode: false);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithNegotiation:
                             eventId = FakeBookingSystem.Database.AddEvent(
@@ -210,7 +229,7 @@ namespace BookingSystem
                             eventId = FakeBookingSystem.Database.AddEvent(
                                 testDatasetIdentifier,
                                 sellerId,
-                                "[OPEN BOOKING API TEST INTERFACE] Bookable Event Paid That Does Not Allow Full Refund",
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Does Not Allow Full Refund",
                                 10M,
                                 10,
                                 requiresApproval,
@@ -225,6 +244,7 @@ namespace BookingSystem
                         OpportunityType = opportunityType,
                         EventId = eventId
                     };
+
                 default:
                     throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
             }

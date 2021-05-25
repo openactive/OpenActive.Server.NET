@@ -37,23 +37,23 @@ namespace BookingSystem
                                 Bookable = false
                             }),
 
-                        new BookablePairIdTemplate<FacilityOpportunity> (
-                            // Opportunity
-                            new OpportunityIdConfiguration
-                            {
-                                OpportunityType = OpportunityType.FacilityUseSlot,
-                                AssignedFeed = OpportunityType.FacilityUseSlot,
-                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}",
-                                OfferIdTemplate =       "{+BaseUrl}/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}#/offers/{OfferId}",
-                                Bookable = true
-                            },
-                            // Parent
-                            new OpportunityIdConfiguration
-                            {
-                                OpportunityType = OpportunityType.FacilityUse,
-                                AssignedFeed = OpportunityType.FacilityUse,
-                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}"
-                            }),
+                        //new BookablePairIdTemplate<FacilityOpportunity> (
+                        //    // Opportunity
+                        //    new OpportunityIdConfiguration
+                        //    {
+                        //        OpportunityType = OpportunityType.FacilityUseSlot,
+                        //        AssignedFeed = OpportunityType.FacilityUseSlot,
+                        //        OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}",
+                        //        OfferIdTemplate =       "{+BaseUrl}/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}#/offers/{OfferId}",
+                        //        Bookable = true
+                        //    },
+                        //    // Parent
+                        //    new OpportunityIdConfiguration
+                        //    {
+                        //        OpportunityType = OpportunityType.FacilityUse,
+                        //        AssignedFeed = OpportunityType.FacilityUse,
+                        //        OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}"
+                        //    }),
                         new BookablePairIdTemplate<EventOpportunity>(
                             // Opportunity
                             new OpportunityIdConfiguration
@@ -144,12 +144,12 @@ namespace BookingSystem
                         {
                             OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
                         },
-                        {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
-                        },
-                        {
-                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
-                        },
+                        //{
+                        //    OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
+                        //},
+                        //{
+                        //    OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
+                        //},
                         {
                             OpportunityType.Event, new AcmeEventRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
                         }
@@ -254,9 +254,9 @@ namespace BookingSystem
                         {
                             new SessionStore(appSettings), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
-                        {
-                            new FacilityStore(appSettings), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
-                        },
+                        //{
+                        //    new FacilityStore(appSettings), new List<OpportunityType> { OpportunityType.FacilityUseSlot }
+                        //},
                         {
                             new EventStore(appSettings), new List<OpportunityType> { OpportunityType.Event }
                         }
