@@ -39,7 +39,7 @@ namespace BookingSystem
 
             switch (opportunityType)
             {
-                case OpportunityType.ScheduledSession:
+                case OpportunityType.Event:
                     int eventId;
                     switch (criteria)
                     {
