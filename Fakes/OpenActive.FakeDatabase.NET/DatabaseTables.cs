@@ -52,6 +52,9 @@ namespace OpenActive.FakeDatabase.NET
         public decimal LocationLng { get; set; }
         public AttendanceMode AttendanceMode { get; set; }
         public bool AllowsProposalAmendment { get; set; }
+        public DayOfWeek PartialScheduleDay { get; set; }
+        public DateTime PartialScheduleTime { get; set; }
+        public TimeSpan PartialScheduleDuration { get; set; }
 
         // Due to ORMLite free tier limit, we can only have 10 tables
         // So instead of having a separate EventTable, Events are just Classes with time-specific info

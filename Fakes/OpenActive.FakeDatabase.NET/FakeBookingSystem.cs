@@ -1824,7 +1824,7 @@ namespace OpenActive.FakeDatabase.NET
                     seed.Id,
                     Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
-                    seed.RequiresApproval
+                    seed.RequiresApproval,
                 })
                 .Select((@class) =>
                 {
@@ -1848,7 +1848,10 @@ namespace OpenActive.FakeDatabase.NET
                         ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
                         AttendanceMode = Faker.PickRandom<AttendanceMode>(),
                         AllowCustomerCancellationFullRefund = Faker.Random.Bool(),
-                        IsEvent = false
+                        IsEvent = false,
+                        PartialScheduleDay = Faker.PickRandom<DayOfWeek>(),
+                        PartialScheduleTime = DateTime.Parse(Faker.Random.ArrayElement(new string[] { "10:00 AM", "12:00PM", "18:00 PM", "20:00 PM" })),
+                        PartialScheduleDuration = TimeSpan.FromMinutes(Faker.Random.Int(1, 120)),
                     };
                 })
                 .ToList();
@@ -2238,6 +2241,7 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
+                var hasPartialSchedules = Faker.Random.Bool(0.3f);
                 var @class = new ClassTable
                 {
                     TestDatasetIdentifier = testDatasetIdentifier,
@@ -2262,7 +2266,10 @@ namespace OpenActive.FakeDatabase.NET
                     AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
                     Modified = DateTimeOffset.Now.UtcTicks,
-                    IsEvent = false
+                    IsEvent = false,
+                    PartialScheduleDay = Faker.PickRandom<DayOfWeek>(),
+                    PartialScheduleTime = DateTime.Parse(Faker.Random.ArrayElement(new string[] { "10:00 AM", "12:00PM", "18:00 PM", "20:00 PM" })),
+                    PartialScheduleDuration = TimeSpan.FromMinutes(Faker.Random.Int(1, 120)),
                 };
                 db.Save(@class);
 

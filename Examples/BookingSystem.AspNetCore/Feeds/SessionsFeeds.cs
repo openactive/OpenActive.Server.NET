@@ -80,6 +80,7 @@ namespace BookingSystem
                 .Join<SellerTable>()
                 .OrderBy(x => x.Modified)
                 .ThenBy(x => x.Id)
+                .Where(x => !x.IsEvent) // Filters for SessionSeries only (as opposed to Events)
                 .Where(x => !afterTimestamp.HasValue && !afterId.HasValue ||
                     x.Modified > afterTimestamp ||
                     x.Modified == afterTimestamp && x.Id > afterId &&
@@ -207,12 +208,30 @@ namespace BookingSystem
                                     PrefLabel = "Jet Skiing",
                                     InScheme = new Uri("https://openactive.io/activity-list")
                                 }
-                            }
+                            },
+                            EventSchedule = HydatePartialSchedules(result.Item1.PartialScheduleDay, result.Item1.PartialScheduleTime, result.Item1.PartialScheduleDuration),
                         }
                     }); ;
 
                 return query.ToList();
             }
+        }
+
+        private List<Schedule> HydatePartialSchedules(DayOfWeek partialScheduleDayOfWeek, DateTimeOffset partialScheduleStartTime, TimeSpan partialScheduleDuration)
+        {
+            var schedules = new List<Schedule>()
+            {
+                new PartialSchedule()
+                {
+                    ByDay = new List<string>() { $"https://schema.org/{partialScheduleDayOfWeek}" },
+                    StartTime = partialScheduleStartTime,
+                    Duration = partialScheduleDuration,
+                    EndTime = partialScheduleStartTime.Add(partialScheduleDuration),
+                    ScheduleTimezone = "Europe/London",
+                }
+            };
+
+            return schedules;
         }
     }
 }
