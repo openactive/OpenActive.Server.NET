@@ -11,68 +11,17 @@ using System.Threading.Tasks;
 
 namespace BookingSystem
 {
-    public class AcmeScheduledSessionRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<SessionOpportunity, ScheduledSession>
-    {
-        //public override string FeedPath { get; protected set; } = "example path override";
-
-        protected async override Task<List<RpdeItem<ScheduledSession>>> GetRpdeItems(long? afterTimestamp, long? afterId)
-        {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
-            {
-                var query = db.Select<OccurrenceTable>()
-                .OrderBy(x => x.Modified)
-                .ThenBy(x => x.Id)
-                .Where(x => !afterTimestamp.HasValue && !afterId.HasValue ||
-                    x.Modified > afterTimestamp ||
-                    x.Modified == afterTimestamp && x.Id > afterId &&
-                    x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
-                .Take(RpdePageSize)
-                .Select(x => new RpdeItem<ScheduledSession>
-                {
-                    Kind = RpdeKind.ScheduledSession,
-                    Id = x.Id,
-                    Modified = x.Modified,
-                    State = x.Deleted ? RpdeState.Deleted : RpdeState.Updated,
-                    Data = x.Deleted ? null : new ScheduledSession
-                    {
-                        // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
-                        // the parent class? Current thinking is it's more extensible on parent class as function signature remains
-                        // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                        Id = RenderOpportunityId(new SessionOpportunity
-                        {
-                            OpportunityType = OpportunityType.ScheduledSession,
-                            SessionSeriesId = x.ClassId,
-                            ScheduledSessionId = x.Id
-                        }),
-                        SuperEvent = RenderOpportunityId(new SessionOpportunity
-                        {
-                            OpportunityType = OpportunityType.SessionSeries,
-                            SessionSeriesId = x.ClassId
-                        }),
-                        StartDate = (DateTimeOffset)x.Start,
-                        EndDate = (DateTimeOffset)x.End,
-                        Duration = x.End - x.Start,
-                        RemainingAttendeeCapacity = x.RemainingSpaces - x.LeasedSpaces,
-                        MaximumAttendeeCapacity = x.TotalSpaces
-                    }
-                });
-
-                return query.ToList();
-            }
-        }
-    }
-
-    public class AcmeSessionSeriesRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<SessionOpportunity, SessionSeries>
+    public class AcmeEventRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<EventOpportunity, Event>
     {
         private readonly bool _useSingleSellerMode;
 
         // Example constructor that can set state from EngineConfig
-        public AcmeSessionSeriesRpdeGenerator(bool useSingleSellerMode)
+        public AcmeEventRpdeGenerator(bool useSingleSellerMode)
         {
             this._useSingleSellerMode = useSingleSellerMode;
         }
 
-        protected async override Task<List<RpdeItem<SessionSeries>>> GetRpdeItems(long? afterTimestamp, long? afterId)
+        protected async override Task<List<RpdeItem<Event>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
@@ -80,7 +29,7 @@ namespace BookingSystem
                 .Join<SellerTable>()
                 .OrderBy(x => x.Modified)
                 .ThenBy(x => x.Id)
-                .Where(x => !x.IsEvent) // Filters for SessionSeries only (as opposed to Events)
+                .Where(x => x.IsEvent) // Filters for Events only
                 .Where(x => !afterTimestamp.HasValue && !afterId.HasValue ||
                     x.Modified > afterTimestamp ||
                     x.Modified == afterTimestamp && x.Id > afterId &&
@@ -89,21 +38,21 @@ namespace BookingSystem
 
                 var query = db
                     .SelectMulti<ClassTable, SellerTable>(q)
-                    .Select(result => new RpdeItem<SessionSeries>
+                    .Select(result => new RpdeItem<Event>
                     {
-                        Kind = RpdeKind.SessionSeries,
+                        Kind = RpdeKind.Event,
                         Id = result.Item1.Id,
                         Modified = result.Item1.Modified,
                         State = result.Item1.Deleted ? RpdeState.Deleted : RpdeState.Updated,
-                        Data = result.Item1.Deleted ? null : new SessionSeries
+                        Data = result.Item1.Deleted ? null : new Event
                         {
                             // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                             // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                             // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                            Id = RenderOpportunityId(new SessionOpportunity
+                            Id = RenderOpportunityId(new EventOpportunity
                             {
-                                OpportunityType = OpportunityType.SessionSeries,
-                                SessionSeriesId = result.Item1.Id
+                                OpportunityType = OpportunityType.Event,
+                                EventId = result.Item1.Id,
                             }),
                             Name = result.Item1.Title,
                             EventAttendanceMode = FeedGeneratorHelper.MapAttendanceMode(result.Item1.AttendanceMode),
@@ -146,10 +95,10 @@ namespace BookingSystem
                             },
                             Offers = new List<Offer> { new Offer
                                 {
-                                    Id = RenderOfferId(new SessionOpportunity
+                                    Id = RenderOfferId(new EventOpportunity
                                     {
-                                        OfferOpportunityType = OpportunityType.SessionSeries,
-                                        SessionSeriesId = result.Item1.Id,
+                                        OpportunityType = OpportunityType.Event,
+                                        EventId = result.Item1.Id,
                                         OfferId = 0
                                     }),
                                     Price = result.Item1.Price,
@@ -209,29 +158,15 @@ namespace BookingSystem
                                     InScheme = new Uri("https://openactive.io/activity-list")
                                 }
                             },
-                            EventSchedule = HydatePartialSchedules(result.Item1.PartialScheduleDay, result.Item1.PartialScheduleTime, result.Item1.PartialScheduleDuration),
+                            StartDate = (DateTimeOffset)result.Item1.Start,
+                            EndDate = (DateTimeOffset)result.Item1.End,
+                            Duration = result.Item1.End - result.Item1.Start,
+                            RemainingAttendeeCapacity = result.Item1.RemainingSpaces - result.Item1.LeasedSpaces,
+                            MaximumAttendeeCapacity = result.Item1.TotalSpaces
                         }
-                    }); ;
-
+                    });
                 return query.ToList();
             }
-        }
-
-        private List<Schedule> HydatePartialSchedules(DayOfWeek partialScheduleDayOfWeek, DateTimeOffset partialScheduleStartTime, TimeSpan partialScheduleDuration)
-        {
-            var schedules = new List<Schedule>()
-            {
-                new PartialSchedule()
-                {
-                    ByDay = new List<string>() { $"https://schema.org/{partialScheduleDayOfWeek}" },
-                    StartTime = partialScheduleStartTime,
-                    Duration = partialScheduleDuration,
-                    EndTime = partialScheduleStartTime.Add(partialScheduleDuration),
-                    ScheduleTimezone = "Europe/London",
-                }
-            };
-
-            return schedules;
         }
     }
 }

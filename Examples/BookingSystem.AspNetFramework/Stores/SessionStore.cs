@@ -310,7 +310,7 @@ namespace BookingSystem
                     OrderItem = new OrderItem
                     {
                         // TODO: The static example below should come from the database (which doesn't currently support tax)
-                        UnitTaxSpecification = GetUnitTaxSpecification(flowContext, @class),
+                        UnitTaxSpecification = StoreHelper.GetUnitTaxSpecification(flowContext, _appSettings, @class.Price),
                         AcceptedOffer = new Offer
                         {
                             // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
@@ -596,30 +596,6 @@ namespace BookingSystem
                     default:
                         throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
-            }
-        }
-
-        private List<TaxChargeSpecification> GetUnitTaxSpecification(BookingFlowContext flowContext, ClassTable classes)
-        {
-            switch (flowContext.TaxPayeeRelationship)
-            {
-                case TaxPayeeRelationship.BusinessToBusiness when _appSettings.Payment.TaxCalculationB2B:
-                case TaxPayeeRelationship.BusinessToConsumer when _appSettings.Payment.TaxCalculationB2C:
-                    return new List<TaxChargeSpecification>
-                    {
-                        new TaxChargeSpecification
-                        {
-                            Name = "VAT at 20%",
-                            Price = classes.Price * (decimal?)0.2,
-                            PriceCurrency = "GBP",
-                            Rate = (decimal?)0.2
-                        }
-                    };
-                case TaxPayeeRelationship.BusinessToBusiness when !_appSettings.Payment.TaxCalculationB2B:
-                case TaxPayeeRelationship.BusinessToConsumer when !_appSettings.Payment.TaxCalculationB2C:
-                    return null;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
         }
     }

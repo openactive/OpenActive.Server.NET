@@ -80,6 +80,7 @@ namespace BookingSystem
                 .Join<SellerTable>()
                 .OrderBy(x => x.Modified)
                 .ThenBy(x => x.Id)
+                .Where(x => !x.IsEvent) // Filters for SessionSeries only (as opposed to Events)
                 .Where(x => !afterTimestamp.HasValue && !afterId.HasValue ||
                     x.Modified > afterTimestamp ||
                     x.Modified == afterTimestamp && x.Id > afterId &&
@@ -105,7 +106,7 @@ namespace BookingSystem
                                 SessionSeriesId = result.Item1.Id
                             }),
                             Name = result.Item1.Title,
-                            EventAttendanceMode = MapAttendanceMode(result.Item1.AttendanceMode),
+                            EventAttendanceMode = FeedGeneratorHelper.MapAttendanceMode(result.Item1.AttendanceMode),
                             Organizer = _useSingleSellerMode ? new Organization
                             {
                                 Id = RenderSingleSellerId(),
@@ -153,7 +154,11 @@ namespace BookingSystem
                                     }),
                                     Price = result.Item1.Price,
                                     PriceCurrency = "GBP",
-                                    OpenBookingFlowRequirement = OpenBookingFlowRequirement(result.Item1),
+                                    OpenBookingFlowRequirement = FeedGeneratorHelper.OpenBookingFlowRequirement(
+                                        result.Item1.RequiresApproval,
+                                        result.Item1.RequiresAttendeeValidation,
+                                        result.Item1.RequiresAdditionalDetails,
+                                        result.Item1.AllowsProposalAmendment),
                                     ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = result.Item1.LatestCancellationBeforeStartDate,
                                     OpenBookingPrepayment = result.Item1.Prepayment.Convert(),
@@ -203,7 +208,8 @@ namespace BookingSystem
                                     PrefLabel = "Jet Skiing",
                                     InScheme = new Uri("https://openactive.io/activity-list")
                                 }
-                            }
+                            },
+                            EventSchedule = HydatePartialSchedules(result.Item1.PartialScheduleDay, result.Item1.PartialScheduleTime, result.Item1.PartialScheduleDuration),
                         }
                     }); ;
 
@@ -211,49 +217,21 @@ namespace BookingSystem
             }
         }
 
-        private static List<OpenBookingFlowRequirement> OpenBookingFlowRequirement(ClassTable @class)
+        private List<Schedule> HydatePartialSchedules(DayOfWeek partialScheduleDayOfWeek, DateTimeOffset partialScheduleStartTime, TimeSpan partialScheduleDuration)
         {
-            List<OpenBookingFlowRequirement> openBookingFlowRequirement = null;
-
-            if (@class.RequiresApproval)
+            var schedules = new List<Schedule>()
             {
-                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
-                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingApproval);
-            }
+                new PartialSchedule()
+                {
+                    ByDay = new List<string>() { $"https://schema.org/{partialScheduleDayOfWeek}" },
+                    StartTime = partialScheduleStartTime,
+                    Duration = partialScheduleDuration,
+                    EndTime = partialScheduleStartTime.Add(partialScheduleDuration),
+                    ScheduleTimezone = "Europe/London",
+                }
+            };
 
-            if (@class.RequiresAttendeeValidation)
-            {
-                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
-                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingAttendeeDetails);
-            }
-
-            if (@class.RequiresAdditionalDetails)
-            {
-                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
-                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingIntakeForm);
-            }
-
-            if (@class.AllowsProposalAmendment)
-            {
-                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
-                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingNegotiation);
-            }
-            return openBookingFlowRequirement;
-        }
-
-        private static EventAttendanceModeEnumeration MapAttendanceMode(AttendanceMode attendanceMode)
-        {
-            switch (attendanceMode)
-            {
-                case AttendanceMode.Offline:
-                    return EventAttendanceModeEnumeration.OfflineEventAttendanceMode;
-                case AttendanceMode.Online:
-                    return EventAttendanceModeEnumeration.OnlineEventAttendanceMode;
-                case AttendanceMode.Mixed:
-                    return EventAttendanceModeEnumeration.MixedEventAttendanceMode;
-                default:
-                    throw new OpenBookingException(new OpenBookingError(), $"AttendanceMode Type {attendanceMode} not supported");
-            }
+            return schedules;
         }
     }
 }
