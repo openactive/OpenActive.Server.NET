@@ -467,6 +467,11 @@
     <Compile Include="Helpers\PropertyValueSpecificationHelper.cs" />
     <Compile Include="Extensions\PropertyValueSpecificationHelper.cs" />
     <Compile Include="Extensions\BookedOrderItemHelper.cs" />
+    <Compile Include="IdComponents\EventOpportunity.cs" />
+    <Compile Include="Stores\EventStore.cs" />
+    <Compile Include="Extensions\FeedGeneratorHelper.cs" />
+    <Compile Include="Extensions\StoreHelper.cs" />
+    <Compile Include="Feeds\EventsFeed.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />

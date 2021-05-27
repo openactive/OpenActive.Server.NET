@@ -175,7 +175,11 @@ namespace BookingSystem
                                     }),
                                     Price = x.Price,
                                     PriceCurrency = "GBP",
-                                    OpenBookingFlowRequirement = OpenBookingFlowRequirement(x),
+                                    OpenBookingFlowRequirement = FeedGeneratorHelper.OpenBookingFlowRequirement(
+                                        x.RequiresApproval,
+                                        x.RequiresAttendeeValidation,
+                                        x.RequiresAdditionalDetails,
+                                        x.AllowsProposalAmendment),
                                     ValidFromBeforeStartDate = x.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = x.LatestCancellationBeforeStartDate,
                                     OpenBookingPrepayment = x.Prepayment.Convert(),
@@ -187,36 +191,6 @@ namespace BookingSystem
 
                 return query.ToList();
             }
-        }
-
-        private static List<OpenBookingFlowRequirement> OpenBookingFlowRequirement(SlotTable slot)
-        {
-            List<OpenBookingFlowRequirement> openBookingFlowRequirement = null;
-
-            if (slot.RequiresApproval)
-            {
-                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
-                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingApproval);
-            }
-
-            if (slot.RequiresAttendeeValidation)
-            {
-                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
-                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingAttendeeDetails);
-            }
-
-            if (slot.RequiresAdditionalDetails)
-            {
-                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
-                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingIntakeForm);
-            }
-
-            if (slot.AllowsProposalAmendment)
-            {
-                openBookingFlowRequirement = openBookingFlowRequirement ?? new List<OpenBookingFlowRequirement>();
-                openBookingFlowRequirement.Add(OpenActive.NET.OpenBookingFlowRequirement.OpenBookingNegotiation);
-            }
-            return openBookingFlowRequirement;
         }
     }
 }
