@@ -51,6 +51,7 @@ namespace OpenActive.Server.NET.StoreBooking
         ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         ValueTask<(Guid, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
+        ValueTask<string> GetIdempotentOrderResponse(OrderIdComponents orderId, string requestHash);
     }
 
     public interface IStateContext
@@ -111,6 +112,11 @@ namespace OpenActive.Server.NET.StoreBooking
         public ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return UpdateOrderProposal(responseOrderProposal, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
+        }
+
+        public async virtual ValueTask<string> GetIdempotentOrderResponse(OrderIdComponents orderIdComponents, string requestHash)
+        {
+            return "";
         }
     }
 }
