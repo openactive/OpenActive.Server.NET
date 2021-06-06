@@ -254,7 +254,7 @@ namespace BookingSystem
                 );
         }
 
-        public async override ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public async override ValueTask<CreateOrderResult> CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
@@ -287,7 +287,9 @@ namespace BookingSystem
                 null,
                 null);
 
-            if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
+            if (!result) return CreateOrderResult.OrderAlreadyExists;
+
+            return CreateOrderResult.OrderSuccessfullyCreated;
         }
 
         public async override ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)

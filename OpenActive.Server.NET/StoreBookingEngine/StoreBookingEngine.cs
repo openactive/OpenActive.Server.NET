@@ -723,7 +723,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         {
                             // Create the parent Order
                             if (storeBookingEngineSettings.EnforceSyncWithinOrderTransactions)
-                                storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction).CheckSyncValueTaskWorked();
+                                storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction).CheckSyncValueTaskWorkedAndReturnResult();
                             else
                                 await storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction);
 
