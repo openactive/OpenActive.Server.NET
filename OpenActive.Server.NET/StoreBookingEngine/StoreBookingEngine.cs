@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System;
 using System.Linq;
+using System.Net;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
@@ -342,7 +343,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected async override Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
+        protected async override Task<ProcessFlowResult> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
         {
             // Get Order without OrderItems expanded
             var order = await storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
@@ -367,10 +368,10 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // TODO: Should other properties be extracted from the flowContext for consistency, or do we trust the internals not to create excessive props?
             order.BookingService = flowContext.BookingService;
-            return order;
+            return new ProcessFlowResult(OpenActiveSerializer.Serialize(order), HttpStatusCode.OK);
         }
 
-        public async override Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
+        public async override Task<ProcessFlowResult> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
         {
             if (!await storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
             {
@@ -528,7 +529,7 @@ namespace OpenActive.Server.NET.StoreBooking
             return context;
         }
 
-        public async override Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
+        public async override Task<ProcessFlowResult> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
         {
             var context = AugmentContextFromOrder(request, order);
 
@@ -550,6 +551,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 Payment = context.Payment,
                 OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList()
             };
+            HttpStatusCode responseCode = HttpStatusCode.OK;
 
             // Add totals to the resulting Order
             OrderCalculations.AugmentOrderWithTotals(
@@ -701,6 +703,9 @@ namespace OpenActive.Server.NET.StoreBooking
                             throw;
                         }
                     }
+
+                    if (responseOrderQuote.OrderedItem.Exists(x => x.Error?.Count > 0))
+                        responseCode = HttpStatusCode.Conflict;
                     break;
 
                 case Order responseOrder:
@@ -783,7 +788,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     throw new OpenBookingException(new UnexpectedOrderTypeError());
             }
 
-            return responseGenericOrder;
+            return new ProcessFlowResult(OpenActiveSerializer.Serialize(responseGenericOrder), responseCode);
         }
     }
 
