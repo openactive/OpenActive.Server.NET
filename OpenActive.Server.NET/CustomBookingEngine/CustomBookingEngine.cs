@@ -335,11 +335,11 @@ namespace OpenActive.Server.NET.CustomBooking
             }
             else
             {
-                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(result), HttpStatusCode.OK);
+                return ResponseContent.OpenBookingResponse(result.Response, result.HttpStatusCode);
             }
         }
 
-        protected abstract Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
+        protected abstract Task<ProcessFlowResult> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
 
 
         protected bool IsOpportunityTypeRecognised(string opportunityTypeString)
@@ -384,8 +384,7 @@ namespace OpenActive.Server.NET.CustomBooking
             var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, orderType);
             var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
             // Return a 409 status code if any OrderItem level errors exist
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
-                orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
+            return ResponseContent.OpenBookingResponse(orderResponse.Response, orderResponse.HttpStatusCode);
         }
         public async Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson)
         {
@@ -400,7 +399,7 @@ namespace OpenActive.Server.NET.CustomBooking
             var response = order.OrderProposalVersion != null ?
                  await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
                  await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.OK);
+            return ResponseContent.OpenBookingResponse(response.Response, response.HttpStatusCode);
         }
 
         public async Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson)
@@ -413,7 +412,8 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
             }
             var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.OrderProposal);
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
+            var response = await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order);
+            return ResponseContent.OpenBookingResponse(response.Response, response.HttpStatusCode);
         }
 
         private SellerIdComponents GetSellerIdComponentsFromApiKey(Uri sellerId)
@@ -760,9 +760,21 @@ namespace OpenActive.Server.NET.CustomBooking
             };
         }
 
-        public abstract Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new();
+        public abstract Task<ProcessFlowResult> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new();
 
-        public abstract Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order);
+        public abstract Task<ProcessFlowResult> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order);
 
+    }
+
+    public class ProcessFlowResult
+    {
+        public string Response { get; }
+        public HttpStatusCode HttpStatusCode { get; }
+
+        public ProcessFlowResult(string response, HttpStatusCode httpStatusCode)
+        {
+            Response = response;
+            HttpStatusCode = httpStatusCode;
+        }
     }
 }

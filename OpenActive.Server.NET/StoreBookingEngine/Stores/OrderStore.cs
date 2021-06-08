@@ -16,6 +16,15 @@ namespace OpenActive.Server.NET.StoreBooking
         OrderDidNotExist
     }
 
+    /// <summary>
+    /// Result of creating (or attempting to create) an Order in a store
+    /// </summary>
+    public enum CreateOrderResult
+    {
+        OrderSuccessfullyCreated,
+        OrderAlreadyExists
+    }
+
     public interface IOrderStore
     {
         void SetConfiguration(OrderIdTemplate orderIdTemplate, SingleIdTemplate<SellerIdComponents> sellerIdTemplate);
@@ -38,10 +47,12 @@ namespace OpenActive.Server.NET.StoreBooking
 
         ValueTask<Lease> CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         ValueTask UpdateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
-        ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
+        ValueTask<CreateOrderResult> CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         ValueTask<(Guid, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
         ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
+        ValueTask<string> GetIdempotentOrderResponse(OrderIdComponents orderId, string requestHash);
+        ValueTask CompleteOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction, string serialisedResponseOrder, string requestHash);
     }
 
     public interface IStateContext
@@ -80,8 +91,8 @@ namespace OpenActive.Server.NET.StoreBooking
             return UpdateLease(responseOrderQuote, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
         }
 
-        public abstract ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction);
-        public ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
+        public abstract ValueTask<CreateOrderResult> CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction);
+        public ValueTask<CreateOrderResult> CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return CreateOrder(responseOrder, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
         }
@@ -102,6 +113,15 @@ namespace OpenActive.Server.NET.StoreBooking
         public ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return UpdateOrderProposal(responseOrderProposal, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
+        }
+
+        public async virtual ValueTask<string> GetIdempotentOrderResponse(OrderIdComponents orderIdComponents, string requestHash)
+        {
+            return "";
+        }
+
+        public async ValueTask CompleteOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction, string serialisedResponseOrder, string requestHash)
+        {
         }
     }
 }
