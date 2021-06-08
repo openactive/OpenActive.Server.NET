@@ -7,6 +7,7 @@ using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET.OpenBookingHelper;
+using OpenActive.Server.NET.OpenBookingHelper.Async;
 using OpenActive.Server.NET.StoreBooking;
 
 namespace OpenActive.Server.NET.CustomBooking
@@ -129,7 +130,7 @@ namespace OpenActive.Server.NET.CustomBooking
         private Uri openDataFeedBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
-
+        private readonly AsyncDuplicateLock asyncDuplicateLock = new AsyncDuplicateLock();
         protected Dictionary<OpportunityType, IBookablePairIdTemplate> OpportunityTemplateLookup { get; }
 
         /// <summary>
@@ -389,18 +390,21 @@ namespace OpenActive.Server.NET.CustomBooking
         }
         public async Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson)
         {
-            // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
-            // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
-            Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
-            if (order == null || order.GetType() != typeof(Order))
+            using ( await asyncDuplicateLock.LockAsync( $"{clientId}|{uuid}".ToLower() ) )
             {
-                throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for B");
+                // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
+                // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
+                Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
+                if (order == null || order.GetType() != typeof(Order))
+                {
+                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for B");
+                }
+                var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
+                var response = order.OrderProposalVersion != null ?
+                     await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
+                     await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.OK);
             }
-            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.Order);
-            var response = order.OrderProposalVersion != null ?
-                 await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
-                 await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.OK);
         }
 
         public async Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson)
