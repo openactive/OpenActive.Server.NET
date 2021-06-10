@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace OpenActive.Server.NET.OpenBookingHelper.Async
 {
-    public sealed class AsyncDuplicateLock
+    public sealed class AsyncDuplicateLock<TKey>
     {
         private sealed class RefCounted<T>
         {
@@ -19,10 +19,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper.Async
             public T Value { get; }
         }
 
-        private static readonly Dictionary<object, RefCounted<SemaphoreSlim>> SemaphoreSlims
-            = new Dictionary<object, RefCounted<SemaphoreSlim>>();
+        private static readonly Dictionary<TKey, RefCounted<SemaphoreSlim>> SemaphoreSlims
+            = new Dictionary<TKey, RefCounted<SemaphoreSlim>>();
 
-        private SemaphoreSlim GetOrCreate(object key)
+        private SemaphoreSlim GetOrCreate(TKey key)
         {
             RefCounted<SemaphoreSlim> item;
             lock (SemaphoreSlims)
@@ -40,7 +40,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper.Async
             return item.Value;
         }
 
-        public async Task<IDisposable> LockAsync(object key)
+        public async Task<IDisposable> LockAsync(TKey key)
         {
             await GetOrCreate(key).WaitAsync().ConfigureAwait(false);
             return new Releaser { Key = key };
@@ -48,7 +48,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper.Async
 
         private sealed class Releaser : IDisposable
         {
-            public object Key { get; set; }
+            public TKey Key { get; set; }
 
             public void Dispose()
             {

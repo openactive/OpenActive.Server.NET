@@ -130,7 +130,7 @@ namespace OpenActive.Server.NET.CustomBooking
         private Uri openDataFeedBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
-        private readonly AsyncDuplicateLock asyncDuplicateLock = new AsyncDuplicateLock();
+        private readonly AsyncDuplicateLock<string> asyncDuplicateLock = new AsyncDuplicateLock<string>();
         protected Dictionary<OpportunityType, IBookablePairIdTemplate> OpportunityTemplateLookup { get; }
 
         /// <summary>
