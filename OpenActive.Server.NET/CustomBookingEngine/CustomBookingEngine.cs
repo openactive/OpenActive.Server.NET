@@ -377,20 +377,23 @@ namespace OpenActive.Server.NET.CustomBooking
         }
         private async Task<ResponseContent> ProcessCheckpoint(string clientId, Uri sellerId, string uuid, string orderQuoteJson, FlowStage flowStage, OrderType orderType)
         {
-            OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
-            if (orderQuote == null || orderQuote.GetType() != typeof(OrderQuote))
+            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
             {
-                throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
+                OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
+                if (orderQuote == null || orderQuote.GetType() != typeof(OrderQuote))
+                {
+                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
+                }
+                var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, orderType);
+                var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
+                // Return a 409 status code if any OrderItem level errors exist
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
+                    orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
             }
-            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, orderType);
-            var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
-            // Return a 409 status code if any OrderItem level errors exist
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
-                orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
         }
         public async Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson)
         {
-            using ( await asyncDuplicateLock.LockAsync( $"{clientId}|{uuid}".ToLower() ) )
+            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
             {
                 // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
                 // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
@@ -407,17 +410,25 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
+        private static string GetParallelLockKey(string clientId, string uuid)
+        {
+            return $"{clientId}|{uuid}".ToLower();
+        }
+
         public async Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson)
         {
-            // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
-            // If C1 and C2 are used correctly, P should not fail except in very exceptional cases.
-            OrderProposal order = OpenActiveSerializer.Deserialize<OrderProposal>(orderJson);
-            if (order == null || order.GetType() != typeof(OrderProposal))
+            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
             {
-                throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
+                // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
+                // If C1 and C2 are used correctly, P should not fail except in very exceptional cases.
+                OrderProposal order = OpenActiveSerializer.Deserialize<OrderProposal>(orderJson);
+                if (order == null || order.GetType() != typeof(OrderProposal))
+                {
+                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
+                }
+                var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.OrderProposal);
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
             }
-            var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuid, OrderType.OrderProposal);
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
         }
 
         private SellerIdComponents GetSellerIdComponentsFromApiKey(Uri sellerId)
@@ -432,15 +443,18 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> DeleteOrder(string clientId, Uri sellerId, string uuid)
         {
-            var result = await ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
-            switch (result)
+            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
             {
-                case DeleteOrderResult.OrderSuccessfullyDeleted:
-                    return ResponseContent.OpenBookingNoContentResponse();
-                case DeleteOrderResult.OrderDidNotExist:
-                    throw new OpenBookingException(new UnknownOrderError());
-                default:
-                    throw new OpenBookingException(new OpenBookingError(), $"Unexpected DeleteOrderResult: {result}");
+                var result = await ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
+                switch (result)
+                {
+                    case DeleteOrderResult.OrderSuccessfullyDeleted:
+                        return ResponseContent.OpenBookingNoContentResponse();
+                    case DeleteOrderResult.OrderDidNotExist:
+                        throw new OpenBookingException(new UnknownOrderError());
+                    default:
+                        throw new OpenBookingException(new OpenBookingError(), $"Unexpected DeleteOrderResult: {result}");
+                }
             }
         }
 
@@ -448,55 +462,61 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> DeleteOrderQuote(string clientId, Uri sellerId, string uuid)
         {
-            await ProcessOrderQuoteDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
-            return ResponseContent.OpenBookingNoContentResponse();
+            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
+            {
+                await ProcessOrderQuoteDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
+                return ResponseContent.OpenBookingNoContentResponse();
+            }
         }
 
         protected abstract Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
 
         public async Task<ResponseContent> ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson)
         {
-            Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
-            SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
-
-            if (order == null || order.GetType() != typeof(Order))
+            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
             {
-                throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for Order Cancellation");
+                Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
+                SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
+
+                if (order == null || order.GetType() != typeof(Order))
+                {
+                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for Order Cancellation");
+                }
+
+                // Check for PatchContainsExcessiveProperties
+                Order orderWithOnlyAllowedProperties = new Order
+                {
+                    OrderedItem = order.OrderedItem.Select(x => new OrderItem { Id = x.Id, OrderItemStatus = x.OrderItemStatus }).ToList()
+                };
+                if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties))
+                {
+                    throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
+                }
+
+                // Check for PatchNotAllowedOnProperty
+                if (!order.OrderedItem.TrueForAll(x => x.OrderItemStatus == OrderItemStatus.CustomerCancelled))
+                {
+                    throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.");
+                }
+
+                var orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(clientId, x.Id)).ToList();
+
+                // Check for mismatching UUIDs
+                if (!orderItemIds.TrueForAll(x => x != null))
+                {
+                    throw new OpenBookingException(new OrderItemIdInvalidError());
+                }
+
+                // Check for mismatching UUIDs
+                if (!orderItemIds.TrueForAll(x => x.OrderType == OrderType.Order && x.uuid == uuid))
+                {
+                    throw new OpenBookingException(new OrderItemNotWithinOrderError());
+                }
+
+                await ProcessCustomerCancellation(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
+
+                return ResponseContent.OpenBookingNoContentResponse();
             }
-
-            // Check for PatchContainsExcessiveProperties
-            Order orderWithOnlyAllowedProperties = new Order
-            {
-                OrderedItem = order.OrderedItem.Select(x => new OrderItem { Id = x.Id, OrderItemStatus = x.OrderItemStatus }).ToList()
-            };
-            if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties))
-            {
-                throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
-            }
-
-            // Check for PatchNotAllowedOnProperty
-            if (!order.OrderedItem.TrueForAll(x => x.OrderItemStatus == OrderItemStatus.CustomerCancelled))
-            {
-                throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.");
-            }
-
-            var orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(clientId, x.Id)).ToList();
-
-            // Check for mismatching UUIDs
-            if (!orderItemIds.TrueForAll(x => x != null))
-            {
-                throw new OpenBookingException(new OrderItemIdInvalidError());
-            }
-
-            // Check for mismatching UUIDs
-            if (!orderItemIds.TrueForAll(x => x.OrderType == OrderType.Order && x.uuid == uuid))
-            {
-                throw new OpenBookingException(new OrderItemNotWithinOrderError());
-            }
-
-            await ProcessCustomerCancellation(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
-
-            return ResponseContent.OpenBookingNoContentResponse();
         }
 
         public abstract Task ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
@@ -504,34 +524,37 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderProposalJson)
         {
-            OrderProposal orderProposal = OpenActiveSerializer.Deserialize<OrderProposal>(orderProposalJson);
-            SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
-
-            if (orderProposal == null || orderProposal.GetType() != typeof(Order))
+            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
             {
-                throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for Order Cancellation");
+                OrderProposal orderProposal = OpenActiveSerializer.Deserialize<OrderProposal>(orderProposalJson);
+                SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
+
+                if (orderProposal == null || orderProposal.GetType() != typeof(Order))
+                {
+                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for Order Cancellation");
+                }
+
+                // Check for PatchContainsExcessiveProperties
+                OrderProposal orderProposalWithOnlyAllowedProperties = new OrderProposal
+                {
+                    OrderProposalStatus = orderProposal.OrderProposalStatus,
+                    OrderCustomerNote = orderProposal.OrderCustomerNote
+                };
+                if (OpenActiveSerializer.Serialize<OrderProposal>(orderProposal) != OpenActiveSerializer.Serialize<OrderProposal>(orderProposalWithOnlyAllowedProperties))
+                {
+                    throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
+                }
+
+                // Check for PatchNotAllowedOnProperty
+                if (orderProposal.OrderProposalStatus != OrderProposalStatus.CustomerRejected)
+                {
+                    throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerRejected' is permitted for this property.");
+                }
+
+                await ProcessOrderProposalCustomerRejection(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderProposal, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate);
+
+                return ResponseContent.OpenBookingNoContentResponse();
             }
-
-            // Check for PatchContainsExcessiveProperties
-            OrderProposal orderProposalWithOnlyAllowedProperties = new OrderProposal
-            {
-                OrderProposalStatus = orderProposal.OrderProposalStatus,
-                OrderCustomerNote = orderProposal.OrderCustomerNote
-            };
-            if (OpenActiveSerializer.Serialize<OrderProposal>(orderProposal) != OpenActiveSerializer.Serialize<OrderProposal>(orderProposalWithOnlyAllowedProperties))
-            {
-                throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
-            }
-
-            // Check for PatchNotAllowedOnProperty
-            if (orderProposal.OrderProposalStatus != OrderProposalStatus.CustomerRejected)
-            {
-                throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerRejected' is permitted for this property.");
-            }
-
-            await ProcessOrderProposalCustomerRejection(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderProposal, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate);
-
-            return ResponseContent.OpenBookingNoContentResponse();
         }
 
         public abstract Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
@@ -539,123 +562,129 @@ namespace OpenActive.Server.NET.CustomBooking
 
         async Task<ResponseContent> IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
         {
-            Event genericEvent = OpenActiveSerializer.Deserialize<Event>(eventJson);
-
-
-            // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-            OpportunityType? opportunityType;
-            ILegalEntity seller;
-            switch (genericEvent)
+            using ( await asyncDuplicateLock.LockAsync( testDatasetIdentifier.ToLower() ) )
             {
-                case ScheduledSession scheduledSession:
-                    switch (scheduledSession.SuperEvent.Value)
-                    {
-                        case SessionSeries sessionSeries:
-                            opportunityType = OpportunityType.ScheduledSession;
-                            seller = sessionSeries.Organizer;
-                            break;
-                        default:
-                            throw new OpenBookingException(new OpenBookingError(), "ScheduledSession must have superEvent of SessionSeries");
-                    }
-                    break;
-                case Slot slot:
-                    switch (slot.FacilityUse.Value)
-                    {
-                        case IndividualFacilityUse individualFacilityUse:
-                            opportunityType = OpportunityType.IndividualFacilityUseSlot;
-                            seller = individualFacilityUse.Provider;
-                            break;
-                        case FacilityUse facilityUse:
-                            opportunityType = OpportunityType.FacilityUseSlot;
-                            seller = facilityUse.Provider;
-                            break;
-                        default:
-                            throw new OpenBookingException(new OpenBookingError(), "Slot must have facilityUse of FacilityUse or IndividualFacilityUse");
-                    }
-                    break;
-                case CourseInstance courseInstance:
-                    opportunityType = OpportunityType.CourseInstance;
-                    seller = courseInstance.Organizer;
-                    break;
-                case HeadlineEvent headlineEvent:
-                    opportunityType = OpportunityType.HeadlineEvent;
-                    seller = headlineEvent.Organizer;
-                    break;
-                case OnDemandEvent onDemandEvent:
-                    switch (onDemandEvent.SuperEvent)
-                    {
-                        case EventSeries eventSeries:
-                            opportunityType = OpportunityType.OnDemandEvent;
-                            seller = eventSeries.Organizer;
-                            break;
-                        case null:
-                            opportunityType = OpportunityType.OnDemandEvent;
-                            seller = onDemandEvent.Organizer;
-                            break;
-                        default:
-                            throw new OpenBookingException(new OpenBookingError(), "OnDemandEvent has unrecognised @type of superEvent");
-                    }
-                    break;
-                case Event @event:
-                    switch (@event.SuperEvent)
-                    {
-                        case HeadlineEvent headlineEvent:
-                            opportunityType = OpportunityType.HeadlineEventSubEvent;
-                            seller = headlineEvent.Organizer;
-                            break;
-                        case CourseInstance courseInstance:
-                            opportunityType = OpportunityType.CourseInstanceSubEvent;
-                            seller = courseInstance.Organizer;
-                            break;
-                        case EventSeries eventSeries:
-                            opportunityType = OpportunityType.Event;
-                            seller = eventSeries.Organizer;
-                            break;
-                        case null:
-                            opportunityType = OpportunityType.Event;
-                            seller = @event.Organizer;
-                            break;
-                        default:
-                            throw new OpenBookingException(new OpenBookingError(), "Event has unrecognised @type of superEvent");
-                    }
-                    break;
-                default:
-                    throw new OpenBookingException(new OpenBookingError(), "Only bookable opportunities are permitted in the test interface");
+                Event genericEvent = OpenActiveSerializer.Deserialize<Event>(eventJson);
 
-                    // TODO: add this error class to the library
+
+                // Note opportunityType is required here to facilitate routing to the correct store to handle the request
+                OpportunityType? opportunityType;
+                ILegalEntity seller;
+                switch (genericEvent)
+                {
+                    case ScheduledSession scheduledSession:
+                        switch (scheduledSession.SuperEvent.Value)
+                        {
+                            case SessionSeries sessionSeries:
+                                opportunityType = OpportunityType.ScheduledSession;
+                                seller = sessionSeries.Organizer;
+                                break;
+                            default:
+                                throw new OpenBookingException(new OpenBookingError(), "ScheduledSession must have superEvent of SessionSeries");
+                        }
+                        break;
+                    case Slot slot:
+                        switch (slot.FacilityUse.Value)
+                        {
+                            case IndividualFacilityUse individualFacilityUse:
+                                opportunityType = OpportunityType.IndividualFacilityUseSlot;
+                                seller = individualFacilityUse.Provider;
+                                break;
+                            case FacilityUse facilityUse:
+                                opportunityType = OpportunityType.FacilityUseSlot;
+                                seller = facilityUse.Provider;
+                                break;
+                            default:
+                                throw new OpenBookingException(new OpenBookingError(), "Slot must have facilityUse of FacilityUse or IndividualFacilityUse");
+                        }
+                        break;
+                    case CourseInstance courseInstance:
+                        opportunityType = OpportunityType.CourseInstance;
+                        seller = courseInstance.Organizer;
+                        break;
+                    case HeadlineEvent headlineEvent:
+                        opportunityType = OpportunityType.HeadlineEvent;
+                        seller = headlineEvent.Organizer;
+                        break;
+                    case OnDemandEvent onDemandEvent:
+                        switch (onDemandEvent.SuperEvent)
+                        {
+                            case EventSeries eventSeries:
+                                opportunityType = OpportunityType.OnDemandEvent;
+                                seller = eventSeries.Organizer;
+                                break;
+                            case null:
+                                opportunityType = OpportunityType.OnDemandEvent;
+                                seller = onDemandEvent.Organizer;
+                                break;
+                            default:
+                                throw new OpenBookingException(new OpenBookingError(), "OnDemandEvent has unrecognised @type of superEvent");
+                        }
+                        break;
+                    case Event @event:
+                        switch (@event.SuperEvent)
+                        {
+                            case HeadlineEvent headlineEvent:
+                                opportunityType = OpportunityType.HeadlineEventSubEvent;
+                                seller = headlineEvent.Organizer;
+                                break;
+                            case CourseInstance courseInstance:
+                                opportunityType = OpportunityType.CourseInstanceSubEvent;
+                                seller = courseInstance.Organizer;
+                                break;
+                            case EventSeries eventSeries:
+                                opportunityType = OpportunityType.Event;
+                                seller = eventSeries.Organizer;
+                                break;
+                            case null:
+                                opportunityType = OpportunityType.Event;
+                                seller = @event.Organizer;
+                                break;
+                            default:
+                                throw new OpenBookingException(new OpenBookingError(), "Event has unrecognised @type of superEvent");
+                        }
+                        break;
+                    default:
+                        throw new OpenBookingException(new OpenBookingError(), "Only bookable opportunities are permitted in the test interface");
+
+                        // TODO: add this error class to the library
+                }
+
+                if (!genericEvent.TestOpportunityCriteria.HasValue)
+                {
+                    throw new OpenBookingException(new OpenBookingError(), "test:testOpportunityCriteria must be supplied.");
+                }
+                if (!genericEvent.TestOpenBookingFlow.HasValue)
+                {
+                    throw new OpenBookingException(new OpenBookingError(), "test:testOpenBookingFlow must be supplied.");
+                }
+
+                if (seller?.Id == null) throw new OpenBookingException(new SellerMismatchError(), "No seller ID was specified");
+                var sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(seller.Id);
+                if (sellerIdComponents == null) throw new OpenBookingException(new SellerMismatchError(), "Seller ID format was invalid");
+
+                // Returns a matching Event subclass that will only include "@type" and "@id" properties
+                var createdEvent = await this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, genericEvent.TestOpenBookingFlow.Value, sellerIdComponents);
+
+                if (createdEvent.Type != genericEvent.Type)
+                {
+                    throw new OpenBookingException(new OpenBookingError(), "Type of created test Event does not match type of requested Event");
+                }
+
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(createdEvent), HttpStatusCode.OK);
             }
-
-            if (!genericEvent.TestOpportunityCriteria.HasValue)
-            {
-                throw new OpenBookingException(new OpenBookingError(), "test:testOpportunityCriteria must be supplied.");
-            }
-            if (!genericEvent.TestOpenBookingFlow.HasValue)
-            {
-                throw new OpenBookingException(new OpenBookingError(), "test:testOpenBookingFlow must be supplied.");
-            }
-
-            if (seller?.Id == null) throw new OpenBookingException(new SellerMismatchError(), "No seller ID was specified");
-            var sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(seller.Id);
-            if (sellerIdComponents == null) throw new OpenBookingException(new SellerMismatchError(), "Seller ID format was invalid");
-
-            // Returns a matching Event subclass that will only include "@type" and "@id" properties
-            var createdEvent = await this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, genericEvent.TestOpenBookingFlow.Value, sellerIdComponents);
-
-            if (createdEvent.Type != genericEvent.Type)
-            {
-                throw new OpenBookingException(new OpenBookingError(), "Type of created test Event does not match type of requested Event");
-            }
-
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(createdEvent), HttpStatusCode.OK);
         }
 
         protected abstract Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller);
 
         async Task<ResponseContent> IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
         {
-            await this.DeleteTestDataset(testDatasetIdentifier);
+            using (await asyncDuplicateLock.LockAsync(testDatasetIdentifier.ToLower()))
+            {
+                await this.DeleteTestDataset(testDatasetIdentifier);
 
-            return ResponseContent.OpenBookingNoContentResponse();
+                return ResponseContent.OpenBookingNoContentResponse();
+            }
         }
 
         protected abstract Task DeleteTestDataset(string testDatasetIdentifier);
