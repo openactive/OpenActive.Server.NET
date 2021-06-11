@@ -377,7 +377,7 @@ namespace OpenActive.Server.NET.CustomBooking
         }
         private async Task<ResponseContent> ProcessCheckpoint(string clientId, Uri sellerId, string uuid, string orderQuoteJson, FlowStage flowStage, OrderType orderType)
         {
-            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(clientId, uuid)))
             {
                 OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
                 if (orderQuote == null || orderQuote.GetType() != typeof(OrderQuote))
@@ -393,7 +393,7 @@ namespace OpenActive.Server.NET.CustomBooking
         }
         public async Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson)
         {
-            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(clientId, uuid)))
             {
                 // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
                 // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
@@ -417,7 +417,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson)
         {
-            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(clientId, uuid)))
             {
                 // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
                 // If C1 and C2 are used correctly, P should not fail except in very exceptional cases.
@@ -443,7 +443,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> DeleteOrder(string clientId, Uri sellerId, string uuid)
         {
-            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(clientId, uuid)))
             {
                 var result = await ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
                 switch (result)
@@ -462,7 +462,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> DeleteOrderQuote(string clientId, Uri sellerId, string uuid)
         {
-            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(clientId, uuid)))
             {
                 await ProcessOrderQuoteDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = uuid }, GetSellerIdComponentsFromApiKey(sellerId));
                 return ResponseContent.OpenBookingNoContentResponse();
@@ -473,7 +473,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson)
         {
-            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(clientId, uuid)))
             {
                 Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
                 SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
@@ -524,7 +524,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderProposalJson)
         {
-            using ( await asyncDuplicateLock.LockAsync( GetParallelLockKey(clientId, uuid) ) )
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(clientId, uuid)))
             {
                 OrderProposal orderProposal = OpenActiveSerializer.Deserialize<OrderProposal>(orderProposalJson);
                 SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
@@ -562,7 +562,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         async Task<ResponseContent> IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
         {
-            using ( await asyncDuplicateLock.LockAsync( testDatasetIdentifier.ToLower() ) )
+            using (await asyncDuplicateLock.LockAsync(testDatasetIdentifier.ToLower()))
             {
                 Event genericEvent = OpenActiveSerializer.Deserialize<Event>(eventJson);
 
