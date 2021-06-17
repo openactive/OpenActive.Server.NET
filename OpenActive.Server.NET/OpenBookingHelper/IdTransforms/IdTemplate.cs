@@ -395,18 +395,23 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         }
 
         // TODO: Later - check if RenderOrderId and RenderOrderItemId with multiple params can be moved back out to OrdersRPDEFeedGenerator?
-        public Uri RenderOrderId(OrderType orderType, string uuid)
+        public Uri RenderOrderId(OrderType orderType, Guid uuid)
         {
             return this.RenderOrderId(new OrderIdComponents { OrderType = orderType, uuid = uuid });
         }
 
         //TODO reduce duplication of the strings / logic below
-        public Uri RenderOrderItemId(OrderType orderType, string uuid, string orderItemId)
+        public Uri RenderOrderItemId(OrderType orderType, Guid uuid, Guid orderItemId)
+        {
+            if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
+            return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdGuid = orderItemId });
+        }
+        public Uri RenderOrderItemId(OrderType orderType, Guid uuid, string orderItemId)
         {
             if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
             return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdString = orderItemId });
         }
-        public Uri RenderOrderItemId(OrderType orderType, string uuid, long orderItemId)
+        public Uri RenderOrderItemId(OrderType orderType, Guid uuid, long orderItemId)
         {
             if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
             return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdLong = orderItemId });
@@ -545,6 +550,22 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                             throw new ArgumentException($"A Guid in the template for binding {binding.Key} failed to parse.");
                         }
                     }
+                    else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(Guid))
+                    {
+                        if (Guid.TryParse(binding.Value.Value as string, out Guid newValue))
+                        {
+                            var existingValue = (Guid)componentsType.GetProperty(binding.Key).GetValue(components);
+                            if (existingValue != newValue && existingValue != Guid.Empty)
+                            {
+                                throw new BookableOpportunityAndOfferMismatchException($"Supplied Ids do not match on component '{binding.Value.Key}'");
+                            }
+                            componentsType.GetProperty(binding.Key).SetValue(components, newValue);
+                        }
+                        else
+                        {
+                            throw new ArgumentException($"A Guid in the template for binding {binding.Key} failed to parse.");
+                        }
+                    }
                     else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(string))
                     {
                         var newValue = binding.Value.Value as string;
@@ -565,7 +586,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         }
                         componentsType.GetProperty(binding.Key).SetValue(components, newValue);
                     }
-                    else if (Nullable.GetUnderlyingType(componentsType.GetProperty(binding.Key).PropertyType).IsEnum)
+                    else if (Nullable.GetUnderlyingType(componentsType.GetProperty(binding.Key).PropertyType)?.IsEnum == true)
                     {
                         object existingValue = componentsType.GetProperty(binding.Key).GetValue(components);
                         object newValue = ToEnum(componentsType.GetProperty(binding.Key).PropertyType, binding.Value.Value as string);

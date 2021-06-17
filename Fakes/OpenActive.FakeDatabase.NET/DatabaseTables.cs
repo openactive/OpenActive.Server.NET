@@ -77,7 +77,7 @@ namespace OpenActive.FakeDatabase.NET
         [Reference]
         public OrderTable OrderTable { get; set; }
         [ForeignKey(typeof(OrderTable), OnDelete = "CASCADE")]
-        public string OrderId { get; set; }
+        public Guid OrderId { get; set; }
         [Reference]
         public OccurrenceTable OccurrenceTable { get; set; }
         [ForeignKey(typeof(OccurrenceTable), OnDelete = "CASCADE")]
@@ -103,7 +103,7 @@ namespace OpenActive.FakeDatabase.NET
     public class OrderTable
     {
         [PrimaryKey]
-        public string OrderId { get; set; }
+        public Guid OrderId { get; set; }
 
         public bool Deleted { get; set; }
         public long OrderModified { get; set; } = DateTimeOffset.Now.UtcTicks;

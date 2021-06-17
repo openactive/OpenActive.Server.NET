@@ -28,7 +28,7 @@ namespace BookingSystem
         /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if Order found, False if Order not found</returns>
-        public async override Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
+        public async override Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, List<OrderIdComponents> orderItemIds)
         {
             try
             {
@@ -49,122 +49,122 @@ namespace BookingSystem
         /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if OrderProposal found, False if OrderProposal not found</returns>
-        public override async Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
+        public override async Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
             return FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
         }
 
-        public async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents)
+        public async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents orderId)
         {
             switch (simulateAction)
             {
                 case SellerAcceptOrderProposalSimulateAction _:
-                    if (idComponents.OrderType != OrderType.OrderProposal)
+                    if (orderId.OrderType != OrderType.OrderProposal)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
                     }
-                    if (!FakeBookingSystem.Database.AcceptOrderProposal(idComponents.uuid))
+                    if (!FakeBookingSystem.Database.AcceptOrderProposal(orderId.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case SellerAmendOrderProposalSimulateAction _:
-                    if (idComponents.OrderType != OrderType.OrderProposal)
+                    if (orderId.OrderType != OrderType.OrderProposal)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
                     }
                     var version = Guid.NewGuid();
-                    if (!FakeBookingSystem.Database.AmendOrderProposal(idComponents.uuid, version))
+                    if (!FakeBookingSystem.Database.AmendOrderProposal(orderId.uuid, version))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case SellerRejectOrderProposalSimulateAction _:
-                    if (idComponents.OrderType != OrderType.OrderProposal)
+                    if (orderId.OrderType != OrderType.OrderProposal)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
                     }
-                    if (!FakeBookingSystem.Database.RejectOrderProposal(null, null, idComponents.uuid, false))
+                    if (!FakeBookingSystem.Database.RejectOrderProposal(null, null, orderId.uuid, false))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case SellerRequestedCancellationWithMessageSimulateAction _:
-                    if (idComponents.OrderType != OrderType.Order)
+                    if (orderId.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false, true))
+                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, orderId.uuid, null, false, true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case SellerRequestedCancellationSimulateAction _:
-                    if (idComponents.OrderType != OrderType.Order)
+                    if (orderId.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, idComponents.uuid, null, false))
+                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, orderId.uuid, null, false))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case AccessCodeUpdateSimulateAction _:
-                    if (idComponents.OrderType != OrderType.Order)
+                    if (orderId.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateAccess(idComponents.uuid, updateAccessCode: true))
+                    if (!FakeBookingSystem.Database.UpdateAccess(orderId.uuid, updateAccessCode: true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case AccessPassUpdateSimulateAction _:
-                    if (idComponents.OrderType != OrderType.Order)
+                    if (orderId.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateAccess(idComponents.uuid, updateAccessPass: true))
+                    if (!FakeBookingSystem.Database.UpdateAccess(orderId.uuid, updateAccessPass: true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case OpportunityAttendanceUpdateSimulateAction _:
-                    if (idComponents.OrderType != OrderType.Order)
+                    if (orderId.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateOpportunityAttendance(idComponents.uuid))
+                    if (!FakeBookingSystem.Database.UpdateOpportunityAttendance(orderId.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case CustomerNoticeSimulateAction _:
-                    if (idComponents.OrderType != OrderType.Order)
+                    if (orderId.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.AddCustomerNotice(idComponents.uuid))
+                    if (!FakeBookingSystem.Database.AddCustomerNotice(orderId.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case ReplacementSimulateAction _:
-                    if (idComponents.OrderType != OrderType.Order)
+                    if (orderId.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.ReplaceOrderOpportunity(idComponents.uuid))
+                    if (!FakeBookingSystem.Database.ReplaceOrderOpportunity(orderId.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
                 case AccessChannelUpdateSimulateAction _:
-                    if (idComponents.OrderType != OrderType.Order)
+                    if (orderId.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateAccess(idComponents.uuid, updateAccessChannel: true))
+                    if (!FakeBookingSystem.Database.UpdateAccess(orderId.uuid, updateAccessChannel: true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -172,11 +172,11 @@ namespace BookingSystem
             }
         }
 
-        public override OrderStateContext Initialise(StoreBookingFlowContext flowContext)
+        public override ValueTask<OrderStateContext> Initialise(StoreBookingFlowContext flowContext)
         {
             // Runs before the flow starts, for both leasing and booking
             // Useful for transferring state between stages of the flow
-            return new OrderStateContext();
+            return new ValueTask<OrderStateContext>(new OrderStateContext());
         }
 
         private static BrokerRole BrokerTypeToBrokerRole(BrokerType brokerType)
@@ -259,10 +259,7 @@ namespace BookingSystem
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
 
-            if (!responseOrder.TotalPaymentDue.Price.HasValue)
-                throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
-
-            var customerType = flowContext.Customer == null ? CustomerType.None : (flowContext.Customer.GetType() == typeof(Organization) ? CustomerType.Organization : CustomerType.Person);
+            var customerType = flowContext.Customer == null ? CustomerType.None : (flowContext.Customer.IsOrganization ? CustomerType.Organization : CustomerType.Person);
             var result = FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
@@ -409,7 +406,7 @@ namespace BookingSystem
         {
             var order = CreateOrderFromOrderMode(dbOrder.OrderMode, orderId, dbOrder.ProposalVersionId, dbOrder.ProposalStatus);
             order.Id = orderId;
-            order.Identifier = new Guid(dbOrder.OrderId);
+            order.Identifier = dbOrder.OrderId;
             order.TotalPaymentDue = new PriceSpecification
             {
                 Price = dbOrder.TotalOrderPrice,

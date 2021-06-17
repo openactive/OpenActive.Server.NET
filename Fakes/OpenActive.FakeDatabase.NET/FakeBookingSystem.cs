@@ -191,7 +191,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
+        public static bool AddLease(string clientId, Guid uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
         {
             var db = transaction.DatabaseConnection;
 
@@ -401,7 +401,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool UpdateAccess(string uuid, bool updateAccessPass = false, bool updateAccessCode = false, bool updateAccessChannel = false)
+        public bool UpdateAccess(Guid uuid, bool updateAccessPass = false, bool updateAccessCode = false, bool updateAccessChannel = false)
         {
             if (!updateAccessPass && !updateAccessCode && !updateAccessChannel)
             {
@@ -456,7 +456,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool UpdateOpportunityAttendance(string uuid)
+        public bool UpdateOpportunityAttendance(Guid uuid)
         {
             using (var db = Mem.Database.Open())
             {
@@ -489,7 +489,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool AddCustomerNotice(string uuid)
+        public bool AddCustomerNotice(Guid uuid)
         {
             using (var db = Mem.Database.Open())
             {
@@ -520,7 +520,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public void DeleteLease(string clientId, string uuid, long? sellerId)
+        public void DeleteLease(string clientId, Guid uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())
             {
@@ -541,7 +541,7 @@ namespace OpenActive.FakeDatabase.NET
         }
 
         public static bool AddOrder(
-            string clientId, string uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId,
+            string clientId, Guid uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId,
             string customerEmail, CustomerType customerType, string customerOrganizationName,
             string customerIdentifier, string customerGivenName, string customerFamilyName, string customerTelephone,
             string paymentIdentifier, string paymentName, string paymentProviderId, string paymentAccountId,
@@ -615,7 +615,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>) GetOrderAndOrderItems(string clientId, long? sellerId, string uuid)
+        public (FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>) GetOrderAndOrderItems(string clientId, long? sellerId, Guid uuid)
         {
             using (var db = Mem.Database.Open())
             {
@@ -628,7 +628,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (bool, ClassTable, OccurrenceTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(string uuid, long? occurrenceId)
+        public (bool, ClassTable, OccurrenceTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(Guid uuid, long? occurrenceId)
         {
             using (var db = Mem.Database.Open())
             {
@@ -667,7 +667,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (bool, FacilityUseTable, SlotTable, BookedOrderItemInfo) GetSlotAndBookedOrderItemInfoBySlotId(string uuid, long? slotId)
+        public (bool, FacilityUseTable, SlotTable, BookedOrderItemInfo) GetSlotAndBookedOrderItemInfoBySlotId(Guid uuid, long? slotId)
         {
             using (var db = Mem.Database.Open())
             {
@@ -702,7 +702,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public FakeDatabaseDeleteOrderResult DeleteOrder(string clientId, string uuid, long? sellerId)
+        public FakeDatabaseDeleteOrderResult DeleteOrder(string clientId, Guid uuid, long? sellerId)
         {
             using (var db = Mem.Database.Open())
             {
@@ -736,7 +736,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long occurrenceId, long spacesRequested)
+        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, Guid uuid, long occurrenceId, long spacesRequested)
         {
             var db = transaction.DatabaseConnection;
             var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
@@ -782,7 +782,7 @@ namespace OpenActive.FakeDatabase.NET
             return (ReserveOrderItemsResult.Success, null, null);
         }
 
-        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, string uuid, long slotId, long spacesRequested)
+        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, Guid uuid, long slotId, long spacesRequested)
         {
             var db = transaction.DatabaseConnection;
             var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
@@ -845,7 +845,7 @@ namespace OpenActive.FakeDatabase.NET
             FakeDatabaseTransaction transaction,
             string clientId,
             long? sellerId,
-            string uuid,
+            Guid uuid,
             long occurrenceId,
             Uri opportunityJsonLdId,
             Uri offerJsonLdId,
@@ -918,7 +918,7 @@ namespace OpenActive.FakeDatabase.NET
             FakeDatabaseTransaction transaction,
             string clientId,
             long? sellerId,
-            string uuid,
+            Guid uuid,
             long slotId,
             Uri opportunityJsonLdId,
             Uri offerJsonLdId,
@@ -982,7 +982,7 @@ namespace OpenActive.FakeDatabase.NET
             return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
         }
 
-        public bool CancelOrderItems(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled, bool includeCancellationMessage = false)
+        public bool CancelOrderItems(string clientId, long? sellerId, Guid uuid, List<long> orderItemIds, bool customerCancelled, bool includeCancellationMessage = false)
         {
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
@@ -1094,7 +1094,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool ReplaceOrderOpportunity(string uuid)
+        public bool ReplaceOrderOpportunity(Guid uuid)
         {
             using (var db = Mem.Database.Open())
             {
@@ -1171,7 +1171,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool AcceptOrderProposal(string uuid)
+        public bool AcceptOrderProposal(Guid uuid)
         {
             using (var db = Mem.Database.Open())
             {
@@ -1195,7 +1195,7 @@ namespace OpenActive.FakeDatabase.NET
                 }
             }
         }
-        public bool AmendOrderProposal(string uuid, Guid version)
+        public bool AmendOrderProposal(Guid uuid, Guid version)
         {
             using (var db = Mem.Database.Open())
             {
@@ -1220,7 +1220,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public FakeDatabaseBookOrderProposalResult BookOrderProposal(string clientId, long? sellerId, string uuid, Guid? proposalVersionUuid)
+        public FakeDatabaseBookOrderProposalResult BookOrderProposal(string clientId, long? sellerId, Guid uuid, Guid? proposalVersionUuid)
         {
             using (var db = Mem.Database.Open())
             {
@@ -1272,7 +1272,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public long GetNumberOfOtherLeaseForOccurrence(string uuid, long? occurrenceId)
+        public long GetNumberOfOtherLeaseForOccurrence(Guid uuid, long? occurrenceId)
         {
             using (var db = Mem.Database.Open())
             {
@@ -1284,7 +1284,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public long GetNumberOfOtherLeasesForSlot(string uuid, long? slotId)
+        public long GetNumberOfOtherLeasesForSlot(Guid uuid, long? slotId)
         {
             using (var db = Mem.Database.Open())
             {
@@ -1296,7 +1296,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool RejectOrderProposal(string clientId, long? sellerId, string uuid, bool customerRejected)
+        public bool RejectOrderProposal(string clientId, long? sellerId, Guid uuid, bool customerRejected)
         {
             using (var db = Mem.Database.Open())
             {
