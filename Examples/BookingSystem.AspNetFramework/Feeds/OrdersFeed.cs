@@ -27,7 +27,7 @@ namespace BookingSystem
                         !afterTimestamp.HasValue ||
                         x.OrderModified > afterTimestamp ||
                         x.OrderModified == afterTimestamp &&
-                        string.Compare(afterId, x.OrderId, StringComparison.InvariantCulture) > 0) &&
+                        string.Compare(afterId, x.OrderId.ToString(), StringComparison.InvariantCulture) > 0) &&
                     x.OrderModified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
                 .Take(RPDEPageSize);
 
@@ -42,7 +42,7 @@ namespace BookingSystem
                     .Select(result => new RpdeItem
                     {
                         Kind = RpdeKind.Order,
-                        Id = result.OrderTable.OrderId,
+                        Id = result.OrderTable.OrderId.ToString(),
                         Modified = result.OrderTable.OrderModified,
                         State = result.OrderTable.Deleted || result.OrderTable.VisibleInOrdersFeed == FeedVisibility.Archived ? RpdeState.Deleted : RpdeState.Updated,
                         Data = result.OrderTable.Deleted || result.OrderTable.VisibleInOrdersFeed == FeedVisibility.Archived ? null :
@@ -116,7 +116,7 @@ namespace BookingSystem
                         !afterTimestamp.HasValue ||
                         x.OrderProposalModified > afterTimestamp ||
                         x.OrderProposalModified == afterTimestamp &&
-                        string.Compare(afterId, x.OrderId, StringComparison.InvariantCulture) > 0) &&
+                        string.Compare(afterId, x.OrderId.ToString(), StringComparison.InvariantCulture) > 0) &&
                     x.OrderProposalModified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
                 .Take(RPDEPageSize);
 
@@ -131,7 +131,7 @@ namespace BookingSystem
                     .Select(result => new RpdeItem
                     {
                         Kind = RpdeKind.Order,
-                        Id = result.OrderTable.OrderId,
+                        Id = result.OrderTable.OrderId.ToString(),
                         Modified = result.OrderTable.OrderProposalModified,
                         State = result.OrderTable.Deleted || result.OrderTable.VisibleInOrderProposalsFeed == FeedVisibility.Archived ? RpdeState.Deleted : RpdeState.Updated,
                         Data = result.OrderTable.Deleted || result.OrderTable.VisibleInOrderProposalsFeed == FeedVisibility.Archived ? null :

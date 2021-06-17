@@ -92,7 +92,11 @@ namespace OpenActive.Server.NET.StoreBooking
         protected abstract Task DeleteTestDataset(string testDatasetIdentifier);
         protected abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, TComponents idComponents);
 
-        protected abstract ValueTask CleanupOrderItems(Lease lease, List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransactionContext);
+        protected virtual ValueTask CleanupOrderItems(Lease lease, List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransactionContext)
+        {
+            // No-op if not implemented, as CleanupOrderItems is optional
+            return new ValueTask();
+        }
         public ValueTask CleanupOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
             return CleanupOrderItems(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext, (TDatabaseTransaction)databaseTransactionContext);
