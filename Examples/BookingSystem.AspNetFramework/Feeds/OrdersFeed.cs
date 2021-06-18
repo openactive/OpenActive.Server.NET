@@ -18,6 +18,7 @@ namespace BookingSystem
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
+                var afterIdGuid = string.IsNullOrEmpty(afterId) ? Guid.Empty : new Guid(afterId);
                 var q = db.From<OrderTable>()
                 .LeftJoin<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
                 .OrderBy(x => x.OrderModified)
@@ -27,7 +28,7 @@ namespace BookingSystem
                         !afterTimestamp.HasValue ||
                         x.OrderModified > afterTimestamp ||
                         x.OrderModified == afterTimestamp &&
-                        string.Compare(afterId, x.OrderId.ToString(), StringComparison.InvariantCulture) > 0) &&
+                        x.OrderId.CompareTo(afterIdGuid) < 0) &&
                     x.OrderModified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
                 .Take(RPDEPageSize);
 
@@ -107,6 +108,7 @@ namespace BookingSystem
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
+                var afterIdGuid = string.IsNullOrEmpty(afterId) ? Guid.Empty : new Guid(afterId);
                 var q = db.From<OrderTable>()
                 .LeftJoin<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
                 .OrderBy(x => x.OrderProposalModified)
@@ -116,7 +118,7 @@ namespace BookingSystem
                         !afterTimestamp.HasValue ||
                         x.OrderProposalModified > afterTimestamp ||
                         x.OrderProposalModified == afterTimestamp &&
-                        string.Compare(afterId, x.OrderId.ToString(), StringComparison.InvariantCulture) > 0) &&
+                        x.OrderId.CompareTo(afterIdGuid) < 0) &&
                     x.OrderProposalModified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
                 .Take(RPDEPageSize);
 

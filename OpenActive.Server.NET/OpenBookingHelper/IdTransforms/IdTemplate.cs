@@ -60,6 +60,23 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         }
     }
 
+    public class ComponentFailedToParseException : Exception
+    {
+        public ComponentFailedToParseException()
+        {
+        }
+
+        public ComponentFailedToParseException(string message)
+            : base(message)
+        {
+        }
+
+        public ComponentFailedToParseException(string message, Exception inner)
+            : base(message, inner)
+        {
+        }
+    }
+
     public interface IBookablePairIdTemplate
     {
         //OpportunityIdConfiguration OpportunityIdConfiguration { get;  }
@@ -516,7 +533,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                     }
                     else if (componentsType.GetProperty(binding.Key) == null)
                     {
-                        throw new ArgumentException("Supplied UriTemplates must match supplied component type properties");
+                        throw new ComponentFailedToParseException("Supplied UriTemplates must match supplied component type properties");
                     }
                     else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(long?))
                     {
@@ -531,7 +548,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         }
                         else
                         {
-                            throw new ArgumentException($"An integer in the template for binding {binding.Key} failed to parse.");
+                            throw new ComponentFailedToParseException($"An integer in the template for binding {binding.Key} failed to parse.");
                         }
                     }
                     else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(Guid?))
@@ -547,7 +564,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         }
                         else
                         {
-                            throw new ArgumentException($"A Guid in the template for binding {binding.Key} failed to parse.");
+                            throw new ComponentFailedToParseException($"A Guid in the template for binding {binding.Key} failed to parse.");
                         }
                     }
                     else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(Guid))
@@ -563,7 +580,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         }
                         else
                         {
-                            throw new ArgumentException($"A Guid in the template for binding {binding.Key} failed to parse.");
+                            throw new ComponentFailedToParseException($"A Guid in the template for binding {binding.Key} failed to parse.");
                         }
                     }
                     else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(string))
@@ -592,7 +609,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         object newValue = ToEnum(componentsType.GetProperty(binding.Key).PropertyType, binding.Value.Value as string);
                         if (newValue == null)
                         {
-                            throw new ArgumentException($"An enumeration in the template for binding {binding.Key} failed to parse.");
+                            throw new ComponentFailedToParseException($"An enumeration in the template for binding {binding.Key} failed to parse.");
                         }
                         if (existingValue != newValue && existingValue != null)
                         {
@@ -604,7 +621,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         }
                         catch (Exception ex)
                         {
-                            throw new ArgumentException($"An enumeration in the template for binding {binding.Key} failed to parse.", ex);
+                            throw new ComponentFailedToParseException($"An enumeration in the template for binding {binding.Key} failed to parse.", ex);
                         }
                     }
                     else

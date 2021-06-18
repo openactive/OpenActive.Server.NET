@@ -488,7 +488,15 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.");
             }
 
-            var orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(clientId, x.Id)).ToList();
+            List<OrderIdComponents> orderItemIds;
+            try
+            {
+                orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(clientId, x.Id)).ToList();
+            }
+            catch (ComponentFailedToParseException)
+            {
+                throw new OpenBookingException(new OrderItemIdInvalidError());
+            }
 
             // Check for mismatching UUIDs
             if (!orderItemIds.TrueForAll(x => x != null))
