@@ -244,7 +244,7 @@ namespace BookingSystem
                                 10M,
                                 10,
                                 requiresApproval,
-                                inPast: false);
+                                inPast: true);
                             break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");

@@ -1808,7 +1808,7 @@ namespace OpenActive.FakeDatabase.NET
             decimal locationLng = 0.1m,
             bool isOnlineOrMixedAttendanceMode = false,
             bool allowProposalAmendment = false,
-            bool inPast = true)
+            bool inPast = false)
 
         {
             var startTime = DateTime.Now.AddDays(inPast ? -1 : 1);
@@ -1879,7 +1879,7 @@ namespace OpenActive.FakeDatabase.NET
             decimal locationLat = 0.1m,
             decimal locationLng = 0.1m,
             bool allowProposalAmendment = false,
-            bool inPast = true)
+            bool inPast = false)
         {
             var startTime = DateTime.Now.AddDays(inPast ? -1 : 1);
             var endTime = DateTime.Now.AddDays(inPast ? -1 : 1).AddHours(1);
