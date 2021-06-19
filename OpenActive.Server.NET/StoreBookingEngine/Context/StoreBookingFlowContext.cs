@@ -28,5 +28,6 @@ namespace OpenActive.Server.NET.StoreBooking
         public BookingService BookingService { get; internal set; }
         public BrokerType? BrokerRole { get; internal set; }
         public Payment Payment { get; internal set; }
+        public List<IOrderItemContext> OrderItemContexts { get; internal set; }
     }
 }

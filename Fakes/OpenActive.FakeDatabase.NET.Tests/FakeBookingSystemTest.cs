@@ -113,18 +113,16 @@ namespace OpenActive.FakeDatabase.NET.Test
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
-                var uuid = "8265ab72-d458-40aa-a460-a9619e13192c";
+                var uuid = new Guid("8265ab72-d458-40aa-a460-a9619e13192c");
                 decimal price = 1.3M;
-                var testOrder = new OrderTable() { OrderId = uuid, SellerId = 1, TotalOrderPrice = price };
+                var testOrder = new OrderTable() { OrderId = uuid.ToString(), SellerId = 1, TotalOrderPrice = price };
 
                 db.Insert(testOrder, true);
 
-                OrderTable order = db.SingleById<OrderTable>(uuid);
+                OrderTable order = db.SingleById<OrderTable>(uuid.ToString());
 
                 Assert.Equal(price, order.TotalOrderPrice);
             }
-
-            
         }
     }
 }

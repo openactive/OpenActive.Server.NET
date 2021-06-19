@@ -16,18 +16,24 @@ namespace BookingSystem
 
         protected async override Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
+            // Note if using SQL Server it is best to use rowversion as the modified value for the Orders table,
+            // and update this class to inherit from OrdersRPDEFeedIncrementingUniqueChangeNumber
+            // (to use afterChangeNumber, instead of afterTimestamp and afterId)
+
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
+                long afterTimestampLong = afterTimestamp ?? 0;
                 var q = db.From<OrderTable>()
                 .LeftJoin<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
                 .OrderBy(x => x.OrderModified)
                 .ThenBy(x => x.OrderId)
                 .Where(x =>
                     x.VisibleInOrdersFeed != FeedVisibility.None && x.ClientId == clientId && (
-                        !afterTimestamp.HasValue ||
-                        x.OrderModified > afterTimestamp ||
-                        x.OrderModified == afterTimestamp &&
-                        string.Compare(afterId, x.OrderId, StringComparison.InvariantCulture) > 0) &&
+                        x.OrderModified > afterTimestampLong ||
+                        (x.OrderModified == afterTimestamp &&
+                        // Note this comparison will fail OpenActive validation if using SQL Server GUIDs due to the SQL Server GUID ordering
+                        // Use SQL Server rowversion and OrdersRPDEFeedIncrementingUniqueChangeNumber instead
+                        string.Compare(afterId, x.OrderId, StringComparison.InvariantCulture) > 0)) &&
                     x.OrderModified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
                 .Take(RPDEPageSize);
 
@@ -46,10 +52,10 @@ namespace BookingSystem
                         Modified = result.OrderTable.OrderModified,
                         State = result.OrderTable.Deleted || result.OrderTable.VisibleInOrdersFeed == FeedVisibility.Archived ? RpdeState.Deleted : RpdeState.Updated,
                         Data = result.OrderTable.Deleted || result.OrderTable.VisibleInOrdersFeed == FeedVisibility.Archived ? null :
-                            AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
+                            AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, new Guid(result.OrderTable.OrderId)), result.OrderTable,
                                 result.OrderItemsTable.Select(orderItem => new OrderItem
                                 {
-                                    Id = RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id),
+                                    Id = RenderOrderItemId(OrderType.Order, new Guid(result.OrderTable.OrderId), orderItem.Id),
                                     AcceptedOffer = new Offer
                                     {
                                         Id = orderItem.OfferJsonLdId,
@@ -107,16 +113,18 @@ namespace BookingSystem
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
+                long afterTimestampLong = afterTimestamp ?? 0;
                 var q = db.From<OrderTable>()
                 .LeftJoin<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
                 .OrderBy(x => x.OrderProposalModified)
                 .ThenBy(x => x.OrderId)
                 .Where(x =>
                     x.VisibleInOrderProposalsFeed != FeedVisibility.None && x.ClientId == clientId && (
-                        !afterTimestamp.HasValue ||
-                        x.OrderProposalModified > afterTimestamp ||
-                        x.OrderProposalModified == afterTimestamp &&
-                        string.Compare(afterId, x.OrderId, StringComparison.InvariantCulture) > 0) &&
+                        x.OrderProposalModified > afterTimestampLong ||
+                        (x.OrderProposalModified == afterTimestamp &&
+                        // Note this comparison will fail OpenActive validation if using SQL Server GUIDs due to the SQL Server GUID ordering
+                        // Use SQL Server rowversion and OrdersRPDEFeedIncrementingUniqueChangeNumber instead
+                        string.Compare(afterId, x.OrderId, StringComparison.InvariantCulture) > 0)) &&
                     x.OrderProposalModified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
                 .Take(RPDEPageSize);
 
@@ -135,10 +143,10 @@ namespace BookingSystem
                         Modified = result.OrderTable.OrderProposalModified,
                         State = result.OrderTable.Deleted || result.OrderTable.VisibleInOrderProposalsFeed == FeedVisibility.Archived ? RpdeState.Deleted : RpdeState.Updated,
                         Data = result.OrderTable.Deleted || result.OrderTable.VisibleInOrderProposalsFeed == FeedVisibility.Archived ? null :
-                            AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, result.OrderTable.OrderId), result.OrderTable,
+                            AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, new Guid(result.OrderTable.OrderId)), result.OrderTable,
                                 result.OrderItemsTable.Select(orderItem => new OrderItem
                                 {
-                                    Id = RenderOrderItemId(OrderType.Order, result.OrderTable.OrderId, orderItem.Id),
+                                    Id = RenderOrderItemId(OrderType.Order, new Guid(result.OrderTable.OrderId), orderItem.Id),
                                     AcceptedOffer = new Offer
                                     {
                                         Id = orderItem.OfferJsonLdId,

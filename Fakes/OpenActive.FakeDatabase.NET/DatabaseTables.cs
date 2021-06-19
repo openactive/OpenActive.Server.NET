@@ -102,6 +102,9 @@ namespace OpenActive.FakeDatabase.NET
     [CompositeIndex(nameof(OrderProposalModified), nameof(OrderId))]
     public class OrderTable
     {
+        /**
+         * Note string type is used for the OrderId instead of Guid type to allow for correct ordering of GUIDs for the RPDE feed
+         */
         [PrimaryKey]
         public string OrderId { get; set; }
 

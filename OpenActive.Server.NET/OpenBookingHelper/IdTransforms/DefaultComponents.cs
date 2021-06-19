@@ -80,9 +80,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     {
         public OrderType? OrderType { get; set; }
         public string ClientId { get; set; }
-        public string uuid { get; set; }
+        public Guid uuid { get; set; }
         public long? OrderItemIdLong { get; set; }
         public string OrderItemIdString { get; set; }
+        public Guid? OrderItemIdGuid { get; set; }
     }
 
     // TODO: Add resolve Order ID via enumeration, and add paths (e.g. 'order-quote-template') to the below
