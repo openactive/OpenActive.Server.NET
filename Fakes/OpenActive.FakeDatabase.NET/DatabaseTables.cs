@@ -77,7 +77,7 @@ namespace OpenActive.FakeDatabase.NET
         [Reference]
         public OrderTable OrderTable { get; set; }
         [ForeignKey(typeof(OrderTable), OnDelete = "CASCADE")]
-        public Guid OrderId { get; set; }
+        public string OrderId { get; set; }
         [Reference]
         public OccurrenceTable OccurrenceTable { get; set; }
         [ForeignKey(typeof(OccurrenceTable), OnDelete = "CASCADE")]
@@ -102,8 +102,11 @@ namespace OpenActive.FakeDatabase.NET
     [CompositeIndex(nameof(OrderProposalModified), nameof(OrderId))]
     public class OrderTable
     {
+        /**
+         * Note string type is used for the OrderId instead of Guid type to allow for correct ordering of GUIDs for the RPDE feed
+         */
         [PrimaryKey]
-        public Guid OrderId { get; set; }
+        public string OrderId { get; set; }
 
         public bool Deleted { get; set; }
         public long OrderModified { get; set; } = DateTimeOffset.Now.UtcTicks;

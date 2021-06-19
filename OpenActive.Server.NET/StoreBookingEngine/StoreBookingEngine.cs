@@ -171,11 +171,11 @@ namespace OpenActive.Server.NET.StoreBooking
             var requestOrderItemId = RequestOrderItem?.OrderedItem.IdReference;
             if (requestOrderItemId == null)
             {
-                throw new OpenBookingException(new InternalLibraryError(), "Request must include an orderedItem for the OrderItem");
+                throw new OpenBookingException(new InternalLibraryError(), "Request must include an orderedItem @id for the OrderItem");
             }
             if (item?.OrderedItem.Object?.Id != requestOrderItemId)
             {
-                throw new OpenBookingException(new InternalLibraryError(), "The Opportunity ID within the response OrderItem must match the request OrderItem");
+                throw new OpenBookingException(new InternalLibraryError(), "The Opportunity @id within the response OrderItem must match the request OrderItem");
             }
             var requestAcceptedOfferId = RequestOrderItem?.AcceptedOffer.IdReference;
             if (requestAcceptedOfferId == null)
@@ -195,6 +195,32 @@ namespace OpenActive.Server.NET.StoreBooking
             if (item?.Error != null)
             {
                 throw new OpenBookingException(new InternalLibraryError(), "Error property must not be set on OrderItem passed to SetResponseOrderItem");
+            }
+
+            if (item.OrderedItem.Object.EndDate.GetPrimative<DateTimeOffset>() < DateTimeOffset.Now)
+            {
+                AddError(new OpportunityOfferPairNotBookableError(), "Opportunities in the past are not bookable");
+            }
+
+            if (item.OrderedItem.Object.EventStatus == Schema.NET.EventStatusType.EventCancelled)
+            {
+                AddError(new OpportunityOfferPairNotBookableError(), "Opportunities that are cancelled are not bookable");
+            }
+
+            if (item.OrderedItem.Object.EventStatus == Schema.NET.EventStatusType.EventPostponed)
+            {
+                AddError(new OpportunityOfferPairNotBookableError(), "Opportunities that are postponed are not bookable");
+            }
+
+            if (item.AcceptedOffer.Object.ValidFromBeforeStartDate.HasValue
+                && item.OrderedItem.Object.StartDate.GetPrimative<DateTimeOffset>() - item.AcceptedOffer.Object.ValidFromBeforeStartDate > DateTimeOffset.Now)
+            {
+                AddError(new OpportunityOfferPairNotBookableError(), "Opportunities is not yet within its booking window");
+            }
+
+            if (item.AcceptedOffer.Object.OpenBookingInAdvance == RequiredStatusType.Unavailable)
+            {
+                AddError(new OpportunityOfferPairNotBookableError(), "Open Booking is not available on this opportunity");
             }
 
             item.Error = Errors;

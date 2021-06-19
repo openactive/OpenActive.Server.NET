@@ -406,7 +406,7 @@ namespace BookingSystem
         {
             var order = CreateOrderFromOrderMode(dbOrder.OrderMode, orderId, dbOrder.ProposalVersionId, dbOrder.ProposalStatus);
             order.Id = orderId;
-            order.Identifier = dbOrder.OrderId;
+            order.Identifier = new Guid(dbOrder.OrderId);
             order.TotalPaymentDue = new PriceSpecification
             {
                 Price = dbOrder.TotalOrderPrice,
@@ -426,10 +426,10 @@ namespace BookingSystem
                 orderId.uuid);
             if (getOrderResult == FakeDatabaseGetOrderResult.OrderWasNotFound) throw new OpenBookingException(new UnknownOrderError());
 
-            var orderIdUri = RenderOrderId(dbOrder.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : dbOrder.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, dbOrder.OrderId);
+            var orderIdUri = RenderOrderId(dbOrder.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : dbOrder.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, new Guid(dbOrder.OrderId));
             var orderItems = dbOrderItems.Select((orderItem) => new OrderItem
             {
-                Id = dbOrder.OrderMode != OrderMode.Lease ? RenderOrderItemId(OrderType.Order, dbOrder.OrderId, orderItem.Id) : null,
+                Id = dbOrder.OrderMode != OrderMode.Lease ? RenderOrderItemId(OrderType.Order, new Guid(dbOrder.OrderId), orderItem.Id) : null,
                 AcceptedOffer = new Offer
                 {
                     Id = orderItem.OfferJsonLdId,

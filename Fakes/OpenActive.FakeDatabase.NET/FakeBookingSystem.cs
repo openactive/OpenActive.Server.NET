@@ -195,13 +195,13 @@ namespace OpenActive.FakeDatabase.NET
         {
             var db = transaction.DatabaseConnection;
 
-            var existingOrder = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid);
+            var existingOrder = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
             if (existingOrder == null)
             {
                 db.Insert(new OrderTable
                 {
                     ClientId = clientId,
-                    OrderId = uuid,
+                    OrderId = uuid.ToString(),
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
@@ -410,7 +410,7 @@ namespace OpenActive.FakeDatabase.NET
 
             using (var db = Mem.Database.Open())
             {
-                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
 
                 if (order != null)
                 {
@@ -460,7 +460,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
 
                 if (order != null)
                 {
@@ -493,7 +493,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
                     List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
@@ -525,14 +525,14 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 // TODO: Note this should throw an error if the Seller ID does not match, same as DeleteOrder
-                if (db.Exists<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Lease && x.OrderId == uuid && (!sellerId.HasValue || x.SellerId == sellerId)))
+                if (db.Exists<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Lease && x.OrderId == uuid.ToString() && (!sellerId.HasValue || x.SellerId == sellerId)))
                 {
                     // ReSharper disable twice PossibleInvalidOperationException
-                    var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
-                    var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
+                    var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
+                    var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
 
-                    db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid);
-                    db.Delete<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid);
+                    db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
+                    db.Delete<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
 
                     RecalculateSpaces(db, occurrenceIds);
                     RecalculateSlotUses(db, slotIds);
@@ -549,13 +549,13 @@ namespace OpenActive.FakeDatabase.NET
         {
             var db = transaction.DatabaseConnection;
 
-            var existingOrder = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid);
+            var existingOrder = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
             if (existingOrder == null)
             {
                 db.Insert(new OrderTable
                 {
                     ClientId = clientId,
-                    OrderId = uuid,
+                    OrderId = uuid.ToString(),
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
@@ -619,9 +619,9 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid && !x.Deleted && (!sellerId.HasValue || x.SellerId == sellerId));
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && !x.Deleted && (!sellerId.HasValue || x.SellerId == sellerId));
                 if (order == null) return (FakeDatabaseGetOrderResult.OrderWasNotFound, null, null);
-                var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid);
+                var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
                 if (orderItems.Count == 0) return (FakeDatabaseGetOrderResult.OrderWasNotFound, null, null);
 
                 return (FakeDatabaseGetOrderResult.OrderSuccessfullyGot, order, orderItems);
@@ -643,7 +643,7 @@ namespace OpenActive.FakeDatabase.NET
                 }
                 var (occurrence, thisClass) = rows.FirstOrDefault();
 
-                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid.ToString() && x.OccurrenceId == occurrenceId);
                 var bookedOrderItemInfo = (orderItem != null && orderItem.Status == BookingStatus.Confirmed) ?
                      new BookedOrderItemInfo
                      {
@@ -681,7 +681,7 @@ namespace OpenActive.FakeDatabase.NET
                     return (hasFoundOccurrence, null, null, null);
                 }
                 var (slot, facilityUse) = rows.FirstOrDefault();
-                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid && x.SlotId == slotId);
+                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid.ToString() && x.SlotId == slotId);
                 var bookedOrderItemInfo = (orderItem != null && orderItem.Status == BookingStatus.Confirmed) ?
                      new BookedOrderItemInfo
                      {
@@ -707,7 +707,7 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 // Set the Order to deleted in the feed, and erase all associated personal data
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OrderMode != OrderMode.Lease);
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OrderMode != OrderMode.Lease);
                 if (order == null)
                 {
                     return FakeDatabaseDeleteOrderResult.OrderWasNotFound;
@@ -726,7 +726,7 @@ namespace OpenActive.FakeDatabase.NET
                 db.Update(order);
 
                 var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
-                var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
+                var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
                 db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId);
 
                 RecalculateSpaces(db, occurrenceIds);
@@ -753,7 +753,7 @@ namespace OpenActive.FakeDatabase.NET
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OccurrenceId == occurrenceId);
             RecalculateSpaces(db, thisOccurrence);
 
             // Only lease if all spaces requested are available
@@ -771,7 +771,7 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     ClientId = clientId,
                     Deleted = false,
-                    OrderId = uuid,
+                    OrderId = uuid.ToString(),
                     OccurrenceId = occurrenceId,
                     Status = BookingStatus.None
                 });
@@ -799,7 +799,7 @@ namespace OpenActive.FakeDatabase.NET
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == slotId);
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId == slotId);
             RecalculateSlotUses(db, thisSlot);
 
             // Only lease if all spaces requested are available
@@ -817,7 +817,7 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     ClientId = clientId,
                     Deleted = false,
-                    OrderId = uuid,
+                    OrderId = uuid.ToString(),
                     SlotId = slotId,
                     Status = BookingStatus.None
                 });
@@ -868,7 +868,7 @@ namespace OpenActive.FakeDatabase.NET
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OccurrenceId == occurrenceId);
             RecalculateSpaces(db, thisOccurrence);
 
             // Only lease if all spaces requested are available
@@ -882,7 +882,7 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     ClientId = clientId,
                     Deleted = false,
-                    OrderId = uuid,
+                    OrderId = uuid.ToString(),
                     Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
                     OccurrenceId = occurrenceId,
                     OpportunityJsonLdId = opportunityJsonLdId,
@@ -941,7 +941,7 @@ namespace OpenActive.FakeDatabase.NET
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid && x.SlotId == slotId);
+            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId == slotId);
             RecalculateSlotUses(db, thisSlot);
 
             // Only lease if all spaces requested are available
@@ -955,7 +955,7 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     ClientId = clientId,
                     Deleted = false,
-                    OrderId = uuid,
+                    OrderId = uuid.ToString(),
                     Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
                     SlotId = slotId,
                     OpportunityJsonLdId = opportunityJsonLdId,
@@ -988,8 +988,8 @@ namespace OpenActive.FakeDatabase.NET
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
                 var order = customerCancelled
-                    ? db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid && !x.Deleted)
-                    : db.Single<OrderTable>(x => x.OrderId == uuid && !x.Deleted);
+                    ? db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid.ToString() && !x.Deleted)
+                    : db.Single<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
 
                 if (order == null)
                     return false;
@@ -1100,7 +1100,7 @@ namespace OpenActive.FakeDatabase.NET
             {
                 var query = db.From<OrderItemsTable>()
                               .Join<OrderTable>()
-                              .Where<OrderItemsTable>(x => x.OrderId == uuid)
+                              .Where<OrderItemsTable>(x => x.OrderId == uuid.ToString())
                               .Where<OrderTable>(x => x.OrderMode != OrderMode.Proposal);
                 var orderItemsAndOrder = db.SelectMulti<OrderItemsTable, OrderTable>(query);
                 if (!orderItemsAndOrder.Any())
@@ -1175,7 +1175,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                var order = db.Single<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid && !x.Deleted);
+                var order = db.Single<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
                     // This makes the call idempotent
@@ -1199,7 +1199,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                var order = db.Single<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid && !x.Deleted);
+                var order = db.Single<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
                     // This makes the call idempotent
@@ -1225,7 +1225,7 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = Mem.Database.Open())
             {
                 // Note call is idempotent, so it might already be in the booked state
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && (x.OrderMode == OrderMode.Proposal || x.OrderMode == OrderMode.Booking) && x.OrderId == uuid && !x.Deleted);
+                var order = db.Single<OrderTable>(x => x.ClientId == clientId && (x.OrderMode == OrderMode.Proposal || x.OrderMode == OrderMode.Booking) && x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
                     if (sellerId.HasValue && order.SellerId != sellerId)
@@ -1280,7 +1280,7 @@ namespace OpenActive.FakeDatabase.NET
                                                  x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
                                                  x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
                                                  x.OccurrenceId == occurrenceId &&
-                                                 x.OrderId != uuid);
+                                                 x.OrderId != uuid.ToString());
             }
         }
 
@@ -1292,7 +1292,7 @@ namespace OpenActive.FakeDatabase.NET
                                                  x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
                                                  x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
                                                  x.SlotId == slotId &&
-                                                 x.OrderId != uuid);
+                                                 x.OrderId != uuid.ToString());
             }
         }
 
@@ -1300,7 +1300,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = Mem.Database.Open())
             {
-                var order = db.Single<OrderTable>(x => (clientId == null || x.ClientId == clientId) && x.OrderMode == OrderMode.Proposal && x.OrderId == uuid && !x.Deleted);
+                var order = db.Single<OrderTable>(x => (clientId == null || x.ClientId == clientId) && x.OrderMode == OrderMode.Proposal && x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
                     if (sellerId.HasValue && order.SellerId != sellerId)
