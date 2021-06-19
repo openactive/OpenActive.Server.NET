@@ -88,7 +88,7 @@ jobs:
         path: ./tests/output/
 
     - name: Deploy conformance certificate to Azure Blob Storage (master branch for 'all-features' profile in controlled mode only)
-      uses: bacongobbler/azure-blob-storage-upload@v1.1.1
+      uses: bacongobbler/azure-blob-storage-upload@v1.2.0
       if: ${{ github.ref == 'refs/heads/master' }}
       with:
         source_dir: ./tests/conformance/
