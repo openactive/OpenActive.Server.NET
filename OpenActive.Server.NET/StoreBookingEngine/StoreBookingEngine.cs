@@ -215,7 +215,7 @@ namespace OpenActive.Server.NET.StoreBooking
             if (item.AcceptedOffer.Object.ValidFromBeforeStartDate.HasValue
                 && item.OrderedItem.Object.StartDate.GetPrimative<DateTimeOffset>() - item.AcceptedOffer.Object.ValidFromBeforeStartDate > DateTimeOffset.Now)
             {
-                AddError(new OpportunityOfferPairNotBookableError(), "Opportunities is not yet within its booking window");
+                AddError(new OpportunityOfferPairNotBookableError(), "Opportunity is not yet within its booking window");
             }
 
             if (item.AcceptedOffer.Object.OpenBookingInAdvance == RequiredStatusType.Unavailable)
