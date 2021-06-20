@@ -192,11 +192,11 @@
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="OpenActive.DatasetSite.NET, Version=4.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\OpenActive.DatasetSite.NET.4.1.0\lib\net45\OpenActive.DatasetSite.NET.dll</HintPath>
+    <Reference Include="OpenActive.DatasetSite.NET, Version=4.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\OpenActive.DatasetSite.NET.4.2.0\lib\net45\OpenActive.DatasetSite.NET.dll</HintPath>
     </Reference>
     <Reference Include="OpenActive.NET, Version=15.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\OpenActive.NET.15.2.1\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
+      <HintPath>..\..\packages\OpenActive.NET.15.2.2\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
     </Reference>
     <Reference Include="Schema.NET, Version=7.0.1.0, Culture=neutral, PublicKeyToken=fc5550082a9c642c, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Schema.NET.7.0.1\lib\net461\Schema.NET.dll</HintPath>
