@@ -54,6 +54,16 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             };
         }
 
+        public static ResponseContent OrdersFeedRpdeResponse(string content)
+        {
+            return new ResponseContent
+            {
+                Content = content,
+                ContentType = OpenActiveMediaTypes.OpenBooking.Version1,
+                StatusCode = HttpStatusCode.OK
+            };
+        }
+
         public static ResponseContent RpdeResponse(string content)
         {
             return new ResponseContent
