@@ -197,7 +197,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 throw new OpenBookingException(new InternalLibraryError(), "Error property must not be set on OrderItem passed to SetResponseOrderItem");
             }
 
-            if (item.OrderedItem.Object.EndDate.GetPrimative<DateTimeOffset>() < DateTimeOffset.Now)
+            if (item.OrderedItem.Object.EndDate.NullableValue < DateTimeOffset.Now)
             {
                 AddError(new OpportunityOfferPairNotBookableError(), "Opportunities in the past are not bookable");
             }
@@ -212,8 +212,8 @@ namespace OpenActive.Server.NET.StoreBooking
                 AddError(new OpportunityOfferPairNotBookableError(), "Opportunities that are postponed are not bookable");
             }
 
-            if (item.AcceptedOffer.Object.ValidFromBeforeStartDate.HasValue
-                && item.OrderedItem.Object.StartDate.GetPrimative<DateTimeOffset>() - item.AcceptedOffer.Object.ValidFromBeforeStartDate > DateTimeOffset.Now)
+            if (item.AcceptedOffer.Object.ValidFromBeforeStartDate.HasValue && item.OrderedItem.Object.StartDate.HasValue
+                && item.OrderedItem.Object.StartDate.Value - item.AcceptedOffer.Object.ValidFromBeforeStartDate.Value > DateTimeOffset.Now)
             {
                 AddError(new OpportunityOfferPairNotBookableError(), "Opportunity is not yet within its booking window");
             }
