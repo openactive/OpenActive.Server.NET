@@ -56,11 +56,11 @@ namespace OpenActive.Server.NET.Tests
                 );
             template.RequiredBaseUrl = new Uri("https://example.com/");
 
-            var components = template.GetOrderItemIdComponents("client", new Uri("https://example.com/api/orders/asdf#/orderedItems/123"));
+            var components = template.GetOrderItemIdComponents("client", new Uri("https://example.com/api/orders/3cbb8557-ca8f-4889-b21f-a59f860f8d25#/orderedItems/123"));
 
             Assert.NotNull(components);
             Assert.Equal(OrderType.Order, components.OrderType);
-            Assert.Equal("asdf", components.uuid);
+            Assert.Equal(new Guid("3cbb8557-ca8f-4889-b21f-a59f860f8d25"), components.uuid);
             Assert.Equal(123, components.OrderItemIdLong);
         }
 
@@ -75,14 +75,14 @@ namespace OpenActive.Server.NET.Tests
 
             OrderIdComponents components = new OrderIdComponents
             {
-                uuid = "asdf",
+                uuid = new Guid("3cbb8557-ca8f-4889-b21f-a59f860f8d25"),
                 OrderItemIdLong = 123,
                 OrderType = OrderType.Order
             };
 
             var id = template.RenderOrderItemId(components);
 
-            Assert.Equal(new Uri("https://example.com/api/orders/asdf#/orderedItems/123"), id);
+            Assert.Equal(new Uri("https://example.com/api/orders/3cbb8557-ca8f-4889-b21f-a59f860f8d25#/orderedItems/123"), id);
 
         }
 

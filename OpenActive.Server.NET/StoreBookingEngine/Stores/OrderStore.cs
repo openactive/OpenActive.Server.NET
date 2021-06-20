@@ -27,12 +27,12 @@ namespace OpenActive.Server.NET.StoreBooking
         /// <param name="stage"></param>
         /// <returns></returns>
         ValueTask<IDatabaseTransaction> BeginOrderTransaction(FlowStage stage);
-        Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
-        Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
-        IStateContext InitialiseFlow(StoreBookingFlowContext flowContext);
+        Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, List<OrderIdComponents> orderItemIds);
+        Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId);
+        ValueTask<IStateContext> InitialiseFlow(StoreBookingFlowContext flowContext);
         Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         Task DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
-        Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents);
+        Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents orderId);
         Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
         Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order);
 
@@ -54,18 +54,27 @@ namespace OpenActive.Server.NET.StoreBooking
         {
             base.SetConfiguration(orderIdTemplate, sellerIdTemplate);
         }
-        public abstract TStateContext Initialise(StoreBookingFlowContext flowContext);
-        public IStateContext InitialiseFlow(StoreBookingFlowContext flowContext)
+        public abstract ValueTask<TStateContext> Initialise(StoreBookingFlowContext flowContext);
+        public async ValueTask<IStateContext> InitialiseFlow(StoreBookingFlowContext flowContext)
         {
-            return Initialise(flowContext);
+            return await Initialise(flowContext);
         }
-        public abstract Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
-        public abstract Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
+        public abstract Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, List<OrderIdComponents> orderItemIds);
+        public virtual Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId) {
+            // This will return an error to the Broker
+            throw new OpenBookingException(new OpenBookingError(), "Order Proposals are not supported in this implementation");
+        }
         public abstract Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         public abstract Task DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
-        public abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents idComponents);
-        public abstract Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller);
-        public abstract Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order);
+        public abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents orderId);
+        public virtual Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller) {
+            // This will return an error to the Broker
+            throw new OpenBookingException(new OpenBookingError(), "The Order Status endpoint is not supported in this implementation");
+        }
+
+        public virtual Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order) {
+            throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "CreateOrderFromOrderProposal must be implemented when implementing Order Proposals");
+        }
         public abstract ValueTask<IDatabaseTransaction> BeginOrderTransaction(FlowStage stage);
 
         public abstract ValueTask<Lease> CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction);
@@ -74,7 +83,12 @@ namespace OpenActive.Server.NET.StoreBooking
             return CreateLease(responseOrderQuote, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
         }
 
-        public abstract ValueTask UpdateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransactionc);
+        public virtual ValueTask UpdateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction)
+        {
+            // No-op if not implemented, as UpdateLease is optional
+            return new ValueTask();
+        }
+
         public ValueTask UpdateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return UpdateLease(responseOrderQuote, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
@@ -86,19 +100,32 @@ namespace OpenActive.Server.NET.StoreBooking
             return CreateOrder(responseOrder, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
         }
 
-        public abstract ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction);
+        public virtual ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction)
+        {
+            // No-op if not implemented, as UpdateOrder is optional
+            return new ValueTask();
+        }
+
         public ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return UpdateOrder(responseOrder, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
         }
 
-        public abstract ValueTask<(Guid, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction);
+        public virtual ValueTask<(Guid, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction)
+        {
+            // CreateOrderProposal gets called in the flow first, so this will return an error to the Broker
+            throw new OpenBookingException(new OpenBookingError(), "Order Proposals are not supported in this implementation");
+        }
         public ValueTask<(Guid, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return CreateOrderProposal(responseOrderProposal, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
         }
 
-        public abstract ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction);
+        public virtual ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction dbTransaction)
+        {
+            // No-op if not implemented, as UpdateOrderProposal is optional
+            return new ValueTask();
+        }
         public ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction)
         {
             return UpdateOrderProposal(responseOrderProposal, flowContext, (TStateContext)stateContext, (TDatabaseTransaction)dbTransaction);
