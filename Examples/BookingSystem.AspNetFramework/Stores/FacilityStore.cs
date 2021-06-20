@@ -225,7 +225,7 @@ namespace BookingSystem
                                 10,
                                 requiresApproval,
                                 allowCustomerCancellationFullRefund: false,
-                                inPast: false);
+                                inPast: true);
                             break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
