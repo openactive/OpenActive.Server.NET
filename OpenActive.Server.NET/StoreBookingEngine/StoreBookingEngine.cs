@@ -632,6 +632,19 @@ namespace OpenActive.Server.NET.StoreBooking
             return context;
         }
 
+        public void AugmentWithOpenBookingPrepaymentConflictErrors(List<IOrderItemContext> orderItemContexts) {
+            var contextsWithOpenBookingPrepaymentRequired = orderItemContexts.Where(x => x.ResponseOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Required).ToList();
+            var contextsWithOpenBookingPrepaymentUnavailable = orderItemContexts.Where(x => x.ResponseOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Unavailable).ToList();
+
+            // Add errors to any items with conflicting openBookingPrepayment values
+            if (contextsWithOpenBookingPrepaymentRequired.Count > 0 && contextsWithOpenBookingPrepaymentUnavailable.Count > 0) {
+                foreach (var ctx in contextsWithOpenBookingPrepaymentRequired.Concat(contextsWithOpenBookingPrepaymentUnavailable))
+                {
+                    ctx.AddError(new OpportunityIsInConflictError(), "A single Order cannot contain items with prepayment Unavailable, and also items with prepayment Required.");
+                }
+            }
+        }
+
         public async override Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
         {
             var flowContext = AugmentContextFromOrder(request, order);
@@ -648,6 +661,9 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // Call GetOrderItems for each Store
             var orderItemGroups = await GetOrderItemContextGroups(orderItemContexts, flowContext, stateContext);
+
+            // Add errors to any items with conflicting openBookingPrepayment values
+            AugmentWithOpenBookingPrepaymentConflictErrors(orderItemContexts);
 
             // Create a response Order based on the original order of the OrderItems in orderItemContexts
             TOrder responseGenericOrder = new TOrder
