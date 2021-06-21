@@ -1807,11 +1807,12 @@ namespace OpenActive.FakeDatabase.NET
             decimal locationLat = 0.1m,
             decimal locationLng = 0.1m,
             bool isOnlineOrMixedAttendanceMode = false,
-            bool allowProposalAmendment = false)
+            bool allowProposalAmendment = false,
+            bool inPast = false)
 
         {
-            var startTime = DateTime.Now.AddDays(1);
-            var endTime = DateTime.Now.AddDays(1).AddHours(1);
+            var startTime = DateTime.Now.AddDays(inPast ? -1 : 1);
+            var endTime = DateTime.Now.AddDays(inPast ? -1 : 1).AddHours(1);
 
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
@@ -1877,10 +1878,11 @@ namespace OpenActive.FakeDatabase.NET
             bool requiresAdditionalDetails = false,
             decimal locationLat = 0.1m,
             decimal locationLng = 0.1m,
-            bool allowProposalAmendment = false)
+            bool allowProposalAmendment = false,
+            bool inPast = false)
         {
-            var startTime = DateTime.Now.AddDays(1);
-            var endTime = DateTime.Now.AddDays(1).AddHours(1);
+            var startTime = DateTime.Now.AddDays(inPast ? -1 : 1);
+            var endTime = DateTime.Now.AddDays(inPast ? -1 : 1).AddHours(1);
 
             using (var db = Mem.Database.Open())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))

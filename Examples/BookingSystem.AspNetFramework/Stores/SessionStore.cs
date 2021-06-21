@@ -236,6 +236,16 @@ namespace BookingSystem
                                 requiresApproval,
                                 allowCustomerCancellationFullRefund: false);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableInPast:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Sesssion in the Past",
+                                10M,
+                                10,
+                                requiresApproval,
+                                inPast: true);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }
@@ -427,6 +437,17 @@ namespace BookingSystem
 
             foreach (var ctxGroup in orderItemContexts.Where(ctx => !ctx.HasErrors).GroupBy(x => x.RequestBookableOpportunityOfferId))
             {
+                // TODO: ENSURE THAT THIS IS CALLED EVERY TIME BY THE STOREBOOKINGENGINE, EVEN WITH ZERO ITEMS
+                // This will ensure that items can be removed from the Order before the booking is confirmed if all items of that type have been removed from the lease
+
+                // Step 1: Get existing lease from database
+
+                // Step 2: Compare items in the existing lease to items in the request
+
+                // Step 3: Add/remove lease items to match the request
+
+                //Dictionary<long, int> existingLease = new Dictionary<long, int>();
+
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
                 {
@@ -437,6 +458,8 @@ namespace BookingSystem
                 }
                 else
                 {
+                    //var existingOpportunities = existingLease[ctxGroup.Key.ScheduledSessionId.Value];
+
                     // Attempt to lease for those with the same IDs, which is atomic
                     var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForClassOccurrence(
                         databaseTransaction.FakeDatabaseTransaction,
@@ -503,6 +526,15 @@ namespace BookingSystem
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
+
+            // TODO: ENSURE THAT THIS IS CALLED EVERY TIME BY THE STOREBOOKINGENGINE, EVEN WITH ZERO ITEMS
+            // This will ensure that items can be removed from the Order before the booking is confirmed if all items of that type have been removed from the lease
+
+            // Step 1: Call lease to ensure items are already leased
+
+            // Step 2: Set OrderItems to booked 
+
+            // Step 3: Write attendee and orderItemIntakeFormResponse to the OrderItem records, for inclusion in P later
 
             foreach (var ctxGroup in orderItemContexts.GroupBy(x => x.RequestBookableOpportunityOfferId))
             {

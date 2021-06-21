@@ -197,7 +197,12 @@ namespace OpenActive.Server.NET.StoreBooking
                 throw new OpenBookingException(new InternalLibraryError(), "Error property must not be set on OrderItem passed to SetResponseOrderItem");
             }
 
-            if (item.OrderedItem.Object.EndDate.GetPrimative<DateTimeOffset>() < DateTimeOffset.Now)
+            if (RequestOrderItem?.AcceptedOffer.Object?.Price == 0 && !(RequestOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == null || RequestOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Unavailable))
+            {
+                throw new OpenBookingException(new InternalLibraryError(), "OpenBookingPrepayment must be set to null or Unavailable for free opportunities.");
+            }
+
+            if (item.OrderedItem.Object.EndDate.NullableValue < DateTimeOffset.Now)
             {
                 AddError(new OpportunityOfferPairNotBookableError(), "Opportunities in the past are not bookable");
             }
@@ -212,8 +217,8 @@ namespace OpenActive.Server.NET.StoreBooking
                 AddError(new OpportunityOfferPairNotBookableError(), "Opportunities that are postponed are not bookable");
             }
 
-            if (item.AcceptedOffer.Object.ValidFromBeforeStartDate.HasValue
-                && item.OrderedItem.Object.StartDate.GetPrimative<DateTimeOffset>() - item.AcceptedOffer.Object.ValidFromBeforeStartDate > DateTimeOffset.Now)
+            if (item.AcceptedOffer.Object.ValidFromBeforeStartDate.HasValue && item.OrderedItem.Object.StartDate.HasValue
+                && item.OrderedItem.Object.StartDate.Value - item.AcceptedOffer.Object.ValidFromBeforeStartDate.Value > DateTimeOffset.Now)
             {
                 AddError(new OpportunityOfferPairNotBookableError(), "Opportunity is not yet within its booking window");
             }
@@ -632,6 +637,19 @@ namespace OpenActive.Server.NET.StoreBooking
             return context;
         }
 
+        public void AugmentWithOpenBookingPrepaymentConflictErrors(List<IOrderItemContext> orderItemContexts) {
+            var contextsWithOpenBookingPrepaymentRequired = orderItemContexts.Where(x => x.ResponseOrderItem?.AcceptedOffer.Object?.Price > 0 && (x.ResponseOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == null || x.ResponseOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Required)).ToList();
+            var contextsWithOpenBookingPrepaymentUnavailable = orderItemContexts.Where(x => x.ResponseOrderItem?.AcceptedOffer.Object?.Price > 0 && x.ResponseOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Unavailable).ToList();
+
+            // Add errors to any items with conflicting openBookingPrepayment values
+            if (contextsWithOpenBookingPrepaymentRequired.Count > 0 && contextsWithOpenBookingPrepaymentUnavailable.Count > 0) {
+                foreach (var ctx in contextsWithOpenBookingPrepaymentRequired.Concat(contextsWithOpenBookingPrepaymentUnavailable))
+                {
+                    ctx.AddError(new OpportunityIsInConflictError(), "A single Order cannot contain items with prepayment Unavailable, and also items with prepayment Required.");
+                }
+            }
+        }
+
         public async override Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
         {
             var flowContext = AugmentContextFromOrder(request, order);
@@ -648,6 +666,9 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // Call GetOrderItems for each Store
             var orderItemGroups = await GetOrderItemContextGroups(orderItemContexts, flowContext, stateContext);
+
+            // Add errors to any items with conflicting openBookingPrepayment values
+            AugmentWithOpenBookingPrepaymentConflictErrors(orderItemContexts);
 
             // Create a response Order based on the original order of the OrderItems in orderItemContexts
             TOrder responseGenericOrder = new TOrder

@@ -236,6 +236,16 @@ namespace BookingSystem
                                 requiresApproval,
                                 allowCustomerCancellationFullRefund: false);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableInPast:
+                            (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Sesssion in the Past",
+                                10M,
+                                10,
+                                requiresApproval,
+                                inPast: true);
+                            break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
                     }

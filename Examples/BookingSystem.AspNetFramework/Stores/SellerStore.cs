@@ -62,6 +62,7 @@ namespace BookingSystem
                 var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
                 if (seller == null)
                 {
+                    // Seller not found
                     return null;
                 }
 
@@ -71,6 +72,7 @@ namespace BookingSystem
                     Name = seller.Name,
                     TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
                     LegalName = seller.Name,
+                    // Note these strings should be populated from the database
                     Address = new PostalAddress
                     {
                         StreetAddress = "1 Fake Place",
@@ -86,6 +88,7 @@ namespace BookingSystem
                     Name = seller.Name,
                     TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
                     LegalName = seller.Name,
+                    // Note these strings should be populated from the database
                     Address = new PostalAddress
                     {
                         StreetAddress = "1 Hidden Gem",

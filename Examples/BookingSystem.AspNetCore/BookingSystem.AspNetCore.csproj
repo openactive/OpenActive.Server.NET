@@ -12,7 +12,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureADB2C.UI" Version="2.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
-    <PackageReference Include="OpenActive.NET" Version="15.0.2" />
+    <PackageReference Include="OpenActive.NET" Version="15.2.2" />
   </ItemGroup>
 
   <ItemGroup>

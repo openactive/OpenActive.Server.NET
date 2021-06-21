@@ -16,6 +16,7 @@ namespace BookingSystem
         public bool EnableTokenAuth { get; set; } = true;
         public bool SingleSeller { get; set; } = false;
         public bool PaymentReconciliationDetailValidation { get; set; } = true;
+        public bool OnlyFreeOpportunities { get; set; } = false;
     }
 
     public class PaymentSettings

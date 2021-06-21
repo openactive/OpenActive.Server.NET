@@ -251,7 +251,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <returns></returns>
         public async Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse((await RenderOrdersRPDEPageForFeed(OrderType.Order, clientId, afterTimestamp, afterId, afterChangeNumber)).ToString());
+            return ResponseContent.OrdersFeedRpdeResponse((await RenderOrdersRPDEPageForFeed(OrderType.Order, clientId, afterTimestamp, afterId, afterChangeNumber)).ToString());
         }
 
         /// <summary>
@@ -265,7 +265,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <returns></returns>
         public async Task<ResponseContent> GetOrderProposalsRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse(
+            return ResponseContent.OrdersFeedRpdeResponse(
                 (await GetOrderProposalsRPDEPageForFeed(
                     clientId,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),

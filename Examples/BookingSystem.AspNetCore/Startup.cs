@@ -59,7 +59,7 @@ namespace BookingSystem.AspNetCore
                 .AddTestHeaderAuthenticationSupport(options => { });
                 services.AddAuthorization(options =>
                 {
-                    // No authorization checks are performed, this just that the required claims are supplied
+                    // No authorization checks are performed, this just ensures that the required claims are supplied
                     options.AddPolicy(OpenActiveScopes.OpenBooking, policy => {
                         policy.RequireClaim(OpenActiveCustomClaimNames.ClientId);
                         policy.RequireClaim(OpenActiveCustomClaimNames.SellerId);
