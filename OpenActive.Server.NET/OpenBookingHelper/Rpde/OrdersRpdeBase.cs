@@ -36,7 +36,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public async Task<RpdePage> GetOrdersRpdePage(string clientId, long? afterChangeNumber)
         {
-            return new RpdePage(this.FeedUrl, afterChangeNumber, await GetRPDEItems(clientId, afterChangeNumber));
+            var page = new RpdePage(this.FeedUrl, afterChangeNumber, await GetRPDEItems(clientId, afterChangeNumber));
+            // Orders feed pages do not include a License
+            page.License = null;
+            return page;
         }
     }
 
@@ -53,7 +56,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
             else
             {
-                return new RpdePage(this.FeedUrl, afterTimestamp, afterId, await GetRPDEItems(clientId, afterTimestamp, afterId));
+                var page = new RpdePage(this.FeedUrl, afterTimestamp, afterId, await GetRPDEItems(clientId, afterTimestamp, afterId));
+                // Orders feed pages do not include a License
+                page.License = null;
+                return page;
             }
         }
     }
