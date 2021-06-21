@@ -129,6 +129,7 @@ namespace OpenActive.Server.NET.CustomBooking
         private Uri openDataFeedBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
+        private readonly AsyncDuplicateLock<string> asyncDuplicateLock = new AsyncDuplicateLock<string>();
 
         protected Dictionary<OpportunityType, IBookablePairIdTemplate> OpportunityTemplateLookup { get; }
 
@@ -230,7 +231,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <returns></returns>
         public async Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse(
+            return ResponseContent.OrdersFeedRpdeResponse(
                 (await RenderOrdersRPDEPageForFeed(
                     OrderType.Order,
                     clientId,
@@ -285,7 +286,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <returns></returns>
         public async Task<ResponseContent> GetOrderProposalsRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse((await RenderOrdersRPDEPageForFeed(OrderType.OrderProposal, clientId, afterTimestamp, afterId, afterChangeNumber)).ToString());
+            return ResponseContent.OrdersFeedRpdeResponse((await RenderOrdersRPDEPageForFeed(OrderType.OrderProposal, clientId, afterTimestamp, afterId, afterChangeNumber)).ToString());
         }
 
         /// <summary>
@@ -377,6 +378,12 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
+        private static string GetParallelLockKey(OrderIdComponents orderId)
+        {
+            // Use parsed GUID value and system defined ClientId rather than string to protect locks from abuse
+            return $"{orderId.ClientId}|{orderId.uuid}".ToUpperInvariant();
+        }
+
         public async Task<ResponseContent> ProcessCheckpoint1(string clientId, Uri sellerId, string uuidString, string orderQuoteJson)
         {
             return await ProcessCheckpoint(clientId, sellerId, uuidString, orderQuoteJson, FlowStage.C1, OrderType.OrderQuote);
@@ -393,13 +400,17 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
             var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuidString, orderType);
-            var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
-            // Return a 409 status code if any OrderItem level errors exist
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
-                orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            {
+                var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
+                // Return a 409 status code if any OrderItem level errors exist
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
+                    orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
+            }
         }
         public async Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuidString, string orderJson)
         {
+            
             // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
             // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
@@ -408,14 +419,18 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for B");
             }
             var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuidString, OrderType.Order);
-            var response = order.OrderProposalVersion != null ?
-                 await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
-                 await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.OK);
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            {
+                var response = order.OrderProposalVersion != null ?
+                     await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
+                     await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.Created);
+            }
         }
 
         public async Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuidString, string orderJson)
         {
+            
             // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
             // If C1 and C2 are used correctly, P should not fail except in very exceptional cases.
             OrderProposal order = OpenActiveSerializer.Deserialize<OrderProposal>(orderJson);
@@ -424,7 +439,10 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
             }
             var (orderId, sellerIdComponents, seller) = await ConstructIdsFromRequest(clientId, sellerId, uuidString, OrderType.OrderProposal);
-            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.OK);
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            {
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, FlowStage.P, order), order)), HttpStatusCode.Created);
+            }
         }
 
         private SellerIdComponents GetSellerIdComponentsFromApiKey(Uri sellerId)
@@ -439,15 +457,19 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> DeleteOrder(string clientId, Uri sellerId, string uuidString)
         {
-            var result = await ProcessOrderDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = ConvertToGuid(uuidString) }, GetSellerIdComponentsFromApiKey(sellerId));
-            switch (result)
+            var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = ConvertToGuid(uuidString) };
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
-                case DeleteOrderResult.OrderSuccessfullyDeleted:
-                    return ResponseContent.OpenBookingNoContentResponse();
-                case DeleteOrderResult.OrderDidNotExist:
-                    throw new OpenBookingException(new UnknownOrderError());
-                default:
-                    throw new OpenBookingException(new OpenBookingError(), $"Unexpected DeleteOrderResult: {result}");
+                var result = await ProcessOrderDeletion(orderId, GetSellerIdComponentsFromApiKey(sellerId));
+                switch (result)
+                {
+                    case DeleteOrderResult.OrderSuccessfullyDeleted:
+                        return ResponseContent.OpenBookingNoContentResponse();
+                    case DeleteOrderResult.OrderDidNotExist:
+                        throw new OpenBookingException(new UnknownOrderError());
+                    default:
+                        throw new OpenBookingException(new OpenBookingError(), $"Unexpected DeleteOrderResult: {result}");
+                }
             }
         }
 
@@ -455,64 +477,71 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> DeleteOrderQuote(string clientId, Uri sellerId, string uuidString)
         {
-            await ProcessOrderQuoteDeletion(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = ConvertToGuid(uuidString) }, GetSellerIdComponentsFromApiKey(sellerId));
-            return ResponseContent.OpenBookingNoContentResponse();
+            var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = ConvertToGuid(uuidString) };
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            {
+                await ProcessOrderQuoteDeletion(orderId, GetSellerIdComponentsFromApiKey(sellerId));
+                return ResponseContent.OpenBookingNoContentResponse();
+            }
         }
 
         protected abstract Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId);
 
         public async Task<ResponseContent> ProcessOrderUpdate(string clientId, Uri sellerId, string uuidString, string orderJson)
         {
-            var uuid = ConvertToGuid(uuidString);
-            Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
-            SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
-
-            if (order == null || order.GetType() != typeof(Order))
+            var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = ConvertToGuid(uuidString) };
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
-                throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for Order Cancellation");
+                Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
+                SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
+
+                if (order == null || order.GetType() != typeof(Order))
+                {
+                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for Order Cancellation");
+                }
+
+                // Check for PatchContainsExcessiveProperties
+                Order orderWithOnlyAllowedProperties = new Order
+                {
+                    OrderedItem = order.OrderedItem.Select(x => new OrderItem { Id = x.Id, OrderItemStatus = x.OrderItemStatus }).ToList()
+                };
+                if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties))
+                {
+                    throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
+                }
+
+                // Check for PatchNotAllowedOnProperty
+                if (!order.OrderedItem.TrueForAll(x => x.OrderItemStatus == OrderItemStatus.CustomerCancelled))
+                {
+                    throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.");
+                }
+
+                List<OrderIdComponents> orderItemIds;
+                try
+                {
+                    orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(clientId, x.Id)).ToList();
+                }
+                catch (ComponentFailedToParseException)
+                {
+                    throw new OpenBookingException(new OrderItemIdInvalidError());
+                }
+
+                // Check for mismatching UUIDs
+                if (!orderItemIds.TrueForAll(x => x != null))
+                {
+                    throw new OpenBookingException(new OrderItemIdInvalidError());
+                }
+
+                // Check for mismatching UUIDs
+                if (!orderItemIds.TrueForAll(x => x.OrderType == OrderType.Order && x.uuid == orderId.uuid))
+                {
+                    throw new OpenBookingException(new OrderItemNotWithinOrderError());
+                }
+
+                await ProcessCustomerCancellation(orderId, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
+
+                return ResponseContent.OpenBookingNoContentResponse();
             }
-
-            // Check for PatchContainsExcessiveProperties
-            Order orderWithOnlyAllowedProperties = new Order
-            {
-                OrderedItem = order.OrderedItem.Select(x => new OrderItem { Id = x.Id, OrderItemStatus = x.OrderItemStatus }).ToList()
-            };
-            if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties))
-            {
-                throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
-            }
-
-            // Check for PatchNotAllowedOnProperty
-            if (!order.OrderedItem.TrueForAll(x => x.OrderItemStatus == OrderItemStatus.CustomerCancelled))
-            {
-                throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.");
-            }
-
-            List<OrderIdComponents> orderItemIds;
-            try
-            {
-                orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(clientId, x.Id)).ToList();
-            }
-            catch (ComponentFailedToParseException)
-            {
-                throw new OpenBookingException(new OrderItemIdInvalidError());
-            }
-
-            // Check for mismatching UUIDs
-            if (!orderItemIds.TrueForAll(x => x != null))
-            {
-                throw new OpenBookingException(new OrderItemIdInvalidError());
-            }
-
-            // Check for mismatching UUIDs
-            if (!orderItemIds.TrueForAll(x => x.OrderType == OrderType.Order && x.uuid == uuid))
-            {
-                throw new OpenBookingException(new OrderItemNotWithinOrderError());
-            }
-
-            await ProcessCustomerCancellation(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
-
-            return ResponseContent.OpenBookingNoContentResponse();
         }
 
         public abstract Task ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
@@ -520,35 +549,38 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuidString, string orderProposalJson)
         {
-            var uuid = ConvertToGuid(uuidString);
-            OrderProposal orderProposal = OpenActiveSerializer.Deserialize<OrderProposal>(orderProposalJson);
-            SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
-
-            if (orderProposal == null || orderProposal.GetType() != typeof(Order))
+            var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderProposal, uuid = ConvertToGuid(uuidString) };
+            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
-                throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for Order Cancellation");
+                OrderProposal orderProposal = OpenActiveSerializer.Deserialize<OrderProposal>(orderProposalJson);
+                SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
+
+                if (orderProposal == null || orderProposal.GetType() != typeof(Order))
+                {
+                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for Order Cancellation");
+                }
+
+                // Check for PatchContainsExcessiveProperties
+                OrderProposal orderProposalWithOnlyAllowedProperties = new OrderProposal
+                {
+                    OrderProposalStatus = orderProposal.OrderProposalStatus,
+                    OrderCustomerNote = orderProposal.OrderCustomerNote
+                };
+                if (OpenActiveSerializer.Serialize<OrderProposal>(orderProposal) != OpenActiveSerializer.Serialize<OrderProposal>(orderProposalWithOnlyAllowedProperties))
+                {
+                    throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
+                }
+
+                // Check for PatchNotAllowedOnProperty
+                if (orderProposal.OrderProposalStatus != OrderProposalStatus.CustomerRejected)
+                {
+                    throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerRejected' is permitted for this property.");
+                }
+
+                await ProcessOrderProposalCustomerRejection(orderId, sellerIdComponents, settings.OrderIdTemplate);
+
+                return ResponseContent.OpenBookingNoContentResponse();
             }
-
-            // Check for PatchContainsExcessiveProperties
-            OrderProposal orderProposalWithOnlyAllowedProperties = new OrderProposal
-            {
-                OrderProposalStatus = orderProposal.OrderProposalStatus,
-                OrderCustomerNote = orderProposal.OrderCustomerNote
-            };
-            if (OpenActiveSerializer.Serialize<OrderProposal>(orderProposal) != OpenActiveSerializer.Serialize<OrderProposal>(orderProposalWithOnlyAllowedProperties))
-            {
-                throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
-            }
-
-            // Check for PatchNotAllowedOnProperty
-            if (orderProposal.OrderProposalStatus != OrderProposalStatus.CustomerRejected)
-            {
-                throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerRejected' is permitted for this property.");
-            }
-
-            await ProcessOrderProposalCustomerRejection(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderProposal, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate);
-
-            return ResponseContent.OpenBookingNoContentResponse();
         }
 
         public abstract Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate);
