@@ -787,7 +787,7 @@ namespace OpenActive.Server.NET.CustomBooking
             // Throw error on incomplete customer details if C2, P or B if Broker type is not ResellerBroker
             if (order.BrokerRole != BrokerType.ResellerBroker)
             {
-                if (stage != FlowStage.C1 && (order.Customer == null || order.Customer.IsPerson && string.IsNullOrWhiteSpace(order.Customer.Email)))
+                if (stage != FlowStage.C1 && (order.Customer == null || string.IsNullOrWhiteSpace(order.Customer.Email)))
                 {
                     throw new OpenBookingException(new IncompleteCustomerDetailsError());
                 }

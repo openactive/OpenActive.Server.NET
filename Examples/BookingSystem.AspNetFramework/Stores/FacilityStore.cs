@@ -149,6 +149,15 @@ namespace BookingSystem
                                 5,
                                 requiresApproval);
                             break;
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOneSpace:
+                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                testDatasetIdentifier,
+                                sellerId,
+                                "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility One Space",
+                                14.99M,
+                                1,
+                                requiresApproval);
+                            break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
                             (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
@@ -372,6 +381,7 @@ namespace BookingSystem
                     SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = facility.SellerId },
                     slot.RequiresApproval,
                     BookedOrderItemInfo = bookedOrderItemInfo,
+                    slot.RemainingUses
                 };
             });
 
@@ -396,7 +406,7 @@ namespace BookingSystem
                     if (item.RequiresApproval)
                         ctx.SetRequiresApproval();
 
-                    if (((Slot)item.OrderItem.OrderedItem.Object).RemainingUses == 0)
+                    if (item.RemainingUses == 0)
                         ctx.AddError(new OpportunityIsFullError());
 
                     // Add validation errors to the OrderItem if either attendee details or additional details are required but not provided
