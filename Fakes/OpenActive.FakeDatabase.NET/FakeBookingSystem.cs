@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -91,6 +91,8 @@ namespace OpenActive.FakeDatabase.NET
 
             // Create empty tables
             DatabaseCreator.CreateTables(Database);
+
+            // OrmLiteUtils.PrintSql();
         }
     }
 
@@ -418,7 +420,7 @@ namespace OpenActive.FakeDatabase.NET
 
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
-                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.None)
                         {
                             if (updateAccessCode)
                             {
@@ -456,7 +458,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool UpdateOpportunityAttendance(Guid uuid)
+        public bool UpdateOpportunityAttendance(Guid uuid, bool attended)
         {
             using (var db = Mem.Database.Open())
             {
@@ -468,9 +470,9 @@ namespace OpenActive.FakeDatabase.NET
 
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
-                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.None)
                         {
-                            orderItem.Status = BookingStatus.Attended;
+                            orderItem.Status = attended ? BookingStatus.Attended : BookingStatus.Absent;
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
                             db.Update(orderItem);
                         }
@@ -499,7 +501,7 @@ namespace OpenActive.FakeDatabase.NET
                     List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
-                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Proposed || orderItem.Status == BookingStatus.None)
+                        if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.None)
                         {
                             orderItem.CustomerNotice = $"customer notice message: {Faker.Random.String(10, minChar: 'a', maxChar: 'z')}";
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
@@ -883,7 +885,7 @@ namespace OpenActive.FakeDatabase.NET
                     ClientId = clientId,
                     Deleted = false,
                     OrderId = uuid.ToString(),
-                    Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
+                    Status = proposal ? BookingStatus.None : BookingStatus.Confirmed,
                     OccurrenceId = occurrenceId,
                     OpportunityJsonLdId = opportunityJsonLdId,
                     OfferJsonLdId = offerJsonLdId,
@@ -956,7 +958,7 @@ namespace OpenActive.FakeDatabase.NET
                     ClientId = clientId,
                     Deleted = false,
                     OrderId = uuid.ToString(),
-                    Status = proposal ? BookingStatus.Proposed : BookingStatus.Confirmed,
+                    Status = proposal ? BookingStatus.None : BookingStatus.Confirmed,
                     SlotId = slotId,
                     OpportunityJsonLdId = opportunityJsonLdId,
                     OfferJsonLdId = offerJsonLdId,
@@ -1007,7 +1009,7 @@ namespace OpenActive.FakeDatabase.NET
                               .Where(whereClause);
                 var orderItems = db
                     .SelectMulti<OrderItemsTable, SlotTable, OccurrenceTable, ClassTable>(query)
-                    .Where(t => t.Item1.Status == BookingStatus.Confirmed || t.Item1.Status == BookingStatus.Attended || t.Item1.Status == BookingStatus.CustomerCancelled)
+                    .Where(t => t.Item1.Status == BookingStatus.Confirmed || t.Item1.Status == BookingStatus.Attended || t.Item1.Status == BookingStatus.Absent || t.Item1.Status == BookingStatus.CustomerCancelled)
                     .ToArray();
 
 
@@ -1076,7 +1078,7 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     var totalPrice = db.Select<OrderItemsTable>(x =>
                         x.ClientId == clientId && x.OrderId == order.OrderId &&
-                        (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
+                        (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent)).Sum(x => x.Price);
 
                     order.TotalOrderPrice = totalPrice;
                     order.VisibleInOrdersFeed = FeedVisibility.Visible;
@@ -1339,7 +1341,7 @@ namespace OpenActive.FakeDatabase.NET
             slot.LeasedUses = leasedUses;
 
             // Update number of actual spaces remaining for the opportunity
-            var totalUsesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+            var totalUsesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent)).Count();
             slot.RemainingUses = slot.MaximumUses - totalUsesTaken;
 
             // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition)
@@ -1367,7 +1369,7 @@ namespace OpenActive.FakeDatabase.NET
             occurrence.LeasedSpaces = leasedSpaces;
 
             // Update number of actual spaces remaining for the opportunity
-            var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+            var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent)).Count();
             occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
 
             // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!

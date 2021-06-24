@@ -129,12 +129,22 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnknownOrderError());
                     }
                     break;
-                case OpportunityAttendanceUpdateSimulateAction _:
+                case AttendeeAttendedSimulateAction _:
                     if (orderId.OrderType != OrderType.Order)
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateOpportunityAttendance(orderId.uuid))
+                    if (!FakeBookingSystem.Database.UpdateOpportunityAttendance(orderId.uuid, true))
+                    {
+                        throw new OpenBookingException(new UnknownOrderError());
+                    }
+                    break;
+                case AttendeeAbsentSimulateAction _:
+                    if (orderId.OrderType != OrderType.Order)
+                    {
+                        throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
+                    }
+                    if (!FakeBookingSystem.Database.UpdateOpportunityAttendance(orderId.uuid, false))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -440,7 +450,8 @@ namespace BookingSystem
                             orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
                             orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
                             orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
-                            orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended : (OrderItemStatus?)null
+                            orderItem.Status == BookingStatus.Attended ? OrderItemStatus.AttendeeAttended :
+                            orderItem.Status == BookingStatus.Absent ? OrderItemStatus.AttendeeAbsent : (OrderItemStatus?)null
             }).ToList();
             var order = RenderOrderFromDatabaseResult(orderIdUri, dbOrder, orderItems);
 

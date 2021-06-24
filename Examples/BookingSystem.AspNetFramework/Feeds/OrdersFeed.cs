@@ -93,7 +93,8 @@ namespace BookingSystem
                                         orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
                                         orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
                                         orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
-                                        orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended : (OrderItemStatus?)null,
+                                        orderItem.Status == BookingStatus.Attended ? OrderItemStatus.AttendeeAttended :
+                                        orderItem.Status == BookingStatus.Absent ? OrderItemStatus.AttendeeAbsent : (OrderItemStatus?)null,
                                     CancellationMessage = orderItem.CancellationMessage,
                                     CustomerNotice = orderItem.CustomerNotice,
                                 }).ToList()
