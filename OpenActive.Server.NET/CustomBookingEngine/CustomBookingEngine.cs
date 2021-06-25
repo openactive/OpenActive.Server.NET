@@ -756,9 +756,14 @@ namespace OpenActive.Server.NET.CustomBooking
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
         protected BookingFlowContext ValidateFlowRequest<TOrder>(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller, FlowStage stage, TOrder order) where TOrder : Order, new()
         {
-            if (order?.Seller.IdReference != null && seller?.Id != order?.Seller.IdReference)
+            if (order?.Seller.IdReference == null)
             {
                 throw new OpenBookingException(new SellerMismatchError());
+            }
+
+            if (seller?.Id != order?.Seller.IdReference)
+            {
+                throw new OpenBookingException(new InvalidAuthorizationDetailsError());
             }
 
             // Check that taxMode is set in Seller
