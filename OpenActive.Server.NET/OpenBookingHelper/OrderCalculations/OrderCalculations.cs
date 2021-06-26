@@ -81,8 +81,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                     continue;
                 }
 
-                var correspondingValues = values.Where(value => value.PropertyID == property.Id).ToArray();
-                if (correspondingValues.Length > 1)
+                var correspondingValues = values?.Where(value => value.PropertyID == property.Id).ToArray();
+                if (correspondingValues?.Length > 1)
                 {
                     var error = new InvalidIntakeFormError();
                     error.Instance = property.Id;
@@ -91,7 +91,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                     continue;
                 }
 
-                var correspondingValue = correspondingValues.SingleOrDefault();
+                var correspondingValue = correspondingValues?.SingleOrDefault();
                 if (required && correspondingValue == null)
                 {
                     var error = new IncompleteIntakeFormError();
@@ -130,7 +130,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                             validationErrorArray.Add(error);
                         }
                         break;
-                    case FileUploadFormFieldSpecification _ when !correspondingValue.Value.HasValueOfType<Uri>():
+                    case FileUploadFormFieldSpecification _ when !(correspondingValue.Value.HasValueOfType<Uri>() || (correspondingValue.Value.HasValueOfType<string>() && correspondingValue.Value.GetClass<string>()?.ParseUrlOrNull() != null)):
                         {
                             var error = new InvalidIntakeFormError();
                             error.Instance = property.Id;
