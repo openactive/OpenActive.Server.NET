@@ -438,9 +438,6 @@ namespace OpenActive.Server.NET.StoreBooking
             // Get Order without OrderItems expanded
             var order = await storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
 
-            // Set Seller to ID reference from GetOrderStatus to allow it to be re-expanded by ValidateFlowRequest
-            order.Seller = order.Seller.Object.Id;
-
             // Get flowContext from resulting Order, treating it like a request (which also validates it like a request)
             var flowContext = AugmentContextFromOrder(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.OrderStatus, order), order);
 
