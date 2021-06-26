@@ -196,7 +196,7 @@
       <HintPath>..\..\packages\OpenActive.DatasetSite.NET.4.2.0\lib\net45\OpenActive.DatasetSite.NET.dll</HintPath>
     </Reference>
     <Reference Include="OpenActive.NET, Version=15.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\OpenActive.NET.15.2.3\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
+      <HintPath>..\..\packages\OpenActive.NET.15.2.5\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
     </Reference>
     <Reference Include="Schema.NET, Version=7.0.1.0, Culture=neutral, PublicKeyToken=fc5550082a9c642c, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Schema.NET.7.0.1\lib\net461\Schema.NET.dll</HintPath>
@@ -464,7 +464,6 @@
     <Compile Include="Stores\SessionStore.cs" />
     <Compile Include="Utils\DependencyResolver.cs" />
     <Compile Include="Utils\ServiceConfig.cs" />
-    <Compile Include="Helpers\PropertyValueSpecificationHelper.cs" />
     <Compile Include="Extensions\PropertyValueSpecificationHelper.cs" />
     <Compile Include="Extensions\BookedOrderItemHelper.cs" />
   </ItemGroup>

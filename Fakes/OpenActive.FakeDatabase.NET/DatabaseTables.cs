@@ -19,7 +19,7 @@ namespace OpenActive.FakeDatabase.NET
 
     public enum AttendanceMode { Offline, Online, Mixed }
 
-    public enum AdditionalDetailTypes { Age, PhotoConsent, Experience, Gender }
+    public enum AdditionalDetailTypes { Age, PhotoConsent, Experience, Gender, FileUpload }
 
     [CompositeIndex(nameof(Modified), nameof(Id))]
     public abstract class Table
