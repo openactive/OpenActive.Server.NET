@@ -60,6 +60,16 @@ namespace BookingSystem
                             });
                         }
                         break;
+                    case AdditionalDetailTypes.FileUpload:
+                        {
+                            hydratedAdditionalDetails.Add(new FileUploadFormFieldSpecification()
+                            {
+                                Id = new Uri("https://example.com/insurance"),
+                                Name = "PLI Certificate",
+                                Description = "Please upload your PLI certificate"
+                            });
+                        }
+                        break;
                 }
             }
 

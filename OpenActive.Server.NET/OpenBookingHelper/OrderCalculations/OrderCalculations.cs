@@ -64,7 +64,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             foreach (var property in properties)
             {
                 var required = false;
-                if (property.Type == "BooleanFormFieldSpecification")
+                if (property is BooleanFormFieldSpecification)
                 {
                     required = true;
                 }
@@ -104,9 +104,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 if (!required && correspondingValue == null)
                     continue;
 
-                switch (property.Type)
+                switch (property)
                 {
-                    case "DropdownFormFieldSpecification" when !((DropdownFormFieldSpecification)property).ValueOption.Contains(correspondingValue.Value.Value):
+                    case DropdownFormFieldSpecification p when !p.ValueOption.Contains(correspondingValue.Value.Value):
                         {
                             var error = new InvalidIntakeFormError();
                             error.Instance = property.Id;
@@ -114,7 +114,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                             validationErrorArray.Add(error);
                             break;
                         }
-                    case "BooleanFormFieldSpecification" when !correspondingValue.Value.HasValueOfType<bool?>():
+                    case BooleanFormFieldSpecification _ when !correspondingValue.Value.HasValueOfType<bool?>():
                         {
                             var error = new InvalidIntakeFormError();
                             error.Instance = property.Id;
@@ -122,11 +122,19 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                             validationErrorArray.Add(error);
                             break;
                         }
-                    case "ShortAnswerFormFieldSpecification" when !correspondingValue.Value.HasValueOfType<string>():
+                    case ShortAnswerFormFieldSpecification _ when !correspondingValue.Value.HasValueOfType<string>():
                         {
                             var error = new InvalidIntakeFormError();
                             error.Instance = property.Id;
                             error.Description = "Value provided is not a string";
+                            validationErrorArray.Add(error);
+                        }
+                        break;
+                    case FileUploadFormFieldSpecification _ when !correspondingValue.Value.HasValueOfType<Uri>():
+                        {
+                            var error = new InvalidIntakeFormError();
+                            error.Instance = property.Id;
+                            error.Description = "Value provided is not a Url";
                             validationErrorArray.Add(error);
                         }
                         break;

@@ -464,7 +464,6 @@
     <Compile Include="Stores\SessionStore.cs" />
     <Compile Include="Utils\DependencyResolver.cs" />
     <Compile Include="Utils\ServiceConfig.cs" />
-    <Compile Include="Helpers\PropertyValueSpecificationHelper.cs" />
     <Compile Include="Extensions\PropertyValueSpecificationHelper.cs" />
     <Compile Include="Extensions\BookedOrderItemHelper.cs" />
   </ItemGroup>
