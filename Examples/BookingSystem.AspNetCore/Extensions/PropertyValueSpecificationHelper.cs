@@ -66,7 +66,8 @@ namespace BookingSystem
                             {
                                 Id = new Uri("https://example.com/insurance"),
                                 Name = "PLI Certificate",
-                                Description = "Please upload your PLI certificate"
+                                Description = "Please upload your PLI certificate",
+                                ValueRequired = true
                             });
                         }
                         break;
