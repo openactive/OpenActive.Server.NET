@@ -258,6 +258,7 @@ namespace BookingSystem
                     BusinessToBusinessTaxCalculation = appSettings.Payment.TaxCalculationB2B,
                     BusinessToConsumerTaxCalculation = appSettings.Payment.TaxCalculationB2C,
                     EnforceSyncWithinOrderTransactions = false,
+                    PrepaymentAlwaysRequired = false
                 });
         }
     }

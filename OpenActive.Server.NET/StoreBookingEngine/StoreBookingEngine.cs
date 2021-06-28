@@ -461,7 +461,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // Add totals to the resulting Order
             OrderCalculations.AugmentOrderWithTotals(
-                order, flowContext, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation);
+                order, flowContext, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation, storeBookingEngineSettings.PrepaymentAlwaysRequired);
 
             // TODO: Should other properties be extracted from the flowContext for consistency, or do we trust the internals not to create excessive props?
             order.BookingService = flowContext.BookingService;
@@ -685,7 +685,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // Add totals to the resulting Order
             OrderCalculations.AugmentOrderWithTotals(
-                responseGenericOrder, flowContext, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation);
+                responseGenericOrder, flowContext, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation, storeBookingEngineSettings.PrepaymentAlwaysRequired);
 
             switch (responseGenericOrder)
             {

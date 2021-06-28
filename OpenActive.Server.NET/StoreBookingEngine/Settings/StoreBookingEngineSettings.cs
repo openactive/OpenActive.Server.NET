@@ -19,5 +19,6 @@ namespace OpenActive.Server.NET.StoreBooking
         public bool BusinessToConsumerTaxCalculation { get; set; }
         public bool BusinessToBusinessTaxCalculation { get; set; }
         public bool EnforceSyncWithinOrderTransactions { get; set; }
+        public bool PrepaymentAlwaysRequired { get; set; } = false;
     }
 }

@@ -200,7 +200,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         }
 
         public static void AugmentOrderWithTotals<TOrder>(
-            TOrder order, StoreBookingFlowContext context, bool businessToConsumerTaxCalculation, bool businessToBusinessTaxCalculation)
+            TOrder order, StoreBookingFlowContext context, bool businessToConsumerTaxCalculation, bool businessToBusinessTaxCalculation, bool prepaymentAlwaysRequired)
             where TOrder : Order
         {
             if (order == null)
@@ -275,15 +275,17 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 PriceCurrency = totalPaymentDueCurrency
             };
 
-            OrderCalculations.AugmentOrderWithCalculations(
-                order, context, businessToConsumerTaxCalculation, businessToBusinessTaxCalculation);
-        }
-
-        public static void AugmentOrderWithCalculations<TOrder>(
-            TOrder order, StoreBookingFlowContext context, bool businessToConsumerTaxCalculation, bool businessToBusinessTaxCalculation)
-            where TOrder : Order
-        {
-            order.TotalPaymentDue.OpenBookingPrepayment = GetRequiredStatusType(order.OrderedItem);
+            if (prepaymentAlwaysRequired)
+            {
+                if (order.OrderedItem?.Any(x => x?.AcceptedOffer.Object?.OpenBookingPrepayment != null) == true)
+                {
+                    throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "OpenBookingPrepayment must not be assigned in AcceptedOffer if PrepaymentAlwaysRequired is true");
+                }
+            } else
+            {
+                order.TotalPaymentDue.OpenBookingPrepayment = GetRequiredStatusType(order.OrderedItem);
+            }
+            
         }
 
         public static RequiredStatusType? GetRequiredStatusType(IReadOnlyCollection<OrderItem> orderItems)
