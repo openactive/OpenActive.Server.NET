@@ -1,7 +1,6 @@
 ﻿using IdentityServer4.Models;
 using IdentityServer4.Stores;
 using OpenActive.FakeDatabase.NET;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,21 +12,17 @@ namespace IdentityServer
         public Task<IEnumerable<PersistedGrant>> GetAllAsync(string subjectId)
         {
             var grants = FakeBookingSystem.Database.GetAllGrants(subjectId);
-
-            List<PersistedGrant> persistedGrants = new List<PersistedGrant>();
-            foreach(var grant in grants)
+            var persistedGrants = grants.Select(grant => new PersistedGrant
             {
-                persistedGrants.Add(new PersistedGrant()
-                {
-                    Key = grant.Key,
-                    Type = grant.Type,
-                    SubjectId = grant.SubjectId,
-                    ClientId = grant.ClientId,
-                    CreationTime = grant.CreationTime,
-                    Expiration = grant.Expiration,
-                    Data = grant.Data
-                });
-            }
+                Key = grant.Key,
+                Type = grant.Type,
+                SubjectId = grant.SubjectId,
+                ClientId = grant.ClientId,
+                CreationTime = grant.CreationTime,
+                Expiration = grant.Expiration,
+                Data = grant.Data
+            }).ToList();
+
             return Task.FromResult<IEnumerable<PersistedGrant>>(persistedGrants);
         }
 
@@ -47,24 +42,28 @@ namespace IdentityServer
             } : null);
         }
 
-        public async Task RemoveAllAsync(string subjectId, string clientId)
+        public Task RemoveAllAsync(string subjectId, string clientId)
         {
             FakeBookingSystem.Database.RemoveGrant(subjectId, clientId);
+            return Task.CompletedTask;
         }
 
-        public async Task RemoveAllAsync(string subjectId, string clientId, string type)
+        public Task RemoveAllAsync(string subjectId, string clientId, string type)
         {
             FakeBookingSystem.Database.RemoveGrant(subjectId, clientId, type);
+            return Task.CompletedTask;
         }
 
-        public async Task RemoveAsync(string key)
+        public Task RemoveAsync(string key)
         {
             FakeBookingSystem.Database.RemoveGrant(key);
+            return Task.CompletedTask;
         }
 
-        public async Task StoreAsync(PersistedGrant grant)
+        public Task StoreAsync(PersistedGrant grant)
         {
             FakeBookingSystem.Database.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.ClientId, grant.CreationTime, grant.Expiration, grant.Data);
+            return Task.CompletedTask;
         }
     }
 }

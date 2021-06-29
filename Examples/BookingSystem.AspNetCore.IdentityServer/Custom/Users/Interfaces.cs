@@ -1,10 +1,4 @@
-﻿using OpenActive.FakeDatabase.NET;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace IdentityServer
+﻿namespace IdentityServer
 {
     public interface IUserRepository
     {

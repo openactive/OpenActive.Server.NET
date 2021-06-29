@@ -1,10 +1,6 @@
-﻿using IdentityModel;
-using OpenActive.FakeDatabase.NET;
-using System;
+﻿using OpenActive.FakeDatabase.NET;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace IdentityServer
 {

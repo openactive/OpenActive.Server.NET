@@ -1,8 +1,6 @@
 ﻿using IdentityServer4.Models;
 using IdentityServer4.Stores;
-using Microsoft.Extensions.Logging;
 using OpenActive.FakeDatabase.NET;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,7 +12,7 @@ namespace IdentityServer
         public Task<Client> FindClientByIdAsync(string clientId)
         {
             var bookingPartner = FakeBookingSystem.Database.GetBookingPartner(clientId);
-            return Task.FromResult(this.ConvertToIS4Client(bookingPartner));
+            return Task.FromResult(ConvertToIS4Client(bookingPartner));
         }
 
         private Client ConvertToIS4Client(BookingPartnerTable bookingPartner)
