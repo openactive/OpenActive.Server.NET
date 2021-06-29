@@ -3,8 +3,8 @@
 <div class="grants">
     <div class="row page-header">
         <div class="col-sm-10">
-            <h1>Booking Partners</h1>
-            <div>Below is the list of applications you have given access to or are pending dynamic registration.</div>
+            <h1>System Administration</h1>
+            <div>Below is the list of all booking partners registered as OAuth clients.</div>
         </div>
     </div>
 
@@ -32,9 +32,7 @@
                 <div class="col-sm-2">
                     <div class="clientname">@bookingPartner.ClientName</div>
                 </div>
-                <div class="col-sm-2">
-                    <a class="btn btn-md btn-default" href="@bookingPartner.ClientUrl" target="_blank">Manage</a>
-                </div>
+ 
                 <div class="col-sm-2">
                     @if (bookingPartner.BookingPartner.BookingsSuspended)
                     {
@@ -54,30 +52,12 @@
                         <a href="/booking-partners/edit/@bookingPartner.ClientId" class="btn btn-md btn-default">API Key</a>
                     </form>
 
-                    @if (bookingPartner.BookingPartner.Registered && !bookingPartner.BookingPartner.BookingsSuspended)
-                    {
-                        <form action="/booking-partners/suspend" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                            <button class="btn btn-md btn-default">Suspend Bookings</button>
-                        </form>
-                    }
-
-                    @if (bookingPartner.BookingPartner.Registered && bookingPartner.BookingPartner.BookingsSuspended)
-                    {
-                        <form action="/booking-partners/restore" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                            <button class="btn btn-md btn-default">Restore</button>
-                        </form>
-                    }
-
                     @if (!bookingPartner.BookingPartner.Registered || bookingPartner.BookingPartner.BookingsSuspended)
                     {
-                        <form action="/booking-partners/revoke" method="post">
+                        <form action="/booking-partners/remove" method="post">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                            <button class="btn btn-md btn-default">Revoke Access</button>
+                            <button class="btn btn-md btn-default">Delete</button>
                         </form>
                     }
                 </div>

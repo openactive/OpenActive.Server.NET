@@ -34,18 +34,18 @@ namespace src
             _events = events;
         }
 
-        /// <summary>
-        /// Show list of grants
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> Index()
+        [HttpGet("seller-admin")]
+        public async Task<IActionResult> SellerAdmin()
         {
-            return View("Index", await BuildViewModel());
+            return View("SellerAdmin", await BuildViewModel());
         }
 
-        /// <summary>
-        /// Show list of grants
-        /// </summary>
+        [HttpGet("sys-admin")]
+        public async Task<IActionResult> SysAdmin()
+        {
+            return View("SysAdmin", await BuildViewModel());
+        }
+
         [HttpGet("edit/{id}")]
         public async Task<IActionResult> Edit(string id)
         {
@@ -56,9 +56,6 @@ namespace src
             return View("BookingPartnerEdit", content);
         }
 
-        /// <summary>
-        /// Show list of grants
-        /// </summary>
         [HttpGet("create")]
         public async Task<IActionResult> Create()
         {
@@ -89,37 +86,31 @@ namespace src
             return Redirect($"/booking-partners/edit/{newBookingPartner.ClientId}");
         }
 
-        /// <summary>
-        /// Handle postback to revoke a client
-        /// </summary>
         [HttpPost("manage-keys")]
         [ValidateAntiForgeryToken]
         public IActionResult ManageKeys([FromForm] string clientId)
         {
-            return Redirect("/booking-partners");
+            return Redirect("/booking-partners/seller-admin");
         }
 
-        /// <summary>
-        /// Handle postback to revoke a client
-        /// </summary>
         [HttpPost("restore")]
         [ValidateAntiForgeryToken]
         public IActionResult Restore([FromForm] string clientId)
         {
-            return Redirect("/booking-partners");
+            return Redirect("/booking-partners/seller-admin");
         }
 
         /// <summary>
-        /// Handle postback to revoke a client
+        /// Handle postback to remove a client
         /// </summary>
-        [HttpPost("revoke")]
+        [HttpPost("remove")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Revoke([FromForm] string clientId)
+        public async Task<IActionResult> Remove([FromForm] string clientId)
         {
             await _interaction.RevokeUserConsentAsync(clientId);
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
-            return Redirect("/booking-partners");
+            return Redirect("/booking-partners/seller-admin");
         }
 
         /// <summary>
@@ -134,7 +125,7 @@ namespace src
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
             await FakeBookingSystem.Database.UpdateBookingPartnerScope(clientId, "openid profile openactive-ordersfeed", true);
-            return Redirect("/booking-partners");
+            return Redirect("/booking-partners/seller-admin");
         }
 
         /// <summary>
