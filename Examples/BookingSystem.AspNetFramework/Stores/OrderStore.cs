@@ -2,7 +2,6 @@
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
-using ServiceStack.OrmLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,11 +27,11 @@ namespace BookingSystem
         /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if Order found, False if Order not found</returns>
-        public async override Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, List<OrderIdComponents> orderItemIds)
+        public override async Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, List<OrderIdComponents> orderItemIds)
         {
             try
             {
-                return FakeBookingSystem.Database.CancelOrderItems(
+                return await FakeBookingSystem.Database.CancelOrderItems(
                     orderId.ClientId,
                     sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     orderId.uuid,
@@ -51,10 +50,10 @@ namespace BookingSystem
         /// <returns>True if OrderProposal found, False if OrderProposal not found</returns>
         public override async Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            return FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
+            return await FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
         }
 
-        public async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents orderId)
+        public override async Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents orderId)
         {
             switch (simulateAction)
             {
@@ -63,7 +62,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
                     }
-                    if (!FakeBookingSystem.Database.AcceptOrderProposal(orderId.uuid))
+                    if (!await FakeBookingSystem.Database.AcceptOrderProposal(orderId.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -74,7 +73,7 @@ namespace BookingSystem
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
                     }
                     var version = Guid.NewGuid();
-                    if (!FakeBookingSystem.Database.AmendOrderProposal(orderId.uuid, version))
+                    if (!await FakeBookingSystem.Database.AmendOrderProposal(orderId.uuid, version))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -84,7 +83,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected OrderProposal");
                     }
-                    if (!FakeBookingSystem.Database.RejectOrderProposal(null, null, orderId.uuid, false))
+                    if (!await FakeBookingSystem.Database.RejectOrderProposal(null, null, orderId.uuid, false))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -94,7 +93,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, orderId.uuid, null, false, true))
+                    if (!await FakeBookingSystem.Database.CancelOrderItems(null, null, orderId.uuid, null, false, true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -104,7 +103,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.CancelOrderItems(null, null, orderId.uuid, null, false))
+                    if (!await FakeBookingSystem.Database.CancelOrderItems(null, null, orderId.uuid, null, false))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -114,7 +113,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateAccess(orderId.uuid, updateAccessCode: true))
+                    if (!await FakeBookingSystem.Database.UpdateAccess(orderId.uuid, updateAccessCode: true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -124,7 +123,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateAccess(orderId.uuid, updateAccessPass: true))
+                    if (!await FakeBookingSystem.Database.UpdateAccess(orderId.uuid, updateAccessPass: true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -134,7 +133,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateOpportunityAttendance(orderId.uuid, true))
+                    if (!await FakeBookingSystem.Database.UpdateOpportunityAttendance(orderId.uuid, true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -144,7 +143,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateOpportunityAttendance(orderId.uuid, false))
+                    if (!await FakeBookingSystem.Database.UpdateOpportunityAttendance(orderId.uuid, false))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -154,7 +153,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.AddCustomerNotice(orderId.uuid))
+                    if (!await FakeBookingSystem.Database.AddCustomerNotice(orderId.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -164,7 +163,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.ReplaceOrderOpportunity(orderId.uuid))
+                    if (!await FakeBookingSystem.Database.ReplaceOrderOpportunity(orderId.uuid))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -174,7 +173,7 @@ namespace BookingSystem
                     {
                         throw new OpenBookingException(new UnexpectedOrderTypeError(), "Expected Order");
                     }
-                    if (!FakeBookingSystem.Database.UpdateAccess(orderId.uuid, updateAccessChannel: true))
+                    if (!await FakeBookingSystem.Database.UpdateAccess(orderId.uuid, updateAccessChannel: true))
                     {
                         throw new OpenBookingException(new UnknownOrderError());
                     }
@@ -207,7 +206,7 @@ namespace BookingSystem
                         : BrokerType.NoBroker;
         }
 
-        public async override ValueTask<Lease> CreateLease(
+        public override async ValueTask<Lease> CreateLease(
             OrderQuote responseOrderQuote,
             StoreBookingFlowContext flowContext,
             OrderStateContext stateContext,
@@ -224,7 +223,7 @@ namespace BookingSystem
             var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
             var brokerRole = BrokerTypeToBrokerRole(flowContext.BrokerRole ?? BrokerType.NoBroker);
 
-            var result = FakeDatabase.AddLease(
+            var result = await FakeDatabase.AddLease(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 brokerRole,
@@ -245,32 +244,33 @@ namespace BookingSystem
             };
         }
 
-        public async override ValueTask UpdateLease(
+        public override ValueTask UpdateLease(
             OrderQuote responseOrderQuote,
             StoreBookingFlowContext flowContext,
             OrderStateContext stateContext,
             OrderTransaction databaseTransaction)
         {
             // Does nothing at the moment
+            return new ValueTask();
         }
 
-        public async override Task DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public override async Task DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
             // Note if no lease support, simply do nothing here
-            FakeBookingSystem.Database.DeleteLease(
+            await FakeBookingSystem.Database.DeleteLease(
                 orderId.ClientId,
                 orderId.uuid,
                 sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */
                 );
         }
 
-        public async override ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public override async ValueTask CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (_appSettings.FeatureFlags.PaymentReconciliationDetailValidation && responseOrder.TotalPaymentDue.Price > 0 && ReconciliationMismatch(flowContext))
                 throw new OpenBookingException(new InvalidPaymentDetailsError(), "Payment reconciliation details do not match");
 
             var customerType = flowContext.Customer == null ? CustomerType.None : (flowContext.Customer.IsOrganization ? CustomerType.Organization : CustomerType.Person);
-            var result = FakeDatabase.AddOrder(
+            var result = await FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
@@ -297,19 +297,20 @@ namespace BookingSystem
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
 
-        public async override ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public override ValueTask UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Does nothing at the moment
+            return new ValueTask();
         }
 
-        public async override ValueTask<(Guid, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public override async ValueTask<(Guid, OrderProposalStatus)> CreateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (!responseOrderProposal.TotalPaymentDue.Price.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Price must be set on TotalPaymentDue");
 
             var version = Guid.NewGuid();
             var customerType = flowContext.Customer == null ? CustomerType.None : (flowContext.Customer.GetType() == typeof(Organization) ? CustomerType.Organization : CustomerType.Person);
-            var result = FakeDatabase.AddOrder(
+            var result = await FakeDatabase.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
@@ -339,14 +340,15 @@ namespace BookingSystem
             return (version, OrderProposalStatus.AwaitingSellerConfirmation);
         }
 
-        public async override ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        public override ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Does nothing at the moment
+            return new ValueTask();
         }
 
-        public async override Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public override async Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            var result = FakeBookingSystem.Database.DeleteOrder(
+            var result = await FakeBookingSystem.Database.DeleteOrder(
                 orderId.ClientId,
                 orderId.uuid,
                 sellerId.SellerIdLong ?? null /* Small hack to allow use of FakeDatabase when in Single Seller mode */);
@@ -365,12 +367,12 @@ namespace BookingSystem
             }
         }
 
-        public async override Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
+        public override async Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
         {
             // TODO more elegantly extract version UUID from orderProposalVersion (probably much further up the stack?)
             var version = new Guid(orderProposalVersion.ToString().Split('/').Last());
 
-            var result = FakeBookingSystem.Database.BookOrderProposal(
+            var result = await FakeBookingSystem.Database.BookOrderProposal(
                 orderId.ClientId,
                 sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid,
@@ -428,9 +430,9 @@ namespace BookingSystem
             return order;
         }
 
-        public async override Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller)
+        public override async Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller)
         {
-            var (getOrderResult, dbOrder, dbOrderItems) = FakeBookingSystem.Database.GetOrderAndOrderItems(
+            var (getOrderResult, dbOrder, dbOrderItems) = await FakeBookingSystem.Database.GetOrderAndOrderItems(
                 orderId.ClientId,
                 sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid);

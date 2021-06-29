@@ -2,7 +2,6 @@
 using OpenActive.Server.NET.OpenBookingHelper;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace OpenActive.Server.NET.StoreBooking

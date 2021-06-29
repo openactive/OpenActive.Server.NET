@@ -1,7 +1,4 @@
-﻿using System;
-using Xunit;
-using OpenActive.Server.NET;
-using OpenActive.NET;
+﻿using Xunit;
 
 namespace OpenActive.Server.NET.Tests
 {

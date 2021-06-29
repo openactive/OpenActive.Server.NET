@@ -1,8 +1,4 @@
 ﻿using OpenActive.NET;
-using OpenActive.Server.NET.OpenBookingHelper;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {

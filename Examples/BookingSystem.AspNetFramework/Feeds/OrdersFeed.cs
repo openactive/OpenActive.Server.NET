@@ -14,7 +14,7 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        protected async override Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
+        protected override async Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
             // Note if using SQL Server it is best to use rowversion as the modified value for the Orders table,
             // and update this class to inherit from OrdersRPDEFeedIncrementingUniqueChangeNumber
@@ -110,7 +110,7 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        protected async override Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
+        protected override async Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {

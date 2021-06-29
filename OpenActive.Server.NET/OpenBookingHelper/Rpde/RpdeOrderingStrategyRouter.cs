@@ -45,7 +45,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <param name="afterId"></param>
         /// <param name="afterChangeNumber"></param>
         /// <returns></returns>
-        public async static Task<RpdePage> GetRpdePage(this IRpdeFeedGenerator generator, string feedidentifier, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public static async Task<RpdePage> GetRpdePage(this IRpdeFeedGenerator generator, string feedidentifier, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             switch (generator)
             {

@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using OpenActive.DatasetSite.NET;
-using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {

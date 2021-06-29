@@ -3,17 +3,17 @@
 <div class="grants">
     <div class="row page-header">
         <div class="col-sm-10">
-            <h1>
-                Booking Partners
-            </h1>
+            <h1>Booking Partners</h1>
             <div>Below is the list of applications you have given access to or are pending dynamic registration.</div>
         </div>
     </div>
+
     <div class="row">
         <div class="col-sm-12 text-right">
             <a href="/bookingpartners/create" class="btn btn-md btn-default">Add a Booking Partner</a>
         </div>
     </div>
+
     @if (Model.BookingPartners.Any() == false)
     {
         <div class="row">
@@ -40,6 +40,7 @@
                     {
                         <small class="warning">Bookings suspended</small>
                     }
+
                     @if (!bookingPartner.BookingPartner.Registered)
                     {
                         <small>Pending registration</small>
@@ -49,8 +50,9 @@
                 <div class="col-sm-6">
                     <form asp-action="ManageKeys">
                         <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                        <a href="~/bookingpartners/edit/@bookingPartner.ClientId" class="btn btn-md btn-default">API Key</a>
+                        <a href="/BookingPartners/Edit/@bookingPartner.ClientId" class="btn btn-md btn-default">API Key</a>
                     </form>
+
                     @if (bookingPartner.BookingPartner.Registered && !bookingPartner.BookingPartner.BookingsSuspended)
                     {
                         <form asp-action="Suspend">
@@ -58,6 +60,7 @@
                             <button class="btn btn-md btn-default">Suspend Bookings</button>
                         </form>
                     }
+
                     @if (bookingPartner.BookingPartner.Registered && bookingPartner.BookingPartner.BookingsSuspended)
                     {
                         <form asp-action="Restore">
@@ -65,6 +68,7 @@
                             <button class="btn btn-md btn-default">Restore</button>
                         </form>
                     }
+
                     @if (!bookingPartner.BookingPartner.Registered || bookingPartner.BookingPartner.BookingsSuspended)
                     {
                         <form asp-action="Revoke">
