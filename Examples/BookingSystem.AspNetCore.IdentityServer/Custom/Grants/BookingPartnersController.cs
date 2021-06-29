@@ -20,6 +20,7 @@ namespace src
     /// </summary>
     [SecurityHeaders]
     [Authorize]
+    [Route("booking-partners")]
     public class BookingPartnersController : Controller
     {
         private readonly IIdentityServerInteractionService _interaction;
@@ -45,7 +46,7 @@ namespace src
         /// <summary>
         /// Show list of grants
         /// </summary>
-        [HttpGet]
+        [HttpGet("edit/{id}")]
         public async Task<IActionResult> Edit(string id)
         {
             var content = await BuildBookingPartnerViewModel(id);
@@ -58,7 +59,7 @@ namespace src
         /// <summary>
         /// Show list of grants
         /// </summary>
-        [HttpGet]
+        [HttpGet("create")]
         public async Task<IActionResult> Create()
         {
             return View("BookingPartnerCreate", await Task.FromResult(new BookingPartnerModel()));
@@ -67,9 +68,9 @@ namespace src
         /// <summary>
         /// Add a new booking partner
         /// </summary>
-        [HttpPost]
+        [HttpPost("create")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateBookingPartner(string email, string bookingPartnerName)
+        public async Task<IActionResult> Create([FromForm] string email, [FromForm] string bookingPartnerName)
         {
             var newBookingPartner = new BookingPartnerTable
             {
@@ -85,76 +86,76 @@ namespace src
             };
 
             await FakeBookingSystem.Database.AddBookingPartner(newBookingPartner);
-            return View("BookingPartnerEdit", await BuildBookingPartnerViewModel(newBookingPartner.ClientId));
+            return Redirect($"/booking-partners/edit/{newBookingPartner.ClientId}");
         }
 
         /// <summary>
         /// Handle postback to revoke a client
         /// </summary>
-        [HttpPost]
+        [HttpPost("manage-keys")]
         [ValidateAntiForgeryToken]
-        public IActionResult ManageKeys(string clientId)
+        public IActionResult ManageKeys([FromForm] string clientId)
         {
-            return RedirectToAction("Index");
+            return Redirect("/booking-partners");
         }
 
         /// <summary>
         /// Handle postback to revoke a client
         /// </summary>
-        [HttpPost]
+        [HttpPost("restore")]
         [ValidateAntiForgeryToken]
-        public IActionResult Restore(string clientId)
+        public IActionResult Restore([FromForm] string clientId)
         {
-            return RedirectToAction("Index");
+            return Redirect("/booking-partners");
         }
 
         /// <summary>
         /// Handle postback to revoke a client
         /// </summary>
-        [HttpPost]
+        [HttpPost("revoke")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Revoke(string clientId)
+        public async Task<IActionResult> Revoke([FromForm] string clientId)
         {
             await _interaction.RevokeUserConsentAsync(clientId);
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
-            return RedirectToAction("Index");
+            return Redirect("/booking-partners");
         }
 
         /// <summary>
         /// Handle postback to suspend a client
         /// </summary>
-        [HttpPost]
+        [HttpPost("suspend")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Suspend(string clientId)
+        public async Task<IActionResult> Suspend([FromForm] string clientId)
         {
             var client = await _clients.FindClientByIdAsync(clientId);
             client.AllowedScopes.Remove("openactive-openbooking");
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
             await FakeBookingSystem.Database.UpdateBookingPartnerScope(clientId, "openid profile openactive-ordersfeed", true);
-            return RedirectToAction("Index");
+            return Redirect("/booking-partners");
         }
 
         /// <summary>
         /// Handle postback to generate a registration key
         /// </summary>
-        [HttpPost]
+        [HttpPost("regenerate-key")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RegenerateKey(string clientId)
+        public async Task<IActionResult> RegenerateKey([FromForm] string clientId)
         {
             var bookingPartner = await FakeBookingSystem.Database.GetBookingPartner(clientId);
             await FakeBookingSystem.Database.SetBookingPartnerKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
 
-            return View("BookingPartnerEdit", await BuildBookingPartnerViewModel(clientId));
+            return Redirect($"/booking-partners/edit/{clientId}");
         }
 
         /// <summary>
         /// Handle postback to generate a registration key, and a new client secret
         /// </summary>
-        [HttpPost]
+        [HttpPost("regenerate-all-keys")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RegenerateAllKeys(string clientId)
+        public async Task<IActionResult> RegenerateAllKeys([FromForm] string clientId)
         {
             var bookingPartner = await FakeBookingSystem.Database.GetBookingPartner(clientId);
             await FakeBookingSystem.Database.ResetBookingPartnerKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
@@ -163,7 +164,7 @@ namespace src
             //var client = await _clients.FindClientByIdAsync(clientId);
             //client.ClientSecrets = new List<Secret>() { new Secret(clientSecret.Sha256()) };
 
-            return View("BookingPartnerEdit", await BuildBookingPartnerViewModel(clientId));
+            return Redirect($"/booking-partners/edit/{clientId}");
         }
 
         private static async Task<BookingPartnerModel> BuildBookingPartnerViewModel(string clientId)

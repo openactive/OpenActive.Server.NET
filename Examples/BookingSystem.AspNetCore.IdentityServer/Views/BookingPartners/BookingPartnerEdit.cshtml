@@ -42,7 +42,8 @@
         <hr />
         <div class="row pb-10">
             <div class="col-sm-3">
-                <form asp-action="RegenerateKey">
+                <form action="/booking-partners/regenerate-key" method="post">
+                    @Html.AntiForgeryToken()
                     <input type="hidden" name="clientId" value="@Model.BookingPartner.ClientId">
                     <button class="btn btn-md btn-default">Generate New Registration Key</button>
                 </form>
@@ -53,7 +54,8 @@
         </div>
         <div class="row pb-40">
             <div class="col-sm-3">
-                <form asp-action="RegenerateAllKeys">
+                <form action="/booking-partners/regenerate-all-keys" method="post">
+                    @Html.AntiForgeryToken()
                     <input type="hidden" name="clientId" value="@Model.BookingPartner.ClientId">
                     <button class="btn btn-md btn-default">Regenerate all Keys</button>
                 </form>
@@ -64,7 +66,7 @@
         </div>
         <div class="row">
             <div class="col-sm-8 text-center">
-                <a class="btn btn-md btn-default" href="~/bookingpartners">Close</a>
+                <a class="btn btn-md btn-default" href="/booking-partners">Close</a>
             </div>
         </div>
     </div>

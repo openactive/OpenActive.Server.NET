@@ -1,41 +1,42 @@
 ﻿@model BookingPartnerModel
 
 <div class="partner container">
-        <div class="row page-header">
-            <div class="col-sm-10">
-                <h1>
-                    New Booking Partner
-                </h1>
-            </div>
+    <div class="row page-header">
+        <div class="col-sm-10">
+            <h1>
+                New Booking Partner
+            </h1>
         </div>
-        <form asp-action="CreateBookingPartner" class="form-horizontal">
-            <div class="row">
-                    <div class="form-group">
-                        <div class="col-sm-2">
-                            <label for="emailAddress" class="control-label">Email address</label>
-                        </div>
-                        <div class="col-sm-6">
-                            <input type="email" class="form-control" id="emailAddress" name="email">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="col-sm-2">
-                            <label for="bookingPartnerName" class="control-label">Booking Partner Name</label>
-                        </div>
-                        <div class="col-sm-6">
-                            <input type="text" class="form-control" id="bookingPartnerName" name="bookingPartnerName">
-                        </div>
-                    </div>
-            </div>
-            <hr />
-
-            <div class="row">
-                <div class="col-sm-8 text-center">
-
-                    <button class="btn btn-md btn-default">Create</button>
-
-                    <a class="btn btn-md btn-default" href="~/bookingpartners">Cancel</a>
+    </div>
+    <form action="/booking-partners/create" method="post" class="form-horizontal">
+        @Html.AntiForgeryToken()
+        <div class="row">
+            <div class="form-group">
+                <div class="col-sm-2">
+                    <label for="emailAddress" class="control-label">Email address</label>
+                </div>
+                <div class="col-sm-6">
+                    <input type="email" class="form-control" id="emailAddress" name="email">
                 </div>
             </div>
-        </form>
-    </div>
+            <div class="form-group">
+                <div class="col-sm-2">
+                    <label for="bookingPartnerName" class="control-label">Booking Partner Name</label>
+                </div>
+                <div class="col-sm-6">
+                    <input type="text" class="form-control" id="bookingPartnerName" name="bookingPartnerName">
+                </div>
+            </div>
+        </div>
+        <hr/>
+
+        <div class="row">
+            <div class="col-sm-8 text-center">
+
+                <button class="btn btn-md btn-default">Create</button>
+
+                <a class="btn btn-md btn-default" href="/booking-partners">Cancel</a>
+            </div>
+        </div>
+    </form>
+</div>

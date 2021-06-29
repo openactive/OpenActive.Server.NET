@@ -10,7 +10,7 @@
 
     <div class="row">
         <div class="col-sm-12 text-right">
-            <a href="/bookingpartners/create" class="btn btn-md btn-default">Add a Booking Partner</a>
+            <a href="/booking-partners/create" class="btn btn-md btn-default">Add a Booking Partner</a>
         </div>
     </div>
 
@@ -48,14 +48,16 @@
                 </div>
 
                 <div class="col-sm-6">
-                    <form asp-action="ManageKeys">
+                    <form action="/booking-partners/manage-keys" method="post">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                        <a href="/BookingPartners/Edit/@bookingPartner.ClientId" class="btn btn-md btn-default">API Key</a>
+                        <a href="/booking-partners/edit/@bookingPartner.ClientId" class="btn btn-md btn-default">API Key</a>
                     </form>
 
                     @if (bookingPartner.BookingPartner.Registered && !bookingPartner.BookingPartner.BookingsSuspended)
                     {
-                        <form asp-action="Suspend">
+                        <form action="/booking-partners/suspend" method="post">
+                            @Html.AntiForgeryToken()
                             <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
                             <button class="btn btn-md btn-default">Suspend Bookings</button>
                         </form>
@@ -63,7 +65,8 @@
 
                     @if (bookingPartner.BookingPartner.Registered && bookingPartner.BookingPartner.BookingsSuspended)
                     {
-                        <form asp-action="Restore">
+                        <form action="/booking-partners/restore" method="post">
+                            @Html.AntiForgeryToken()
                             <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
                             <button class="btn btn-md btn-default">Restore</button>
                         </form>
@@ -71,7 +74,8 @@
 
                     @if (!bookingPartner.BookingPartner.Registered || bookingPartner.BookingPartner.BookingsSuspended)
                     {
-                        <form asp-action="Revoke">
+                        <form action="/booking-partners/revoke" method="post">
+                            @Html.AntiForgeryToken()
                             <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
                             <button class="btn btn-md btn-default">Revoke Access</button>
                         </form>
