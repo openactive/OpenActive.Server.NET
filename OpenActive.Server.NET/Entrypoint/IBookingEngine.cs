@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET.OpenBookingHelper;
 
 namespace OpenActive.Server.NET

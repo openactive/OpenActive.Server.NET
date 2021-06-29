@@ -1,10 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using OpenActive.NET;
-using OpenActive.Server.NET.OpenBookingHelper;
 using System;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace BookingSystem.AspNetCore.Helpers

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using OpenActive.DatasetSite.NET;
-using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
 
 // TODO: Consolidate this logic with RpdeBase.cs to remove duplication (using generics?)

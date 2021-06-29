@@ -13,16 +13,14 @@ namespace IdentityServer
             _userRepository = userRepository;
         }
 
-        public Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
+        public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
         {
             // context.Username refers to the cardId; context.Password refers to Lastname
-            if (_userRepository.ValidateCredentials(context.UserName, context.Password))
+            if (await _userRepository.ValidateCredentials(context.UserName, context.Password))
             {
-                var user = _userRepository.FindByUsername(context.UserName);
+                var user = await _userRepository.FindByUsername(context.UserName);
                 context.Result = new GrantValidationResult(user.SubjectId, OidcConstants.AuthenticationMethods.Password);
             }
-
-            return Task.FromResult(0);
         }
     }
 }

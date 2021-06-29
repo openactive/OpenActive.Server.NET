@@ -15,7 +15,7 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        protected async override Task<List<RpdeItem<ScheduledSession>>> GetRpdeItems(long? afterTimestamp, long? afterId)
+        protected override async Task<List<RpdeItem<ScheduledSession>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
@@ -72,7 +72,7 @@ namespace BookingSystem
             this._useSingleSellerMode = useSingleSellerMode;
         }
 
-        protected async override Task<List<RpdeItem<SessionSeries>>> GetRpdeItems(long? afterTimestamp, long? afterId)
+        protected override async Task<List<RpdeItem<SessionSeries>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {

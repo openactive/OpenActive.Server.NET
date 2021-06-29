@@ -7,7 +7,6 @@ using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
-using ServiceStack.OrmLite;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 
 namespace BookingSystem
@@ -24,7 +23,7 @@ namespace BookingSystem
 
         Random rnd = new Random();
 
-        protected async override Task<FacilityOpportunity> CreateOpportunityWithinTestDataset(
+        protected override async Task<FacilityOpportunity> CreateOpportunityWithinTestDataset(
             string testDatasetIdentifier,
             OpportunityType opportunityType,
             TestOpportunityCriteriaEnumeration criteria,
@@ -45,7 +44,7 @@ namespace BookingSystem
                     {
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Facility",
@@ -56,7 +55,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFree:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableUsingPayment:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                              testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
@@ -65,7 +64,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility",
@@ -77,7 +76,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
                             {
                                 var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
-                                (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                     testDatasetIdentifier,
                                     sellerId,
                                     $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Window",
@@ -91,7 +90,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableOutsideWindow:
                             {
                                 var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow;
-                                (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                                (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                     testDatasetIdentifier,
                                     sellerId,
                                     $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility {(isValid ? "Within" : "Outside")} Cancellation Window",
@@ -102,7 +101,7 @@ namespace BookingSystem
                             }
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Prepayment Optional",
@@ -112,7 +111,7 @@ namespace BookingSystem
                                 prepayment: RequiredStatusType.Optional);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Prepayment Unavailable",
@@ -122,7 +121,7 @@ namespace BookingSystem
                                 prepayment: RequiredStatusType.Unavailable);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Prepayment Required",
@@ -132,7 +131,7 @@ namespace BookingSystem
                                 prepayment: RequiredStatusType.Required);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility No Spaces",
@@ -141,7 +140,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility Five Spaces",
@@ -150,7 +149,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOneSpace:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility One Space",
@@ -159,7 +158,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 2,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Tax Net",
@@ -168,7 +167,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxGross:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Tax Gross",
@@ -177,7 +176,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableSellerTermsOfService:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Facility With Seller Terms Of Service",
@@ -186,7 +185,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Facility That Requires Attendee Details",
@@ -196,7 +195,7 @@ namespace BookingSystem
                                 requiresAttendeeValidation: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAdditionalDetails:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility That Requires Additional Details",
@@ -206,7 +205,7 @@ namespace BookingSystem
                                 requiresAdditionalDetails: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithNegotiation:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility That Allows Proposal Amendment",
@@ -216,7 +215,7 @@ namespace BookingSystem
                                 allowProposalAmendment: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Facility Paid That Does Not Allow Full Refund",
@@ -226,7 +225,7 @@ namespace BookingSystem
                                 allowCustomerCancellationFullRefund: false);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableInPast:
-                            (facilityId, slotId) = FakeBookingSystem.Database.AddFacility(
+                            (facilityId, slotId) = await FakeBookingSystem.Database.AddFacility(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Facility in the Past",
@@ -251,29 +250,29 @@ namespace BookingSystem
             }
         }
 
-        protected async override Task DeleteTestDataset(string testDatasetIdentifier)
+        protected override async Task DeleteTestDataset(string testDatasetIdentifier)
         {
-            FakeBookingSystem.Database.DeleteTestFacilitiesFromDataset(testDatasetIdentifier);
+            await FakeBookingSystem.Database.DeleteTestFacilitiesFromDataset(testDatasetIdentifier);
         }
 
-        protected async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, FacilityOpportunity idComponents)
+        protected override async Task TriggerTestAction(OpenBookingSimulateAction simulateAction, FacilityOpportunity idComponents)
         {
             switch (simulateAction)
             {
                 case ChangeOfLogisticsTimeSimulateAction _:
-                    if (!FakeBookingSystem.Database.UpdateFacilitySlotStartAndEndTimeByPeriodInMins(idComponents.SlotId.Value, 60))
+                    if (!await FakeBookingSystem.Database.UpdateFacilitySlotStartAndEndTimeByPeriodInMins(idComponents.SlotId.Value, 60))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
                     return;
                 case ChangeOfLogisticsNameSimulateAction _:
-                    if (!FakeBookingSystem.Database.UpdateFacilityUseName(idComponents.SlotId.Value, "Updated Facility Title"))
+                    if (!await FakeBookingSystem.Database.UpdateFacilityUseName(idComponents.SlotId.Value, "Updated Facility Title"))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
                     return;
                 case ChangeOfLogisticsLocationSimulateAction _:
-                    if (!FakeBookingSystem.Database.UpdateFacilityUseLocationLatLng(idComponents.SlotId.Value, 0.2m, 0.3m))
+                    if (!await FakeBookingSystem.Database.UpdateFacilityUseLocationLatLng(idComponents.SlotId.Value, 0.2m, 0.3m))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
@@ -285,7 +284,7 @@ namespace BookingSystem
         }
 
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
-        protected async override Task GetOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
+        protected override async Task GetOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
             // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
 
@@ -293,15 +292,15 @@ namespace BookingSystem
 
             // Response OrderItems must be updated into supplied orderItemContexts (including duplicates for multi-party booking)
 
-            var query = orderItemContexts.Select((orderItemContext) =>
+            var query = await Task.WhenAll(orderItemContexts.Select(async orderItemContext =>
             {
-                var getOccurrenceInfoResult = FakeBookingSystem.Database.GetSlotAndBookedOrderItemInfoBySlotId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
+                var getOccurrenceInfoResult = await FakeBookingSystem.Database.GetSlotAndBookedOrderItemInfoBySlotId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
                 var (hasFoundOccurrence, facility, slot, bookedOrderItemInfo) = getOccurrenceInfoResult;
                 if (hasFoundOccurrence == false)
                 {
                     return null;
                 }
-                var remainingUsesIncludingOtherLeases = FakeBookingSystem.Database.GetNumberOfOtherLeasesForSlot(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
+                var remainingUsesIncludingOtherLeases = await FakeBookingSystem.Database.GetNumberOfOtherLeasesForSlot(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
 
                 return new
                 {
@@ -383,8 +382,7 @@ namespace BookingSystem
                     BookedOrderItemInfo = bookedOrderItemInfo,
                     slot.RemainingUses
                 };
-            });
-
+            }));
 
             // Add the response OrderItems to the relevant contexts (note that the context must be updated within this method)
             foreach (var (item, ctx) in query.Zip(orderItemContexts, (item, ctx) => (item, ctx)))
@@ -417,7 +415,7 @@ namespace BookingSystem
             }
         }
 
-        protected async override ValueTask LeaseOrderItems(Lease lease, List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected override async ValueTask LeaseOrderItems(Lease lease, List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -435,7 +433,7 @@ namespace BookingSystem
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    var (result, capacityErrors, capacityLeaseErrors) = FakeDatabase.LeaseOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, ctxGroup.Count());
+                    var (result, capacityErrors, capacityLeaseErrors) = await FakeDatabase.LeaseOrderItemsForFacilitySlot(databaseTransaction.FakeDatabaseTransaction, flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.SlotId.Value, ctxGroup.Count());
 
                     switch (result)
                     {
@@ -490,7 +488,7 @@ namespace BookingSystem
         }
 
         //TODO: This should reuse code of LeaseOrderItem
-        protected async override ValueTask BookOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected override async ValueTask BookOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -503,7 +501,7 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForFacilitySlot(
+                var (result, bookedOrderItemInfos) = await FakeDatabase.BookOrderItemsForFacilitySlot(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
@@ -540,7 +538,7 @@ namespace BookingSystem
         }
 
         // TODO check logic here, it's just been copied from BookOrderItems. Possibly could remove duplication here.
-        protected async override ValueTask ProposeOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected override async ValueTask ProposeOrderItems(List<OrderItemContext<FacilityOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -554,7 +552,7 @@ namespace BookingSystem
                 }
 
                 // Attempt to book for those with the same IDs, which is atomic
-                var (result, bookedOrderItemInfos) = FakeDatabase.BookOrderItemsForFacilitySlot(
+                var (result, bookedOrderItemInfos) = await FakeDatabase.BookOrderItemsForFacilitySlot(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
                     flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,

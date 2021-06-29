@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using System;

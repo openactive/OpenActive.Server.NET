@@ -296,7 +296,7 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
 
-        protected async override Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller)
+        protected override async Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
@@ -304,7 +304,7 @@ namespace OpenActive.Server.NET.StoreBooking
             return await storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, openBookingFlow, seller);
         }
 
-        protected async override Task DeleteTestDataset(string testDatasetIdentifier)
+        protected override async Task DeleteTestDataset(string testDatasetIdentifier)
         {
             foreach (var store in storeRouting.Values)
             {
@@ -312,7 +312,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected async override Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate)
+        protected override async Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate)
         {
             switch (simulateAction.Object.Value)
             {
@@ -355,7 +355,7 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        public async override Task ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
+        public override async Task ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
             if (!await storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderId, sellerId, orderItemIds))
             {
@@ -363,7 +363,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        public async override Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
+        public override async Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
         {
             if (!await storeBookingEngineSettings.OrderStore.CustomerRejectOrderProposal(orderId, sellerId))
             {
@@ -371,12 +371,12 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected async override Task<DeleteOrderResult> ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
+        protected override async Task<DeleteOrderResult> ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
             return await storeBookingEngineSettings.OrderStore.DeleteOrder(orderId, sellerId);
         }
 
-        protected async override Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
+        protected override async Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
             await storeBookingEngineSettings.OrderStore.DeleteLease(orderId, sellerId);
         }
@@ -433,7 +433,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected async override Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
+        protected override async Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
         {
             // Get Order without OrderItems expanded
             var order = await storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
@@ -468,7 +468,7 @@ namespace OpenActive.Server.NET.StoreBooking
             return order;
         }
 
-        public async override Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
+        public override async Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
         {
             if (!await storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
             {
@@ -650,7 +650,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        public async override Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
+        public override async Task<TOrder> ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
         {
             var flowContext = AugmentContextFromOrder(request, order);
 

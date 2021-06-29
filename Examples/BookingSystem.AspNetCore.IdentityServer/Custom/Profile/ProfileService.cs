@@ -35,14 +35,14 @@ namespace IdentityServer
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        public virtual Task GetProfileDataAsync(ProfileDataRequestContext context)
+        public virtual async Task GetProfileDataAsync(ProfileDataRequestContext context)
         {
             context.LogProfileRequest(Logger);
 
             // Claims added here are defined be the API and RESOURCE configurations in Config.cs, only the requested claims will be added to the IssuedClaims collection
             if (context.RequestedClaimTypes.Any())
             {
-                var user = Users.FindBySubjectId(context.Subject.GetSubjectId());
+                var user = await Users.FindBySubjectId(context.Subject.GetSubjectId());
                 if (user != null)
                 {
                     context.AddRequestedClaims(user.Claims);
@@ -52,13 +52,10 @@ namespace IdentityServer
                     {
                         context.IssuedClaims.Add(sellerIdClaim);
                     }
-
                 }
             }
 
             context.LogIssuedClaims(Logger);
-
-            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -67,15 +64,12 @@ namespace IdentityServer
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        public virtual Task IsActiveAsync(IsActiveContext context)
+        public virtual async Task IsActiveAsync(IsActiveContext context)
         {
-            Logger.LogDebug("IsActive called from: {caller}", context.Caller);
+            Logger.LogDebug("IsActive called from: {Caller}", context.Caller);
 
-            var user = Users.FindBySubjectId(context.Subject.GetSubjectId());
+            var user = await Users.FindBySubjectId(context.Subject.GetSubjectId());
             context.IsActive = user?.IsActive == true;
-
-            return Task.CompletedTask;
         }
-       
     }
 }

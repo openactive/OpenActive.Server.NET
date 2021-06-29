@@ -1,38 +1,34 @@
 ﻿using OpenActive.FakeDatabase.NET;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace IdentityServer
 {
     public class UserRepository : IUserRepository
     {
-        private string jsonLdIdBaseUrl;
+        private readonly string _jsonLdIdBaseUrl;
 
         public UserRepository(string jsonLdIdBaseUrl)
         {
-            this.jsonLdIdBaseUrl = jsonLdIdBaseUrl;
+            this._jsonLdIdBaseUrl = jsonLdIdBaseUrl;
         }
 
-        public bool ValidateCredentials(string username, string password)
+        public Task<bool> ValidateCredentials(string username, string password)
         {
             return FakeBookingSystem.Database.ValidateSellerUserCredentials(username, password);
         }
 
-        public UserWithClaims FindBySubjectId(string subjectId)
+        public async Task<UserWithClaims> FindBySubjectId(string subjectId)
         {
-            if (long.TryParse(subjectId, out long longSubjectId))
-            {
-                return GetUserFromSellerUserWithClaims(FakeBookingSystem.Database.GetSellerUserById(longSubjectId));
-            }
-            else
-            {
-                return null;
-            }
+            return long.TryParse(subjectId, out var longSubjectId)
+                ? GetUserFromSellerUserWithClaims(await FakeBookingSystem.Database.GetSellerUserById(longSubjectId))
+                : null;
         }
 
-        public User FindByUsername(string username)
+        public async Task<User> FindByUsername(string username)
         {
-            return GetUserFromSellerUser(FakeBookingSystem.Database.GetSellerUser(username));
+            return GetUserFromSellerUser(await FakeBookingSystem.Database.GetSellerUser(username));
         }
 
         // TODO: Make this an extension method
@@ -54,16 +50,19 @@ namespace IdentityServer
                 IsActive = true,
                 Claims = new List<Claim>()
             };
+
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerName", sellerUser.SellerTable.Name);
-            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerId", jsonLdIdBaseUrl + "/api/identifiers/sellers/" + sellerUser.SellerTable.Id);
+            AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerId", _jsonLdIdBaseUrl + "/api/identifiers/sellers/" + sellerUser.SellerTable.Id);
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerUrl", sellerUser.SellerTable.Url);
             AddClaimIfNotNull(user.Claims, "https://openactive.io/sellerLogo", sellerUser.SellerTable.LogoUrl);
             return user;
         }
 
-        private User GetUserFromSellerUser(SellerUserTable sellerUser)
+        private static User GetUserFromSellerUser(SellerUserTable sellerUser)
         {
-            if (sellerUser == null) return null;
+            if (sellerUser == null)
+                return null;
+
             return new User
             {
                 Username = sellerUser.Username,

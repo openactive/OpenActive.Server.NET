@@ -9,16 +9,18 @@ namespace IdentityServer
 {
     public class ClientStore : IClientStore
     {
-        public Task<Client> FindClientByIdAsync(string clientId)
+        public async Task<Client> FindClientByIdAsync(string clientId)
         {
-            var bookingPartner = FakeBookingSystem.Database.GetBookingPartner(clientId);
-            return Task.FromResult(ConvertToIS4Client(bookingPartner));
+            var bookingPartner = await FakeBookingSystem.Database.GetBookingPartner(clientId);
+            return ConvertToIS4Client(bookingPartner);
         }
 
         private Client ConvertToIS4Client(BookingPartnerTable bookingPartner)
         {
-            if (bookingPartner == null) return null;
-            return new Client()
+            if (bookingPartner == null)
+                return null;
+
+            return new Client
             {
                 Enabled = bookingPartner.Registered,
                 ClientId = bookingPartner.ClientId,

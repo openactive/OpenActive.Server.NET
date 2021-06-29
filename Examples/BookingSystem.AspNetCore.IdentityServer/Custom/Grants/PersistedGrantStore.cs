@@ -9,9 +9,9 @@ namespace IdentityServer
 {
     public class AcmePersistedGrantStore : IPersistedGrantStore
     {
-        public Task<IEnumerable<PersistedGrant>> GetAllAsync(string subjectId)
+        public async Task<IEnumerable<PersistedGrant>> GetAllAsync(string subjectId)
         {
-            var grants = FakeBookingSystem.Database.GetAllGrants(subjectId);
+            var grants = await FakeBookingSystem.Database.GetAllGrants(subjectId);
             var persistedGrants = grants.Select(grant => new PersistedGrant
             {
                 Key = grant.Key,
@@ -23,14 +23,14 @@ namespace IdentityServer
                 Data = grant.Data
             }).ToList();
 
-            return Task.FromResult<IEnumerable<PersistedGrant>>(persistedGrants);
+            return persistedGrants;
         }
 
-        public Task<PersistedGrant> GetAsync(string key)
+        public async Task<PersistedGrant> GetAsync(string key)
         {
-            var grant = FakeBookingSystem.Database.GetGrant(key);
+            var grant = await FakeBookingSystem.Database.GetGrant(key);
 
-            return Task.FromResult(grant != null ? new PersistedGrant()
+            return grant != null ? new PersistedGrant()
             {
                 Key = grant.Key,
                 Type = grant.Type,
@@ -39,7 +39,7 @@ namespace IdentityServer
                 CreationTime = grant.CreationTime,
                 Expiration = grant.Expiration,
                 Data = grant.Data
-            } : null);
+            } : null;
         }
 
         public Task RemoveAllAsync(string subjectId, string clientId)

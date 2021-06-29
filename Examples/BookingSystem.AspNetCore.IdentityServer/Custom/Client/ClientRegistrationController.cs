@@ -50,7 +50,7 @@ namespace IdentityServer
                 registrationKey = headerValues.FirstOrDefault().Substring("Bearer ".Length);
 
             // update the booking system
-            var bookingPartner = FakeBookingSystem.Database.GetBookingPartnerByInitialAccessToken(registrationKey);
+            var bookingPartner = await FakeBookingSystem.Database.GetBookingPartnerByInitialAccessToken(registrationKey);
             if (bookingPartner == null)
                 return Unauthorized("Initial Access Token is not valid, or is expired");
 
@@ -66,7 +66,7 @@ namespace IdentityServer
                 Scope = model.Scope,
             };
 
-            FakeBookingSystem.Database.SaveBookingPartner(bookingPartner);
+            await FakeBookingSystem.Database.SaveBookingPartner(bookingPartner);
 
             // Read the updated client from the database and reflect back in the request
             var client = await _clients.FindClientByIdAsync(bookingPartner.ClientId);

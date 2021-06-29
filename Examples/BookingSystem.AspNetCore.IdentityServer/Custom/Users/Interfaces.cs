@@ -1,9 +1,11 @@
-﻿namespace IdentityServer
+﻿using System.Threading.Tasks;
+
+namespace IdentityServer
 {
     public interface IUserRepository
     {
-        bool ValidateCredentials(string username, string password);
-        UserWithClaims FindBySubjectId(string subjectId);
-        User FindByUsername(string username);
+        Task<bool> ValidateCredentials(string username, string password);
+        Task<UserWithClaims> FindBySubjectId(string subjectId);
+        Task<User> FindByUsername(string username);
     }
 }
