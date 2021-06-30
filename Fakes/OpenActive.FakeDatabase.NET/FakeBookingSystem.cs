@@ -1373,6 +1373,8 @@ namespace OpenActive.FakeDatabase.NET
                 await CreateSellerUsers(db);
                 await CreateFakeClasses(db);
                 await CreateFakeFacilitiesAndSlots(db);
+                await CreateOrders(db);
+                await CreateGrants(db);
                 await BookingPartnerTable.Create(db);
                 transaction.Commit();
             }
@@ -1508,6 +1510,107 @@ namespace OpenActive.FakeDatabase.NET
             };
 
             await db.InsertAllAsync(sellers);
+        }
+
+        public static async Task CreateOrders(IDbConnection db)
+        {
+            var orders = new List<OrderTable>
+            {
+                new OrderTable
+                {
+                    OrderId = Guid.NewGuid().ToString(),
+                    Deleted = false,
+                    OrderCreated = DateTimeOffset.Now,
+                    OrderModified = DateTimeOffset.Now.Ticks,
+                    OrderProposalModified = DateTimeOffset.Now.Ticks,
+                    ClientId = "clientid_XXX",
+                    SellerId = 1,
+                    CustomerType = CustomerType.Person,
+                    BrokerRole = BrokerRole.AgentBroker,
+                    BrokerName = "MyFitnessApp",
+                    BrokerUrl = new Uri("https://myfitnessapp.example.com/"),
+                    CustomerEmail = "Ardith72@hotmail.com",
+                    CustomerIdentifier = Guid.NewGuid().ToString(),
+                    CustomerGivenName = "Hills",
+                    CustomerFamilyName = "Modesta",
+                    CustomerTelephone = "731.403.0727",
+                    PaymentIdentifier = "dyulZE-Kt",
+                    PaymentName = "AcmeBroker Points",
+                    PaymentProviderId = "STRIPE",
+                    PaymentAccountId = "SN1593",
+                    TotalOrderPrice = 14.99M,
+                    OrderMode = OrderMode.Booking,
+                    LeaseExpires = DateTime.Now.AddDays(10),
+                    VisibleInOrdersFeed = FeedVisibility.None
+                },
+                new OrderTable
+                {
+                    OrderId = Guid.NewGuid().ToString(),
+                    Deleted = false,
+                    OrderCreated = DateTimeOffset.Now,
+                    OrderModified = DateTimeOffset.Now.Ticks,
+                    OrderProposalModified = DateTimeOffset.Now.Ticks,
+                    ClientId = "clientid_XXX",
+                    SellerId = 1,
+                    CustomerType = CustomerType.Person,
+                    BrokerRole = BrokerRole.AgentBroker,
+                    BrokerName = "MyFitnessApp",
+                    BrokerUrl = new Uri("https://myfitnessapp.example.com/"),
+                    CustomerEmail = "Zelma.Pacocha79@gmail.com",
+                    CustomerIdentifier = Guid.NewGuid().ToString(),
+                    CustomerGivenName = "Boyer",
+                    CustomerFamilyName = "Santos",
+                    CustomerTelephone = "1-346-608-5991 x53561",
+                    PaymentIdentifier = "JU1ktRR7U",
+                    PaymentName = "AcmeBroker Points",
+                    PaymentProviderId = "STRIPE",
+                    PaymentAccountId = "SN1593",
+                    TotalOrderPrice = 14.99M,
+                    OrderMode = OrderMode.Booking,
+                    LeaseExpires = DateTime.Now.AddDays(10),
+                    VisibleInOrdersFeed = FeedVisibility.None
+                },
+                new OrderTable
+                {
+                    OrderId = Guid.NewGuid().ToString(),
+                    Deleted = false,
+                    OrderCreated = DateTimeOffset.Now,
+                    OrderModified = DateTimeOffset.Now.Ticks,
+                    OrderProposalModified = DateTimeOffset.Now.Ticks,
+                    ClientId = "clientid_XXX",
+                    SellerId = 1,
+                    CustomerType = CustomerType.Person,
+                    BrokerRole = BrokerRole.AgentBroker,
+                    BrokerName = "MyFitnessApp",
+                    BrokerUrl = new Uri("https://myfitnessapp.example.com/"),
+                    CustomerEmail = "Regan_Moen4@gmail.com",
+                    CustomerIdentifier = Guid.NewGuid().ToString(),
+                    CustomerGivenName = "Kohler",
+                    CustomerFamilyName = "Toby",
+                    CustomerTelephone = "1-585-849-0456",
+                    PaymentIdentifier = "Lr4GW6MNQ",
+                    PaymentName = "AcmeBroker Points",
+                    PaymentProviderId = "STRIPE",
+                    PaymentAccountId = "SN1593",
+                    TotalOrderPrice = 59.96M,
+                    OrderMode = OrderMode.Booking,
+                    LeaseExpires = DateTime.Now.AddDays(10),
+                    VisibleInOrdersFeed = FeedVisibility.None
+                }
+            };
+
+            await db.InsertAllAsync(orders);
+        }
+
+        public static async Task CreateGrants(IDbConnection db)
+        {
+            var grants = new List<GrantTable>
+            {
+                new GrantTable { ClientId = "clientid_XXX", SubjectId = "100", Type = "user_consent" },
+                new GrantTable { ClientId = "clientid_YYY", SubjectId = "100", Type = "user_consent" }
+            };
+
+            await db.InsertAllAsync(grants);
         }
 
         public static readonly SellerUserTable[] DefaultSellerUsers =
