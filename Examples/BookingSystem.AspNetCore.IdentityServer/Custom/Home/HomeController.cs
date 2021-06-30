@@ -1,7 +1,6 @@
 // Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
-
 using IdentityServer4.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -27,6 +26,7 @@ namespace src
             _logger = logger;
         }
 
+        [HttpGet("")]
         public IActionResult Index()
         {
             if (_environment.IsDevelopment())
@@ -35,18 +35,19 @@ namespace src
                 return View();
             }
 
-            _logger.LogInformation("Homepage is disabled in production. Returning 404.");
+            _logger.LogInformation("Homepage is disabled in production - returning 404");
             return NotFound();
         }
 
         /// <summary>
         /// Shows the error page
         /// </summary>
+        [HttpGet("/error")]
         public async Task<IActionResult> Error(string errorId)
         {
             var vm = new ErrorViewModel();
 
-            // retrieve error details from identityserver
+            // retrieve error details from identity server
             var message = await _interaction.GetErrorContextAsync(errorId);
             if (message != null)
             {

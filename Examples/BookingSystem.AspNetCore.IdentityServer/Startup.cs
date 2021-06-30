@@ -50,6 +50,10 @@ namespace IdentityServer
             {
                 app.UseDeveloperExceptionPage();
             }
+            else
+            {
+                app.UseExceptionHandler("/error");
+            }
 
             app.UseIdentityServer();
 
