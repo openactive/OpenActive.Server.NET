@@ -30,7 +30,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             var bookingPartners = new List<BookingPartnerTable>
             {
-                new BookingPartnerTable { Name = "Test Suite 1", ClientId = "clientid_XXX", InitialAccessToken = "openactive_test_suite_client_12345xaq", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { Name = "RED January", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "openactive_test_suite_client_12345xaq", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
                 new BookingPartnerTable { Name = "Acmefitness", ClientId = "clientid_800", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98767", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
                     GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
@@ -39,7 +39,7 @@ namespace OpenActive.FakeDatabase.NET
                     LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
                     RedirectUris = new[] { "http://localhost:3000/cb" }
                 },
-                new BookingPartnerTable { Name = "Example app", ClientId = "clientid_709", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98768", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { Name = "Mum's runs", ClientId = "clientid_801", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98768", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
                     GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
                     ClientUri = "http://example.com",
@@ -47,8 +47,24 @@ namespace OpenActive.FakeDatabase.NET
                     LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
                     RedirectUris = new[] { "http://localhost:3000/cb" }
                 },
-                new BookingPartnerTable { Name = "Test Suite 2", ClientId = "clientid_YYY", InitialAccessToken = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
-                new BookingPartnerTable { Name = "Test Suite 3", ClientId = "clientid_ZZZ", InitialAccessToken = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
+                new BookingPartnerTable { Name = "Vivacity Insurance", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { Name = "Active with Friends", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
+                new BookingPartnerTable { Name = "Ultimate Fitness Challenge", ClientId = "clientid_XXX", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "123123", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
+                    GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
+                    ClientUri = "http://example.com",
+                    RestoreAccessUri = "http://example.com",
+                    LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
+                    RedirectUris = new[] { "http://localhost:3000/cb" }
+                },
+                new BookingPartnerTable { Name = "Healthy Steps Every Day", ClientId = "clientid_YYY", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "456456", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
+                    GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
+                    ClientUri = "http://example.com",
+                    RestoreAccessUri = "http://example.com",
+                    LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
+                    RedirectUris = new[] { "http://localhost:3000/cb" }
+                },
             };
 
             await db.InsertAllAsync(bookingPartners);

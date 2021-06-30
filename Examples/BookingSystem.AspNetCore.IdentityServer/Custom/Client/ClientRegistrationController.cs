@@ -96,7 +96,7 @@ namespace IdentityServer
         [JsonPropertyName(OidcConstants.ClientMetadata.ClientUri)]
         public string ClientUri { get; set; }
 
-        [JsonPropertyName("registration_client_uri")]
+        [JsonPropertyName(OidcConstants.ClientMetadata.InitiateLoginUris)]
         public string ClientRegistrationUri { get; set; }
 
         [JsonPropertyName(OidcConstants.ClientMetadata.LogoUri)]

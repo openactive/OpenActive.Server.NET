@@ -1373,8 +1373,8 @@ namespace OpenActive.FakeDatabase.NET
                 await CreateSellerUsers(db);
                 await CreateFakeClasses(db);
                 await CreateFakeFacilitiesAndSlots(db);
-                // await CreateOrders(db); // Add these in to generate your own orders and grants, otherwise generate them using the test suite
-                // await CreateGrants(db);
+                await CreateOrders(db); // Add these in to generate your own orders and grants, otherwise generate them using the test suite
+                await CreateGrants(db);
                 await BookingPartnerTable.Create(db);
                 transaction.Commit();
             }
@@ -1527,7 +1527,7 @@ namespace OpenActive.FakeDatabase.NET
                     SellerId = 1,
                     CustomerType = CustomerType.Person,
                     BrokerRole = BrokerRole.AgentBroker,
-                    BrokerName = "MyFitnessApp",
+                    BrokerName = "Adult Fitness Challenge",
                     BrokerUrl = new Uri("https://myfitnessapp.example.com/"),
                     CustomerEmail = "Ardith72@hotmail.com",
                     CustomerIdentifier = Guid.NewGuid().ToString(),
@@ -1550,11 +1550,11 @@ namespace OpenActive.FakeDatabase.NET
                     OrderCreated = DateTimeOffset.Now,
                     OrderModified = DateTimeOffset.Now.Ticks,
                     OrderProposalModified = DateTimeOffset.Now.Ticks,
-                    ClientId = "clientid_XXX",
+                    ClientId = "clientid_YYY",
                     SellerId = 1,
                     CustomerType = CustomerType.Person,
                     BrokerRole = BrokerRole.AgentBroker,
-                    BrokerName = "MyFitnessApp",
+                    BrokerName = "Healthy Steps App",
                     BrokerUrl = new Uri("https://myfitnessapp.example.com/"),
                     CustomerEmail = "Zelma.Pacocha79@gmail.com",
                     CustomerIdentifier = Guid.NewGuid().ToString(),
@@ -1577,11 +1577,11 @@ namespace OpenActive.FakeDatabase.NET
                     OrderCreated = DateTimeOffset.Now,
                     OrderModified = DateTimeOffset.Now.Ticks,
                     OrderProposalModified = DateTimeOffset.Now.Ticks,
-                    ClientId = "clientid_XXX",
+                    ClientId = "clientid_YYY",
                     SellerId = 1,
                     CustomerType = CustomerType.Person,
                     BrokerRole = BrokerRole.AgentBroker,
-                    BrokerName = "MyFitnessApp",
+                    BrokerName = "Healthy Steps Website",
                     BrokerUrl = new Uri("https://myfitnessapp.example.com/"),
                     CustomerEmail = "Regan_Moen4@gmail.com",
                     CustomerIdentifier = Guid.NewGuid().ToString(),
@@ -1607,7 +1607,8 @@ namespace OpenActive.FakeDatabase.NET
             var grants = new List<GrantTable>
             {
                 new GrantTable { ClientId = "clientid_XXX", SubjectId = "100", Type = "user_consent" },
-                new GrantTable { ClientId = "clientid_YYY", SubjectId = "100", Type = "user_consent" }
+                new GrantTable { ClientId = "clientid_YYY", SubjectId = "100", Type = "user_consent" },
+                new GrantTable { ClientId = "clientid_ZZZ", SubjectId = "100", Type = "user_consent" },
             };
 
             await db.InsertAllAsync(grants);
