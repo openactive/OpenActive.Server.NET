@@ -14,6 +14,7 @@ namespace OpenActive.FakeDatabase.NET
         public string Name { get; set; }
         public string ClientSecret { get; set; }
         public string ClientUri { get; set; }
+        public string RestoreAccessUri { get; set; }
         public string LogoUri { get; set; }
         public string[] GrantTypes { get; set; }
         public string[] RedirectUris { get; set; }
@@ -34,6 +35,7 @@ namespace OpenActive.FakeDatabase.NET
                     Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
                     GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
                     ClientUri = "http://example.com",
+                    RestoreAccessUri = "http://example.com",
                     LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
                     RedirectUris = new[] { "http://localhost:3000/cb" }
                 },
@@ -41,6 +43,7 @@ namespace OpenActive.FakeDatabase.NET
                     Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
                     GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
                     ClientUri = "http://example.com",
+                    RestoreAccessUri = "http://example.com",
                     LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
                     RedirectUris = new[] { "http://localhost:3000/cb" }
                 },

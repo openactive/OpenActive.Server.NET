@@ -27,6 +27,7 @@ namespace src
                     ClientName = bookingPartner.Name,
                     ClientLogoUrl = bookingPartner.LogoUri,
                     ClientUrl = bookingPartner.ClientUri,
+                    RestoreAccessUrl = bookingPartner.RestoreAccessUri,
                     BookingPartner = bookingPartner,
                     SellersEnabled = bookingStatistics.SellersEnabled,
                     BookingsByBroker = bookingStatistics.BookingsByBroker
@@ -42,6 +43,7 @@ namespace src
         public string ClientId { get; set; }
         public string ClientName { get; set; }
         public string ClientUrl { get; set; }
+        public string RestoreAccessUrl { get; set; }
         public string ClientLogoUrl { get; set; }
         public DateTime Created { get; set; }
         public DateTime? Expires { get; set; }

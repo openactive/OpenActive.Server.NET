@@ -86,13 +86,6 @@ namespace src
             return Redirect($"/booking-partners/edit/{newBookingPartner.ClientId}");
         }
 
-        [HttpPost("restore")]
-        [ValidateAntiForgeryToken]
-        public IActionResult Restore([FromForm] string clientId)
-        {
-            return Redirect("/booking-partners/seller-admin");
-        }
-
         /// <summary>
         /// Handle postback to remove a client
         /// </summary>

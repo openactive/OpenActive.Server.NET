@@ -58,6 +58,7 @@ namespace IdentityServer
             bookingPartner.ClientSecret = key.Sha256();
             bookingPartner.Name = model.ClientName;
             bookingPartner.ClientUri = model.ClientUri;
+            bookingPartner.RestoreAccessUri = model.ClientUri; // ToDo: is this right?
             bookingPartner.LogoUri = model.LogoUri;
             bookingPartner.GrantTypes = model.GrantTypes;
             bookingPartner.RedirectUris = model.RedirectUris;

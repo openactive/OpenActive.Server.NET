@@ -42,17 +42,13 @@
                                     <form action="/booking-partners/suspend" method="post">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                                        <button class="btn btn-md btn-default">Suspend Bookings</button>
+                                        <button class="btn btn-md btn-default btn-suspend-bookings">Suspend Bookings</button>
                                     </form>
                                 }
 
                                 @if (bookingPartner.BookingPartner.Registered && bookingPartner.BookingPartner.BookingsSuspended)
                                 {
-                                    <form action="/booking-partners/restore" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                                        <button class="btn btn-md btn-default">Restore</button>
-                                    </form>
+                                    <a class="btn btn-md btn-default" href="@bookingPartner.RestoreAccessUrl" @(string.IsNullOrWhiteSpace(bookingPartner.RestoreAccessUrl) ? "disabled" : "")>Restore</a>
                                 }
 
                                 @if (!bookingPartner.BookingPartner.Registered || bookingPartner.BookingPartner.BookingsSuspended)
