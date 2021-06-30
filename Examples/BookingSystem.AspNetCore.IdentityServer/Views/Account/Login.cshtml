@@ -3,7 +3,7 @@
 
 <div class="login-page">
     <div class="page-header">
-        <h1>Login</h1>
+        <h1>Lorem Fitsum Seller Login</h1>
     </div>
 
     <partial name="_ValidationSummary" />
@@ -14,7 +14,7 @@
             <div class="col-sm-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Local Login</h3>
+                        <h3 class="panel-title">Seller Login</h3>
                     </div>
                     <div class="panel-body">
                         <form asp-route="Login">
@@ -92,6 +92,8 @@
                     <h3 class="panel-title">Test credentials</h3>
                 </div>
                 <div class="panel-body">
+                    <p>Please use the test Seller credentials below to log in:</p>
+                    <div><b>Username</b> &#8594; <b>Password</b></div>
                     @foreach (var seller in FakeDatabase.DefaultSellerUsers)
                     {
                         <div>@seller.Username &#8594; @seller.PasswordRaw</div>
