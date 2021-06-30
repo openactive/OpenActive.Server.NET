@@ -2,73 +2,67 @@
 
 <div class="grants">
     <div class="row page-header">
-        <div class="col-sm-10">
-            <h1>Seller Administration</h1>
-            <div>Below is the list of your approved booking partners.</div>
-        </div>
+        <h1>Seller Administration</h1>
+        <div>Below is the list of your approved booking partners.</div>
     </div>
 
-    @if (Model.BookingPartners.Any() == false)
-    {
-        <div class="row">
-            <div class="col-sm-8">
-                <div class="alert alert-info">
-                    You have not given access to any applications
-                </div>
-            </div>
-        </div>
-    }
-    else
-    {
-        foreach (var bookingPartner in Model.BookingPartners)
+    <div class="row">
+        @if (Model.BookingPartners.Any() == false)
         {
-            <div class="row grant">
-                <div class="col-sm-2">
-                    <div class="clientname">@bookingPartner.ClientName</div>
-                </div>
-                <div class="col-sm-2">
-                    @if (bookingPartner.BookingPartner.BookingsSuspended)
-                    {
-                        <small class="warning">Bookings suspended</small>
-                    }
-
-                    @if (!bookingPartner.BookingPartner.Registered)
-                    {
-                        <small>Pending registration</small>
-                    }
-                </div>
-
-                <div class="col-sm-6">
-                    <a class="btn btn-md btn-default" href="@bookingPartner.ClientUrl" target="_blank">Manage</a>
-
-                    @if (bookingPartner.BookingPartner.Registered && !bookingPartner.BookingPartner.BookingsSuspended)
-                    {
-                        <form action="/booking-partners/suspend" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                            <button class="btn btn-md btn-default">Suspend Bookings</button>
-                        </form>
-                    }
-
-                    @if (bookingPartner.BookingPartner.Registered && bookingPartner.BookingPartner.BookingsSuspended)
-                    {
-                        <form action="/booking-partners/restore" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                            <button class="btn btn-md btn-default">Restore</button>
-                        </form>
-                    }
-
-                    @if (!bookingPartner.BookingPartner.Registered || bookingPartner.BookingPartner.BookingsSuspended)
-                    {
-                        <form action="/booking-partners/remove" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                            <button class="btn btn-md btn-default">Remove</button>
-                        </form>
-                    }
-                </div>
+            <div class="alert alert-info">
+                You have not given access to any applications
             </div>
         }
-    }
+        else
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <td>Booking partner</td>
+                        <td>Bookings by broker / last 30 days</td>
+                        <td></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var bookingPartner in Model.BookingPartners)
+                    {
+                        <tr>
+                            <td>@bookingPartner.ClientName</td>
+                            <td></td>
+                            <td>
+                                <a class="btn btn-md btn-default" href="@bookingPartner.ClientUrl" target="_blank">Manage</a>
+
+                                @if (bookingPartner.BookingPartner.Registered && !bookingPartner.BookingPartner.BookingsSuspended)
+                                {
+                                    <form action="/booking-partners/suspend" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                        <button class="btn btn-md btn-default">Suspend Bookings</button>
+                                    </form>
+                                }
+
+                                @if (bookingPartner.BookingPartner.Registered && bookingPartner.BookingPartner.BookingsSuspended)
+                                {
+                                    <form action="/booking-partners/restore" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                        <button class="btn btn-md btn-default">Restore</button>
+                                    </form>
+                                }
+
+                                @if (!bookingPartner.BookingPartner.Registered || bookingPartner.BookingPartner.BookingsSuspended)
+                                {
+                                    <form action="/booking-partners/remove" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                        <button class="btn btn-md btn-default">Remove</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
 </div>
