@@ -9,8 +9,6 @@ on:
 jobs:
   deploy-reference-implementation:
     # Master branch only
-    if: ${{ github.ref == 'refs/heads/master' }}
-
     runs-on: ubuntu-latest
     steps:
 
