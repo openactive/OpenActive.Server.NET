@@ -1,3 +1,4 @@
+@using OpenActive.FakeDatabase.NET
 @model LoginViewModel
 
 <div class="login-page">
@@ -8,7 +9,6 @@
     <partial name="_ValidationSummary" />
 
     <div class="row">
-
         @if (Model.EnableLocalLogin)
         {
             <div class="col-sm-6">
@@ -17,7 +17,6 @@
                         <h3 class="panel-title">Local Login</h3>
                     </div>
                     <div class="panel-body">
-
                         <form asp-route="Login">
                             <input type="hidden" asp-for="ReturnUrl" />
 
@@ -84,5 +83,21 @@
                 There are no login schemes configured for this client.
             </div>
         }
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Test credentials</h3>
+                </div>
+                <div class="panel-body">
+                    @foreach (var seller in FakeDatabase.DefaultSellerUsers)
+                    {
+                        <div>@seller.Username &#8594; @seller.PasswordRaw</div>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 </div>

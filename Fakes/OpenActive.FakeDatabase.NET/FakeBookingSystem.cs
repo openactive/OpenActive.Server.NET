@@ -1510,19 +1510,19 @@ namespace OpenActive.FakeDatabase.NET
             await db.InsertAllAsync(sellers);
         }
 
+        public static readonly SellerUserTable[] DefaultSellerUsers =
+        {
+            new SellerUserTable {Id = 100, Username = "test1", PasswordRaw = "test1", SellerId = 1},
+            new SellerUserTable {Id = 101, Username = "test1b", PasswordRaw = "test1b", SellerId = 1},
+            new SellerUserTable {Id = 102, Username = "test2", PasswordRaw = "test2", SellerId = 2},
+            new SellerUserTable {Id = 103, Username = "test3", PasswordRaw = "test3", SellerId = 3},
+            new SellerUserTable {Id = 104, Username = "test4", PasswordRaw = "test4", SellerId = 4},
+            new SellerUserTable {Id = 105, Username = "test5", PasswordRaw = "test5", SellerId = 5},
+        };
+
         public static async Task CreateSellerUsers(IDbConnection db)
         {
-            var sellerUsers = new List<SellerUserTable>
-            {
-                new SellerUserTable { Id = 100, Username = "test1", PasswordHash = "test1".Sha256(), SellerId = 1 },
-                new SellerUserTable { Id = 101, Username = "test1b", PasswordHash = "test1b".Sha256(), SellerId = 1 },
-                new SellerUserTable { Id = 102, Username = "test2", PasswordHash = "test2".Sha256(), SellerId = 2 },
-                new SellerUserTable { Id = 103, Username = "test3", PasswordHash = "test3".Sha256(), SellerId = 3 },
-                new SellerUserTable { Id = 104, Username = "test4", PasswordHash = "test4".Sha256(), SellerId = 4 },
-                new SellerUserTable { Id = 105, Username = "test5", PasswordHash = "test5".Sha256(), SellerId = 5 },
-            };
-
-            await db.InsertAllAsync(sellerUsers);
+            await db.InsertAllAsync(DefaultSellerUsers);
         }
 
         public async Task<bool> ValidateSellerUserCredentials(string username, string password)
