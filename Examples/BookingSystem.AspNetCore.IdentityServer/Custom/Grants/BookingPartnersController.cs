@@ -86,13 +86,6 @@ namespace src
             return Redirect($"/booking-partners/edit/{newBookingPartner.ClientId}");
         }
 
-        [HttpPost("manage-keys")]
-        [ValidateAntiForgeryToken]
-        public IActionResult ManageKeys([FromForm] string clientId)
-        {
-            return Redirect("/booking-partners/seller-admin");
-        }
-
         [HttpPost("restore")]
         [ValidateAntiForgeryToken]
         public IActionResult Restore([FromForm] string clientId)
@@ -124,7 +117,7 @@ namespace src
             await FakeBookingSystem.Database.DeleteBookingPartner(clientId);
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
-            return Redirect("/booking-partners/seller-admin");
+            return Redirect("/booking-partners/sys-admin");
         }
 
         /// <summary>

@@ -45,14 +45,11 @@
                                     <a href="/booking-partners/edit/@bookingPartner.ClientId" class="btn btn-md btn-default">API Key</a>
                                 </form>
 
-                                @if (!bookingPartner.BookingPartner.Registered || bookingPartner.BookingPartner.BookingsSuspended)
-                                {
-                                    <form action="/booking-partners/remove" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                                        <button class="btn btn-md btn-default">Delete</button>
-                                    </form>
-                                }
+                                <form action="/booking-partners/delete" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                    <button class="btn btn-md btn-default">Delete</button>
+                                </form>
                             </td>
                         </tr>
                     }
