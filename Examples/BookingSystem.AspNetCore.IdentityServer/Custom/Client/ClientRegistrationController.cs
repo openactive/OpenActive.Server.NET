@@ -58,7 +58,7 @@ namespace IdentityServer
             bookingPartner.ClientSecret = key.Sha256();
             bookingPartner.Name = model.ClientName;
             bookingPartner.ClientUri = model.ClientUri;
-            bookingPartner.RestoreAccessUri = model.ClientUri; // ToDo: is this right?
+            bookingPartner.RestoreAccessUri = model.ClientRegistrationUri;
             bookingPartner.LogoUri = model.LogoUri;
             bookingPartner.GrantTypes = model.GrantTypes;
             bookingPartner.RedirectUris = model.RedirectUris;
@@ -95,6 +95,9 @@ namespace IdentityServer
 
         [JsonPropertyName(OidcConstants.ClientMetadata.ClientUri)]
         public string ClientUri { get; set; }
+
+        [JsonPropertyName("registration_client_uri")]
+        public string ClientRegistrationUri { get; set; }
 
         [JsonPropertyName(OidcConstants.ClientMetadata.LogoUri)]
         public string LogoUri { get; set; }
