@@ -12,10 +12,10 @@ namespace IdentityServer
         public async Task<Client> FindClientByIdAsync(string clientId)
         {
             var bookingPartner = await FakeBookingSystem.Database.GetBookingPartner(clientId);
-            return ConvertToIS4Client(bookingPartner);
+            return ConvertToIs4Client(bookingPartner);
         }
 
-        private Client ConvertToIS4Client(BookingPartnerTable bookingPartner)
+        private static Client ConvertToIs4Client(BookingPartnerTable bookingPartner)
         {
             if (bookingPartner == null)
                 return null;
@@ -25,20 +25,20 @@ namespace IdentityServer
                 Enabled = bookingPartner.Registered,
                 ClientId = bookingPartner.ClientId,
                 ClientName = bookingPartner.Name,
-                AllowedGrantTypes = bookingPartner.ClientProperties?.GrantTypes == null ? new List<string>() : bookingPartner.ClientProperties.GrantTypes.ToList(),
-                ClientSecrets = bookingPartner.ClientSecret == null ? new List<Secret>() : new List<Secret>() { new Secret(bookingPartner.ClientSecret) },
-                AllowedScopes = bookingPartner.ClientProperties?.Scope == null ? new List<string>() : bookingPartner.ClientProperties.Scope.Split(' ').ToList(),
+                AllowedGrantTypes = bookingPartner.GrantTypes == null ? new List<string>() : bookingPartner.GrantTypes.ToList(),
+                ClientSecrets = bookingPartner.ClientSecret == null ? new List<Secret>() : new List<Secret> { new Secret(bookingPartner.ClientSecret) },
+                AllowedScopes = bookingPartner.Scope == null ? new List<string>() : bookingPartner.Scope.Split(' ').ToList(),
                 Claims = bookingPartner.ClientId == null ? new List<System.Security.Claims.Claim>() : new List<System.Security.Claims.Claim>() { new System.Security.Claims.Claim("https://openactive.io/clientId", bookingPartner.ClientId) },
                 ClientClaimsPrefix = "",
                 AlwaysSendClientClaims = true,
                 AlwaysIncludeUserClaimsInIdToken = true,
                 AllowOfflineAccess = true,
                 UpdateAccessTokenClaimsOnRefresh = true,
-                RedirectUris = bookingPartner.ClientProperties?.RedirectUris == null ? new List<string>() : bookingPartner.ClientProperties.RedirectUris.ToList(),
+                RedirectUris = bookingPartner.RedirectUris == null ? new List<string>() : bookingPartner.RedirectUris.ToList(),
                 RequireConsent = true,
                 RequirePkce = true,
-                LogoUri = bookingPartner.ClientProperties?.LogoUri,
-                ClientUri = bookingPartner.ClientProperties?.ClientUri
+                LogoUri = bookingPartner.LogoUri,
+                ClientUri = bookingPartner.ClientUri
             };
         }
     }

@@ -30,7 +30,7 @@ namespace IdentityServer
         {
             var grant = await FakeBookingSystem.Database.GetGrant(key);
 
-            return grant != null ? new PersistedGrant()
+            return grant != null ? new PersistedGrant
             {
                 Key = grant.Key,
                 Type = grant.Type,

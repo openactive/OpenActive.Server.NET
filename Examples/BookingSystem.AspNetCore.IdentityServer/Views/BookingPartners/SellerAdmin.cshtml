@@ -30,7 +30,7 @@
                             <td>@bookingPartner.ClientName</td>
                             <td></td>
                             <td>
-                                <a class="btn btn-md btn-default" href="@bookingPartner.ClientUrl" target="_blank">Manage</a>
+                                <a class="btn btn-md btn-default" href="@bookingPartner.ClientUrl" @(string.IsNullOrWhiteSpace(bookingPartner.ClientUrl) ? "disabled" : "")>Manage</a>
 
                                 @if (bookingPartner.BookingPartner.Registered && !bookingPartner.BookingPartner.BookingsSuspended)
                                 {

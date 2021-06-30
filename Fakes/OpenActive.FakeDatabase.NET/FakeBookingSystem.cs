@@ -507,6 +507,14 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        public async Task DeleteBookingPartner(string clientId)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                await db.DeleteAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+            }
+        }
+
         public async Task DeleteLease(string clientId, Guid uuid, long? sellerId)
         {
             using (var db = await Mem.Database.OpenAsync())
@@ -1570,60 +1578,25 @@ namespace OpenActive.FakeDatabase.NET
             {
                 new BookingPartnerTable { Name = "Test Suite 1", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "openactive_test_suite_client_12345xaq", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
                 new BookingPartnerTable { Name = "Acmefitness", ClientId = "clientid_800", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98767", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientProperties = new ClientModel {
-                        Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
-                        GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
-                        ClientUri = "http://example.com",
-                        LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
-                        RedirectUris = new[] { "http://localhost:3000/cb" }
-                    }
+                    Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
+                    GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
+                    ClientUri = "http://example.com",
+                    LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
+                    RedirectUris = new[] { "http://localhost:3000/cb" }
                 },
-                new BookingPartnerTable { Name = "Example app", ClientId = "clientid_801", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98768", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientProperties = new ClientModel {
-                        Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
-                        GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
-                        ClientUri = "http://example.com",
-                        LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
-                        RedirectUris = new[] { "http://localhost:3000/cb" }
-                    }
+                new BookingPartnerTable { Name = "Example app", ClientId = "clientid_709", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98768", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
+                    Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
+                    GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
+                    ClientUri = "http://example.com",
+                    LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
+                    RedirectUris = new[] { "http://localhost:3000/cb" }
                 },
                 new BookingPartnerTable { Name = "Test Suite 2", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
                 new BookingPartnerTable { Name = "Test Suite 3", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
             };
 
-            // var grants = new List<GrantTable>()
-            // {
-            //     new GrantTable
-            //     {
-            //         Key = "8vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
-            //         Type = "user_consent",
-            //         SubjectId = "TestSubjectId",
-            //         ClientId = "clientid_123",
-            //         CreationTime = DateTime.Now,
-            //         Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_123\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
-            //     },
-            //     new GrantTable
-            //     {
-            //         Key = "7vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
-            //         Type = "user_consent",
-            //         SubjectId = "TestSubjectId",
-            //         ClientId = "clientid_456",
-            //         CreationTime = DateTime.Now,
-            //         Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_456\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
-            //     },
-            //     new GrantTable
-            //     {
-            //         Key = "9vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
-            //         Type = "user_consent",
-            //         SubjectId = "TestSubjectId",
-            //         ClientId = "clientid_789",
-            //         CreationTime = DateTime.Now,
-            //         Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_789\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
-            //     },
-            // };
-
             await db.InsertAllAsync(bookingPartners);
-            //await db.InsertAllAsync(grants);
+            // To populate GrantTable locally, run the tests, e.g. `NODE_APP_INSTANCE=dev npm run start auth non-free`
         }
 
         public async Task<List<BookingPartnerTable>> GetBookingPartners()
@@ -1631,6 +1604,18 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = await Mem.Database.OpenAsync())
             {
                 return (await db.SelectAsync<BookingPartnerTable>()).AsList();
+            }
+        }
+
+        public async Task<List<BookingPartnerTable>> GetBookingPartners(long sellerUserId)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var query = db.From<BookingPartnerTable>()
+                              .Join<BookingPartnerTable, GrantTable>((bpt, gt) => bpt.ClientId == gt.ClientId)
+                              .Join<GrantTable, SellerUserTable>((gt, st) => gt.SubjectId == st.Id.ToString())
+                              .Where<SellerUserTable>(st => st.Id == sellerUserId);
+                return (await db.SelectAsync(query)).AsList();
             }
         }
 
@@ -1688,7 +1673,7 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = await Mem.Database.OpenAsync())
             {
                 var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
-                bookingPartner.ClientProperties.Scope = scope;
+                bookingPartner.Scope = scope;
                 bookingPartner.BookingsSuspended = true;
                 await db.SaveAsync(bookingPartner);
             }

@@ -37,7 +37,8 @@ namespace src
         [HttpGet("seller-admin")]
         public async Task<IActionResult> SellerAdmin()
         {
-            return View("SellerAdmin", await BuildViewModel());
+            var sellerUserId = User.GetSubjectId();
+            return View("SellerAdmin", await BuildViewModel(long.Parse(sellerUserId)));
         }
 
         [HttpGet("sys-admin")]
@@ -114,6 +115,20 @@ namespace src
         }
 
         /// <summary>
+        /// Handle postback to delete a client
+        /// </summary>
+        [HttpPost("delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete([FromForm] string clientId)
+        {
+            await _interaction.RevokeUserConsentAsync(clientId);
+            await FakeBookingSystem.Database.DeleteBookingPartner(clientId);
+            await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
+
+            return Redirect("/booking-partners/seller-admin");
+        }
+
+        /// <summary>
         /// Handle postback to suspend a client
         /// </summary>
         [HttpPost("suspend")]
@@ -169,21 +184,23 @@ namespace src
             {
                 ClientId = bookingPartner.ClientId,
                 ClientName = bookingPartner.Name,
-                ClientLogoUrl = bookingPartner.ClientProperties?.LogoUri,
-                ClientUrl = bookingPartner.ClientProperties?.ClientUri,
+                ClientLogoUrl = bookingPartner.LogoUri,
+                ClientUrl = bookingPartner.ClientUri,
                 BookingPartner = bookingPartner
             };
         }
 
-        private static async Task<BookingPartnerViewModel> BuildViewModel()
+        private static async Task<BookingPartnerViewModel> BuildViewModel(long? sellerUserId = null)
         {
-            var bookingPartners = await FakeBookingSystem.Database.GetBookingPartners();
+            var bookingPartners = sellerUserId.HasValue
+                ? await FakeBookingSystem.Database.GetBookingPartners(sellerUserId.Value)
+                : await FakeBookingSystem.Database.GetBookingPartners();
             var list = bookingPartners.Select(bookingPartner => new BookingPartnerModel
             {
                 ClientId = bookingPartner.ClientId,
                 ClientName = bookingPartner.Name,
-                ClientLogoUrl = bookingPartner.ClientProperties?.LogoUri,
-                ClientUrl = bookingPartner.ClientProperties?.ClientUri,
+                ClientLogoUrl = bookingPartner.LogoUri,
+                ClientUrl = bookingPartner.ClientUri,
                 BookingPartner = bookingPartner
             }).ToList();
 

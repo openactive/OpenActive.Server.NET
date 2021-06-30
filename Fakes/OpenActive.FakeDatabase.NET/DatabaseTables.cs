@@ -209,7 +209,11 @@ namespace OpenActive.FakeDatabase.NET
         public string ClientId { get; set; }
         public string Name { get; set; }
         public string ClientSecret { get; set; }
-        public ClientModel ClientProperties { get; set; }
+        public string ClientUri { get; set; }
+        public string LogoUri { get; set; }
+        public string[] GrantTypes { get; set; }
+        public string[] RedirectUris { get; set; }
+        public string Scope { get; set; }
         public bool Registered { get; set; }
         public DateTime CreatedDate { get; set; }
         public string InitialAccessToken { get; set; }
@@ -227,19 +231,6 @@ namespace OpenActive.FakeDatabase.NET
         public DateTime CreationTime { get; set; }
         public DateTime? Expiration { get; set; }
         public string Data { get; set; }
-    }
-
-    public class ClientModel
-    {
-        public string ClientUri { get; set; }
-
-        public string LogoUri { get; set; }
-
-        public string[] GrantTypes { get; set; }
-
-        public string[] RedirectUris { get; set; }
-
-        public string Scope { get; set; }
     }
 
     public static class DatabaseCreator

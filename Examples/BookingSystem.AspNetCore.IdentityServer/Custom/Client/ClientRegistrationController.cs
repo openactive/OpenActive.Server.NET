@@ -57,14 +57,11 @@ namespace IdentityServer
             bookingPartner.Registered = true;
             bookingPartner.ClientSecret = key.Sha256();
             bookingPartner.Name = model.ClientName;
-            bookingPartner.ClientProperties = new ClientModel
-            {
-                ClientUri = model.ClientUri,
-                LogoUri = model.LogoUri,
-                GrantTypes = model.GrantTypes,
-                RedirectUris = model.RedirectUris,
-                Scope = model.Scope,
-            };
+            bookingPartner.ClientUri = model.ClientUri;
+            bookingPartner.LogoUri = model.LogoUri;
+            bookingPartner.GrantTypes = model.GrantTypes;
+            bookingPartner.RedirectUris = model.RedirectUris;
+            bookingPartner.Scope = model.Scope;
 
             await FakeBookingSystem.Database.SaveBookingPartner(bookingPartner);
 
