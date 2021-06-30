@@ -3,7 +3,7 @@
 @{
     var error = Model?.Error?.Error;
     var errorDescription = Model?.Error?.ErrorDescription;
-    var request_id = Model?.Error?.RequestId;
+    var requestId = Model?.Error?.RequestId;
 }
 
 <div class="error-page">
@@ -12,29 +12,27 @@
     </div>
 
     <div class="row">
-        <div class="col-sm-6">
-            <div class="alert alert-danger">
-                Sorry, there was an error
+        <div class="alert alert-danger">
+            Sorry, there was an error
 
-                @if (error != null)
-                {
-                    <strong>
-                        <em>
-                            : @error
-                        </em>
-                    </strong>
-
-                    if (errorDescription != null)
-                    {
-                        <div>@errorDescription</div>
-                    }
-                }
-            </div>
-
-            @if (request_id != null)
+            @if (error != null)
             {
-                <div class="request-id">Request Id: @request_id</div>
+                <strong>
+                    <em>
+                        : @error
+                    </em>
+                </strong>
+
+                if (errorDescription != null)
+                {
+                    <div>@errorDescription</div>
+                }
             }
         </div>
+
+        @if (requestId != null)
+        {
+            <div class="request-id">Request Id: @requestId</div>
+        }
     </div>
 </div>
