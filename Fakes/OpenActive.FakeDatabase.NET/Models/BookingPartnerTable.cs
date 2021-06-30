@@ -52,7 +52,7 @@ namespace OpenActive.FakeDatabase.NET
             };
 
             await db.InsertAllAsync(bookingPartners);
-                // To populate GrantTable locally, run the tests, e.g. `NODE_APP_INSTANCE=dev npm run start auth non-free`
+            // To populate GrantTable locally, run the tests, e.g. `NODE_APP_INSTANCE=dev npm run start auth non-free`
         }
 
         public static async Task<List<BookingPartnerTable>> Get()
@@ -68,9 +68,9 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
             {
                 var query = db.From<BookingPartnerTable>()
-                              .Join<BookingPartnerTable, GrantTable>((bpt, gt) => bpt.ClientId == gt.ClientId)
-                              .Join<GrantTable, SellerUserTable>((gt, st) => gt.SubjectId == st.Id.ToString())
-                              .Where<SellerUserTable>(st => st.Id == sellerUserId);
+                              .Join<BookingPartnerTable, GrantTable>((b, g) => b.ClientId == g.ClientId && g.Type == "user_consent")
+                              .Join<GrantTable, SellerUserTable>((g, s) => g.SubjectId == s.Id.ToString())
+                              .Where<SellerUserTable>(s => s.Id == sellerUserId);
                 return await db.SelectAsync(query);
             }
         }

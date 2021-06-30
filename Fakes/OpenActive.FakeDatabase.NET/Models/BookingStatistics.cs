@@ -22,9 +22,9 @@ namespace OpenActive.FakeDatabase.NET
                                                 .GroupBy(o => o.BrokerName)
                                                 .ToDictionary(g => g.Key, g => g.Count());
                 var sellersQuery = db.From<BookingPartnerTable>()
-                                     .Join<BookingPartnerTable, GrantTable>((bpt, gt) => bpt.ClientId == gt.ClientId)
-                                     .Join<GrantTable, SellerUserTable>((gt, st) => gt.SubjectId == st.Id.ToString())
-                                     .Where<BookingPartnerTable>(bp => bp.ClientId == clientId);
+                                     .Join<BookingPartnerTable, GrantTable>((b, g) => b.ClientId == g.ClientId)
+                                     .Join<GrantTable, SellerUserTable>((g, s) => g.SubjectId == s.Id.ToString())
+                                     .Where<BookingPartnerTable>(b => b.ClientId == clientId);
                 var sellersEnabled = await db.SelectAsync<SellerUserTable>(sellersQuery); // ToDo: this is only used in one of the cases - should we split this into two classes?
                 return new BookingStatistics { ClientId = clientId, BookingsByBroker = bookingsByBroker, SellersEnabled = sellersEnabled.Count };
             }
