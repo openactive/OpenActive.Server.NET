@@ -11,6 +11,7 @@ using ServiceStack.OrmLite;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using ServiceStack.OrmLite.Dapper;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -23,7 +24,7 @@ namespace OpenActive.FakeDatabase.NET
         /// <summary>
         /// The Database is created as static, to simulate the persistence of a real database
         /// </summary>
-        public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase();
+        public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase().Result;
 
         public static void Initialise()
         {
@@ -31,13 +32,19 @@ namespace OpenActive.FakeDatabase.NET
             // This SQLite database file is shared between the Booking System and Identity Server, and
             // Initialise() must be called on startup of each to ensure they do not wipe the database
             // on the first call to it
-            Database.GetBookingPartners();
+#pragma warning disable 4014
+            BookingPartnerTable.Get().Wait();
+#pragma warning restore 4014
         }
 
         public static DateTime Truncate(this DateTime dateTime, TimeSpan timeSpan)
         {
-            if (timeSpan == TimeSpan.Zero) return dateTime; // Or could throw an ArgumentException
-            if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue) return dateTime; // do not modify "guard" values
+            if (timeSpan == TimeSpan.Zero)
+                return dateTime; // Or could throw an ArgumentException
+
+            if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
+                return dateTime; // do not modify "guard" values
+
             return dateTime.AddTicks(-(dateTime.Ticks % timeSpan.Ticks));
         }
     }
@@ -54,7 +61,8 @@ namespace OpenActive.FakeDatabase.NET
         /// <returns>A hash</returns>
         public static string Sha256(this string input)
         {
-            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
 
             using (var sha = SHA256.Create())
             {
@@ -75,7 +83,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
             // There are issues with transactions when using full in-memory SQLite. To workaround this, we create a temporary file and use this to hold the SQLite database.
-            string connectionString = Path.GetTempPath() + "openactive-fakedatabase.db";
+            var connectionString = Path.GetTempPath() + "openactive-fakedatabase.db";
             Database = new OrmLiteConnectionFactory(connectionString, SqliteDialect.Provider);
 
             using (var connection = Database.Open())
@@ -167,40 +175,41 @@ namespace OpenActive.FakeDatabase.NET
             Randomizer.Seed = new Random((int)(DateTime.Today - new DateTime(1970, 1, 1)).TotalDays);
         }
 
-        private const int OpportunityCount = 2000;
+        private static readonly int OpportunityCount =
+            int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCount) ? opportunityCount : 2000;
 
         /// <summary>
         /// TODO: Call this on a schedule from both .NET Core and .NET Framework reference implementations
         /// </summary>
-        public void CleanupExpiredLeases()
+        public async Task CleanupExpiredLeases()
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 var occurrenceIds = new List<long>();
                 var slotIds = new List<long>();
 
-                foreach (var order in db.Select<OrderTable>(x => x.LeaseExpires < DateTimeOffset.Now))
+                foreach (var order in await db.SelectAsync<OrderTable>(x => x.LeaseExpires < DateTimeOffset.Now))
                 {
                     // ReSharper disable twice PossibleInvalidOperationException
-                    occurrenceIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value));
-                    slotIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId && x.SlotId.HasValue).Select(x => x.SlotId.Value));
-                    db.Delete<OrderItemsTable>(x => x.OrderId == order.OrderId);
-                    db.Delete<OrderTable>(x => x.OrderId == order.OrderId);
+                    occurrenceIds.AddRange((await db.SelectAsync<OrderItemsTable>(x => x.OrderId == order.OrderId && x.OccurrenceId.HasValue)).Select(x => x.OccurrenceId.Value));
+                    slotIds.AddRange((await db.SelectAsync<OrderItemsTable>(x => x.OrderId == order.OrderId && x.SlotId.HasValue)).Select(x => x.SlotId.Value));
+                    await db.DeleteAsync<OrderItemsTable>(x => x.OrderId == order.OrderId);
+                    await db.DeleteAsync<OrderTable>(x => x.OrderId == order.OrderId);
                 }
 
-                RecalculateSpaces(db, occurrenceIds.Distinct());
-                RecalculateSlotUses(db, slotIds.Distinct());
+                await RecalculateSpaces(db, occurrenceIds.Distinct());
+                await RecalculateSlotUses(db, slotIds.Distinct());
             }
         }
 
-        public static bool AddLease(string clientId, Guid uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
+        public static async Task<bool> AddLease(string clientId, Guid uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
         {
             var db = transaction.DatabaseConnection;
 
-            var existingOrder = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
+            var existingOrder = await db.SingleAsync<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
             if (existingOrder == null)
             {
-                db.Insert(new OrderTable
+                await db.InsertAsync(new OrderTable
                 {
                     ClientId = clientId,
                     OrderId = uuid.ToString(),
@@ -215,32 +224,29 @@ namespace OpenActive.FakeDatabase.NET
                     LeaseExpires = leaseExpires.DateTime,
                     VisibleInOrdersFeed = FeedVisibility.None
                 });
+
                 return true;
             }
+
             // Return false if there's a clash with an existing Order or OrderProposal
-            else if (existingOrder.OrderMode != OrderMode.Lease || existingOrder.Deleted)
-            {
+            if (existingOrder.OrderMode != OrderMode.Lease || existingOrder.Deleted)
                 return false;
-            }
+
             // Reuse existing lease if it exists
-            else
-            {
-                existingOrder.BrokerRole = brokerRole;
-                existingOrder.BrokerName = brokerName;
-                existingOrder.BrokerUrl = brokerUrl;
-                existingOrder.BrokerTelephone = brokerTelephone;
-                existingOrder.SellerId = sellerId ?? 1;
-                existingOrder.CustomerEmail = customerEmail;
-                existingOrder.OrderMode = OrderMode.Lease;
-                existingOrder.LeaseExpires = leaseExpires.DateTime;
-                db.Update(existingOrder);
+            existingOrder.BrokerRole = brokerRole;
+            existingOrder.BrokerName = brokerName;
+            existingOrder.BrokerUrl = brokerUrl;
+            existingOrder.BrokerTelephone = brokerTelephone;
+            existingOrder.SellerId = sellerId ?? 1;
+            existingOrder.CustomerEmail = customerEmail;
+            existingOrder.OrderMode = OrderMode.Lease;
+            existingOrder.LeaseExpires = leaseExpires.DateTime;
+            await db.UpdateAsync(existingOrder);
 
-                // TODO: Remove this and improve leasing logic to add/update rather than delete/replace
-                // Remove previous lease
-                db.Delete<OrderItemsTable>(x => x.OrderId == existingOrder.OrderId);
-
-                return true;
-            }
+            // TODO: Remove this and improve leasing logic to add/update rather than delete/replace
+            // Remove previous lease
+            await db.DeleteAsync<OrderItemsTable>(x => x.OrderId == existingOrder.OrderId);
+            return true;
         }
 
         /// <summary>
@@ -249,23 +255,21 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="slotId"></param>
         /// <param name="newName"></param>
         /// <returns></returns>
-        public bool UpdateFacilityUseName(long slotId, string newName)
+        public async Task<bool> UpdateFacilityUseName(long slotId, string newName)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 var query = db.From<SlotTable>()
-                            .LeftJoin<SlotTable, FacilityUseTable>()
-                            .Where(x => x.Id == slotId)
-                            .And<FacilityUseTable>(y => !y.Deleted);
-                var facilityUse = db.Select<FacilityUseTable>(query).Single();
+                              .LeftJoin<SlotTable, FacilityUseTable>()
+                              .Where(x => x.Id == slotId)
+                              .And<FacilityUseTable>(y => !y.Deleted);
+                var facilityUse = (await db.SelectAsync<FacilityUseTable>(query)).Single();
                 if (facilityUse == null)
-                {
                     return false;
-                }
 
                 facilityUse.Name = newName;
                 facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(facilityUse);
+                await db.UpdateAsync(facilityUse);
                 return true;
             }
         }
@@ -276,20 +280,18 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="slotId"></param>
         /// <param name="numberOfMins"></param>
         /// <returns></returns>
-        public bool UpdateFacilitySlotStartAndEndTimeByPeriodInMins(long slotId, int numberOfMins)
+        public async Task<bool> UpdateFacilitySlotStartAndEndTimeByPeriodInMins(long slotId, int numberOfMins)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                var slot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
+                var slot = await db.SingleAsync<SlotTable>(x => x.Id == slotId && !x.Deleted);
                 if (slot == null)
-                {
                     return false;
-                }
 
-                slot.Start.AddMinutes(numberOfMins);
-                slot.End.AddMinutes(numberOfMins);
+                slot.Start = slot.Start.AddMinutes(numberOfMins);
+                slot.End = slot.End.AddMinutes(numberOfMins);
                 slot.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(slot);
+                await db.UpdateAsync(slot);
                 return true;
             }
         }
@@ -301,24 +303,22 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="newLat"></param>
         /// <param name="newLng"></param>
         /// <returns></returns>
-        public bool UpdateFacilityUseLocationLatLng(long slotId, decimal newLat, decimal newLng)
+        public async Task<bool> UpdateFacilityUseLocationLatLng(long slotId, decimal newLat, decimal newLng)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 var query = db.From<SlotTable>()
-                            .LeftJoin<SlotTable, FacilityUseTable>()
-                            .Where(x => x.Id == slotId)
-                            .And<FacilityUseTable>(y => !y.Deleted);
-                var facilityUse = db.Select<FacilityUseTable>(query).Single();
+                              .LeftJoin<SlotTable, FacilityUseTable>()
+                              .Where(x => x.Id == slotId)
+                              .And<FacilityUseTable>(y => !y.Deleted);
+                var facilityUse = (await db.SelectAsync<FacilityUseTable>(query)).Single();
                 if (facilityUse == null)
-                {
                     return false;
-                }
 
                 facilityUse.LocationLat = newLat;
                 facilityUse.LocationLng = newLng;
                 facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(facilityUse);
+                await db.UpdateAsync(facilityUse);
                 return true;
             }
         }
@@ -329,23 +329,21 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="occurrenceId"></param>
         /// <param name="newTitle"></param>
         /// <returns></returns>
-        public bool UpdateClassTitle(long occurrenceId, string newTitle)
+        public async Task<bool> UpdateClassTitle(long occurrenceId, string newTitle)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 var query = db.From<OccurrenceTable>()
                             .LeftJoin<OccurrenceTable, ClassTable>()
                             .Where(x => x.Id == occurrenceId)
                             .And<ClassTable>(y => !y.Deleted);
-                var classInstance = db.Select<ClassTable>(query).Single();
+                var classInstance = await db.SingleAsync<ClassTable>(query);
                 if (classInstance == null)
-                {
                     return false;
-                }
 
                 classInstance.Title = newTitle;
                 classInstance.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(classInstance);
+                await db.UpdateAsync(classInstance);
                 return true;
             }
         }
@@ -356,20 +354,18 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="occurrenceId"></param>
         /// <param name="numberOfMins"></param>
         /// <returns></returns>
-        public bool UpdateScheduledSessionStartAndEndTimeByPeriodInMins(long occurrenceId, int numberOfMins)
+        public async Task<bool> UpdateScheduledSessionStartAndEndTimeByPeriodInMins(long occurrenceId, int numberOfMins)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                var occurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
+                var occurrence = await db.SingleAsync<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
                 if (occurrence == null)
-                {
                     return false;
-                }
 
-                occurrence.Start.AddMinutes(numberOfMins);
-                occurrence.End.AddMinutes(numberOfMins);
+                occurrence.Start = occurrence.Start.AddMinutes(numberOfMins);
+                occurrence.End = occurrence.End.AddMinutes(numberOfMins);
                 occurrence.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(occurrence);
+                await db.UpdateAsync(occurrence);
                 return true;
             }
         }
@@ -381,42 +377,38 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="newLat"></param>
         /// <param name="newLng"></param>
         /// <returns></returns>
-        public bool UpdateSessionSeriesLocationLatLng(long occurrenceId, decimal newLat, decimal newLng)
+        public async Task<bool> UpdateSessionSeriesLocationLatLng(long occurrenceId, decimal newLat, decimal newLng)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 var query = db.From<OccurrenceTable>()
                             .LeftJoin<OccurrenceTable, ClassTable>()
                             .Where(x => x.Id == occurrenceId)
                             .And<ClassTable>(y => !y.Deleted);
-                var classInstance = db.Select<ClassTable>(query).Single();
+                var classInstance = await db.SingleAsync<ClassTable>(query);
                 if (classInstance == null)
-                {
                     return false;
-                }
 
                 classInstance.LocationLat = newLat;
                 classInstance.LocationLng = newLng;
                 classInstance.Modified = DateTimeOffset.Now.UtcTicks;
-                db.Update(classInstance);
+                await db.UpdateAsync(classInstance);
                 return true;
             }
         }
 
-        public bool UpdateAccess(Guid uuid, bool updateAccessPass = false, bool updateAccessCode = false, bool updateAccessChannel = false)
+        public async Task<bool> UpdateAccess(Guid uuid, bool updateAccessPass = false, bool updateAccessCode = false, bool updateAccessChannel = false)
         {
             if (!updateAccessPass && !updateAccessCode && !updateAccessChannel)
-            {
                 return false;
-            }
 
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
+                OrderTable order = await db.SingleAsync<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
 
                 if (order != null)
                 {
-                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+                    List<OrderItemsTable> orderItems = await db.SelectAsync<OrderItemsTable>(x => x.OrderId == order.OrderId);
 
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
@@ -441,32 +433,30 @@ namespace OpenActive.FakeDatabase.NET
                             }
 
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
-                            db.Save(orderItem);
+                            await db.SaveAsync(orderItem);
                         }
                     }
 
                     order.OrderModified = DateTimeOffset.Now.UtcTicks;
                     order.VisibleInOrdersFeed = FeedVisibility.Visible;
-                    db.Update(order);
+                    await db.UpdateAsync(order);
 
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+
+                return false;
             }
         }
 
-        public bool UpdateOpportunityAttendance(Guid uuid, bool attended)
+        public async Task<bool> UpdateOpportunityAttendance(Guid uuid, bool attended)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
+                OrderTable order = await db.SingleAsync<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
 
                 if (order != null)
                 {
-                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+                    List<OrderItemsTable> orderItems = await db.SelectAsync<OrderItemsTable>(x => x.OrderId == order.OrderId);
 
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
@@ -474,75 +464,79 @@ namespace OpenActive.FakeDatabase.NET
                         {
                             orderItem.Status = attended ? BookingStatus.Attended : BookingStatus.Absent;
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
-                            db.Update(orderItem);
+                            await db.UpdateAsync(orderItem);
                         }
                     }
 
                     order.OrderModified = DateTimeOffset.Now.UtcTicks;
                     order.VisibleInOrdersFeed = FeedVisibility.Visible;
-                    db.Update(order);
+                    await db.UpdateAsync(order);
 
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+
+                return false;
             }
         }
 
-        public bool AddCustomerNotice(Guid uuid)
+        public async Task<bool> AddCustomerNotice(Guid uuid)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                OrderTable order = db.Single<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
+                OrderTable order = await db.SingleAsync<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
-                    List<OrderItemsTable> orderItems = db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId);
+                    List<OrderItemsTable> orderItems = await db.SelectAsync<OrderItemsTable>(x => x.OrderId == order.OrderId);
                     foreach (OrderItemsTable orderItem in orderItems)
                     {
                         if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.None)
                         {
                             orderItem.CustomerNotice = $"customer notice message: {Faker.Random.String(10, minChar: 'a', maxChar: 'z')}";
                             orderItem.Modified = DateTimeOffset.Now.UtcTicks;
-                            db.Update(orderItem);
+                            await db.UpdateAsync(orderItem);
                         }
                     }
 
                     order.OrderModified = DateTimeOffset.Now.UtcTicks;
                     order.VisibleInOrdersFeed = FeedVisibility.Visible;
-                    db.Update(order);
+                    await db.UpdateAsync(order);
 
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+
+                return false;
             }
         }
 
-        public void DeleteLease(string clientId, Guid uuid, long? sellerId)
+        public async Task DeleteBookingPartner(string clientId)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                await db.DeleteAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+            }
+        }
+
+        public async Task DeleteLease(string clientId, Guid uuid, long? sellerId)
+        {
+            using (var db = await Mem.Database.OpenAsync())
             {
                 // TODO: Note this should throw an error if the Seller ID does not match, same as DeleteOrder
-                if (db.Exists<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Lease && x.OrderId == uuid.ToString() && (!sellerId.HasValue || x.SellerId == sellerId)))
+                if (await db.ExistsAsync<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Lease && x.OrderId == uuid.ToString() && (!sellerId.HasValue || x.SellerId == sellerId)))
                 {
                     // ReSharper disable twice PossibleInvalidOperationException
-                    var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
-                    var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
+                    var occurrenceIds = (await db.SelectAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OccurrenceId.HasValue)).Select(x => x.OccurrenceId.Value).Distinct();
+                    var slotIds = (await db.SelectAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId.HasValue)).Select(x => x.SlotId.Value).Distinct();
 
-                    db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
-                    db.Delete<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
+                    await db.DeleteAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
+                    await db.DeleteAsync<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
 
-                    RecalculateSpaces(db, occurrenceIds);
-                    RecalculateSlotUses(db, slotIds);
+                    await RecalculateSpaces(db, occurrenceIds);
+                    await RecalculateSlotUses(db, slotIds);
                 }
             }
         }
 
-        public static bool AddOrder(
+        public static async Task<bool> AddOrder(
             string clientId, Guid uuid, BrokerRole brokerRole, string brokerName, Uri brokerUrl, string brokerTelephone, long? sellerId,
             string customerEmail, CustomerType customerType, string customerOrganizationName,
             string customerIdentifier, string customerGivenName, string customerFamilyName, string customerTelephone,
@@ -551,10 +545,10 @@ namespace OpenActive.FakeDatabase.NET
         {
             var db = transaction.DatabaseConnection;
 
-            var existingOrder = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
+            var existingOrder = await db.SingleAsync<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
             if (existingOrder == null)
             {
-                db.Insert(new OrderTable
+                await db.InsertAsync(new OrderTable
                 {
                     ClientId = clientId,
                     OrderId = uuid.ToString(),
@@ -584,69 +578,65 @@ namespace OpenActive.FakeDatabase.NET
                 return true;
             }
             // Return false if there's a clash with an existing Order or OrderProposal
-            else if (existingOrder.OrderMode != OrderMode.Lease || existingOrder.Deleted)
+
+            if (existingOrder.OrderMode != OrderMode.Lease || existingOrder.Deleted)
             {
                 return false;
             }
             // Reuse existing lease if it exists
-            else
-            {
-                existingOrder.BrokerRole = brokerRole;
-                existingOrder.BrokerName = brokerName;
-                existingOrder.BrokerUrl = brokerUrl;
-                existingOrder.BrokerTelephone = brokerTelephone;
-                existingOrder.SellerId = sellerId ?? 1;
-                existingOrder.CustomerEmail = customerEmail;
-                existingOrder.CustomerType = customerType;
-                existingOrder.CustomerOrganizationName = customerOrganizationName;
-                existingOrder.CustomerIdentifier = customerIdentifier;
-                existingOrder.CustomerGivenName = customerGivenName;
-                existingOrder.CustomerFamilyName = customerFamilyName;
-                existingOrder.CustomerTelephone = customerTelephone;
-                existingOrder.PaymentIdentifier = paymentIdentifier;
-                existingOrder.PaymentName = paymentName;
-                existingOrder.PaymentProviderId = paymentProviderId;
-                existingOrder.PaymentAccountId = paymentAccountId;
-                existingOrder.TotalOrderPrice = totalOrderPrice;
-                existingOrder.OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking;
-                existingOrder.ProposalVersionId = proposalVersionUuid;
-                existingOrder.ProposalStatus = proposalStatus;
-                db.Update(existingOrder);
+            existingOrder.BrokerRole = brokerRole;
+            existingOrder.BrokerName = brokerName;
+            existingOrder.BrokerUrl = brokerUrl;
+            existingOrder.BrokerTelephone = brokerTelephone;
+            existingOrder.SellerId = sellerId ?? 1;
+            existingOrder.CustomerEmail = customerEmail;
+            existingOrder.CustomerType = customerType;
+            existingOrder.CustomerOrganizationName = customerOrganizationName;
+            existingOrder.CustomerIdentifier = customerIdentifier;
+            existingOrder.CustomerGivenName = customerGivenName;
+            existingOrder.CustomerFamilyName = customerFamilyName;
+            existingOrder.CustomerTelephone = customerTelephone;
+            existingOrder.PaymentIdentifier = paymentIdentifier;
+            existingOrder.PaymentName = paymentName;
+            existingOrder.PaymentProviderId = paymentProviderId;
+            existingOrder.PaymentAccountId = paymentAccountId;
+            existingOrder.TotalOrderPrice = totalOrderPrice;
+            existingOrder.OrderMode = proposalVersionUuid != null ? OrderMode.Proposal : OrderMode.Booking;
+            existingOrder.ProposalVersionId = proposalVersionUuid;
+            existingOrder.ProposalStatus = proposalStatus;
+            await db.UpdateAsync(existingOrder);
 
-                return true;
-            }
+            return true;
         }
 
-        public (FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>) GetOrderAndOrderItems(string clientId, long? sellerId, Guid uuid)
+        public async Task<(FakeDatabaseGetOrderResult, OrderTable, List<OrderItemsTable>)> GetOrderAndOrderItems(string clientId, long? sellerId, Guid uuid)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && !x.Deleted && (!sellerId.HasValue || x.SellerId == sellerId));
+                var order = await db.SingleAsync<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && !x.Deleted && (!sellerId.HasValue || x.SellerId == sellerId));
                 if (order == null) return (FakeDatabaseGetOrderResult.OrderWasNotFound, null, null);
-                var orderItems = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
+                var orderItems = await db.SelectAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString());
                 if (orderItems.Count == 0) return (FakeDatabaseGetOrderResult.OrderWasNotFound, null, null);
 
                 return (FakeDatabaseGetOrderResult.OrderSuccessfullyGot, order, orderItems);
             }
         }
 
-        public (bool, ClassTable, OccurrenceTable, BookedOrderItemInfo) GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(Guid uuid, long? occurrenceId)
+        public async Task<(bool, ClassTable, OccurrenceTable, BookedOrderItemInfo)> GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(Guid uuid, long? occurrenceId)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 var query = db.From<OccurrenceTable>()
                     .LeftJoin<OccurrenceTable, ClassTable>()
-                    .Where((x) => x.Id == occurrenceId);
+                    .Where(x => x.Id == occurrenceId);
                 var rows = db.SelectMulti<OccurrenceTable, ClassTable>(query);
-                var hasFoundOccurrence = false;
                 if (!rows.Any())
-                {
-                    return (hasFoundOccurrence, null, null, null);
-                }
+                    return (true, null, null, null);
+
                 var (occurrence, thisClass) = rows.FirstOrDefault();
 
-                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid.ToString() && x.OccurrenceId == occurrenceId);
-                var bookedOrderItemInfo = (orderItem != null && orderItem.Status == BookingStatus.Confirmed) ?
+                var orderItem = await db.SingleAsync<OrderItemsTable>(x => x.OrderId == uuid.ToString() && x.OccurrenceId == occurrenceId);
+                var bookedOrderItemInfo = orderItem != null && orderItem.Status == BookingStatus.Confirmed ?
                      new BookedOrderItemInfo
                      {
                          OrderItemId = orderItem.Id,
@@ -659,9 +649,8 @@ namespace OpenActive.FakeDatabase.NET
                      }
                      : null;
 
-                hasFoundOccurrence = true;
                 return (
-                    hasFoundOccurrence,
+                    true,
                     thisClass,
                     occurrence,
                     bookedOrderItemInfo
@@ -669,21 +658,19 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (bool, FacilityUseTable, SlotTable, BookedOrderItemInfo) GetSlotAndBookedOrderItemInfoBySlotId(Guid uuid, long? slotId)
+        public async Task<(bool, FacilityUseTable, SlotTable, BookedOrderItemInfo)> GetSlotAndBookedOrderItemInfoBySlotId(Guid uuid, long? slotId)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 var query = db.From<SlotTable>()
                     .LeftJoin<SlotTable, FacilityUseTable>()
-                    .Where((x) => x.Id == slotId);
+                    .Where(x => x.Id == slotId);
                 var rows = db.SelectMulti<SlotTable, FacilityUseTable>(query);
-                var hasFoundOccurrence = false;
                 if (!rows.Any())
-                {
-                    return (hasFoundOccurrence, null, null, null);
-                }
+                    return (false, null, null, null);
+
                 var (slot, facilityUse) = rows.FirstOrDefault();
-                var orderItem = db.Single<OrderItemsTable>(x => x.OrderId == uuid.ToString() && x.SlotId == slotId);
+                var orderItem = await db.SingleAsync<OrderItemsTable>(x => x.OrderId == uuid.ToString() && x.SlotId == slotId);
                 var bookedOrderItemInfo = (orderItem != null && orderItem.Status == BookingStatus.Confirmed) ?
                      new BookedOrderItemInfo
                      {
@@ -694,9 +681,8 @@ namespace OpenActive.FakeDatabase.NET
                      }
                      : null;
 
-                hasFoundOccurrence = true;
                 return (
-                    hasFoundOccurrence,
+                    true,
                     facilityUse,
                     slot,
                     bookedOrderItemInfo
@@ -704,12 +690,12 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public FakeDatabaseDeleteOrderResult DeleteOrder(string clientId, Guid uuid, long? sellerId)
+        public async Task<FakeDatabaseDeleteOrderResult> DeleteOrder(string clientId, Guid uuid, long? sellerId)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 // Set the Order to deleted in the feed, and erase all associated personal data
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OrderMode != OrderMode.Lease);
+                var order = await db.SingleAsync<OrderTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OrderMode != OrderMode.Lease);
                 if (order == null)
                 {
                     return FakeDatabaseDeleteOrderResult.OrderWasNotFound;
@@ -725,24 +711,24 @@ namespace OpenActive.FakeDatabase.NET
                 order.Deleted = true;
                 order.CustomerEmail = null;
                 order.OrderModified = DateTimeOffset.Now.UtcTicks;
-                db.Update(order);
+                await db.UpdateAsync(order);
 
-                var occurrenceIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct();
-                var slotIds = db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct();
-                db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId);
+                var occurrenceIds = (await db.SelectAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId && x.OccurrenceId.HasValue)).Select(x => x.OccurrenceId.Value).Distinct();
+                var slotIds = (await db.SelectAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId.HasValue)).Select(x => x.SlotId.Value).Distinct();
+                await db.DeleteAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId);
 
-                RecalculateSpaces(db, occurrenceIds);
-                RecalculateSlotUses(db, slotIds);
+                await RecalculateSpaces(db, occurrenceIds);
+                await RecalculateSlotUses(db, slotIds);
 
                 return FakeDatabaseDeleteOrderResult.OrderSuccessfullyDeleted;
             }
         }
 
-        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, Guid uuid, long occurrenceId, long spacesRequested)
+        public static async Task<(ReserveOrderItemsResult, long?, long?)> LeaseOrderItemsForClassOccurrence(FakeDatabaseTransaction transaction, string clientId, long? sellerId, Guid uuid, long occurrenceId, long spacesRequested)
         {
             var db = transaction.DatabaseConnection;
-            var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
-            var thisClass = db.Single<ClassTable>(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
+            var thisOccurrence = await db.SingleAsync<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
+            var thisClass = await db.SingleAsync<ClassTable>(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
 
             if (thisOccurrence == null || thisClass == null)
                 return (ReserveOrderItemsResult.OpportunityNotFound, null, null);
@@ -755,8 +741,8 @@ namespace OpenActive.FakeDatabase.NET
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OccurrenceId == occurrenceId);
-            RecalculateSpaces(db, thisOccurrence);
+            await db.DeleteAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OccurrenceId == occurrenceId);
+            await RecalculateSpaces(db, thisOccurrence);
 
             // Only lease if all spaces requested are available
             if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces < spacesRequested)
@@ -769,7 +755,7 @@ namespace OpenActive.FakeDatabase.NET
 
             for (var i = 0; i < spacesRequested; i++)
             {
-                db.Insert(new OrderItemsTable
+                await db.InsertAsync(new OrderItemsTable
                 {
                     ClientId = clientId,
                     Deleted = false,
@@ -780,15 +766,15 @@ namespace OpenActive.FakeDatabase.NET
             }
 
             // Update number of spaces remaining for the opportunity
-            RecalculateSpaces(db, thisOccurrence);
+            await RecalculateSpaces(db, thisOccurrence);
             return (ReserveOrderItemsResult.Success, null, null);
         }
 
-        public static (ReserveOrderItemsResult, long?, long?) LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, Guid uuid, long slotId, long spacesRequested)
+        public static async Task<(ReserveOrderItemsResult, long?, long?)> LeaseOrderItemsForFacilitySlot(FakeDatabaseTransaction transaction, string clientId, long? sellerId, Guid uuid, long slotId, long spacesRequested)
         {
             var db = transaction.DatabaseConnection;
-            var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
-            var thisFacility = db.Single<FacilityUseTable>(x => x.Id == thisSlot.FacilityUseId && !x.Deleted);
+            var thisSlot = await db.SingleAsync<SlotTable>(x => x.Id == slotId && !x.Deleted);
+            var thisFacility = await db.SingleAsync<FacilityUseTable>(x => x.Id == thisSlot.FacilityUseId && !x.Deleted);
 
             if (thisSlot == null || thisFacility == null)
                 return (ReserveOrderItemsResult.OpportunityNotFound, null, null);
@@ -801,8 +787,8 @@ namespace OpenActive.FakeDatabase.NET
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId == slotId);
-            RecalculateSlotUses(db, thisSlot);
+            await db.DeleteAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId == slotId);
+            await RecalculateSlotUses(db, thisSlot);
 
             // Only lease if all spaces requested are available
             if (thisSlot.RemainingUses - thisSlot.LeasedUses < spacesRequested)
@@ -815,7 +801,7 @@ namespace OpenActive.FakeDatabase.NET
 
             for (var i = 0; i < spacesRequested; i++)
             {
-                db.Insert(new OrderItemsTable
+                await db.InsertAsync(new OrderItemsTable
                 {
                     ClientId = clientId,
                     Deleted = false,
@@ -826,7 +812,7 @@ namespace OpenActive.FakeDatabase.NET
             }
 
             // Update number of spaces remaining for the opportunity
-            RecalculateSlotUses(db, thisSlot);
+            await RecalculateSlotUses(db, thisSlot);
             return (ReserveOrderItemsResult.Success, null, null);
         }
 
@@ -843,7 +829,7 @@ namespace OpenActive.FakeDatabase.NET
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
-        public static (ReserveOrderItemsResult, List<BookedOrderItemInfo>) BookOrderItemsForClassOccurrence(
+        public static async Task<(ReserveOrderItemsResult, List<BookedOrderItemInfo>)> BookOrderItemsForClassOccurrence(
             FakeDatabaseTransaction transaction,
             string clientId,
             long? sellerId,
@@ -856,8 +842,8 @@ namespace OpenActive.FakeDatabase.NET
             )
         {
             var db = transaction.DatabaseConnection;
-            var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
-            var thisClass = db.Single<ClassTable>(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
+            var thisOccurrence = await db.SingleAsync<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
+            var thisClass = await db.SingleAsync<ClassTable>(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
 
             if (thisOccurrence == null || thisClass == null)
                 return (ReserveOrderItemsResult.OpportunityNotFound, null);
@@ -870,8 +856,8 @@ namespace OpenActive.FakeDatabase.NET
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OccurrenceId == occurrenceId);
-            RecalculateSpaces(db, thisOccurrence);
+            await db.DeleteAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.OccurrenceId == occurrenceId);
+            await RecalculateSpaces(db, thisOccurrence);
 
             // Only lease if all spaces requested are available
             if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces < numberOfSpaces)
@@ -898,7 +884,7 @@ namespace OpenActive.FakeDatabase.NET
                     MeetingId = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
                     MeetingPassword = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null
                 };
-                db.Save(orderItem);
+                await db.SaveAsync(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
                     OrderItemId = orderItem.Id,
@@ -911,12 +897,12 @@ namespace OpenActive.FakeDatabase.NET
                 });
             }
 
-            RecalculateSpaces(db, thisOccurrence);
+            await RecalculateSpaces(db, thisOccurrence);
             return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
         }
 
         // TODO this should reuse code of LeaseOrderItemsForFacilityOccurrence
-        public static (ReserveOrderItemsResult, List<BookedOrderItemInfo>) BookOrderItemsForFacilitySlot(
+        public static async Task<(ReserveOrderItemsResult, List<BookedOrderItemInfo>)> BookOrderItemsForFacilitySlot(
             FakeDatabaseTransaction transaction,
             string clientId,
             long? sellerId,
@@ -929,8 +915,8 @@ namespace OpenActive.FakeDatabase.NET
             )
         {
             var db = transaction.DatabaseConnection;
-            var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
-            var thisFacility = db.Single<FacilityUseTable>(x => x.Id == thisSlot.FacilityUseId && !x.Deleted);
+            var thisSlot = await db.SingleAsync<SlotTable>(x => x.Id == slotId && !x.Deleted);
+            var thisFacility = await db.SingleAsync<FacilityUseTable>(x => x.Id == thisSlot.FacilityUseId && !x.Deleted);
 
             if (thisSlot == null || thisFacility == null)
                 return (ReserveOrderItemsResult.OpportunityNotFound, null);
@@ -943,8 +929,8 @@ namespace OpenActive.FakeDatabase.NET
 
             // Remove existing leases
             // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-            db.Delete<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId == slotId);
-            RecalculateSlotUses(db, thisSlot);
+            await db.DeleteAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == uuid.ToString() && x.SlotId == slotId);
+            await RecalculateSlotUses(db, thisSlot);
 
             // Only lease if all spaces requested are available
             if (thisSlot.RemainingUses - thisSlot.LeasedUses < numberOfSpaces)
@@ -969,7 +955,7 @@ namespace OpenActive.FakeDatabase.NET
                     BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
                 };
 
-                db.Save(orderItem);
+                await db.SaveAsync(orderItem);
 
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
@@ -980,18 +966,18 @@ namespace OpenActive.FakeDatabase.NET
                 });
             }
 
-            RecalculateSlotUses(db, thisSlot);
+            await RecalculateSlotUses(db, thisSlot);
             return (ReserveOrderItemsResult.Success, bookedOrderItemInfos);
         }
 
-        public bool CancelOrderItems(string clientId, long? sellerId, Guid uuid, List<long> orderItemIds, bool customerCancelled, bool includeCancellationMessage = false)
+        public async Task<bool> CancelOrderItems(string clientId, long? sellerId, Guid uuid, List<long> orderItemIds, bool customerCancelled, bool includeCancellationMessage = false)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
                 var order = customerCancelled
-                    ? db.Single<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid.ToString() && !x.Deleted)
-                    : db.Single<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
+                    ? await db.SingleAsync<OrderTable>(x => x.ClientId == clientId && x.OrderMode == OrderMode.Booking && x.OrderId == uuid.ToString() && !x.Deleted)
+                    : await db.SingleAsync<OrderTable>(x => x.OrderId == uuid.ToString() && !x.Deleted);
 
                 if (order == null)
                     return false;
@@ -1053,11 +1039,9 @@ namespace OpenActive.FakeDatabase.NET
                             // If the customer has already cancelled this OrderItem, do nothing to maintain idempotency
                             continue;
                         }
-                        else
-                        {
-                            orderItem.Status = BookingStatus.CustomerCancelled;
-                            updatedOrderItems.Add(orderItem);
-                        }
+
+                        orderItem.Status = BookingStatus.CustomerCancelled;
+                        updatedOrderItems.Add(orderItem);
 
                     }
                     else
@@ -1069,26 +1053,26 @@ namespace OpenActive.FakeDatabase.NET
                             orderItem.CancellationMessage = "Order cancelled by seller";
                     }
 
-                    db.Save(orderItem);
+                    await db.SaveAsync(orderItem);
                 }
 
                 // Update the total price and modified date on the Order to update the feed, if something has changed
                 // This makes the call idempotent
                 if (updatedOrderItems.Count > 0)
                 {
-                    var totalPrice = db.Select<OrderItemsTable>(x =>
+                    var totalPrice = (await db.SelectAsync<OrderItemsTable>(x =>
                         x.ClientId == clientId && x.OrderId == order.OrderId &&
-                        (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent)).Sum(x => x.Price);
+                        (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent))).Sum(x => x.Price);
 
                     order.TotalOrderPrice = totalPrice;
                     order.VisibleInOrdersFeed = FeedVisibility.Visible;
                     order.OrderModified = DateTimeOffset.Now.UtcTicks;
-                    db.Update(order);
+                    await db.UpdateAsync(order);
 
                     // Note an actual implementation would need to handle different opportunity types here
                     // Update the number of spaces available as a result of cancellation
-                    RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
-                    RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                    await RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                    await RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
                 }
 
                 transaction.Commit();
@@ -1096,9 +1080,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool ReplaceOrderOpportunity(Guid uuid)
+        public async Task<bool> ReplaceOrderOpportunity(Guid uuid)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 var query = db.From<OrderItemsTable>()
                               .Join<OrderTable>()
@@ -1108,7 +1092,7 @@ namespace OpenActive.FakeDatabase.NET
                 if (!orderItemsAndOrder.Any())
                     return false;
                 var order = orderItemsAndOrder.First().Item2;
-                var orderItems = orderItemsAndOrder.Select(x => x.Item1);
+                var orderItems = orderItemsAndOrder.Select(x => x.Item1).AsList();
 
                 var index = Faker.Random.Int(0, orderItemsAndOrder.Count - 1);
                 var orderItem = orderItemsAndOrder[index].Item1;
@@ -1158,26 +1142,26 @@ namespace OpenActive.FakeDatabase.NET
                     return false;
                 }
 
-                db.Update(orderItem);
+                await db.UpdateAsync(orderItem);
 
-                order.TotalOrderPrice = orderItems.Sum(x => x.Price); ;
+                order.TotalOrderPrice = orderItems.Sum(x => x.Price);
                 order.VisibleInOrdersFeed = FeedVisibility.Visible;
                 order.OrderModified = DateTimeOffset.Now.UtcTicks;
-                db.Update(order);
+                await db.UpdateAsync(order);
 
                 // Note an actual implementation would need to handle different opportunity types here
                 // Update the number of spaces available as a result of cancellation
-                RecalculateSpaces(db, orderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
-                RecalculateSlotUses(db, orderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                await RecalculateSpaces(db, orderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                await RecalculateSlotUses(db, orderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
                 return true;
             }
         }
 
-        public bool AcceptOrderProposal(Guid uuid)
+        public async Task<bool> AcceptOrderProposal(Guid uuid)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                var order = db.Single<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid.ToString() && !x.Deleted);
+                var order = await db.SingleAsync<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
                     // This makes the call idempotent
@@ -1187,21 +1171,19 @@ namespace OpenActive.FakeDatabase.NET
                         order.ProposalStatus = ProposalStatus.SellerAccepted;
                         order.VisibleInOrderProposalsFeed = FeedVisibility.Visible;
                         order.OrderProposalModified = DateTimeOffset.Now.UtcTicks;
-                        db.Update(order);
+                        await db.UpdateAsync(order);
                     }
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+
+                return false;
             }
         }
-        public bool AmendOrderProposal(Guid uuid, Guid version)
+        public async Task<bool> AmendOrderProposal(Guid uuid, Guid version)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                var order = db.Single<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid.ToString() && !x.Deleted);
+                var order = await db.SingleAsync<OrderTable>(x => x.OrderMode == OrderMode.Proposal && x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
                     // This makes the call idempotent
@@ -1211,23 +1193,21 @@ namespace OpenActive.FakeDatabase.NET
                         order.ProposalVersionId = version;
                         order.VisibleInOrderProposalsFeed = FeedVisibility.Visible;
                         order.OrderProposalModified = DateTimeOffset.Now.UtcTicks;
-                        db.Update(order);
+                        await db.UpdateAsync(order);
                     }
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+
+                return false;
             }
         }
 
-        public FakeDatabaseBookOrderProposalResult BookOrderProposal(string clientId, long? sellerId, Guid uuid, Guid? proposalVersionUuid)
+        public async Task<FakeDatabaseBookOrderProposalResult> BookOrderProposal(string clientId, long? sellerId, Guid uuid, Guid? proposalVersionUuid)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 // Note call is idempotent, so it might already be in the booked state
-                var order = db.Single<OrderTable>(x => x.ClientId == clientId && (x.OrderMode == OrderMode.Proposal || x.OrderMode == OrderMode.Booking) && x.OrderId == uuid.ToString() && !x.Deleted);
+                var order = await db.SingleAsync<OrderTable>(x => x.ClientId == clientId && (x.OrderMode == OrderMode.Proposal || x.OrderMode == OrderMode.Booking) && x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
                     if (sellerId.HasValue && order.SellerId != sellerId)
@@ -1243,13 +1223,13 @@ namespace OpenActive.FakeDatabase.NET
                         return FakeDatabaseBookOrderProposalResult.OrderProposalNotAccepted;
                     }
                     List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
-                    foreach (OrderItemsTable orderItem in db.Select<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId))
+                    foreach (OrderItemsTable orderItem in await db.SelectAsync<OrderItemsTable>(x => x.ClientId == clientId && x.OrderId == order.OrderId))
                     {
                         if (orderItem.Status != BookingStatus.Confirmed)
                         {
                             updatedOrderItems.Add(orderItem);
                             orderItem.Status = BookingStatus.Confirmed;
-                            db.Save(orderItem);
+                            await db.SaveAsync(orderItem);
                         }
                     }
                     // Update the status and modified date of the OrderProposal to update the feed, if something has changed
@@ -1259,24 +1239,22 @@ namespace OpenActive.FakeDatabase.NET
                         order.OrderMode = OrderMode.Booking;
                         order.VisibleInOrderProposalsFeed = FeedVisibility.Archived;
                         order.OrderProposalModified = DateTimeOffset.Now.UtcTicks;
-                        db.Update(order);
+                        await db.UpdateAsync(order);
                         // Note an actual implementation would need to handle different opportunity types here
                         // Update the number of spaces available as a result of cancellation
-                        RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
-                        RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                        await RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                        await RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
                     }
                     return FakeDatabaseBookOrderProposalResult.OrderSuccessfullyBooked;
                 }
-                else
-                {
-                    return FakeDatabaseBookOrderProposalResult.OrderWasNotFound;
-                }
+
+                return FakeDatabaseBookOrderProposalResult.OrderWasNotFound;
             }
         }
 
-        public long GetNumberOfOtherLeaseForOccurrence(Guid uuid, long? occurrenceId)
+        public async Task<long> GetNumberOfOtherLeaseForOccurrence(Guid uuid, long? occurrenceId)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 return db.Count<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
                                                  x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
@@ -1286,9 +1264,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public long GetNumberOfOtherLeasesForSlot(Guid uuid, long? slotId)
+        public async Task<long> GetNumberOfOtherLeasesForSlot(Guid uuid, long? slotId)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
                 return db.Count<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
                                                  x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
@@ -1298,11 +1276,11 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool RejectOrderProposal(string clientId, long? sellerId, Guid uuid, bool customerRejected)
+        public async Task<bool> RejectOrderProposal(string clientId, long? sellerId, Guid uuid, bool customerRejected)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                var order = db.Single<OrderTable>(x => (clientId == null || x.ClientId == clientId) && x.OrderMode == OrderMode.Proposal && x.OrderId == uuid.ToString() && !x.Deleted);
+                var order = await db.SingleAsync<OrderTable>(x => (clientId == null || x.ClientId == clientId) && x.OrderMode == OrderMode.Proposal && x.OrderId == uuid.ToString() && !x.Deleted);
                 if (order != null)
                 {
                     if (sellerId.HasValue && order.SellerId != sellerId)
@@ -1315,95 +1293,96 @@ namespace OpenActive.FakeDatabase.NET
                         order.ProposalStatus = customerRejected ? ProposalStatus.CustomerRejected : ProposalStatus.SellerRejected;
                         order.VisibleInOrderProposalsFeed = FeedVisibility.Visible;
                         order.OrderProposalModified = DateTimeOffset.Now.UtcTicks;
-                        db.Update(order);
+                        await db.UpdateAsync(order);
                         // Note an actual implementation would need to handle different opportunity types here
                         // Update the number of spaces available as a result of cancellation
-                        List<OrderItemsTable> updatedOrderItems = db.Select<OrderItemsTable>(x => (clientId == null || x.ClientId == clientId) && x.OrderId == order.OrderId).ToList();
-                        RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
-                        RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
+                        List<OrderItemsTable> updatedOrderItems = (await db.SelectAsync<OrderItemsTable>(x => (clientId == null || x.ClientId == clientId) && x.OrderId == order.OrderId)).AsList();
+                        await RecalculateSpaces(db, updatedOrderItems.Where(x => x.OccurrenceId.HasValue).Select(x => x.OccurrenceId.Value).Distinct());
+                        await RecalculateSlotUses(db, updatedOrderItems.Where(x => x.SlotId.HasValue).Select(x => x.SlotId.Value).Distinct());
                     }
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+
+                return false;
             }
         }
 
-        public static void RecalculateSlotUses(IDbConnection db, SlotTable slot)
+        public static async Task RecalculateSlotUses(IDbConnection db, SlotTable slot)
         {
             if (slot == null)
                 return;
 
             // Update number of leased spaces remaining for the opportunity
-            var leasedUses = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.SlotId == slot.Id).Count();
+            var leasedUses = (await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.SlotId == slot.Id)).Count;
             slot.LeasedUses = leasedUses;
 
             // Update number of actual spaces remaining for the opportunity
-            var totalUsesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent)).Count();
+            var totalUsesTaken = (await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent))).Count;
             slot.RemainingUses = slot.MaximumUses - totalUsesTaken;
 
             // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition)
             // TODO: Document this!
             slot.Modified = DateTimeOffset.Now.UtcTicks;
-            db.Update(slot);
+            await db.UpdateAsync(slot);
         }
 
-        public static void RecalculateSlotUses(IDbConnection db, IEnumerable<long> slotIds)
+        public static async Task RecalculateSlotUses(IDbConnection db, IEnumerable<long> slotIds)
         {
             foreach (var slotId in slotIds)
             {
-                var thisSlot = db.Single<SlotTable>(x => x.Id == slotId && !x.Deleted);
-                RecalculateSlotUses(db, thisSlot);
+                var thisSlot = await db.SingleAsync<SlotTable>(x => x.Id == slotId && !x.Deleted);
+                await RecalculateSlotUses(db, thisSlot);
             }
         }
 
-        public static void RecalculateSpaces(IDbConnection db, OccurrenceTable occurrence)
+        public static async Task RecalculateSpaces(IDbConnection db, OccurrenceTable occurrence)
         {
             if (occurrence == null)
                 return;
 
             // Update number of leased spaces remaining for the opportunity
-            var leasedSpaces = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurrence.Id).Count();
+            var leasedSpaces = (await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurrence.Id)).Count;
             occurrence.LeasedSpaces = leasedSpaces;
 
             // Update number of actual spaces remaining for the opportunity
-            var totalSpacesTaken = db.LoadSelect<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent)).Count();
+            var totalSpacesTaken = (await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent))).Count();
             occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
 
             // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
             occurrence.Modified = DateTimeOffset.Now.UtcTicks;
-            db.Update(occurrence);
+            await db.UpdateAsync(occurrence);
         }
 
-        public static void RecalculateSpaces(IDbConnection db, IEnumerable<long> occurrenceIds)
+        public static async Task RecalculateSpaces(IDbConnection db, IEnumerable<long> occurrenceIds)
         {
             foreach (var occurrenceId in occurrenceIds)
             {
-                var thisOccurrence = db.Single<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
-                RecalculateSpaces(db, thisOccurrence);
+                var thisOccurrence = await db.SingleAsync<OccurrenceTable>(x => x.Id == occurrenceId && !x.Deleted);
+                await RecalculateSpaces(db, thisOccurrence);
             }
         }
 
-        public static FakeDatabase GetPrepopulatedFakeDatabase()
+        public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase()
         {
             var database = new FakeDatabase();
-            using (var db = database.Mem.Database.Open())
+            using (var db = await database.Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
 
-                CreateSellers(db);
-                CreateSellerUsers(db);
-                CreateFakeClasses(db);
-                CreateFakeFacilitiesAndSlots(db);
-                CreateBookingPartners(db);
+                await CreateSellers(db);
+                await CreateSellerUsers(db);
+                await CreateFakeClasses(db);
+                await CreateFakeFacilitiesAndSlots(db);
+                await CreateOrders(db); // Add these in to generate your own orders and grants, otherwise generate them using the test suite
+                await CreateGrants(db);
+                await BookingPartnerTable.Create(db);
                 transaction.Commit();
             }
+
             return database;
         }
 
-        private static void CreateFakeFacilitiesAndSlots(IDbConnection db)
+        private static async Task CreateFakeFacilitiesAndSlots(IDbConnection db)
         {
             var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
 
@@ -1415,9 +1394,9 @@ namespace OpenActive.FakeDatabase.NET
                     Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
                     SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5  
                 })
-                .ToList();
+                .AsList();
 
-            int slotId = 0;
+            var slotId = 0;
             var slots = opportunitySeeds.Select(seed =>
                 Enumerable.Range(0, 10)
                     .Select(_ => new
@@ -1426,7 +1405,7 @@ namespace OpenActive.FakeDatabase.NET
                         TotalUses = Faker.Random.Int(0, 8),
                         Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
                     })
-                    .Select((slot) =>
+                    .Select(slot =>
                     {
                         var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
                         return new SlotTable
@@ -1446,7 +1425,7 @@ namespace OpenActive.FakeDatabase.NET
                             RequiresAdditionalDetails = requiresAdditionalDetails,
                             RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
                             RequiresApproval = seed.RequiresApproval,
-                            AllowsProposalAmendment = seed.RequiresApproval ? Faker.Random.Bool() : false,
+                            AllowsProposalAmendment = seed.RequiresApproval && Faker.Random.Bool(),
                             ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                             LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                             AllowCustomerCancellationFullRefund = Faker.Random.Bool()
@@ -1454,11 +1433,11 @@ namespace OpenActive.FakeDatabase.NET
                     }
                     )).SelectMany(os => os);
 
-            db.InsertAll(facilities);
-            db.InsertAll(slots);
+            await db.InsertAllAsync(facilities);
+            await db.InsertAllAsync(slots);
         }
 
-        public static void CreateFakeClasses(IDbConnection db)
+        public static async Task CreateFakeClasses(IDbConnection db)
         {
             var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
 
@@ -1470,7 +1449,7 @@ namespace OpenActive.FakeDatabase.NET
                     ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                     seed.RequiresApproval
                 })
-                .Select((@class) =>
+                .Select(@class =>
                 {
                     var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
                     return new ClassTable
@@ -1486,7 +1465,7 @@ namespace OpenActive.FakeDatabase.NET
                         RequiresAdditionalDetails = requiresAdditionalDetails,
                         RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
                         RequiresApproval = @class.RequiresApproval,
-                        AllowsProposalAmendment = @class.RequiresApproval ? Faker.Random.Bool() : false,
+                        AllowsProposalAmendment = @class.RequiresApproval && Faker.Random.Bool(),
                         LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
                         SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                         ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
@@ -1494,9 +1473,9 @@ namespace OpenActive.FakeDatabase.NET
                         AllowCustomerCancellationFullRefund = Faker.Random.Bool()
                     };
                 })
-                .ToList();
+                .AsList();
 
-            int occurrenceId = 0;
+            var occurrenceId = 0;
             var occurrences = opportunitySeeds.Select(seed =>
                 Enumerable.Range(0, 10)
                     .Select(_ => new
@@ -1515,11 +1494,11 @@ namespace OpenActive.FakeDatabase.NET
                         RemainingSpaces = occurrence.TotalSpaces
                     })).SelectMany(os => os);
 
-            db.InsertAll(classes);
-            db.InsertAll(occurrences);
+            await db.InsertAllAsync(classes);
+            await db.InsertAllAsync(occurrences);
         }
 
-        public static void CreateSellers(IDbConnection db)
+        public static async Task CreateSellers(IDbConnection db)
         {
             var sellers = new List<SellerTable>
             {
@@ -1530,270 +1509,209 @@ namespace OpenActive.FakeDatabase.NET
                 new SellerTable { Id = 5, Name = "Jane Smith", IsIndividual = true, LogoUrl = "https://placekitten.com/640/360", Url = "https://www.example.com", IsTaxGross = true }
             };
 
-            db.InsertAll(sellers);
+            await db.InsertAllAsync(sellers);
         }
 
-        public static void CreateSellerUsers(IDbConnection db)
+        public static async Task CreateOrders(IDbConnection db)
         {
-            var sellerUsers = new List<SellerUserTable>
+            var orders = new List<OrderTable>
             {
-                new SellerUserTable { Id = 100, Username = "test1", PasswordHash = "test1".Sha256(), SellerId = 1 },
-                new SellerUserTable { Id = 101, Username = "test1b", PasswordHash = "test1b".Sha256(), SellerId = 1 },
-                new SellerUserTable { Id = 102, Username = "test2", PasswordHash = "test2".Sha256(), SellerId = 2 },
-                new SellerUserTable { Id = 103, Username = "test3", PasswordHash = "test3".Sha256(), SellerId = 3 },
-                new SellerUserTable { Id = 104, Username = "test4", PasswordHash = "test4".Sha256(), SellerId = 4 },
-                new SellerUserTable { Id = 105, Username = "test5", PasswordHash = "test5".Sha256(), SellerId = 5 },
-            };
-
-            db.InsertAll(sellerUsers);
-        }
-
-        public bool ValidateSellerUserCredentials(string Username, string Password)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                var matchingUser = db.Single<SellerUserTable>(x => x.Username == Username && x.PasswordHash == Password.Sha256());
-                return (matchingUser != null);
-            }
-        }
-
-        public SellerUserTable GetSellerUser(string Username)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                return db.Single<SellerUserTable>(x => x.Username == Username);
-            }
-        }
-
-        public SellerUserTable GetSellerUserById(long sellerUserId)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                return db.LoadSingleById<SellerUserTable>(sellerUserId);
-            }
-        }
-
-        /*
-        public List<BookingPartnerAdministratorTable> GetBookingPartnerAdministrators()
-        {
-            return new List<BookingPartnerAdministratorTable> {
-                new BookingPartnerAdministratorTable
+                new OrderTable
                 {
-                    Username = "test",
-                    Password = "test".Sha256(),
-                    SubjectId = "TestSubjectId",
-                    Claims = new List<Claim>
-                    {
-                        new Claim("https://openactive.io/sellerName", "Example Seller"),
-                        new Claim("https://openactive.io/sellerId", "https://localhost:5001/api/identifiers/sellers/1"),
-                        new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
-                        new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
-                        new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),
-                        new Claim("https://openactive.io/bookingServiceUrl", "http://abc.com/booking-service")
-                    }
+                    OrderId = Guid.NewGuid().ToString(),
+                    Deleted = false,
+                    OrderCreated = DateTimeOffset.Now,
+                    OrderModified = DateTimeOffset.Now.Ticks,
+                    OrderProposalModified = DateTimeOffset.Now.Ticks,
+                    ClientId = "clientid_XXX",
+                    SellerId = 1,
+                    CustomerType = CustomerType.Person,
+                    BrokerRole = BrokerRole.AgentBroker,
+                    BrokerName = "Adult Fitness Challenge",
+                    BrokerUrl = new Uri("https://myfitnessapp.example.com/"),
+                    CustomerEmail = "Ardith72@hotmail.com",
+                    CustomerIdentifier = Guid.NewGuid().ToString(),
+                    CustomerGivenName = "Hills",
+                    CustomerFamilyName = "Modesta",
+                    CustomerTelephone = "731.403.0727",
+                    PaymentIdentifier = "dyulZE-Kt",
+                    PaymentName = "AcmeBroker Points",
+                    PaymentProviderId = "STRIPE",
+                    PaymentAccountId = "SN1593",
+                    TotalOrderPrice = 14.99M,
+                    OrderMode = OrderMode.Booking,
+                    LeaseExpires = DateTime.Now.AddDays(10),
+                    VisibleInOrdersFeed = FeedVisibility.None
+                },
+                new OrderTable
+                {
+                    OrderId = Guid.NewGuid().ToString(),
+                    Deleted = false,
+                    OrderCreated = DateTimeOffset.Now,
+                    OrderModified = DateTimeOffset.Now.Ticks,
+                    OrderProposalModified = DateTimeOffset.Now.Ticks,
+                    ClientId = "clientid_YYY",
+                    SellerId = 1,
+                    CustomerType = CustomerType.Person,
+                    BrokerRole = BrokerRole.AgentBroker,
+                    BrokerName = "Healthy Steps App",
+                    BrokerUrl = new Uri("https://myfitnessapp.example.com/"),
+                    CustomerEmail = "Zelma.Pacocha79@gmail.com",
+                    CustomerIdentifier = Guid.NewGuid().ToString(),
+                    CustomerGivenName = "Boyer",
+                    CustomerFamilyName = "Santos",
+                    CustomerTelephone = "1-346-608-5991 x53561",
+                    PaymentIdentifier = "JU1ktRR7U",
+                    PaymentName = "AcmeBroker Points",
+                    PaymentProviderId = "STRIPE",
+                    PaymentAccountId = "SN1593",
+                    TotalOrderPrice = 14.99M,
+                    OrderMode = OrderMode.Booking,
+                    LeaseExpires = DateTime.Now.AddDays(10),
+                    VisibleInOrdersFeed = FeedVisibility.None
+                },
+                new OrderTable
+                {
+                    OrderId = Guid.NewGuid().ToString(),
+                    Deleted = false,
+                    OrderCreated = DateTimeOffset.Now,
+                    OrderModified = DateTimeOffset.Now.Ticks,
+                    OrderProposalModified = DateTimeOffset.Now.Ticks,
+                    ClientId = "clientid_YYY",
+                    SellerId = 1,
+                    CustomerType = CustomerType.Person,
+                    BrokerRole = BrokerRole.AgentBroker,
+                    BrokerName = "Healthy Steps Website",
+                    BrokerUrl = new Uri("https://myfitnessapp.example.com/"),
+                    CustomerEmail = "Regan_Moen4@gmail.com",
+                    CustomerIdentifier = Guid.NewGuid().ToString(),
+                    CustomerGivenName = "Kohler",
+                    CustomerFamilyName = "Toby",
+                    CustomerTelephone = "1-585-849-0456",
+                    PaymentIdentifier = "Lr4GW6MNQ",
+                    PaymentName = "AcmeBroker Points",
+                    PaymentProviderId = "STRIPE",
+                    PaymentAccountId = "SN1593",
+                    TotalOrderPrice = 59.96M,
+                    OrderMode = OrderMode.Booking,
+                    LeaseExpires = DateTime.Now.AddDays(10),
+                    VisibleInOrdersFeed = FeedVisibility.None
                 }
             };
+
+            await db.InsertAllAsync(orders);
         }
-        */
 
-
-        public static void CreateBookingPartners(IDbConnection db)
+        public static async Task CreateGrants(IDbConnection db)
         {
-            var bookingPartners = new List<BookingPartnerTable>
+            var grants = new List<GrantTable>
             {
-                new BookingPartnerTable { Name = "Test Suite 1", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "openactive_test_suite_client_12345xaq", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
-                new BookingPartnerTable { Name = "Acmefitness", ClientId = "clientid_800", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98767", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientProperties = new ClientModel {
-                        Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
-                        GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
-                        ClientUri = "http://example.com",
-                        LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
-                        RedirectUris = new string[] { "http://localhost:3000/cb" }
-                    }
-                },
-                new BookingPartnerTable { Name = "Example app", ClientId = "clientid_801", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98768", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    ClientProperties = new ClientModel {
-                        Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
-                        GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
-                        ClientUri = "http://example.com",
-                        LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
-                        RedirectUris = new string[] { "http://localhost:3000/cb" }
-                    }
-                },
-                new BookingPartnerTable { Name = "Test Suite 2", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
-                new BookingPartnerTable { Name = "Test Suite 3", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
+                new GrantTable { ClientId = "clientid_XXX", SubjectId = "100", Type = "user_consent" },
+                new GrantTable { ClientId = "clientid_YYY", SubjectId = "100", Type = "user_consent" },
+                new GrantTable { ClientId = "clientid_ZZZ", SubjectId = "100", Type = "user_consent" },
             };
 
-            var grants = new List<GrantTable>()
-            {
-                new GrantTable()
-                {
-                    Key = "8vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
-                    Type = "user_consent",
-                    SubjectId = "TestSubjectId",
-                    ClientId = "clientid_123",
-                    CreationTime = DateTime.Now,
-                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_123\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
-                },
-                new GrantTable()
-                {
-                    Key = "7vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
-                    Type = "user_consent",
-                    SubjectId = "TestSubjectId",
-                    ClientId = "clientid_456",
-                    CreationTime = DateTime.Now,
-                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_456\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
-                },
-                new GrantTable()
-                {
-                    Key = "9vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
-                    Type = "user_consent",
-                    SubjectId = "TestSubjectId",
-                    ClientId = "clientid_789",
-                    CreationTime = DateTime.Now,
-                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_789\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
-                },
-            };
-
-            db.InsertAll(bookingPartners);
-            //db.InsertAll(grants);
+            await db.InsertAllAsync(grants);
         }
 
-        public List<BookingPartnerTable> GetBookingPartners()
+        public static readonly SellerUserTable[] DefaultSellerUsers =
         {
-            using (var db = Mem.Database.Open())
+            new SellerUserTable {Id = 100, Username = "test1", PasswordRaw = "test1", SellerId = 1},
+            new SellerUserTable {Id = 101, Username = "test1b", PasswordRaw = "test1b", SellerId = 1},
+            new SellerUserTable {Id = 102, Username = "test2", PasswordRaw = "test2", SellerId = 2},
+            new SellerUserTable {Id = 103, Username = "test3", PasswordRaw = "test3", SellerId = 3},
+            new SellerUserTable {Id = 104, Username = "test4", PasswordRaw = "test4", SellerId = 4},
+            new SellerUserTable {Id = 105, Username = "test5", PasswordRaw = "test5", SellerId = 5},
+        };
+
+        public static async Task CreateSellerUsers(IDbConnection db)
+        {
+            await db.InsertAllAsync(DefaultSellerUsers);
+        }
+
+        public async Task<bool> ValidateSellerUserCredentials(string username, string password)
+        {
+            using (var db = await Mem.Database.OpenAsync())
             {
-                return db.Select<BookingPartnerTable>().ToList();
+                var matchingUser = await db.SingleAsync<SellerUserTable>(x => x.Username == username && x.PasswordHash == password.Sha256());
+                return matchingUser != null;
             }
         }
 
-        public BookingPartnerTable GetBookingPartnerByInitialAccessToken(string registrationKey)
+        public async Task<SellerUserTable> GetSellerUser(string username)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                var bookingPartner = db.Single<BookingPartnerTable>(x => x.InitialAccessToken == registrationKey);
-                return bookingPartner?.InitialAccessTokenKeyValidUntil > DateTime.Now ? bookingPartner : null;
+                return await db.SingleAsync<SellerUserTable>(x => x.Username == username);
             }
         }
 
-        public BookingPartnerTable GetBookingPartner(string clientId)
+        public async Task<SellerUserTable> GetSellerUserById(long sellerUserId)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                return db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
+                return await db.LoadSingleByIdAsync<SellerUserTable>(sellerUserId);
             }
         }
 
-        public void SaveBookingPartner(BookingPartnerTable bookingPartnerTable)
+        public async Task<GrantTable> GetGrant(string key)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                db.Save(bookingPartnerTable);
+                return await db.SingleAsync<GrantTable>(x => x.Key == key);
+            }
+        }
+        public async Task<IEnumerable<GrantTable>> GetAllGrants(string subjectId)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                return (await db.SelectAsync<GrantTable>(x => x.SubjectId == subjectId)).AsList();
             }
         }
 
-        public void ResetBookingPartnerKey(string clientId, string key)
+        public async Task AddGrant(string key, string type, string subjectId, string clientId, DateTime creationTime, DateTime? expiration, string data)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
-                bookingPartner.Registered = false;
-                bookingPartner.InitialAccessToken = key;
-                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
-                bookingPartner.ClientSecret = null;
-                db.Save(bookingPartner);
-            }
-        }
-
-        public void SetBookingPartnerKey(string clientId, string key)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
-                bookingPartner.InitialAccessToken = key;
-                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
-                db.Save(bookingPartner);
-            }
-        }
-
-        public void UpdateBookingPartnerScope(string clientId, string scope, bool bookingsSuspended)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                var bookingPartner = db.Single<BookingPartnerTable>(x => x.ClientId == clientId);
-                bookingPartner.ClientProperties.Scope = scope;
-                bookingPartner.BookingsSuspended = true;
-                db.Save(bookingPartner);
-            }
-        }
-
-
-        public void AddBookingPartner(BookingPartnerTable newBookingPartner)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                db.Save(newBookingPartner);
-            }
-        }
-
-        public GrantTable GetGrant(string key)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                return db.Single<GrantTable>(x => x.Key == key);
-            }
-        }
-        public IEnumerable<GrantTable> GetAllGrants(string subjectId)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                return db.Select<GrantTable>(x => x.SubjectId == subjectId).ToList();
-            }
-        }
-
-        public void AddGrant(string key, string type, string subjectId, string clientId, DateTime CreationTime, DateTime? Expiration, string data)
-        {
-            using (var db = Mem.Database.Open())
-            {
-                var grant = new GrantTable()
+                var grant = new GrantTable
                 {
                     Key = key,
                     Type = type,
                     SubjectId = subjectId,
                     ClientId = clientId,
-                    CreationTime = CreationTime,
-                    Expiration = Expiration,
+                    CreationTime = creationTime,
+                    Expiration = expiration,
                     Data = data
                 };
-                db.Save(grant);
+                await db.SaveAsync(grant);
             }
         }
 
-        public void RemoveGrant(string key)
+        public async Task RemoveGrant(string key)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                db.Delete<GrantTable>(x => x.Key == key);
+                await db.DeleteAsync<GrantTable>(x => x.Key == key);
             }
         }
 
-        public void RemoveGrant(string subjectId, string clientId)
+        public async Task RemoveGrant(string subjectId, string clientId)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                db.Delete<GrantTable>(x => x.SubjectId == subjectId && x.ClientId == clientId);
+                await db.DeleteAsync<GrantTable>(x => x.SubjectId == subjectId && x.ClientId == clientId);
             }
         }
 
-        public void RemoveGrant(string subjectId, string clientId, string type)
+        public async Task RemoveGrant(string subjectId, string clientId, string type)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                db.Delete<GrantTable>(x => x.SubjectId == subjectId && x.ClientId == clientId && x.Type == type);
+                await db.DeleteAsync<GrantTable>(x => x.SubjectId == subjectId && x.ClientId == clientId && x.Type == type);
             }
         }
 
-        public (int, int) AddClass(
+        public async Task<(int, int)> AddClass(
             string testDatasetIdentifier,
             long? sellerId,
             string title,
@@ -1816,7 +1734,7 @@ namespace OpenActive.FakeDatabase.NET
             var startTime = DateTime.Now.AddDays(inPast ? -1 : 1);
             var endTime = DateTime.Now.AddDays(inPast ? -1 : 1).AddHours(1);
 
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
                 var @class = new ClassTable
@@ -1844,7 +1762,7 @@ namespace OpenActive.FakeDatabase.NET
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
                     Modified = DateTimeOffset.Now.UtcTicks
                 };
-                db.Save(@class);
+                await db.SaveAsync(@class);
 
                 var occurrence = new OccurrenceTable
                 {
@@ -1857,7 +1775,7 @@ namespace OpenActive.FakeDatabase.NET
                     RemainingSpaces = totalSpaces,
                     Modified = DateTimeOffset.Now.UtcTicks
                 };
-                db.Save(occurrence);
+                await db.SaveAsync(occurrence);
 
                 transaction.Commit();
 
@@ -1865,7 +1783,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public (int, int) AddFacility(
+        public async Task<(int, int)> AddFacility(
             string testDatasetIdentifier,
             long? sellerId,
             string title,
@@ -1886,7 +1804,7 @@ namespace OpenActive.FakeDatabase.NET
             var startTime = DateTime.Now.AddDays(inPast ? -1 : 1);
             var endTime = DateTime.Now.AddDays(inPast ? -1 : 1).AddHours(1);
 
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
                 var facility = new FacilityUseTable
@@ -1899,7 +1817,7 @@ namespace OpenActive.FakeDatabase.NET
                     LocationLng = locationLng,
                     Modified = DateTimeOffset.Now.UtcTicks
                 };
-                db.Save(facility);
+                await db.SaveAsync(facility);
 
                 var slot = new SlotTable
                 {
@@ -1926,7 +1844,7 @@ namespace OpenActive.FakeDatabase.NET
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
                     Modified = DateTimeOffset.Now.UtcTicks
                 };
-                db.Save(slot);
+                await db.SaveAsync(slot);
 
                 transaction.Commit();
 
@@ -1934,26 +1852,26 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public void DeleteTestClassesFromDataset(string testDatasetIdentifier)
+        public async Task DeleteTestClassesFromDataset(string testDatasetIdentifier)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                db.UpdateOnly(() => new ClassTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
+                await db.UpdateOnlyAsync(() => new ClassTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
 
-                db.UpdateOnly(() => new OccurrenceTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
+                await db.UpdateOnlyAsync(() => new OccurrenceTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
         }
 
-        public void DeleteTestFacilitiesFromDataset(string testDatasetIdentifier)
+        public async Task DeleteTestFacilitiesFromDataset(string testDatasetIdentifier)
         {
-            using (var db = Mem.Database.Open())
+            using (var db = await Mem.Database.OpenAsync())
             {
-                db.UpdateOnly(() => new FacilityUseTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
+                await db.UpdateOnlyAsync(() => new FacilityUseTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
 
-                db.UpdateOnly(() => new SlotTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
+                await db.UpdateOnlyAsync(() => new SlotTable { Modified = DateTimeOffset.Now.UtcTicks, Deleted = true },
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
         }
@@ -1988,7 +1906,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             return new OpportunitySeed
             {
-                Faker = faker,
+                SeedFaker = faker,
                 Id = index + 1,
                 StartDateBounds = BoundsDaysToMinutes(input.startDateRange).Value,
                 ValidFromBeforeStartDateBounds = !input.validFromBeforeStartDateRange.HasValue ? (Bounds?)null : BoundsDaysToMinutes(input.validFromBeforeStartDateRange).Value,
@@ -1998,8 +1916,8 @@ namespace OpenActive.FakeDatabase.NET
 
         private static Bounds? BoundsDaysToMinutes(Bounds? bounds)
         {
-            const int MINUTES_IN_DAY = 60 * 24;
-            return !bounds.HasValue ? (Bounds?)null : new Bounds(bounds.Value.Lower * MINUTES_IN_DAY, bounds.Value.Upper * MINUTES_IN_DAY);
+            const int minutesInDay = 60 * 24;
+            return !bounds.HasValue ? (Bounds?)null : new Bounds(bounds.Value.Lower * minutesInDay, bounds.Value.Upper * minutesInDay);
         }
 
         /// <summary>
@@ -2007,20 +1925,20 @@ namespace OpenActive.FakeDatabase.NET
         /// </summary>
         private static List<OpportunitySeed> GenerateOpportunitySeedDistribution(int count)
         {
-            return Faker.GenerateIntegerDistribution(count, BucketDefinitions, GenerateRandomOpportunityData).ToList();
+            return Faker.GenerateIntegerDistribution(count, BucketDefinitions, GenerateRandomOpportunityData).AsList();
         }
 
         private struct OpportunitySeed
         {
-            public Faker Faker { get; set; }
+            public Faker SeedFaker { get; set; }
             public int Id { get; set; }
             public Bounds StartDateBounds { get; set; }
             public Bounds? ValidFromBeforeStartDateBounds { get; set; }
 
-            public DateTime RandomStartDate() => DateTime.Now.AddMinutes(this.Faker.Random.Int(StartDateBounds));
+            public DateTime RandomStartDate() => DateTime.Now.AddMinutes(SeedFaker.Random.Int(StartDateBounds));
 
             public TimeSpan? RandomValidFromBeforeStartDate() => ValidFromBeforeStartDateBounds.HasValue
-                ? TimeSpan.FromMinutes(this.Faker.Random.Int(ValidFromBeforeStartDateBounds.Value))
+                ? TimeSpan.FromMinutes(SeedFaker.Random.Int(ValidFromBeforeStartDateBounds.Value))
                 : (TimeSpan?)null;
             public bool RequiresApproval { get; set; }
         }
@@ -2035,7 +1953,7 @@ namespace OpenActive.FakeDatabase.NET
 
         private static List<AdditionalDetailTypes> PickRandomAdditionalDetails()
         {
-            return new HashSet<AdditionalDetailTypes> { Faker.PickRandom<AdditionalDetailTypes>(), Faker.PickRandom<AdditionalDetailTypes>() }.ToList();
+            return new HashSet<AdditionalDetailTypes> { Faker.PickRandom<AdditionalDetailTypes>(), Faker.PickRandom<AdditionalDetailTypes>() }.AsList();
         }
     }
 }

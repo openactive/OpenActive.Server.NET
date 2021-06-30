@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Security.Claims;
-using System.Text;
 using OpenActive.NET;
 
 namespace OpenActive.Server.NET.OpenBookingHelper

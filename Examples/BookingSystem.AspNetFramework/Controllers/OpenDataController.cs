@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using BookingSystem.AspNetFramework.Helpers;
-using OpenActive.NET;
 using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 

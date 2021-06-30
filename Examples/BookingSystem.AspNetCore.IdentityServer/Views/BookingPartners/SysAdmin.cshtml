@@ -1,0 +1,60 @@
+﻿@model BookingPartnerViewModel
+
+<div class="grants">
+    <div class="row page-header">
+        <h1>System Administration</h1>
+        <div>Below is the list of all booking partners registered as OAuth clients.</div>
+    </div>
+
+    <div class="row">
+        @if (!Model.BookingPartners.Any())
+        {
+            <div class="alert alert-info">
+                There are no booking partners in the system
+            </div>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <td>Booking partner</td>
+                        <td>Sellers enabled</td>
+                        <td>Bookings by broker / last 30 days</td>
+                        <td>
+                            <a href="/booking-partners/create" class="btn btn-md btn-default"><b class="glyphicon glyphicon-plus"></b>&nbsp;Add a Booking Partner</a>
+                        </td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var bookingPartner in Model.BookingPartners)
+                    {
+                        <tr>
+                            <td>@bookingPartner.ClientName</td>
+                            <td>@bookingPartner.SellersEnabled</td>
+                            <td>
+                                @foreach (var (broker, orderCount) in bookingPartner.BookingsByBroker)
+                                {
+                                    <div>@broker: @orderCount</div>
+                                }
+                            </td>
+                            <td>
+                                <form action="/booking-partners/manage-keys" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                    <a href="/booking-partners/edit/@bookingPartner.ClientId" class="btn btn-md btn-default">API Key</a>
+                                </form>
+
+                                <form action="/booking-partners/delete" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                    <button class="btn btn-md btn-default">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

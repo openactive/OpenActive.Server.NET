@@ -1,7 +1,4 @@
-﻿using System.Web;
-using System.Web.Optimization;
-
-namespace BookingSystem.AspNetFramework
+﻿namespace BookingSystem.AspNetFramework
 {
     //public class BundleConfig
     //{

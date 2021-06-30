@@ -23,7 +23,7 @@ namespace BookingSystem
         }
 
         // If the Seller is not found, simply return null to generate the correct Open Booking error
-        protected async override ValueTask<ILegalEntity> GetSeller(SellerIdComponents sellerIdComponents)
+        protected override async ValueTask<ILegalEntity> GetSeller(SellerIdComponents sellerIdComponents)
         {
             // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required for an actual implementation.
             if (_useSingleSellerMode)
