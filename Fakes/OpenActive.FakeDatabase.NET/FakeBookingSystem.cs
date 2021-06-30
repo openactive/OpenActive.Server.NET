@@ -175,7 +175,8 @@ namespace OpenActive.FakeDatabase.NET
             Randomizer.Seed = new Random((int)(DateTime.Today - new DateTime(1970, 1, 1)).TotalDays);
         }
 
-        private const int OpportunityCount = 10; // ToDo: make this 2000 again
+        private static readonly int OpportunityCount =
+            int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCount) ? opportunityCount : 2000;
 
         /// <summary>
         /// TODO: Call this on a schedule from both .NET Core and .NET Framework reference implementations
