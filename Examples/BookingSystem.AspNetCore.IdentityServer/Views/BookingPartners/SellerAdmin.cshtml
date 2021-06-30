@@ -28,7 +28,12 @@
                     {
                         <tr>
                             <td>@bookingPartner.ClientName</td>
-                            <td></td>
+                            <td>
+                                @foreach (var (broker, orderCount) in bookingPartner.BookingsByBroker)
+                                {
+                                    <div>@broker: @orderCount</div>
+                                }
+                            </td>
                             <td>
                                 <a class="btn btn-md btn-default" href="@bookingPartner.ClientUrl" @(string.IsNullOrWhiteSpace(bookingPartner.ClientUrl) ? "disabled" : "")>Manage</a>
 

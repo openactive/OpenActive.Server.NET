@@ -31,8 +31,13 @@
                     {
                         <tr>
                             <td>@bookingPartner.ClientName</td>
-                            <td></td>
-                            <td></td>
+                            <td>@bookingPartner.SellersEnabled</td>
+                            <td>
+                                @foreach (var (broker, orderCount) in bookingPartner.BookingsByBroker)
+                                {
+                                    <div>@broker: @orderCount</div>
+                                }
+                            </td>
                             <td>
                                 <form action="/booking-partners/manage-keys" method="post">
                                     @Html.AntiForgeryToken()

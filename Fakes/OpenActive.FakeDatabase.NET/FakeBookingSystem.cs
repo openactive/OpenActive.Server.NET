@@ -33,7 +33,7 @@ namespace OpenActive.FakeDatabase.NET
             // Initialise() must be called on startup of each to ensure they do not wipe the database
             // on the first call to it
 #pragma warning disable 4014
-            Database.GetBookingPartners();
+            BookingPartnerTable.Get().Wait();
 #pragma warning restore 4014
         }
 
@@ -175,7 +175,7 @@ namespace OpenActive.FakeDatabase.NET
             Randomizer.Seed = new Random((int)(DateTime.Today - new DateTime(1970, 1, 1)).TotalDays);
         }
 
-        private const int OpportunityCount = 2000;
+        private const int OpportunityCount = 10; // ToDo: make this 2000 again
 
         /// <summary>
         /// TODO: Call this on a schedule from both .NET Core and .NET Framework reference implementations
@@ -1372,7 +1372,7 @@ namespace OpenActive.FakeDatabase.NET
                 await CreateSellerUsers(db);
                 await CreateFakeClasses(db);
                 await CreateFakeFacilitiesAndSlots(db);
-                await CreateBookingPartners(db);
+                await BookingPartnerTable.Create(db);
                 transaction.Commit();
             }
 
@@ -1546,144 +1546,6 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = await Mem.Database.OpenAsync())
             {
                 return await db.LoadSingleByIdAsync<SellerUserTable>(sellerUserId);
-            }
-        }
-
-        /*
-        public List<BookingPartnerAdministratorTable> GetBookingPartnerAdministrators()
-        {
-            return new List<BookingPartnerAdministratorTable> {
-                new BookingPartnerAdministratorTable
-                {
-                    Username = "test",
-                    Password = "test".Sha256(),
-                    SubjectId = "TestSubjectId",
-                    Claims = new List<Claim>
-                    {
-                        new Claim("https://openactive.io/sellerName", "Example Seller"),
-                        new Claim("https://openactive.io/sellerId", "https://localhost:5001/api/identifiers/sellers/1"),
-                        new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
-                        new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
-                        new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),
-                        new Claim("https://openactive.io/bookingServiceUrl", "http://abc.com/booking-service")
-                    }
-                }
-            };
-        }
-        */
-
-        public static async Task CreateBookingPartners(IDbConnection db)
-        {
-            var bookingPartners = new List<BookingPartnerTable>
-            {
-                new BookingPartnerTable { Name = "Test Suite 1", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "openactive_test_suite_client_12345xaq", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
-                new BookingPartnerTable { Name = "Acmefitness", ClientId = "clientid_800", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98767", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
-                    GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
-                    ClientUri = "http://example.com",
-                    LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
-                    RedirectUris = new[] { "http://localhost:3000/cb" }
-                },
-                new BookingPartnerTable { Name = "Example app", ClientId = "clientid_709", ClientSecret = "secret".Sha256(), Email="garden@health.com", Registered = true, InitialAccessToken = "98768", InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
-                    Scope = "openid profile openactive-openbooking openactive-ordersfeed openactive-identity",
-                    GrantTypes = new[] { "client_credentials", "refresh_token", "authorization_code" },
-                    ClientUri = "http://example.com",
-                    LogoUri = "https://via.placeholder.com/512x256.png?text=Logo",
-                    RedirectUris = new[] { "http://localhost:3000/cb" }
-                },
-                new BookingPartnerTable { Name = "Test Suite 2", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-primary-745ddf2d13019ce8b69c", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now },
-                new BookingPartnerTable { Name = "Test Suite 3", ClientId = Guid.NewGuid().ToString(), InitialAccessToken = "dynamic-secondary-a21518cb57af7b6052df", Registered = false, InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now }
-            };
-
-            await db.InsertAllAsync(bookingPartners);
-            // To populate GrantTable locally, run the tests, e.g. `NODE_APP_INSTANCE=dev npm run start auth non-free`
-        }
-
-        public async Task<List<BookingPartnerTable>> GetBookingPartners()
-        {
-            using (var db = await Mem.Database.OpenAsync())
-            {
-                return (await db.SelectAsync<BookingPartnerTable>()).AsList();
-            }
-        }
-
-        public async Task<List<BookingPartnerTable>> GetBookingPartners(long sellerUserId)
-        {
-            using (var db = await Mem.Database.OpenAsync())
-            {
-                var query = db.From<BookingPartnerTable>()
-                              .Join<BookingPartnerTable, GrantTable>((bpt, gt) => bpt.ClientId == gt.ClientId)
-                              .Join<GrantTable, SellerUserTable>((gt, st) => gt.SubjectId == st.Id.ToString())
-                              .Where<SellerUserTable>(st => st.Id == sellerUserId);
-                return (await db.SelectAsync(query)).AsList();
-            }
-        }
-
-        public async Task<BookingPartnerTable> GetBookingPartnerByInitialAccessToken(string registrationKey)
-        {
-            using (var db = await Mem.Database.OpenAsync())
-            {
-                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.InitialAccessToken == registrationKey);
-                return bookingPartner?.InitialAccessTokenKeyValidUntil > DateTime.Now ? bookingPartner : null;
-            }
-        }
-
-        public async Task<BookingPartnerTable> GetBookingPartner(string clientId)
-        {
-            using (var db = await Mem.Database.OpenAsync())
-            {
-                return await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
-            }
-        }
-
-        public async Task SaveBookingPartner(BookingPartnerTable bookingPartnerTable)
-        {
-            using (var db = await Mem.Database.OpenAsync())
-            {
-                await db.SaveAsync(bookingPartnerTable);
-            }
-        }
-
-        public async Task ResetBookingPartnerKey(string clientId, string key)
-        {
-            using (var db = await Mem.Database.OpenAsync())
-            {
-                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
-                bookingPartner.Registered = false;
-                bookingPartner.InitialAccessToken = key;
-                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
-                bookingPartner.ClientSecret = null;
-                await db.SaveAsync(bookingPartner);
-            }
-        }
-
-        public async Task SetBookingPartnerKey(string clientId, string key)
-        {
-            using (var db = await Mem.Database.OpenAsync())
-            {
-                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
-                bookingPartner.InitialAccessToken = key;
-                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
-                await db.SaveAsync(bookingPartner);
-            }
-        }
-
-        public async Task UpdateBookingPartnerScope(string clientId, string scope, bool bookingsSuspended)
-        {
-            using (var db = await Mem.Database.OpenAsync())
-            {
-                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
-                bookingPartner.Scope = scope;
-                bookingPartner.BookingsSuspended = true;
-                await db.SaveAsync(bookingPartner);
-            }
-        }
-
-        public async Task AddBookingPartner(BookingPartnerTable newBookingPartner)
-        {
-            using (var db = await Mem.Database.OpenAsync())
-            {
-                await db.SaveAsync(newBookingPartner);
             }
         }
 

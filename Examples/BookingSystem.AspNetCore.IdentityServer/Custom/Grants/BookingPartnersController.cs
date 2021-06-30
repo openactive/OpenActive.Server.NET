@@ -10,7 +10,6 @@ using IdentityServer4.Events;
 using IdentityServer4.Extensions;
 using OpenActive.FakeDatabase.NET;
 using System;
-using System.Linq;
 using IdentityServer;
 
 namespace src
@@ -37,20 +36,20 @@ namespace src
         [HttpGet("seller-admin")]
         public async Task<IActionResult> SellerAdmin()
         {
-            var sellerUserId = User.GetSubjectId();
-            return View("SellerAdmin", await BuildViewModel(long.Parse(sellerUserId)));
+            var sellerUserId = long.Parse(User.GetSubjectId());
+            return View("SellerAdmin", await BookingPartnerViewModel.Build(sellerUserId));
         }
 
         [HttpGet("sys-admin")]
         public async Task<IActionResult> SysAdmin()
         {
-            return View("SysAdmin", await BuildViewModel());
+            return View("SysAdmin", await BookingPartnerViewModel.Build());
         }
 
         [HttpGet("edit/{id}")]
         public async Task<IActionResult> Edit(string id)
         {
-            var content = await BuildBookingPartnerViewModel(id);
+            var content = await BuildBookingPartnerModel(id);
             if (content == null)
                 return NotFound();
 
@@ -83,7 +82,7 @@ namespace src
                 BookingsSuspended = false
             };
 
-            await FakeBookingSystem.Database.AddBookingPartner(newBookingPartner);
+            await BookingPartnerTable.Add(newBookingPartner);
             return Redirect($"/booking-partners/edit/{newBookingPartner.ClientId}");
         }
 
@@ -139,7 +138,7 @@ namespace src
             client.AllowedScopes.Remove("openactive-openbooking");
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
-            await FakeBookingSystem.Database.UpdateBookingPartnerScope(clientId, "openid profile openactive-ordersfeed", true);
+            await BookingPartnerTable.UpdateScope(clientId, "openid profile openactive-ordersfeed", true);
             return Redirect("/booking-partners/seller-admin");
         }
 
@@ -150,8 +149,8 @@ namespace src
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegenerateKey([FromForm] string clientId)
         {
-            var bookingPartner = await FakeBookingSystem.Database.GetBookingPartner(clientId);
-            await FakeBookingSystem.Database.SetBookingPartnerKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
+            var bookingPartner = await BookingPartnerTable.GetByClientId(clientId);
+            await BookingPartnerTable.SetKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
 
             return Redirect($"/booking-partners/edit/{clientId}");
         }
@@ -163,8 +162,8 @@ namespace src
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegenerateAllKeys([FromForm] string clientId)
         {
-            var bookingPartner = await FakeBookingSystem.Database.GetBookingPartner(clientId);
-            await FakeBookingSystem.Database.ResetBookingPartnerKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
+            var bookingPartner = await BookingPartnerTable.GetByClientId(clientId);
+            await BookingPartnerTable.ResetKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
 
             // TODO: Is this cached in memory, does it need updating??
             //var client = await _clients.FindClientByIdAsync(clientId);
@@ -173,10 +172,10 @@ namespace src
             return Redirect($"/booking-partners/edit/{clientId}");
         }
 
-        private static async Task<BookingPartnerModel> BuildBookingPartnerViewModel(string clientId)
+        private static async Task<BookingPartnerModel> BuildBookingPartnerModel(string clientId)
         {
             // var client = await _clients.FindClientByIdAsync(clientId);
-            var bookingPartner = await FakeBookingSystem.Database.GetBookingPartner(clientId);
+            var bookingPartner = await BookingPartnerTable.GetByClientId(clientId);
             if (bookingPartner == null)
                 return null;
 
@@ -188,23 +187,6 @@ namespace src
                 ClientUrl = bookingPartner.ClientUri,
                 BookingPartner = bookingPartner
             };
-        }
-
-        private static async Task<BookingPartnerViewModel> BuildViewModel(long? sellerUserId = null)
-        {
-            var bookingPartners = sellerUserId.HasValue
-                ? await FakeBookingSystem.Database.GetBookingPartners(sellerUserId.Value)
-                : await FakeBookingSystem.Database.GetBookingPartners();
-            var list = bookingPartners.Select(bookingPartner => new BookingPartnerModel
-            {
-                ClientId = bookingPartner.ClientId,
-                ClientName = bookingPartner.Name,
-                ClientLogoUrl = bookingPartner.LogoUri,
-                ClientUrl = bookingPartner.ClientUri,
-                BookingPartner = bookingPartner
-            }).ToList();
-
-            return new BookingPartnerViewModel { BookingPartners = list };
         }
     }
 }

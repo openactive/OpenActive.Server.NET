@@ -4,12 +4,37 @@
 using OpenActive.FakeDatabase.NET;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace src
 {
     public class BookingPartnerViewModel
     {
         public IEnumerable<BookingPartnerModel> BookingPartners { get; set; }
+
+        public static async Task<BookingPartnerViewModel> Build(long? sellerUserId = null)
+        {
+            var bookingPartners = sellerUserId.HasValue
+                ? await BookingPartnerTable.GetBySellerUserId(sellerUserId.Value)
+                : await BookingPartnerTable.Get();
+            var list = (await Task.WhenAll(bookingPartners.Select(async bookingPartner =>
+            {
+                var bookingStatistics = await BookingStatistics.Get(bookingPartner.ClientId);
+                return new BookingPartnerModel
+                {
+                    ClientId = bookingPartner.ClientId,
+                    ClientName = bookingPartner.Name,
+                    ClientLogoUrl = bookingPartner.LogoUri,
+                    ClientUrl = bookingPartner.ClientUri,
+                    BookingPartner = bookingPartner,
+                    SellersEnabled = bookingStatistics.SellersEnabled,
+                    BookingsByBroker = bookingStatistics.BookingsByBroker
+                };
+            }))).ToList();
+
+            return new BookingPartnerViewModel { BookingPartners = list };
+        }
     }
 
     public class BookingPartnerModel
@@ -23,5 +48,7 @@ namespace src
         public IEnumerable<string> IdentityGrantNames { get; set; }
         public IEnumerable<string> ApiGrantNames { get; set; }
         public BookingPartnerTable BookingPartner { get; set; }
+        public IDictionary<string, int> BookingsByBroker { get; set; }
+        public int SellersEnabled { get; set; }
     }
 }
