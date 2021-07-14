@@ -113,16 +113,12 @@ namespace OpenActive.FakeDatabase.NET
     {
         public RemoteSqlServer()
         {
-
-            //var connectionString = "Server=tcp:referenceimplementationdbserver.database.windows.net,1433;Initial Catalog=ReferenceImplementation;Persist Security Info=False;User ID=master;Password=WMIh67Qb;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
             var connectionString = Environment.GetEnvironmentVariable("REMOTE_STORAGE_CONNECTION_STRING");
             if (connectionString == null)
             {
                 throw new Exception("Environment variable 'REMOTE_STORAGE_CONNECTION_STRING' is not set when 'USE_REMOTE_STORAGE' is true");
             }
             Database = new OrmLiteConnectionFactory(connectionString, SqlServerDialect.Provider);
-
-
 
             // Create empty tables
             var dropTablesOnRestart = bool.TryParse(Environment.GetEnvironmentVariable("DROP_TABLES_ON_RESTART"), out var dropTablesEnvVar) ? dropTablesEnvVar : false;
@@ -205,7 +201,6 @@ namespace OpenActive.FakeDatabase.NET
         public FakeDatabase()
         {
             var useRemoteStorage = bool.TryParse(Environment.GetEnvironmentVariable("USE_REMOTE_STORAGE"), out var remoteStorageEnvVar) ? remoteStorageEnvVar : false;
-            //DatabaseWrapper = useRemoteStorage ? new RemoteSqlServer() : new InMemorySQLite();
             if (useRemoteStorage)
             {
                 DatabaseWrapper = new RemoteSqlServer();
@@ -219,12 +214,13 @@ namespace OpenActive.FakeDatabase.NET
         private static readonly int OpportunityCount =
             int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCount) ? opportunityCount : 20;
 
-        public async Task SoftDeletedPastOccurrencesAndSlots()
+        public async Task SoftDeletedPastOpportunitiesAndInsertNewAtEdgeOfWindow()
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
+                // Get Occurrences to be soft deleted
                 var toBeSoftDeletedOccurrences = await db.SelectAsync<OccurrenceTable>(x => x.Deleted != true && x.Start < DateTime.Now);
-
+                // Create new copy of occurrences where date is at edge of window (ie 15 days in the future), reset the uses, and insert
                 var occurrencesAtEdgeOfWindow = toBeSoftDeletedOccurrences.Select(x =>
                 {
                     x.Start = x.Start.AddDays(15);
@@ -232,9 +228,29 @@ namespace OpenActive.FakeDatabase.NET
                     x.LeasedSpaces = 0;
                     return x;
                 }
-                );
-                await db.UpdateOnlyAsync(new OccurrenceTable { Deleted = true }, x => x.Deleted != true && x.Start < DateTime.Now);
-                await db.UpdateOnlyAsync(new SlotTable { Deleted = true }, x => x.Deleted != true && x.Start < DateTime.Now);
+                ).ToList();
+                await db.InsertAsync(occurrencesAtEdgeOfWindow);
+
+                // Mark old occurrences as soft deleted and update
+                var softDeletedOccurrences = toBeSoftDeletedOccurrences.Select(x => { x.Deleted = true; return x; });
+                await db.UpdateAsync(softDeletedOccurrences);
+
+                // Get Slots to be soft deleted
+                var toBeSoftDeletedSlots = await db.SelectAsync<SlotTable>(x => x.Deleted != true && x.Start < DateTime.Now);
+                // Create new copy of slots where date is at edge of window (ie 15 days in the future), reset the uses, and insert
+                var slotsAtEdgeOfWindow = toBeSoftDeletedSlots.Select(x =>
+                {
+                    x.Start = x.Start.AddDays(15);
+                    x.RemainingUses = x.MaximumUses;
+                    x.LeasedUses = 0;
+                    return x;
+                }
+                ).ToList();
+                await db.InsertAsync(slotsAtEdgeOfWindow);
+
+                // Mark old slots as soft deleted and update
+                var softDeletedSlots = toBeSoftDeletedSlots.Select(x => { x.Deleted = true; return x; });
+                await db.UpdateAsync(softDeletedOccurrences);
             }
         }
 
@@ -244,21 +260,6 @@ namespace OpenActive.FakeDatabase.NET
             {
                 await db.DeleteAsync<OccurrenceTable>(x => x.Deleted == true && x.Start < DateTime.Now.AddDays(-1));
                 await db.DeleteAsync<SlotTable>(x => x.Deleted == true && x.Start < DateTime.Now.AddDays(-1));
-            }
-        }
-
-        public async Task CreateOccurrencesAndSlotsAtEndOfWindow()
-        {
-            var numberOfOpportunitiesToGenerate = OpportunityCount / 15; // 15 days 
-            using (var db = await DatabaseWrapper.Database.OpenAsync())
-            {
-                var classes = db.Select<ClassTable>();
-                var upperBoundOfOccurrencesPerClass = Math.Ceiling((decimal)numberOfOpportunitiesToGenerate / classes.Count);
-                List<OccurrenceTable> occurrences = new List<OccurrenceTable>();
-                for (var i = 0; i < upperBoundOfOccurrencesPerClass; i++)
-                {
-
-                }
             }
         }
 

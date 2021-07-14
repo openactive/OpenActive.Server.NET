@@ -12,7 +12,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ApplicationHostBaseUrl": "https://localhost:5001",
-        "REMOTE_STORAGE_CONNECTION_STRING": "Server=tcp:referenceimplementationdbserver.database.windows.net,1433;Initial Catalog=ReferenceImplementation;Persist Security Info=False;User ID=master;Password=WMIh67Qb;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;",
+        "REMOTE_STORAGE_CONNECTION_STRING": "",
         "USE_REMOTE_STORAGE": "true",
         "DROP_TABLES_ON_RESTART": "true"
       }
