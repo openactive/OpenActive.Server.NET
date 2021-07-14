@@ -19,7 +19,7 @@ namespace OpenActive.FakeDatabase.NET.Test
         [Fact]
         public void FakeDatabase_Exists()
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var q = db.From<ClassTable>()
                             .Join<OccurrenceTable>();
@@ -53,7 +53,7 @@ namespace OpenActive.FakeDatabase.NET.Test
         {
             var testSeller = new SellerTable() { Name = "Test" };
 
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
                 {
@@ -77,7 +77,7 @@ namespace OpenActive.FakeDatabase.NET.Test
         [Fact]
         public void ReadWrite_DateTime()
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var now = DateTime.Now; // Note date must be stored as local time, not UTC
                 var testOccurrence = new OccurrenceTable() { Start = now, ClassId = 1 };
@@ -93,7 +93,7 @@ namespace OpenActive.FakeDatabase.NET.Test
         [Fact]
         public void ReadWrite_Enum()
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var status = BookingStatus.CustomerCancelled;
                 var testOrderItem = new OrderItemsTable() { Status = status };
@@ -109,7 +109,7 @@ namespace OpenActive.FakeDatabase.NET.Test
         [Fact]
         public void ReadWrite_OrderWithPrice()
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var uuid = new Guid("8265ab72-d458-40aa-a460-a9619e13192c");
                 decimal price = 1.3M;

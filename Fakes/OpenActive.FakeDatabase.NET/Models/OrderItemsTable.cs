@@ -14,11 +14,11 @@ namespace OpenActive.FakeDatabase.NET
         public string OrderId { get; set; }
         [Reference]
         public OccurrenceTable OccurrenceTable { get; set; }
-        [ForeignKey(typeof(OccurrenceTable), OnDelete = "CASCADE")]
+        [ForeignKey(typeof(OccurrenceTable), OnDelete = "NO ACTION")] // SQL Server seems to have a problem with chained cascading
         public long? OccurrenceId { get; set; }
         [Reference]
         public SlotTable SlotTable { get; set; }
-        [ForeignKey(typeof(SlotTable), OnDelete = "CASCADE")]
+        [ForeignKey(typeof(SlotTable), OnDelete = "NO ACTION")] // SQL Server seems to have a problem with chained cascading
         public long? SlotId { get; set; }
         public BookingStatus Status { get; set; }
         public string CancellationMessage { get; set; }

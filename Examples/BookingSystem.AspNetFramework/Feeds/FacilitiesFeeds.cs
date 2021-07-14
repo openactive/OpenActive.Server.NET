@@ -24,7 +24,7 @@ namespace BookingSystem
 
         protected override async Task<List<RpdeItem<FacilityUse>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var q = db.From<FacilityUseTable>()
                 .Join<SellerTable>()
@@ -126,7 +126,7 @@ namespace BookingSystem
 
         protected override async Task<List<RpdeItem<Slot>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var query = db.Select<SlotTable>()
                 .OrderBy(x => x.Modified)

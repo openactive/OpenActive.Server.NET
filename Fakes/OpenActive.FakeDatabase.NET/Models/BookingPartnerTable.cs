@@ -73,7 +73,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task<List<BookingPartnerTable>> Get()
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {
                 return await db.SelectAsync<BookingPartnerTable>();
             }
@@ -81,7 +81,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task<List<BookingPartnerTable>> GetBySellerUserId(long sellerUserId)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {
                 var query = db.From<BookingPartnerTable>()
                               .Join<BookingPartnerTable, GrantTable>((b, g) => b.ClientId == g.ClientId && g.Type == "user_consent")
@@ -93,7 +93,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task<BookingPartnerTable> GetByInitialAccessToken(string registrationKey)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {
                 var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.InitialAccessToken == registrationKey);
                 return bookingPartner?.InitialAccessTokenKeyValidUntil > DateTime.Now ? bookingPartner : null;
@@ -102,7 +102,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task<BookingPartnerTable> GetByClientId(string clientId)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {
                 return await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
             }
@@ -110,7 +110,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task Save(BookingPartnerTable bookingPartnerTable)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {
                 await db.SaveAsync(bookingPartnerTable);
             }
@@ -118,7 +118,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task ResetKey(string clientId, string key)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {
                 var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
                 bookingPartner.Registered = false;
@@ -131,7 +131,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task SetKey(string clientId, string key)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {
                 var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
                 bookingPartner.InitialAccessToken = key;
@@ -142,7 +142,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task UpdateScope(string clientId, string scope, bool bookingsSuspended)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {
                 var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
                 bookingPartner.Scope = scope;
@@ -153,7 +153,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task Add(BookingPartnerTable newBookingPartner)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {
                 await db.SaveAsync(newBookingPartner);
             }

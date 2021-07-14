@@ -32,30 +32,56 @@ namespace OpenActive.FakeDatabase.NET
 
     public static class DatabaseCreator
     {
-        public static void CreateTables(OrmLiteConnectionFactory dbFactory)
+        public static void CreateTables(OrmLiteConnectionFactory dbFactory, bool dropTablesOnRestart)
         {
             using (var db = dbFactory.Open())
             {
-                db.DropTable<SellerUserTable>();
-                db.DropTable<OrderItemsTable>();
-                db.DropTable<OccurrenceTable>();
-                db.DropTable<OrderTable>();
-                db.DropTable<ClassTable>();
-                db.DropTable<SellerTable>();
-                db.DropTable<FacilityUseTable>();
-                db.DropTable<SlotTable>();
-                db.DropTable<GrantTable>();
-                db.DropTable<BookingPartnerTable>();
-                db.CreateTable<GrantTable>();
-                db.CreateTable<BookingPartnerTable>();
-                db.CreateTable<SellerTable>();
-                db.CreateTable<ClassTable>();
-                db.CreateTable<OrderTable>();
-                db.CreateTable<OccurrenceTable>();
-                db.CreateTable<OrderItemsTable>();
-                db.CreateTable<FacilityUseTable>();
-                db.CreateTable<SlotTable>();
-                db.CreateTable<SellerUserTable>();
+                if (dropTablesOnRestart)
+                {
+                    db.DropTable<SellerUserTable>();
+                    db.DropTable<OrderItemsTable>();
+                    db.DropTable<OccurrenceTable>();
+                    db.DropTable<OrderTable>();
+                    db.DropTable<ClassTable>();
+                    db.DropTable<SlotTable>();
+                    db.DropTable<FacilityUseTable>();
+                    db.DropTable<GrantTable>();
+                    db.DropTable<BookingPartnerTable>();
+                    db.DropTable<SellerTable>();
+                    db.CreateTable<GrantTable>();
+                    db.CreateTable<BookingPartnerTable>();
+                    db.CreateTable<SellerTable>();
+                    db.CreateTable<ClassTable>();
+                    db.CreateTable<OrderTable>();
+                    db.CreateTable<OccurrenceTable>();
+                    db.CreateTable<FacilityUseTable>();
+                    db.CreateTable<SlotTable>();
+                    db.CreateTable<OrderItemsTable>();
+                    db.CreateTable<SellerUserTable>();
+                }
+                else
+                {
+                    if (!db.TableExists<GrantTable>())
+                        db.CreateTable<GrantTable>();
+                    if (!db.TableExists<BookingPartnerTable>())
+                        db.CreateTable<BookingPartnerTable>();
+                    if (!db.TableExists<SellerTable>())
+                        db.CreateTable<SellerTable>();
+                    if (!db.TableExists<ClassTable>())
+                        db.CreateTable<ClassTable>();
+                    if (!db.TableExists<OrderTable>())
+                        db.CreateTable<OrderTable>();
+                    if (!db.TableExists<OccurrenceTable>())
+                        db.CreateTable<OccurrenceTable>();
+                    if (!db.TableExists<FacilityUseTable>())
+                        db.CreateTable<FacilityUseTable>();
+                    if (!db.TableExists<SlotTable>())
+                        db.CreateTable<SlotTable>();
+                    if (!db.TableExists<OrderItemsTable>())
+                        db.CreateTable<OrderItemsTable>();
+                    if (!db.TableExists<SellerUserTable>())
+                        db.CreateTable<SellerUserTable>();
+                }
             }
         }
     }
