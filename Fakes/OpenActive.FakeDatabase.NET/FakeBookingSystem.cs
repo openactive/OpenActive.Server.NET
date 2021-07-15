@@ -1468,20 +1468,22 @@ namespace OpenActive.FakeDatabase.NET
         public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase()
         {
             var fakeDatabase = new FakeDatabase();
-            using (var db = await fakeDatabase.DatabaseWrapper.Database.OpenAsync())
-            using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
+            var dropTablesOnRestart = bool.TryParse(Environment.GetEnvironmentVariable("DROP_TABLES_ON_RESTART"), out var dropTablesEnvVar) ? dropTablesEnvVar : false;
+            if (dropTablesOnRestart)
             {
-
-                await CreateSellers(db);
-                await CreateSellerUsers(db);
-                await CreateFakeClasses(db);
-                await CreateFakeFacilitiesAndSlots(db);
-                await CreateOrders(db); // Add these in to generate your own orders and grants, otherwise generate them using the test suite
-                await CreateGrants(db);
-                await BookingPartnerTable.Create(db);
-                transaction.Commit();
+                using (var db = await fakeDatabase.DatabaseWrapper.Database.OpenAsync())
+                using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
+                {
+                    await CreateSellers(db);
+                    await CreateSellerUsers(db);
+                    await CreateFakeClasses(db);
+                    await CreateFakeFacilitiesAndSlots(db);
+                    await CreateOrders(db); // Add these in to generate your own orders and grants, otherwise generate them using the test suite
+                    await CreateGrants(db);
+                    await BookingPartnerTable.Create(db);
+                    transaction.Commit();
+                }
             }
-
             return fakeDatabase;
         }
 
