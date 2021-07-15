@@ -212,7 +212,7 @@ namespace OpenActive.FakeDatabase.NET
         }
 
         private static readonly int OpportunityCount =
-            int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCount) ? opportunityCount : 20;
+            int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCount) ? opportunityCount : 2000;
 
         public async Task SoftDeletedPastOpportunitiesAndInsertNewAtEdgeOfWindow()
         {
