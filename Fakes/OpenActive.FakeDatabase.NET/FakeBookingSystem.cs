@@ -221,19 +221,23 @@ namespace OpenActive.FakeDatabase.NET
                 // Get Occurrences to be soft deleted
                 var toBeSoftDeletedOccurrences = await db.SelectAsync<OccurrenceTable>(x => x.Deleted != true && x.Start < DateTime.Now);
                 // Create new copy of occurrences where date is at edge of window (ie 15 days in the future), reset the uses, and insert
-                var occurrencesAtEdgeOfWindow = toBeSoftDeletedOccurrences.Select(x =>
+                var occurrencesAtEdgeOfWindow = toBeSoftDeletedOccurrences.Select(x => new OccurrenceTable
                 {
-                    x.Start = x.Start.AddDays(15);
-                    x.RemainingSpaces = x.TotalSpaces;
-                    x.LeasedSpaces = 0;
-                    return x;
+                    TestDatasetIdentifier = x.TestDatasetIdentifier,
+                    ClassTable = x.ClassTable,
+                    ClassId = x.ClassId,
+                    Start = x.Start.AddDays(15),
+                    End = x.End.AddDays(15),
+                    RemainingSpaces = x.TotalSpaces,
+                    LeasedSpaces = 0,
+                    TotalSpaces = x.TotalSpaces,
                 }
                 ).ToList();
-                await db.InsertAsync(occurrencesAtEdgeOfWindow);
+                await db.InsertAllAsync(occurrencesAtEdgeOfWindow);
 
                 // Mark old occurrences as soft deleted and update
                 var softDeletedOccurrences = toBeSoftDeletedOccurrences.Select(x => { x.Deleted = true; return x; });
-                await db.UpdateAsync(softDeletedOccurrences);
+                await db.UpdateAllAsync(softDeletedOccurrences);
 
                 // Get Slots to be soft deleted
                 var toBeSoftDeletedSlots = await db.SelectAsync<SlotTable>(x => x.Deleted != true && x.Start < DateTime.Now);
@@ -246,11 +250,11 @@ namespace OpenActive.FakeDatabase.NET
                     return x;
                 }
                 ).ToList();
-                await db.InsertAsync(slotsAtEdgeOfWindow);
+                await db.InsertAllAsync(slotsAtEdgeOfWindow);
 
                 // Mark old slots as soft deleted and update
                 var softDeletedSlots = toBeSoftDeletedSlots.Select(x => { x.Deleted = true; return x; });
-                await db.UpdateAsync(softDeletedOccurrences);
+                await db.UpdateAllAsync(softDeletedOccurrences);
             }
         }
 

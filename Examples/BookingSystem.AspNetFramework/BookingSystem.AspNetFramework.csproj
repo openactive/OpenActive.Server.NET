@@ -375,9 +375,6 @@
     <Reference Include="ServiceStack.OrmLite">
       <HintPath>..\..\packages\ServiceStack.OrmLite.5.11.0\lib\net45\ServiceStack.OrmLite.dll</HintPath>
     </Reference>
-    <Reference Include="ServiceStack.OrmLite.SqlServer">
-      <HintPath>..\..\packages\ServiceStack.OrmLite.SqlServer.5.11.0\lib\net45\ServiceStack.OrmLite.SqlServer.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="EntityFramework">

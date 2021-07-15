@@ -8,13 +8,18 @@ namespace BookingSystem.AspNetCore
     {
         public static void Main(string[] args)
         {
-            // Initialising fake database (shared with IdentityServer)
+            var host = CreateWebHostBuilder(args)
+                .Build();
+
             FakeBookingSystem.Initialise();
-            CreateWebHostBuilder(args).Build().Run();
+
+            host.Run();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+            .CaptureStartupErrors(true)
+            .UseSetting("detailedErrors", "true")
+            .UseStartup<Startup>();
     }
 }
