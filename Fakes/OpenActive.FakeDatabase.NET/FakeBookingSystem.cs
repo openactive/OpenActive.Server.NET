@@ -276,8 +276,8 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
-                await db.DeleteAsync<OccurrenceTable>(x => x.Deleted == true && x.Start < DateTime.Now.AddDays(-1));
-                await db.DeleteAsync<SlotTable>(x => x.Deleted == true && x.Start < DateTime.Now.AddDays(-1));
+                await db.DeleteAsync<OccurrenceTable>(x => x.Deleted == true && x.Modified < new DateTimeOffset(DateTime.Today.AddDays(-1)).UtcTicks);
+                await db.DeleteAsync<SlotTable>(x => x.Deleted == true && x.Modified < new DateTimeOffset(DateTime.Today.AddDays(-1)).UtcTicks);
             }
         }
 
