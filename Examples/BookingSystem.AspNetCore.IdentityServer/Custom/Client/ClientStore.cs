@@ -28,7 +28,7 @@ namespace IdentityServer
                 AllowedGrantTypes = bookingPartner.GrantTypes == null ? new List<string>() : bookingPartner.GrantTypes.ToList(),
                 ClientSecrets = bookingPartner.ClientSecret == null ? new List<Secret>() : new List<Secret> { new Secret(bookingPartner.ClientSecret) },
                 AllowedScopes = bookingPartner.Scope == null ? new List<string>() : bookingPartner.Scope.Split(' ').ToList(),
-                Claims = bookingPartner.ClientId == null ? new List<System.Security.Claims.Claim>() : new List<System.Security.Claims.Claim>() { new System.Security.Claims.Claim("https://openactive.io/clientId", bookingPartner.ClientId) },
+                Claims = bookingPartner.ClientId == null ? new List<ClientClaim>() : new List<ClientClaim>() { new ClientClaim("https://openactive.io/clientId", bookingPartner.ClientId) },
                 ClientClaimsPrefix = "",
                 AlwaysSendClientClaims = true,
                 AlwaysIncludeUserClaimsInIdToken = true,

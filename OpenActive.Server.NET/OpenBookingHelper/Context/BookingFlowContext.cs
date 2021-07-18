@@ -11,5 +11,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public ILegalEntity Payer { get; internal set; }
         public ILegalEntity Seller { get; internal set; }
         public SellerIdComponents SellerId { get; internal set; }
+        public BrokerType BrokerRole { get; internal set; }
     }
 }

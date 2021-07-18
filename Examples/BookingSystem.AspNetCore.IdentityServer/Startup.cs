@@ -32,7 +32,8 @@ namespace IdentityServer
                     options.Discovery.CustomEntries.Add("registration_endpoint", "~/connect/register");
                 })
                 .AddInMemoryIdentityResources(Config.Ids)
-                .AddInMemoryApiResources(Config.Apis)
+                .AddInMemoryApiScopes(Config.ApiScopes)
+                .AddInMemoryApiResources(Config.ApiResources)
                 .AddClientStore<ClientStore>()
                 .AddFakeUserStore(AppSettings.JsonLdIdBaseUrl)
                 .AddPersistedGrantStore<AcmePersistedGrantStore>()

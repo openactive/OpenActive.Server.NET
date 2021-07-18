@@ -628,9 +628,6 @@ namespace OpenActive.Server.NET.StoreBooking
             // Reflect back only those broker fields that are supported
             context.Payment = order.Payment == null ? null : storeBookingEngineSettings.PaymentSupportedFields(order.Payment);
 
-            // Add broker role to context for completeness
-            context.BrokerRole = order.BrokerRole;
-
             // Get static BookingService fields from settings
             context.BookingService = storeBookingEngineSettings.BookingServiceDetails;
 

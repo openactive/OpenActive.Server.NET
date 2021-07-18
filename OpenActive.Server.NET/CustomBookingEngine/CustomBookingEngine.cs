@@ -821,7 +821,8 @@ namespace OpenActive.Server.NET.CustomBooking
                 Seller = seller,
                 SellerId = sellerIdComponents,
                 TaxPayeeRelationship = taxPayeeRelationship,
-                Payer = payer
+                Payer = payer,
+                BrokerRole = order.BrokerRole.Value
             };
         }
 

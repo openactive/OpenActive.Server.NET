@@ -13,31 +13,29 @@ namespace IdentityServer
         public static IEnumerable<IdentityResource> Ids =>
             CustomIdentityResource.GetIdentityResources();
 
-        public static IEnumerable<ApiResource> Apis =>
+        public static IEnumerable<ApiScope> ApiScopes =>
+            new List<ApiScope>
+            {
+                new ApiScope(name: "openactive-openbooking", displayName: "Access to the Open Booking API", userClaims: new List<string> { JwtClaimTypes.Name, "https://openactive.io/sellerId", "https://openactive.io/clientId" })
+                {
+                    Required = true,
+                },
+                new ApiScope(name: "openactive-ordersfeed", displayName: "Access to Orders RPDE Feeds", userClaims: new List<string> { JwtClaimTypes.Name, "https://openactive.io/clientId" })
+                {
+                    Required = true,
+                }
+            };
+
+        public static IEnumerable<ApiResource> ApiResources =>
            new List<ApiResource>
            {
-                new ApiResource
+                new ApiResource("openbooking", "Open Booking API")
                 {
-                    Name = "openbooking",
                     ApiSecrets =
                     {
                         new Secret("secret".Sha256())
                     },
-                    Scopes =
-                    {
-                        new Scope()
-                        {
-                            Name = "openactive-openbooking",
-                            DisplayName = "Access to C1, C2, B Endpoints",
-                            UserClaims = { JwtClaimTypes.Name, "https://openactive.io/sellerId", "https://openactive.io/clientId" }
-                        },
-                        new Scope
-                        {
-                            Name = "openactive-ordersfeed",
-                            DisplayName = "Access to Orders RPDE Feeds",
-                            UserClaims = { JwtClaimTypes.Name, "https://openactive.io/clientId" }
-                        }
-                    }
+                    Scopes = { "openactive-openbooking", "openactive-ordersfeed" }
                 }
            };
     }
