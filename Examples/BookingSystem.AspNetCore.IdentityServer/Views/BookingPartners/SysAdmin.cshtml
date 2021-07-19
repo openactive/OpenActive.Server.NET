@@ -23,7 +23,7 @@
                         <td>Sellers enabled</td>
                         <td>Bookings by broker / last 30 days</td>
                         <td>
-                            <a href="/booking-partners/create" class="btn btn-md btn-default"><b class="glyphicon glyphicon-plus"></b>&nbsp;Add a Booking Partner</a>
+                            <a href="/booking-partners/create" class="btn btn-sm btn-secondary"><b class="glyphicon glyphicon-plus"></b>&nbsp;Add a Booking Partner</a>
                         </td>
                     </tr>
                 </thead>
@@ -40,17 +40,19 @@
                                 }
                             </td>
                             <td>
-                                <form action="/booking-partners/manage-keys" method="post">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                                    <a href="/booking-partners/edit/@bookingPartner.ClientId" class="btn btn-md btn-default">API Key</a>
-                                </form>
+                                <div class="btn-group">
+                                    <form class="form-inline" action="/booking-partners/manage-keys" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                        <a href="/booking-partners/edit/@bookingPartner.ClientId" class="btn btn-sm btn-secondary mr-1 ml-1">API Key</a>
+                                    </form>
 
-                                <form action="/booking-partners/delete" method="post">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                                    <button class="btn btn-md btn-default">Delete</button>
-                                </form>
+                                    <form class="form-inline" action="/booking-partners/delete" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                        <button class="btn btn-sm btn-secondary mr-1 ml-1">Delete</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     }

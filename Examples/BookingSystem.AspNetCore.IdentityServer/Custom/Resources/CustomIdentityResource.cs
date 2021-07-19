@@ -16,13 +16,15 @@ namespace IdentityServer
                     "https://openactive.io/bookingServiceName",
                     "https://openactive.io/bookingServiceUrl",};
             openactiveIdentity.Required = true;
-            openactiveIdentity.DisplayName = "Access to Openactive Identity claims about you, the Seller.";
+            openactiveIdentity.DisplayName = "The name, URL, and logo of your organisation and booking system";
             openactiveIdentity.Name = "openactive-identity";
 
             return new List<IdentityResource>
             {
-                new IdentityResources.OpenId(),
-                new IdentityResources.Profile(),
+                new IdentityResources.OpenId() {
+                     DisplayName = "The unique identifier of your user account"
+                },
+                // new IdentityResources.Profile(),
                 openactiveIdentity
             };
         }

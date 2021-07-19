@@ -221,7 +221,7 @@ namespace BookingSystem
 
             // TODO: Make the lease duration configurable
             var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
-            var brokerRole = BrokerTypeToBrokerRole(flowContext.BrokerRole ?? BrokerType.NoBroker);
+            var brokerRole = BrokerTypeToBrokerRole(flowContext.BrokerRole);
 
             var result = await FakeDatabase.AddLease(
                 flowContext.OrderId.ClientId,

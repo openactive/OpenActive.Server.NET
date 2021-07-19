@@ -8,34 +8,24 @@
             </h1>
         </div>
     </div>
-    <form action="/booking-partners/create" method="post" class="form-horizontal">
+    <form action="/booking-partners/create" method="post">
         @Html.AntiForgeryToken()
-        <div class="row">
-            <div class="form-group">
-                <div class="col-sm-2">
-                    <label for="emailAddress" class="control-label">Email address</label>
-                </div>
-                <div class="col-sm-6">
-                    <input type="email" class="form-control" id="emailAddress" name="email">
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-2">
-                    <label for="bookingPartnerName" class="control-label">Booking Partner Name</label>
-                </div>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" id="bookingPartnerName" name="bookingPartnerName">
-                </div>
-            </div>
+        <div class="form-group">
+            <label for="emailAddress" class="control-label">Email address</label>
+            <input type="email" class="form-control" id="emailAddress" name="email">
         </div>
-        <hr/>
+        <div class="form-group">
+            <label for="bookingPartnerName" class="control-label">Booking Partner Name</label>
+            <input type="text" class="form-control" id="bookingPartnerName" name="bookingPartnerName">
+        </div>
+        <hr />
 
         <div class="row">
             <div class="col-sm-8 text-center">
 
-                <button class="btn btn-md btn-default">Create</button>
+                <button class="btn btn-sm btn-secondary">Create</button>
 
-                <a class="btn btn-md btn-default" href="/booking-partners/seller-admin">Cancel</a>
+                <a class="btn btn-sm btn-secondary" href="/booking-partners/sys-admin">Cancel</a>
             </div>
         </div>
     </form>

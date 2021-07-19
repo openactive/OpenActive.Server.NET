@@ -8,7 +8,6 @@ namespace IdentityServer
         {
             builder.Services.AddSingleton<IUserRepository>(repo => new UserRepository(jsonLdIdBaseUrl));
             builder.AddProfileService<ProfileService>();
-            builder.AddResourceOwnerValidator<ResourceOwnerPasswordValidator>();
 
             return builder;
         }

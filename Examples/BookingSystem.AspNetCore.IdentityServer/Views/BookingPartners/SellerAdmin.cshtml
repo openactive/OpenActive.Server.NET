@@ -38,30 +38,32 @@
                                 }
                             </td>
                             <td>
-                                <a class="btn btn-md btn-default" href="@bookingPartner.ClientUrl" @(string.IsNullOrWhiteSpace(bookingPartner.ClientUrl) ? "disabled" : "")>Manage</a>
+                                <div class="btn-group">
+                                    <a class="btn btn-sm btn-secondary mr-1 ml-1" href="@bookingPartner.ClientUrl" @(string.IsNullOrWhiteSpace(bookingPartner.ClientUrl) ? "disabled" : "")>Manage</a>
 
-                                @if (bookingPartner.BookingPartner.Registered && !bookingPartner.BookingPartner.BookingsSuspended)
-                                {
-                                    <form action="/booking-partners/suspend" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                                        <button class="btn btn-md btn-default btn-suspend-bookings">Suspend Bookings</button>
-                                    </form>
-                                }
+                                    @if (bookingPartner.BookingPartner.Registered && !bookingPartner.BookingPartner.BookingsSuspended)
+                                    {
+                                        <form class="form-inline" action="/booking-partners/suspend" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                            <button class="btn btn-sm btn-secondary mr-1 ml-1">Suspend Bookings</button>
+                                        </form>
+                                    }
 
-                                @if (bookingPartner.BookingPartner.Registered && bookingPartner.BookingPartner.BookingsSuspended)
-                                {
-                                    <a class="btn btn-md btn-default" href="@bookingPartner.RestoreAccessUrl" @(string.IsNullOrWhiteSpace(bookingPartner.RestoreAccessUrl) ? "disabled" : "")>Restore</a>
-                                }
+                                    @if (bookingPartner.BookingPartner.Registered && bookingPartner.BookingPartner.BookingsSuspended)
+                                    {
+                                        <a class="btn btn-sm btn-secondary mr-1 ml-1" href="@bookingPartner.RestoreAccessUrl" @(string.IsNullOrWhiteSpace(bookingPartner.RestoreAccessUrl) ? "disabled" : "")>Restore</a>
+                                    }
 
-                                @if (!bookingPartner.BookingPartner.Registered || bookingPartner.BookingPartner.BookingsSuspended)
-                                {
-                                    <form action="/booking-partners/remove" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
-                                        <button class="btn btn-md btn-default">Remove</button>
-                                    </form>
-                                }
+                                    @if (!bookingPartner.BookingPartner.Registered || bookingPartner.BookingPartner.BookingsSuspended)
+                                    {
+                                        <form class="form-inline" action="/booking-partners/remove" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="clientId" value="@bookingPartner.ClientId">
+                                            <button class="btn btn-sm btn-secondary mr-1 ml-1">Remove</button>
+                                        </form>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }
