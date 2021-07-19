@@ -211,9 +211,6 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        private static readonly int OpportunityCount =
-            int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCount) ? opportunityCount : 2000;
-
         public async Task SoftDeletedPastOpportunitiesAndInsertNewAtEdgeOfWindow()
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
@@ -1359,11 +1356,13 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
-                return db.Count<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
-                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
-                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
-                                                 x.OccurrenceId == occurrenceId &&
+                var q = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
+                        .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
+                                                x.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                x.ProposalStatus != ProposalStatus.SellerRejected)
+                        .Where<OrderItemsTable>(x => x.OccurrenceId == occurrenceId &&
                                                  x.OrderId != uuid.ToString());
+                return db.Count(q);
             }
         }
 
@@ -1371,11 +1370,14 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
-                return db.Count<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
-                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
-                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
-                                                 x.SlotId == slotId &&
+                var q = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
+                    .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
+                                                x.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                x.ProposalStatus != ProposalStatus.SellerRejected)
+                        .Where<OrderItemsTable>(x => x.SlotId == slotId &&
                                                  x.OrderId != uuid.ToString());
+
+                return db.Count(q);
             }
         }
 
@@ -1416,11 +1418,19 @@ namespace OpenActive.FakeDatabase.NET
                 return;
 
             // Update number of leased spaces remaining for the opportunity
-            var leasedUses = (await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.SlotId == slot.Id)).Count;
+            var leasedUsesQuery = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
+                    .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
+                                                x.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                x.ProposalStatus != ProposalStatus.SellerRejected)
+                        .Where<OrderItemsTable>(x => x.SlotId == slot.Id);
+            var leasedUses = await db.CountAsync(leasedUsesQuery);
             slot.LeasedUses = leasedUses;
 
             // Update number of actual spaces remaining for the opportunity
-            var totalUsesTaken = (await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent))).Count;
+            var totalUsesTakenQuery = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
+                .Where<OrderTable>(x => x.OrderMode == OrderMode.Booking)
+                .Where<OrderItemsTable>(x => x.SlotId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent));
+            var totalUsesTaken = await db.CountAsync(totalUsesTakenQuery);
             slot.RemainingUses = slot.MaximumUses - totalUsesTaken;
 
             // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition)
@@ -1444,11 +1454,19 @@ namespace OpenActive.FakeDatabase.NET
                 return;
 
             // Update number of leased spaces remaining for the opportunity
-            var leasedSpaces = (await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking && x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected && x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected && x.OccurrenceId == occurrence.Id)).Count;
+            var leasedUsesQuery = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
+                                .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
+                                                            x.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                            x.ProposalStatus != ProposalStatus.SellerRejected)
+                                    .Where<OrderItemsTable>(x => x.OccurrenceId == occurrence.Id);
+            var leasedSpaces = await db.CountAsync(leasedUsesQuery);
             occurrence.LeasedSpaces = leasedSpaces;
 
             // Update number of actual spaces remaining for the opportunity
-            var totalSpacesTaken = (await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent))).Count();
+            var totalUsesTakenQuery = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
+                           .Where<OrderTable>(x => x.OrderMode == OrderMode.Booking)
+                           .Where<OrderItemsTable>(x => x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent));
+            var totalSpacesTaken = await db.CountAsync(totalUsesTakenQuery);
             occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
 
             // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
@@ -1468,16 +1486,19 @@ namespace OpenActive.FakeDatabase.NET
         public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase()
         {
             var fakeDatabase = new FakeDatabase();
+            var useRemoteStorage = bool.TryParse(Environment.GetEnvironmentVariable("USE_REMOTE_STORAGE"), out var remoteStorageEnvVar) ? remoteStorageEnvVar : false;
             var dropTablesOnRestart = bool.TryParse(Environment.GetEnvironmentVariable("DROP_TABLES_ON_RESTART"), out var dropTablesEnvVar) ? dropTablesEnvVar : false;
-            if (dropTablesOnRestart)
+            var opportunityCount =
+            int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCountEnvVar) ? opportunityCountEnvVar : 2000;
+            if (!useRemoteStorage || dropTablesOnRestart)
             {
                 using (var db = await fakeDatabase.DatabaseWrapper.Database.OpenAsync())
                 using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
                 {
                     await CreateSellers(db);
                     await CreateSellerUsers(db);
-                    await CreateFakeClasses(db);
-                    await CreateFakeFacilitiesAndSlots(db);
+                    await CreateFakeClasses(db, opportunityCount);
+                    await CreateFakeFacilitiesAndSlots(db, opportunityCount);
                     await CreateOrders(db); // Add these in to generate your own orders and grants, otherwise generate them using the test suite
                     await CreateGrants(db);
                     await BookingPartnerTable.Create(db);
@@ -1487,9 +1508,9 @@ namespace OpenActive.FakeDatabase.NET
             return fakeDatabase;
         }
 
-        private static async Task CreateFakeFacilitiesAndSlots(IDbConnection db)
+        private static async Task CreateFakeFacilitiesAndSlots(IDbConnection db, int opportunityCount)
         {
-            var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
+            var opportunitySeeds = GenerateOpportunitySeedDistribution(opportunityCount);
 
             var facilities = opportunitySeeds
                 .Select(seed => new FacilityUseTable
@@ -1542,9 +1563,9 @@ namespace OpenActive.FakeDatabase.NET
             await db.InsertAllAsync(slots);
         }
 
-        public static async Task CreateFakeClasses(IDbConnection db)
+        public static async Task CreateFakeClasses(IDbConnection db, int opportunityCount)
         {
-            var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
+            var opportunitySeeds = GenerateOpportunitySeedDistribution(opportunityCount);
 
             var classes = opportunitySeeds
                 .Select(seed => new

@@ -41,7 +41,7 @@ namespace OpenActive.FakeDatabase.NET
         public string PaymentAccountId { get; set; }
         public decimal TotalOrderPrice { get; set; }
         public OrderMode OrderMode { get; set; }
-        public DateTime LeaseExpires { get; set; }
+        public DateTime? LeaseExpires { get; set; }
         public FeedVisibility VisibleInOrdersFeed { get; set; }
         public FeedVisibility VisibleInOrderProposalsFeed { get; set; }
         public ProposalStatus? ProposalStatus { get; set; }
