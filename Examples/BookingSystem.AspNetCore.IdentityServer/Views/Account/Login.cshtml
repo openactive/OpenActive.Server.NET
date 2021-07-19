@@ -1,3 +1,4 @@
+@using OpenActive.FakeDatabase.NET
 @model LoginViewModel
 
 <div class="login-page">
@@ -15,7 +16,7 @@
             <div class="col-sm-6">
                 <div class="card">
                     <div class="card-header">
-                        <h2>Local Account</h2>
+                        <h2>Seller Account</h2>
                     </div>
 
                     <div class="card-body">
@@ -83,5 +84,22 @@
                 There are no login schemes configured for this request.
             </div>
         }
+    </div>
+    <div class="row mt-5">
+        <div class="col-sm-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Test credentials</h3>
+                </div>
+                <div class="panel-body">
+                    <p>Please use the test Seller credentials below to log in:</p>
+                    <div><b>Username</b> &#8594; <b>Password</b></div>
+                    @foreach (var seller in FakeDatabase.DefaultSellerUsers)
+                    {
+                        <div>@seller.Username &#8594; @seller.PasswordRaw</div>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 </div>
