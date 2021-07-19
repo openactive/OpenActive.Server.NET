@@ -61,26 +61,16 @@ namespace OpenActive.FakeDatabase.NET
                 }
                 else
                 {
-                    if (!db.TableExists<GrantTable>())
-                        db.CreateTable<GrantTable>();
-                    if (!db.TableExists<BookingPartnerTable>())
-                        db.CreateTable<BookingPartnerTable>();
-                    if (!db.TableExists<SellerTable>())
-                        db.CreateTable<SellerTable>();
-                    if (!db.TableExists<ClassTable>())
-                        db.CreateTable<ClassTable>();
-                    if (!db.TableExists<OrderTable>())
-                        db.CreateTable<OrderTable>();
-                    if (!db.TableExists<OccurrenceTable>())
-                        db.CreateTable<OccurrenceTable>();
-                    if (!db.TableExists<FacilityUseTable>())
-                        db.CreateTable<FacilityUseTable>();
-                    if (!db.TableExists<SlotTable>())
-                        db.CreateTable<SlotTable>();
-                    if (!db.TableExists<OrderItemsTable>())
-                        db.CreateTable<OrderItemsTable>();
-                    if (!db.TableExists<SellerUserTable>())
-                        db.CreateTable<SellerUserTable>();
+                    db.CreateTableIfNotExists<GrantTable>();
+                    db.CreateTableIfNotExists<BookingPartnerTable>();
+                    db.CreateTableIfNotExists<SellerTable>();
+                    db.CreateTableIfNotExists<ClassTable>();
+                    db.CreateTableIfNotExists<OrderTable>();
+                    db.CreateTableIfNotExists<OccurrenceTable>();
+                    db.CreateTableIfNotExists<FacilityUseTable>();
+                    db.CreateTableIfNotExists<SlotTable>();
+                    db.CreateTableIfNotExists<OrderItemsTable>();
+                    db.CreateTableIfNotExists<SellerUserTable>();
                 }
             }
         }
