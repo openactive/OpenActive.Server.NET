@@ -1,4 +1,5 @@
-﻿using IdentityServer4.Models;
+﻿using IdentityServer4.Extensions;
+using IdentityServer4.Models;
 using IdentityServer4.Stores;
 using OpenActive.FakeDatabase.NET;
 using System.Collections.Generic;
@@ -9,14 +10,17 @@ namespace IdentityServer
 {
     public class AcmePersistedGrantStore : IPersistedGrantStore
     {
-        public async Task<IEnumerable<PersistedGrant>> GetAllAsync(string subjectId)
+        public async Task<IEnumerable<PersistedGrant>> GetAllAsync(PersistedGrantFilter filter)
         {
-            var grants = await FakeBookingSystem.FakeDatabase.GetAllGrants(subjectId);
+            filter.Validate();
+
+            var grants = await FakeBookingSystem.FakeDatabase.GetAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
             var persistedGrants = grants.Select(grant => new PersistedGrant
             {
                 Key = grant.Key,
                 Type = grant.Type,
                 SubjectId = grant.SubjectId,
+                SessionId = grant.SessionId,
                 ClientId = grant.ClientId,
                 CreationTime = grant.CreationTime,
                 Expiration = grant.Expiration,
@@ -35,6 +39,7 @@ namespace IdentityServer
                 Key = grant.Key,
                 Type = grant.Type,
                 SubjectId = grant.SubjectId,
+                SessionId = grant.SessionId,
                 ClientId = grant.ClientId,
                 CreationTime = grant.CreationTime,
                 Expiration = grant.Expiration,
@@ -42,28 +47,21 @@ namespace IdentityServer
             } : null;
         }
 
-        public Task RemoveAllAsync(string subjectId, string clientId)
+        public async Task RemoveAllAsync(PersistedGrantFilter filter)
         {
-            FakeBookingSystem.FakeDatabase.RemoveGrant(subjectId, clientId);
-            return Task.CompletedTask;
+            filter.Validate();
+
+            await FakeBookingSystem.FakeDatabase.RemoveAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
         }
 
-        public Task RemoveAllAsync(string subjectId, string clientId, string type)
+        public async Task RemoveAsync(string key)
         {
-            FakeBookingSystem.FakeDatabase.RemoveGrant(subjectId, clientId, type);
-            return Task.CompletedTask;
+            await FakeBookingSystem.FakeDatabase.RemoveGrant(key);
         }
-
-        public Task RemoveAsync(string key)
+        
+        public async Task StoreAsync(PersistedGrant grant)
         {
-            FakeBookingSystem.FakeDatabase.RemoveGrant(key);
-            return Task.CompletedTask;
-        }
-
-        public Task StoreAsync(PersistedGrant grant)
-        {
-            FakeBookingSystem.FakeDatabase.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.ClientId, grant.CreationTime, grant.Expiration, grant.Data);
-            return Task.CompletedTask;
+            await FakeBookingSystem.FakeDatabase.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.SessionId, grant.ClientId, grant.CreationTime, grant.Expiration, grant.Data);
         }
     }
 }

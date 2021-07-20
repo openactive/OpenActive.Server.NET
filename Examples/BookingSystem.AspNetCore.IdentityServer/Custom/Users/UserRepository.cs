@@ -70,6 +70,16 @@ namespace IdentityServer
                 IsActive = true,
             };
         }
+
+        public async Task<User> FindByExternalProvider(string provider, string providerUserId)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public async Task<User> AutoProvisionUser(string provider, string providerUserId, List<Claim> list)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     public class User

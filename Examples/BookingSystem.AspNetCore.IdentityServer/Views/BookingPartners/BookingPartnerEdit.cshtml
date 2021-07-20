@@ -8,62 +8,50 @@
                 </h1>
             </div>
         </div>
-        <div class="row">
-            <form class="form-horizontal">
+        <div>
+            <form>
                 <div class="form-group">
-                    <div class="col-sm-2">
-                        <label for="emailAddress" class="control-label">Email address</label>
-                    </div>
-                    <div class="col-sm-6">
-                        <input type="email" class="form-control" id="emailAddress" value="@Model.BookingPartner.Email" disabled>
-                    </div>
+                    <label for="emailAddress" class="control-label">Email address</label>
+                    <input type="email" class="form-control" id="emailAddress" value="@Model.BookingPartner.Email" disabled>
                 </div>
                 <div class="form-group">
-                    <div class="col-sm-2">
-                        <label for="clientId" class="control-label">Client Id</label>
-                    </div>
-                    <div class="col-sm-6">
-                        <input type="text" class="form-control" id="clientId" value="@Model.ClientId" disabled>
-                    </div>
+                    <label for="clientId" class="control-label">Client Id</label>
+                    <input type="text" class="form-control" id="clientId" value="@Model.ClientId" disabled>
                 </div>
                 <div class="form-group">
-                    <div class="col-sm-2">
-                        <label for="registrationKey" class="control-label">Registration Key</label>
-                    </div>
-                    <div class="col-sm-4">
-                        <input type="text" class="form-control" id="registrationKey" value="@(Model.BookingPartner.InitialAccessTokenKeyValidUntil > DateTime.Now ? Model.BookingPartner.InitialAccessToken : "EXPIRED" )" disabled>
-                    </div>
+                    <label for="registrationKey" class="control-label">Registration Key</label>
+                    <input type="text" class="form-control" id="registrationKey" value="@(Model.BookingPartner.InitialAccessTokenKeyValidUntil > DateTime.Now ? Model.BookingPartner.InitialAccessToken : "EXPIRED" )" disabled>
                 </div>
             </form>
         </div>
         <hr />
-        <div class="row pb-10">
+        <div class="row pb-4">
             <div class="col-sm-3">
-                <form action="/booking-partners/regenerate-key" method="post">
+                <form class="form-inline" action="/booking-partners/regenerate-key" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="clientId" value="@Model.BookingPartner.ClientId">
-                    <button class="btn btn-md btn-default">Generate New Registration Key</button>
+                    <button class="btn btn-sm btn-block btn-secondary">Generate new Registration Key</button>
                 </form>
             </div>
-            <div class="col-sm-5">
+            <div class="col-sm-9">
                 If the booking partner has requested a new registration key
             </div>
         </div>
-        <div class="row pb-40">
+        <div class="row pb-4">
             <div class="col-sm-3">
-                <form action="/booking-partners/regenerate-all-keys" method="post">
+                <form class="form-inline" action="/booking-partners/reset-client-credentials" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="clientId" value="@Model.BookingPartner.ClientId">
-                    <button class="btn btn-md btn-default">Regenerate all Keys</button>
+                    <button class="btn btn-sm btn-block btn-secondary">Reset client credentials</button>
                 </form>
             </div>
-            <div class="col-sm-5">
-                If you suspect the booking partner's security has been compromised
+            <div class="col-sm-9">
+                If the booking partner's security has been compromised
             </div>
         </div>
         <div class="row">
             <div class="col-sm-8 text-center">
-                <a class="btn btn-md btn-default" href="/booking-partners/sys-admin">Close</a>
+                <a class="btn btn-sm btn-secondary" href="/booking-partners/sys-admin">Close</a>
             </div>
         </div>
     </div>

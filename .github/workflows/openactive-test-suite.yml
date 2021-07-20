@@ -31,6 +31,10 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.411
+    - name: Setup .NET Core SDK 3.1.411 for Authentication Authority Reference Implementation
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.411
     - name: Setup Node.js 14.x
       uses: actions/setup-node@v1
       with:
@@ -149,6 +153,10 @@ jobs:
       - uses: actions/checkout@master
       # Setup .NET Core SDK
       - name: Setup .NET Core SDK 3.1.411
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.411
+      - name: Setup .NET Core SDK 3.1.411 for Authentication Authority Reference Implementation
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 3.1.411

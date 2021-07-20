@@ -1,0 +1,39 @@
+﻿@using IdentityServer4.Extensions
+
+@{
+    string name = null;
+    if (!true.Equals(ViewData["signed-out"]))
+    {
+        name = Context.User?.GetDisplayName();
+    }
+}
+
+<nav class="navbar navbar-dark bg-dark navbar-expand-sm">
+    <a href="~/" class="navbar-brand">
+        <img src="~/icon.png" class="d-inline-block align-top">
+        Lorem Fitsum
+    </a>
+
+    <ul class="navbar-nav ml-auto">
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Booking partners</a>
+
+            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="/booking-partners/seller-admin">Seller admin</a>
+                <a class="dropdown-item" href="/booking-partners/sys-admin">System admin</a>
+            </div>
+        </li>
+
+        @if (!string.IsNullOrWhiteSpace(name))
+        {
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">@name</a>
+
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" asp-action="Logout" asp-controller="Account">Logout</a>
+                </div>
+            </li>
+        }
+    </ul>
+</nav>
+

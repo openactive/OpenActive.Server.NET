@@ -116,7 +116,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static async Task ResetKey(string clientId, string key)
+        public static async Task ResetCredentials(string clientId, string key)
         {
             using (var db = await FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.OpenAsync())
             {

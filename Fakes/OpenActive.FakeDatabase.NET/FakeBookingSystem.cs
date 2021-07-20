@@ -1787,15 +1787,33 @@ namespace OpenActive.FakeDatabase.NET
                 return await db.SingleAsync<GrantTable>(x => x.Key == key);
             }
         }
-        public async Task<IEnumerable<GrantTable>> GetAllGrants(string subjectId)
+        public async Task<IEnumerable<GrantTable>> GetAllGrants(string subjectId, string sessionId, string clientId, string type)
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
-                return (await db.SelectAsync<GrantTable>(x => x.SubjectId == subjectId)).AsList();
+                var query = db.From<GrantTable>();
+                if (!String.IsNullOrWhiteSpace(clientId))
+                {
+                    query = query.Where(x => x.ClientId == clientId);
+                }
+                if (!String.IsNullOrWhiteSpace(sessionId))
+                {
+                    query = query.Where(x => x.SessionId == sessionId);
+                }
+                if (!String.IsNullOrWhiteSpace(subjectId))
+                {
+                    query = query.Where(x => x.SubjectId == subjectId);
+                }
+                if (!String.IsNullOrWhiteSpace(type))
+                {
+                    query = query.Where(x => x.Type == type);
+                }
+
+                return (await db.SelectAsync(query)).AsList();
             }
         }
 
-        public async Task AddGrant(string key, string type, string subjectId, string clientId, DateTime creationTime, DateTime? expiration, string data)
+        public async Task AddGrant(string key, string type, string subjectId, string sessionId, string clientId, DateTime creationTime, DateTime? expiration, string data)
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
@@ -1804,6 +1822,7 @@ namespace OpenActive.FakeDatabase.NET
                     Key = key,
                     Type = type,
                     SubjectId = subjectId,
+                    SessionId = sessionId,
                     ClientId = clientId,
                     CreationTime = creationTime,
                     Expiration = expiration,
@@ -1821,11 +1840,28 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public async Task RemoveGrant(string subjectId, string clientId)
+        public async Task RemoveAllGrants(string subjectId, string sessionId, string clientId, string type)
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
-                await db.DeleteAsync<GrantTable>(x => x.SubjectId == subjectId && x.ClientId == clientId);
+                var query = db.From<GrantTable>();
+                if (!String.IsNullOrWhiteSpace(clientId))
+                {
+                    query = query.Where(x => x.ClientId == clientId);
+                }
+                if (!String.IsNullOrWhiteSpace(sessionId))
+                {
+                    query = query.Where(x => x.SessionId == sessionId);
+                }
+                if (!String.IsNullOrWhiteSpace(subjectId))
+                {
+                    query = query.Where(x => x.SubjectId == subjectId);
+                }
+                if (!String.IsNullOrWhiteSpace(type))
+                {
+                    query = query.Where(x => x.Type == type);
+                }
+                await db.DeleteAsync(query);
             }
         }
 
