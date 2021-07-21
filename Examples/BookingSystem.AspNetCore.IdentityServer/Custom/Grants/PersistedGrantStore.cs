@@ -14,7 +14,7 @@ namespace IdentityServer
         {
             filter.Validate();
 
-            var grants = await FakeBookingSystem.Database.GetAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
+            var grants = await FakeBookingSystem.FakeDatabase.GetAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
             var persistedGrants = grants.Select(grant => new PersistedGrant
             {
                 Key = grant.Key,
@@ -32,7 +32,7 @@ namespace IdentityServer
 
         public async Task<PersistedGrant> GetAsync(string key)
         {
-            var grant = await FakeBookingSystem.Database.GetGrant(key);
+            var grant = await FakeBookingSystem.FakeDatabase.GetGrant(key);
 
             return grant != null ? new PersistedGrant
             {
@@ -51,17 +51,17 @@ namespace IdentityServer
         {
             filter.Validate();
 
-            await FakeBookingSystem.Database.RemoveAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
+            await FakeBookingSystem.FakeDatabase.RemoveAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
         }
 
         public async Task RemoveAsync(string key)
         {
-            await FakeBookingSystem.Database.RemoveGrant(key);
+            await FakeBookingSystem.FakeDatabase.RemoveGrant(key);
         }
         
         public async Task StoreAsync(PersistedGrant grant)
         {
-            await FakeBookingSystem.Database.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.SessionId, grant.ClientId, grant.CreationTime, grant.Expiration, grant.Data);
+            await FakeBookingSystem.FakeDatabase.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.SessionId, grant.ClientId, grant.CreationTime, grant.Expiration, grant.Data);
         }
     }
 }

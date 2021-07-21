@@ -1,3 +1,5 @@
+using System;
+
 namespace BookingSystem
 {
     public class AppSettings
@@ -6,6 +8,8 @@ namespace BookingSystem
         public string OpenIdIssuerUrl { get; set; }
         public FeatureSettings FeatureFlags { get; set; }
         public PaymentSettings Payment { get; set; }
+        public TimeSpan DataRefresherInterval = TimeSpan.FromHours(6);
+
     }
 
     /**

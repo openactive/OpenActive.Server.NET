@@ -11,7 +11,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public FakeDatabaseTransaction(FakeDatabase database)
         {
-            DatabaseConnection = database.Mem.Database.Open();
+            DatabaseConnection = database.DatabaseWrapper.Database.Open();
             transaction = DatabaseConnection.OpenTransaction(IsolationLevel.Serializable);
         }
         
