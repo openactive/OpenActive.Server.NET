@@ -1360,7 +1360,7 @@ namespace OpenActive.FakeDatabase.NET
                         .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
                                                 x.ProposalStatus != ProposalStatus.CustomerRejected &&
                                                 x.ProposalStatus != ProposalStatus.SellerRejected)
-                        .Where<OrderItemsTable>(x => x.OccurrenceId == occurrenceId &&
+                        .And<OrderItemsTable>(x => x.OccurrenceId == occurrenceId &&
                                                  x.OrderId != uuid.ToString());
                 return db.Count(q);
             }
@@ -1374,7 +1374,7 @@ namespace OpenActive.FakeDatabase.NET
                     .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
                                                 x.ProposalStatus != ProposalStatus.CustomerRejected &&
                                                 x.ProposalStatus != ProposalStatus.SellerRejected)
-                        .Where<OrderItemsTable>(x => x.SlotId == slotId &&
+                        .And<OrderItemsTable>(x => x.SlotId == slotId &&
                                                  x.OrderId != uuid.ToString());
 
                 return db.Count(q);
