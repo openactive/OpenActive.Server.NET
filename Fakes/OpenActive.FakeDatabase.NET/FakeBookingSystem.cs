@@ -1661,7 +1661,7 @@ namespace OpenActive.FakeDatabase.NET
                 return await db.SingleAsync<GrantTable>(x => x.Key == key);
             }
         }
-        public async Task<IEnumerable<GrantTable>> GetAllGrants(string subjectId, string sessionId, string clientId, string type)
+        public async Task<List<GrantTable>> GetAllGrants(string subjectId, string sessionId, string clientId, string type)
         {
             using (var db = await Mem.Database.OpenAsync())
             {
@@ -1687,7 +1687,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public async Task AddGrant(string key, string type, string subjectId, string sessionId, string clientId, DateTime creationTime, DateTime? expiration, string data)
+        public async Task<bool> AddGrant(string key, string type, string subjectId, string sessionId, string clientId, DateTime creationTime, DateTime? consumedTime, DateTime? expiration, string data)
         {
             using (var db = await Mem.Database.OpenAsync())
             {
@@ -1699,10 +1699,11 @@ namespace OpenActive.FakeDatabase.NET
                     SessionId = sessionId,
                     ClientId = clientId,
                     CreationTime = creationTime,
+                    ConsumedTime = consumedTime,
                     Expiration = expiration,
                     Data = data
                 };
-                await db.SaveAsync(grant);
+                return await db.SaveAsync(grant);
             }
         }
 

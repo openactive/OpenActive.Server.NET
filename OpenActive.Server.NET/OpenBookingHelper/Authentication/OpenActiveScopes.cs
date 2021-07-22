@@ -16,5 +16,10 @@
         /// Seller identity scope
         /// </summary>
         public const string SellerIdentity = "openactive-identity";
+
+        /// <summary>
+        /// Customer Account endpoint scope
+        /// </summary>
+        public const string CustomerAccount = "openactive-customeraccount";
     }
 }
