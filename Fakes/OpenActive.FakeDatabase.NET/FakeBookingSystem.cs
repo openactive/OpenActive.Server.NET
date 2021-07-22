@@ -1356,12 +1356,13 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
-                var q = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
-                        .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
-                                                x.ProposalStatus != ProposalStatus.CustomerRejected &&
-                                                x.ProposalStatus != ProposalStatus.SellerRejected)
-                        .And<OrderItemsTable>(x => x.OccurrenceId == occurrenceId &&
-                                                 x.OrderId != uuid.ToString());
+                var q = db.From<OrderItemsTable>().Join<OrderTable>((orderItem, order) =>
+                orderItem.OrderId == order.OrderId &&
+                order.OrderMode != OrderMode.Booking &&
+                order.ProposalStatus != ProposalStatus.CustomerRejected &&
+                order.ProposalStatus != ProposalStatus.SellerRejected &&
+                orderItem.OccurrenceId == occurrenceId &&
+                orderItem.OrderId != uuid.ToString());
                 return db.Count(q);
             }
         }
@@ -1370,14 +1371,24 @@ namespace OpenActive.FakeDatabase.NET
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
-                var q = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
-                    .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
-                                                x.ProposalStatus != ProposalStatus.CustomerRejected &&
-                                                x.ProposalStatus != ProposalStatus.SellerRejected)
-                        .And<OrderItemsTable>(x => x.SlotId == slotId &&
-                                                 x.OrderId != uuid.ToString());
+                var q = db.From<OrderItemsTable>().Join<OrderTable>((orderItem, order) =>
+                    orderItem.OrderId == order.OrderId &&
+                    order.OrderMode != OrderMode.Booking &&
+                    order.ProposalStatus != ProposalStatus.CustomerRejected &&
+                    order.ProposalStatus != ProposalStatus.SellerRejected &&
+                    orderItem.SlotId == slotId &&
+                    orderItem.OrderId != uuid.ToString()
+                );
+                var a = db.SelectAsync(q);
 
-                return db.Count(q);
+                //return db.Count(q);
+
+                var b = await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode != OrderMode.Booking &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.CustomerRejected &&
+                                                 x.OrderTable.ProposalStatus != ProposalStatus.SellerRejected &&
+                                                 x.SlotId == slotId &&
+                                                 x.OrderId != uuid.ToString());
+                return b.Count;
             }
         }
 
@@ -1422,14 +1433,14 @@ namespace OpenActive.FakeDatabase.NET
                     .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
                                                 x.ProposalStatus != ProposalStatus.CustomerRejected &&
                                                 x.ProposalStatus != ProposalStatus.SellerRejected)
-                        .Where<OrderItemsTable>(x => x.SlotId == slot.Id);
+                        .And<OrderItemsTable>(x => x.SlotId == slot.Id);
             var leasedUses = await db.CountAsync(leasedUsesQuery);
             slot.LeasedUses = leasedUses;
 
             // Update number of actual spaces remaining for the opportunity
             var totalUsesTakenQuery = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
                 .Where<OrderTable>(x => x.OrderMode == OrderMode.Booking)
-                .Where<OrderItemsTable>(x => x.SlotId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent));
+                .And<OrderItemsTable>(x => x.SlotId == slot.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent));
             var totalUsesTaken = await db.CountAsync(totalUsesTakenQuery);
             slot.RemainingUses = slot.MaximumUses - totalUsesTaken;
 
@@ -1454,18 +1465,22 @@ namespace OpenActive.FakeDatabase.NET
                 return;
 
             // Update number of leased spaces remaining for the opportunity
-            var leasedUsesQuery = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
-                                .Where<OrderTable>(x => x.OrderMode != OrderMode.Booking &&
-                                                            x.ProposalStatus != ProposalStatus.CustomerRejected &&
-                                                            x.ProposalStatus != ProposalStatus.SellerRejected)
-                                    .Where<OrderItemsTable>(x => x.OccurrenceId == occurrence.Id);
+            var leasedUsesQuery = db.From<OrderItemsTable>().Join<OrderTable>((orderItem, order) =>
+                orderItem.OrderId == order.OrderId &&
+                order.OrderMode != OrderMode.Booking &&
+                order.ProposalStatus != ProposalStatus.CustomerRejected &&
+                order.ProposalStatus != ProposalStatus.SellerRejected &&
+                orderItem.OccurrenceId == occurrence.Id);
+
             var leasedSpaces = await db.CountAsync(leasedUsesQuery);
             occurrence.LeasedSpaces = leasedSpaces;
 
             // Update number of actual spaces remaining for the opportunity
-            var totalUsesTakenQuery = db.From<OrderItemsTable>().Join<OrderTable>((x, y) => x.OrderId == y.OrderId)
-                           .Where<OrderTable>(x => x.OrderMode == OrderMode.Booking)
-                           .Where<OrderItemsTable>(x => x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent));
+            var totalUsesTakenQuery = db.From<OrderItemsTable>().Join<OrderTable>((orderItem, order) =>
+            orderItem.OrderId == order.OrderId &&
+            order.OrderMode == OrderMode.Booking &&
+            orderItem.OccurrenceId == occurrence.Id
+            && (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Attended || orderItem.Status == BookingStatus.Absent));
             var totalSpacesTaken = await db.CountAsync(totalUsesTakenQuery);
             occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
 

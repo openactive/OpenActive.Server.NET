@@ -14,7 +14,8 @@
         "ApplicationHostBaseUrl": "https://localhost:5001",
         "REMOTE_STORAGE_CONNECTION_STRING": "",
         "USE_REMOTE_STORAGE": "true",
-        "DROP_TABLES_ON_RESTART": "true"
+        "DROP_TABLES_ON_RESTART": "true",
+        "OPPORTUNITY_COUNT": "20"
       }
     }
   }
