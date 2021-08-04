@@ -20,6 +20,11 @@
         /// <summary>
         /// Customer Account endpoint scope
         /// </summary>
-        public const string CustomerAccount = "openactive-customeraccount";
+        public const string CustomerAccountModify = "openactive-customeraccount-modify";
+
+        /// <summary>
+        /// Customer Accoun query endpoint scope
+        /// </summary>
+        public const string CustomerAccountQuery = "openactive-customeraccount-query";
     }
 }
