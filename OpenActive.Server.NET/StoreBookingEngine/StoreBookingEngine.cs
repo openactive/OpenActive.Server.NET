@@ -197,7 +197,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 throw new OpenBookingException(new InternalLibraryError(), "Error property must not be set on OrderItem passed to SetResponseOrderItem");
             }
 
-            if (RequestOrderItem?.AcceptedOffer.Object?.Price == 0 && !(RequestOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == null || RequestOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Unavailable))
+            if (item?.AcceptedOffer.Object?.Price == 0 && !(item?.AcceptedOffer.Object?.OpenBookingPrepayment == null || item?.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Unavailable))
             {
                 throw new OpenBookingException(new InternalLibraryError(), "OpenBookingPrepayment must be set to null or Unavailable for free opportunities.");
             }
