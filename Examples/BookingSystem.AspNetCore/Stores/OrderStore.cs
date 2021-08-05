@@ -11,6 +11,10 @@ namespace BookingSystem
 {
     public class OrderStateContext : IStateContext
     {
+        // OrderStateContext will be disposed at the end of the flow
+        public void Dispose()
+        { 
+        }
     }
 
     public class AcmeOrderStore : OrderStore<OrderTransaction, OrderStateContext>
@@ -181,11 +185,17 @@ namespace BookingSystem
             }
         }
 
-        public override ValueTask<OrderStateContext> Initialise(StoreBookingFlowContext flowContext)
+        public override ValueTask<OrderStateContext> CreateOrderStateContext(StoreBookingFlowContext flowContext)
         {
-            // Runs before the flow starts, for both leasing and booking
             // Useful for transferring state between stages of the flow
             return new ValueTask<OrderStateContext>(new OrderStateContext());
+        }
+
+        public override ValueTask Initialise(StoreBookingFlowContext flowContext, OrderStateContext stateContext)
+        {
+            // Runs before the flow starts, for both leasing and booking
+            // Simply remove this method if it is not required
+            return new ValueTask();
         }
 
         private static BrokerRole BrokerTypeToBrokerRole(BrokerType brokerType)

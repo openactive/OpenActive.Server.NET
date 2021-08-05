@@ -62,7 +62,12 @@ namespace OpenActive.Server.NET.StoreBooking
             return await CreateOrderStateContext(flowContext);
         }
 
-        public abstract ValueTask Initialise(StoreBookingFlowContext flowContext, TStateContext stateContext);
+        public virtual ValueTask Initialise(StoreBookingFlowContext flowContext, TStateContext stateContext)
+        {
+            // No-op if not implemented, as Initialise is optional
+            return new ValueTask();
+        }
+
         async ValueTask IOrderStore.Initialise(StoreBookingFlowContext flowContext, IStateContext stateContext)
         {
             await Initialise(flowContext, (TStateContext)stateContext);

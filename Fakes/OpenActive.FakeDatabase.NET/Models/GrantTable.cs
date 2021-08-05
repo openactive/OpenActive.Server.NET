@@ -1,3 +1,4 @@
+using ServiceStack.DataAnnotations;
 using System;
 
 namespace OpenActive.FakeDatabase.NET

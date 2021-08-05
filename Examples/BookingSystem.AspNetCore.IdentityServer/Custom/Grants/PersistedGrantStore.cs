@@ -1,6 +1,7 @@
 ﻿using IdentityServer4.Extensions;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
+using Microsoft.Extensions.Logging;
 using OpenActive.FakeDatabase.NET;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace IdentityServer
     {
         protected readonly ILogger _logger;
 
-        public PersistedGrantStore(ILogger<PersistedGrantStore> logger)
+        public AcmePersistedGrantStore(ILogger<AcmePersistedGrantStore> logger)
         {
             _logger = logger;
         }
@@ -45,7 +46,7 @@ namespace IdentityServer
         {
             var grant = await FakeBookingSystem.Database.GetGrant(key);
 
-            Logger.LogDebug("{persistedGrantKey} found in database: {persistedGrantKeyFound}", key, grant != null);
+            _logger.LogDebug("{persistedGrantKey} found in database: {persistedGrantKeyFound}", key, grant != null);
 
             return grant != null ? new PersistedGrant
             {
@@ -79,7 +80,7 @@ namespace IdentityServer
         
         public async Task StoreAsync(PersistedGrant grant)
         {
-            if (await FakeBookingSystem.Database.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.SessionId, grant.ClientId, grant.CreationTime, grant.Expiration, grant.Data))
+            if (await FakeBookingSystem.Database.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.SessionId, grant.ClientId, grant.CreationTime, grant.ConsumedTime, grant.Expiration, grant.Data))
             {
                 _logger.LogDebug("{persistedGrantKey} not found in database, and so was inserted", grant.Key);
             }
