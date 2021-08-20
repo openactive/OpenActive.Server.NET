@@ -28,7 +28,9 @@ namespace OpenActive.Server.NET.StoreBooking
         ValueTask<IDatabaseTransaction> BeginOrderTransaction(FlowStage stage);
         Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, List<OrderIdComponents> orderItemIds);
         Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId);
-        ValueTask<IStateContext> InitialiseFlow(StoreBookingFlowContext flowContext);
+        ValueTask<IStateContext> CreateOrderStateContext(StoreBookingFlowContext flowContext);
+        ValueTask Initialise(StoreBookingFlowContext flowContext, IStateContext stateContext);
+
         Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         Task DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
         Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents orderId);
@@ -43,7 +45,7 @@ namespace OpenActive.Server.NET.StoreBooking
         ValueTask UpdateOrderProposal(OrderProposal responseOrderProposal, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction dbTransaction);
     }
 
-    public interface IStateContext
+    public interface IStateContext: IDisposable
     {
     }
 
@@ -53,11 +55,24 @@ namespace OpenActive.Server.NET.StoreBooking
         {
             base.SetConfiguration(orderIdTemplate, sellerIdTemplate);
         }
-        public abstract ValueTask<TStateContext> Initialise(StoreBookingFlowContext flowContext);
-        public async ValueTask<IStateContext> InitialiseFlow(StoreBookingFlowContext flowContext)
+
+        public abstract ValueTask<TStateContext> CreateOrderStateContext(StoreBookingFlowContext flowContext);
+        async ValueTask<IStateContext> IOrderStore.CreateOrderStateContext(StoreBookingFlowContext flowContext)
         {
-            return await Initialise(flowContext);
+            return await CreateOrderStateContext(flowContext);
         }
+
+        public virtual ValueTask Initialise(StoreBookingFlowContext flowContext, TStateContext stateContext)
+        {
+            // No-op if not implemented, as Initialise is optional
+            return new ValueTask();
+        }
+
+        async ValueTask IOrderStore.Initialise(StoreBookingFlowContext flowContext, IStateContext stateContext)
+        {
+            await Initialise(flowContext, (TStateContext)stateContext);
+        }
+
         public abstract Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, List<OrderIdComponents> orderItemIds);
         public virtual Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId) {
             // This will return an error to the Broker

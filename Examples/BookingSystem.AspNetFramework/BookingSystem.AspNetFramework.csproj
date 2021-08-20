@@ -202,19 +202,19 @@
       <HintPath>..\..\packages\Schema.NET.7.0.1\lib\net461\Schema.NET.dll</HintPath>
     </Reference>
     <Reference Include="ServiceStack.Common, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\ServiceStack.Common.Core.5.10.4\lib\netstandard2.0\ServiceStack.Common.dll</HintPath>
+      <HintPath>..\..\packages\ServiceStack.Common.Core.5.11.0\lib\netstandard2.0\ServiceStack.Common.dll</HintPath>
     </Reference>
     <Reference Include="ServiceStack.Interfaces, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\ServiceStack.Interfaces.Core.5.10.4\lib\netstandard2.0\ServiceStack.Interfaces.dll</HintPath>
+      <HintPath>..\..\packages\ServiceStack.Interfaces.Core.5.11.0\lib\netstandard2.0\ServiceStack.Interfaces.dll</HintPath>
     </Reference>
     <Reference Include="ServiceStack.OrmLite, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\ServiceStack.OrmLite.Core.5.10.4\lib\netstandard2.0\ServiceStack.OrmLite.dll</HintPath>
+      <HintPath>..\..\packages\ServiceStack.OrmLite.Core.5.11.0\lib\netstandard2.0\ServiceStack.OrmLite.dll</HintPath>
     </Reference>
     <Reference Include="ServiceStack.OrmLite.Sqlite, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\ServiceStack.OrmLite.Sqlite.Core.5.10.4\lib\netstandard2.0\ServiceStack.OrmLite.Sqlite.dll</HintPath>
+      <HintPath>..\..\packages\ServiceStack.OrmLite.Sqlite.Core.5.11.0\lib\netstandard2.0\ServiceStack.OrmLite.Sqlite.dll</HintPath>
     </Reference>
     <Reference Include="ServiceStack.Text, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\ServiceStack.Text.Core.5.10.4\lib\netstandard2.0\ServiceStack.Text.dll</HintPath>
+      <HintPath>..\..\packages\ServiceStack.Text.Core.5.11.0\lib\netstandard2.0\ServiceStack.Text.dll</HintPath>
     </Reference>
     <Reference Include="Stubble.Core, Version=1.7.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Stubble.Core.1.7.2\lib\net45\Stubble.Core.dll</HintPath>
