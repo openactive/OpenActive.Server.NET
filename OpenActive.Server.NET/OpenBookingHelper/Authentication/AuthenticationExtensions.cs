@@ -63,7 +63,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// </summary>
         /// <param name="principal"></param>
         /// <returns></returns>
-        public static string GetAccessTokenOrdersFeedClaim(this ClaimsPrincipal principal)
+        public static string GetClientIdFromAccessToken(this ClaimsPrincipal principal)
         {
             var clientId = principal.GetClientId();
             if (clientId != null)
@@ -75,6 +75,5 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 throw new OpenBookingException(new InvalidAPITokenError());
             }
         }
-
     }
 }
