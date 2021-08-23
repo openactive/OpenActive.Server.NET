@@ -202,7 +202,7 @@ namespace BookingSystem.AspNetCore.Controllers
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
-                string clientId = User.GetAccessTokenOrdersFeedClaim();
+                string clientId = User.GetClientIdFromAccessToken();
                 return (await bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber)).GetContentResult();
             }
             catch (OpenBookingException obe)
@@ -221,7 +221,7 @@ namespace BookingSystem.AspNetCore.Controllers
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
-                string clientId = User.GetAccessTokenOrdersFeedClaim();
+                string clientId = User.GetClientIdFromAccessToken();
                 return (await bookingEngine.GetOrderProposalsRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber)).GetContentResult();
             }
             catch (OpenBookingException obe)
