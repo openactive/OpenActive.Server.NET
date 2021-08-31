@@ -129,7 +129,7 @@ namespace OpenActive.Server.NET.CustomBooking
         private Uri openDataFeedBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
-        private readonly AsyncDuplicateLock<string> asyncDuplicateLock = new AsyncDuplicateLock<string>();
+        private static readonly AsyncDuplicateLock asyncDuplicateLock = new AsyncDuplicateLock();
 
         protected Dictionary<OpportunityType, IBookablePairIdTemplate> OpportunityTemplateLookup { get; }
 
@@ -403,6 +403,7 @@ namespace OpenActive.Server.NET.CustomBooking
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, flowStage, orderQuote), orderQuote);
+
                 // Return a 409 status code if any OrderItem level errors exist
                 return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
                     orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
@@ -424,7 +425,10 @@ namespace OpenActive.Server.NET.CustomBooking
                 var response = order.OrderProposalVersion != null ?
                      await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, order) :
                      await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.B, order), order);
-                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response), HttpStatusCode.Created);
+
+                // Return a 409 status code if any OrderItem level errors exist
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response),
+                    response.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.Created);
             }
         }
 
