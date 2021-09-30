@@ -1,4 +1,5 @@
 ﻿using OpenActive.NET;
+using System;
 using System.Net;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
@@ -60,13 +61,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             };
         }
 
-        public static ResponseContent RpdeResponse(string content)
+        public static ResponseContent RpdeResponse(string content, TimeSpan cacheControlMaxAge)
         {
             return new ResponseContent
             {
                 Content = content,
                 ContentType = OpenActiveMediaTypes.RealtimePagedDataExchange.Version1,
-                StatusCode = HttpStatusCode.OK
+                StatusCode = HttpStatusCode.OK,
+                CacheControlMaxAge = cacheControlMaxAge
             };
         }
 
@@ -82,6 +84,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         // Summary:
         //     The intended HTTP status code of the response
         public HttpStatusCode StatusCode { get; internal set; } = HttpStatusCode.OK;
+        //
+        // Summary:
+        //     The Cache-Control header intended for the response (public, max-age=X)
+        public TimeSpan CacheControlMaxAge { get; internal set; }
 
         public override string ToString()
         {

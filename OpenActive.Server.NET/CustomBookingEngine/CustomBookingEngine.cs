@@ -169,15 +169,14 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <returns></returns>
         public async Task<ResponseContent> GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse(
+            return GetResponseContentFromRPDEPage(
                 (await RouteOpenDataRPDEPageForFeed(
                     feedname,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),
                     afterId,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterChangeNumber, nameof(afterChangeNumber))
-                    )).ToString());
+                    )));
         }
-
 
         /// <summary>
         /// Handler for an RPDE endpoint
@@ -191,11 +190,14 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <returns></returns>
         public async Task<ResponseContent> GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse((await RouteOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber)).ToString());
+            return GetResponseContentFromRPDEPage(await RouteOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber));
         }
 
-
-
+        private ResponseContent GetResponseContentFromRPDEPage(RpdePage rpdePage)
+        {
+            var cacheMaxAge = rpdePage.Items.Count == 0 ? this.settings.RPDELastPageCacheDuration : this.settings.RPDEPageCacheDuration;
+            return ResponseContent.RpdeResponse(rpdePage.ToString(), cacheMaxAge);
+        }
 
         /// <summary>
         /// Handler for an RPDE endpoint
