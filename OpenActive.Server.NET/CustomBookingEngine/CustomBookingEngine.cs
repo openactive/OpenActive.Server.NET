@@ -154,7 +154,7 @@ namespace OpenActive.Server.NET.CustomBooking
         {
             if (datasetSettings == null || supportedFeeds == null) throw new NotSupportedException("RenderDatasetSite is only supported if DatasetSiteGeneratorSettings are supplied to the IBookingEngine");
             // TODO add caching layer in front of dataset site rendering
-            return ResponseContent.HtmlResponse(DatasetSiteGenerator.RenderSimpleDatasetSite(datasetSettings, supportedFeeds));
+            return ResponseContent.HtmlResponse(DatasetSiteGenerator.RenderSimpleDatasetSite(datasetSettings, supportedFeeds), this.settings.DatasetSiteCacheDuration);
         }
 
         /// <summary>
