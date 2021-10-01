@@ -37,5 +37,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// See https://developer.openactive.io/publishing-data/data-feeds/scaling-feeds for CDN configuration instructions
         /// </summary>
         public TimeSpan RPDELastPageCacheDuration { get; set; } = TimeSpan.FromSeconds(8);
+        /// <summary>
+        /// TTL in the Cache-Control header for the dataset site
+        /// See https://developer.openactive.io/publishing-data/data-feeds/scaling-feeds for CDN configuration instructions
+        /// </summary>
+        public TimeSpan DatasetSiteCacheDuration { get; set; } = TimeSpan.FromMinutes(15);
     }
 }

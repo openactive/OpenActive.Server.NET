@@ -11,13 +11,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     /// </summary>
     public class ResponseContent
     {
-        public static ResponseContent HtmlResponse(string content)
+        public static ResponseContent HtmlResponse(string content, TimeSpan cacheControlMaxAge)
         {
             return new ResponseContent
             {
                 Content = content,
                 ContentType = System.Net.Mime.MediaTypeNames.Text.Html,
-                StatusCode = HttpStatusCode.OK
+                StatusCode = HttpStatusCode.OK,
+                CacheControlMaxAge = cacheControlMaxAge
             };
         }
 
