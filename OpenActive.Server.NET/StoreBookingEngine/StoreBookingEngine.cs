@@ -577,11 +577,6 @@ namespace OpenActive.Server.NET.StoreBooking
             // Reflect back only those customer fields that are supported
             switch (order.Customer)
             {
-                case AuthenticatedPerson authenticatedPerson:
-                    context.AuthenticatedCustomer = authenticatedPerson;
-                    context.Customer = null;
-                    break;
-
                 case Person person:
                     context.Customer = storeBookingEngineSettings.CustomerPersonSupportedFields(person);
                     break;
@@ -589,13 +584,6 @@ namespace OpenActive.Server.NET.StoreBooking
                 case Organization organization:
                     context.Customer = storeBookingEngineSettings.CustomerOrganizationSupportedFields(organization);
                     break;
-            }
-
-            // Throw error on missing AuthToken
-            if (context.AuthenticatedCustomer != null)
-            {
-                if (context.AuthenticatedCustomer.AccessToken == null)
-                    throw new OpenBookingException(new OpenBookingError(), "beta:CustomerAuthTokenMissingError");
             }
 
             // Throw error on incomplete broker details

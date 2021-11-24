@@ -22,7 +22,6 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
         public ILegalEntity Customer { get; internal set; }
-        public AuthenticatedPerson AuthenticatedCustomer { get; internal set; }
         public Organization Broker { get; internal set; }
         public BookingService BookingService { get; internal set; }
         public Payment Payment { get; internal set; }
