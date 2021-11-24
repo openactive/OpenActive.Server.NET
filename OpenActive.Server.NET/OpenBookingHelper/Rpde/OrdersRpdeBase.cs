@@ -12,7 +12,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         protected Uri FeedUrl { get; private set; }
 
-        internal void SetConfiguration(int rpdePageSize, OrderIdTemplate orderIdTemplate, SingleIdTemplate<SellerIdComponents> sellerIdTemplate, Uri ordersFeedBaseUrl, OrderType feedType)
+        internal void SetConfiguration(int rpdePageSize, OrderIdTemplate orderIdTemplate, SingleIdTemplate<SimpleIdComponents> sellerIdTemplate, Uri ordersFeedBaseUrl, OrderType feedType)
         {
             base.SetConfiguration(orderIdTemplate, sellerIdTemplate);
 

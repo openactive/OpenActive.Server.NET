@@ -10,5 +10,9 @@
         /// Seller Id Custom Claim Name
         /// </summary>
         public const string SellerId = "https://openactive.io/sellerId";
+        /// <summary>
+        /// Customer Account Id Custom Claim Name
+        /// </summary>
+        public const string CustomerAccountId = "https://openactive.io/customerAccountId";
     }
 }

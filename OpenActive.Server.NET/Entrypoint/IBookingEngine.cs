@@ -20,14 +20,15 @@ namespace OpenActive.Server.NET
         Task<ResponseContent> GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
 
         // These endpoints are authenticated by seller credentials (OAuth Authorization Code Grant)
-        Task<ResponseContent> ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
-        Task<ResponseContent> ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson);
-        Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson);
-        Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson);
-        Task<ResponseContent> DeleteOrder(string clientId, Uri sellerId, string uuid);
-        Task<ResponseContent> DeleteOrderQuote(string clientId, Uri sellerId, string uuid);
-        Task<ResponseContent> ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
-        Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
+        Task<ResponseContent> ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson, Uri customerAccountId = null);
+        Task<ResponseContent> ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson, Uri customerAccountId = null);
+        Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuid, string orderJson, Uri customerAccountId = null);
+        Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuid, string orderJson, Uri customerAccountId = null);
+        Task<ResponseContent> DeleteOrder(string clientId, Uri sellerId, string uuid, Uri customerAccountId = null);
+        Task<ResponseContent> DeleteOrderQuote(string clientId, Uri sellerId, string uuid, Uri customerAccountId = null);
+        Task<ResponseContent> ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson, Uri customerAccountId = null);
+        Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuid, string orderJson, Uri customerAccountId = null);
+        Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuid, Uri customerAccountId = null);
 
         // These endpoints are authenticated by client credentials (OAuth Client Credentials Grant)
         Task<ResponseContent> InsertTestOpportunity(string testDatasetIdentifier, string eventJson);
@@ -37,6 +38,5 @@ namespace OpenActive.Server.NET
         Task<ResponseContent> GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
         Task<ResponseContent> GetOrderProposalsRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
         Task<ResponseContent> GetOrderProposalsRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
-        Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuid);
     }
 }

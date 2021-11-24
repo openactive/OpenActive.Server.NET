@@ -11,7 +11,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     public interface IOpportunityDataRpdeFeedGenerator : IRpdeFeedGenerator
     {
         string FeedPath { get; }
-        void SetConfiguration(OpportunityTypeConfiguration opportunityTypeConfiguration, Uri jsonLdIdBaseUrl, int rpdePageSize, IBookablePairIdTemplate bookablePairIdTemplate, SingleIdTemplate<SellerIdComponents> sellerTemplate, Uri openDataFeedBaseUrl);
+        void SetConfiguration(OpportunityTypeConfiguration opportunityTypeConfiguration, Uri jsonLdIdBaseUrl, int rpdePageSize, IBookablePairIdTemplate bookablePairIdTemplate, SingleIdTemplate<SimpleIdComponents> sellerTemplate, Uri openDataFeedBaseUrl);
     }
 
     public abstract class OpportunityDataRpdeFeedGenerator<TComponents, TClass> : ModelSupport<TComponents>, IOpportunityDataRpdeFeedGenerator where TComponents : class, IBookableIdComponents, new() where TClass : Schema.NET.Thing
@@ -20,7 +20,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public virtual Uri FeedUrl { get; protected set; }
         public virtual string FeedPath { get; protected set; }
 
-        public void SetConfiguration(OpportunityTypeConfiguration opportunityTypeConfiguration, Uri jsonLdIdBaseUrl, int rpdePageSize, IBookablePairIdTemplate bookablePairIdTemplate, SingleIdTemplate<SellerIdComponents> sellerTemplate, Uri openDataFeedBaseUrl)
+        public void SetConfiguration(OpportunityTypeConfiguration opportunityTypeConfiguration, Uri jsonLdIdBaseUrl, int rpdePageSize, IBookablePairIdTemplate bookablePairIdTemplate, SingleIdTemplate<SimpleIdComponents> sellerTemplate, Uri openDataFeedBaseUrl)
         {
             if (!(bookablePairIdTemplate is BookablePairIdTemplate<TComponents>))
             {

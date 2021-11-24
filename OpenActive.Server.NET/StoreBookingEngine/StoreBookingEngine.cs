@@ -165,7 +165,7 @@ namespace OpenActive.Server.NET.StoreBooking
             };
         }
 
-        public void SetResponseOrderItem(OrderItem item, SellerIdComponents sellerId, StoreBookingFlowContext flowContext)
+        public void SetResponseOrderItem(OrderItem item, SimpleIdComponents sellerId, StoreBookingFlowContext flowContext)
         {
             if (item == null) throw new ArgumentNullException(nameof(item));
             var requestOrderItemId = RequestOrderItem?.OrderedItem.IdReference;
@@ -298,7 +298,7 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
 
-        protected override async Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller)
+        protected override async Task<Event> InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SimpleIdComponents seller)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new InternalOpenBookingException(new InternalLibraryConfigurationError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
@@ -357,7 +357,7 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        public override async Task ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
+        public override async Task ProcessCustomerCancellation(OrderIdComponents orderId, SimpleIdComponents sellerId, SimpleIdComponents customerAccountIdComponents, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
             if (!await storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderId, sellerId, orderItemIds))
             {
@@ -365,7 +365,7 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        public override async Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate)
+        public override async Task ProcessOrderProposalCustomerRejection(OrderIdComponents orderId, SimpleIdComponents sellerId, SimpleIdComponents customerAccountIdComponents, OrderIdTemplate orderIdTemplate)
         {
             if (!await storeBookingEngineSettings.OrderStore.CustomerRejectOrderProposal(orderId, sellerId))
             {
@@ -373,12 +373,12 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected override async Task<DeleteOrderResult> ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
+        protected override async Task<DeleteOrderResult> ProcessOrderDeletion(OrderIdComponents orderId, SimpleIdComponents sellerId, SimpleIdComponents customerAccountIdComponents)
         {
             return await storeBookingEngineSettings.OrderStore.DeleteOrder(orderId, sellerId);
         }
 
-        protected override async Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
+        protected override async Task ProcessOrderQuoteDeletion(OrderIdComponents orderId, SimpleIdComponents sellerId, SimpleIdComponents customerAccountIdComponents)
         {
             await storeBookingEngineSettings.OrderStore.DeleteLease(orderId, sellerId);
         }
@@ -421,13 +421,13 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected override async Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerIdComponents, ILegalEntity seller)
+        protected override async Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SimpleIdComponents sellerIdComponents, ILegalEntity seller, SimpleIdComponents customerAccountIdComponents)
         {
             // Get Order without OrderItems expanded
             var order = await storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
 
             // Get flowContext from resulting Order, treating it like a request (which also validates it like a request)
-            var flowContext = AugmentContextFromOrder(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, FlowStage.OrderStatus, order), order);
+            var flowContext = AugmentContextFromOrder(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, customerAccountIdComponents, FlowStage.OrderStatus, order), order);
 
             // Expand OrderItems based on the flowContext
             // Get contexts from OrderItems
@@ -456,13 +456,13 @@ namespace OpenActive.Server.NET.StoreBooking
             return order;
         }
 
-        public override async Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SellerIdComponents sellerId, Order order)
+        public override async Task<Order> ProcessOrderCreationFromOrderProposal(OrderIdComponents orderId, OrderIdTemplate orderIdTemplate, ILegalEntity seller, SimpleIdComponents sellerId, SimpleIdComponents customerAccountIdComponents, Order order)
         {
             if (!await storeBookingEngineSettings.OrderStore.CreateOrderFromOrderProposal(orderId, sellerId, order.OrderProposalVersion, order))
             {
                 throw new OpenBookingException(new OrderProposalVersionOutdatedError());
             }
-            return await ProcessGetOrderStatus(orderId, sellerId, seller);
+            return await ProcessGetOrderStatus(orderId, sellerId, seller, customerAccountIdComponents);
         }
 
         private List<IOrderItemContext> GetOrderItemContexts(List<OrderItem> sourceOrderItems)
@@ -574,16 +574,50 @@ namespace OpenActive.Server.NET.StoreBooking
         {
             StoreBookingFlowContext context = new StoreBookingFlowContext(request);
 
-            // Reflect back only those customer fields that are supported
-            switch (order.Customer)
+            // If this is a Customer Account request
+            if (context.CustomerAccountId != null)
             {
-                case Person person:
-                    context.Customer = storeBookingEngineSettings.CustomerPersonSupportedFields(person);
-                    break;
+                // TODO: use CustomerAccountStore to get Customer details
+                // QUICK HACK
+                context.Customer = new Person
+                {
+                    Email = "a-customer-account@test.com",
+                    HasAccount = new CustomerAccount
+                    {
+                        Identifier = context.CustomerAccountId.IdGuid.ToString()
+                    }
+                };
+            } else if (order.Customer.HasAccount.IdReference != null) {
+                // TODO: REMOVE THIS, as this is not in the latest spec - the latest spec just relies on the auth token
 
-                case Organization organization:
-                    context.Customer = storeBookingEngineSettings.CustomerOrganizationSupportedFields(organization);
-                    break;
+                // QUICK HACK
+                context.Customer = new Person
+                {
+                    Email = "a-customer-account@test.com",
+                    HasAccount = new CustomerAccount
+                    {
+                        Id = order.Customer.HasAccount.IdReference
+                    }
+                };
+                var template = new SingleIdTemplate<SimpleIdComponents>(
+                    "{+BaseUrl}/api/customer-accounts/{IdGuid}"
+                );
+                // Hack to add CustomerAccountId
+                context.CustomerAccountId = template.GetIdComponents(order.Customer.HasAccount.IdReference);
+            }
+            else
+            {
+                // Reflect back only those customer fields that are supported
+                switch (order.Customer)
+                {
+                    case Person person:
+                        context.Customer = storeBookingEngineSettings.CustomerPersonSupportedFields(person);
+                        break;
+
+                    case Organization organization:
+                        context.Customer = storeBookingEngineSettings.CustomerOrganizationSupportedFields(organization);
+                        break;
+                }
             }
 
             // Throw error on incomplete broker details
