@@ -21,6 +21,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public OrderIdTemplate OrderIdTemplate { get; set; }
         public SingleIdTemplate<SimpleIdComponents> SellerIdTemplate { get; set; }
         public SingleIdTemplate<SimpleIdComponents> CustomerAccountIdTemplate { get; set; }
+        public Uri CustomerAccountIdBaseUrl { get; set; }
         public Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> OpenDataFeeds { get; set; }
         public int RPDEPageSize { get; set; } = 500;
         public Uri JsonLdIdBaseUrl { get; set; }

@@ -67,6 +67,7 @@ namespace OpenActive.Server.NET.CustomBooking
             }
             settings.OrderIdTemplate.RequiredBaseUrl = openBookingAPIBaseUrl;
             settings.SellerIdTemplate.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
+            settings.CustomerAccountIdTemplate.RequiredBaseUrl = settings.CustomerAccountIdBaseUrl;
 
             // Create a lookup of each IdTemplate to pass into the appropriate RpdeGenerator
             // TODO: Output better error if there is a feed assigned across two templates
