@@ -582,12 +582,12 @@ namespace OpenActive.Server.NET.StoreBooking
                 context.Customer = new Person
                 {
                     Email = "a-customer-account@test.com",
-                    HasAccount = new CustomerAccount
+                    /*HasAccount = new CustomerAccount
                     {
-                        Identifier = context.CustomerAccountId.IdGuid.ToString()
-                    }
+                        Identifier = "/api/customer-accounts/" + context.CustomerAccountId?.IdGuid?.ToString()
+                    }*/
                 };
-            } else if (order.Customer.HasAccount.IdReference != null) {
+            } /*else if (order?.Customer?.HasAccount.IdReference != null) {
                 // TODO: REMOVE THIS, as this is not in the latest spec - the latest spec just relies on the auth token
 
                 // QUICK HACK
@@ -604,7 +604,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 );
                 // Hack to add CustomerAccountId
                 context.CustomerAccountId = template.GetIdComponents(order.Customer.HasAccount.IdReference);
-            }
+            } */
             else
             {
                 // Reflect back only those customer fields that are supported

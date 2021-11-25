@@ -59,7 +59,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             var clientId = principal.GetClientId();
             var sellerId = principal.GetSellerId().ParseUrlOrNull();
             var customerAccountId = principal.GetCustomerAccountId().ParseUrlOrNull();
-            if (clientId != null && sellerId != null)
+            if (clientId != null) // TODO: Add  && sellerId != null, and ensure sellerId is always passed in even in single seller mode
             {
                 return (clientId, sellerId, customerAccountId);
             }
