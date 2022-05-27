@@ -36,7 +36,7 @@ namespace OpenActive.Server.NET.StoreBooking
     //TODO: Remove duplication between this and RpdeBase if possible as they are using the same pattern?
     public abstract class OpportunityStore<TComponents, TDatabaseTransaction, TStateContext> : ModelSupport<TComponents>, IOpportunityStore where TComponents : class, IBookableIdComponents, new() where TDatabaseTransaction : IDatabaseTransaction where TStateContext : IStateContext
     {
-        // async methoids that are never called in transactions
+        // async methods that are never called in transactions
         void IOpportunityStore.SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SimpleIdComponents> sellerTemplate)
         {
             if (template as BookablePairIdTemplate<TComponents> == null)
