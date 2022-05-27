@@ -448,7 +448,11 @@ namespace OpenActive.Server.NET.CustomBooking
             var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.OrderProposal);
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
-                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, customerAccountIdComponents, FlowStage.P, order), order)), HttpStatusCode.Created);
+                var response = await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, customerAccountIdComponents, FlowStage.P, order), order);
+
+                // Return a 409 status code if any OrderItem level errors exist
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response),
+                    response.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.Created);
             }
         }
 
