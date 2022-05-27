@@ -419,13 +419,13 @@ namespace OpenActive.Server.NET.StoreBooking
             }
         }
 
-        protected override async Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SimpleIdComponents sellerIdComponents, ILegalEntity seller, SimpleIdComponents customerAccountIdComponents)
+        protected override async Task<Order> ProcessGetOrderStatus(OrderIdComponents orderId, SimpleIdComponents simpleIdComponents, ILegalEntity seller, SimpleIdComponents customerAccountIdComponents)
         {
             // Get Order without OrderItems expanded
-            var order = await storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, sellerIdComponents, seller);
+            var order = await storeBookingEngineSettings.OrderStore.GetOrderStatus(orderId, simpleIdComponents, seller);
 
             // Get flowContext from resulting Order, treating it like a request (which also validates it like a request)
-            var flowContext = AugmentContextFromOrder(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, customerAccountIdComponents, FlowStage.OrderStatus, order), order);
+            var flowContext = AugmentContextFromOrder(ValidateFlowRequest<Order>(orderId, simpleIdComponents, seller, customerAccountIdComponents, FlowStage.OrderStatus, order), order);
 
             // Expand OrderItems based on the flowContext
             // Get contexts from OrderItems

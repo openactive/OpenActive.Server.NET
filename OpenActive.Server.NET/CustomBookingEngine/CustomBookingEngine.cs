@@ -331,8 +331,8 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public async Task<ResponseContent> GetOrderStatus(string clientId, Uri sellerId, string uuidString, Uri customerAccountId = null)
         {
-            var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.Order);
-            var result = await ProcessGetOrderStatus(orderId, sellerIdComponents, seller, customerAccountIdComponents);
+            var (orderId, simpleIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.Order);
+            var result = await ProcessGetOrderStatus(orderId, simpleIdComponents, seller, customerAccountIdComponents);
             if (result == null)
             {
                 throw new OpenBookingException(new UnknownOrderError());
@@ -402,10 +402,10 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
-            var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, orderType);
+            var (orderId, simpleIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, orderType);
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
-                var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, customerAccountIdComponents, flowStage, orderQuote), orderQuote);
+                var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, simpleIdComponents, seller, customerAccountIdComponents, flowStage, orderQuote), orderQuote);
 
                 // Return a 409 status code if any OrderItem level errors exist
                 return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(orderResponse),
@@ -422,12 +422,12 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for B");
             }
-            var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.Order);
+            var (orderId, simpleIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.Order);
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 var response = order.OrderProposalVersion != null ?
-                     await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, customerAccountIdComponents, order) :
-                     await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, customerAccountIdComponents, FlowStage.B, order), order);
+                     await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, simpleIdComponents, customerAccountIdComponents, order) :
+                     await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, simpleIdComponents, seller, customerAccountIdComponents, FlowStage.B, order), order);
 
                 // Return a 409 status code if any OrderItem level errors exist
                 return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response),
@@ -445,21 +445,21 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
             }
-            var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.OrderProposal);
+            var (orderId, simpleIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.OrderProposal);
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
-                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, customerAccountIdComponents, FlowStage.P, order), order)), HttpStatusCode.Created);
+                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, simpleIdComponents, seller, customerAccountIdComponents, FlowStage.P, order), order)), HttpStatusCode.Created);
             }
         }
 
-        private SimpleIdComponents GetSellerIdComponentsFromApiKey(Uri sellerId)
+        private SimpleIdComponents GetSimpleIdComponentsFromApiKey(Uri sellerId)
         {
-            // Return empty SellerIdComponents in Single Seller mode, as it is not required in the API Key
+            // Return empty SimpleIdComponents in Single Seller mode, as it is not required in the API Key
             if (settings.HasSingleSeller == true) return new SimpleIdComponents();
 
-            var sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(sellerId);
-            if (sellerIdComponents == null) throw new OpenBookingException(new InvalidAPITokenError());
-            return sellerIdComponents;
+            var simpleIdComponents = settings.SellerIdTemplate.GetIdComponents(sellerId);
+            if (simpleIdComponents == null) throw new OpenBookingException(new InvalidAPITokenError());
+            return simpleIdComponents;
         }
 
         private SimpleIdComponents GetCustomerAccountIdComponentsFromApiKey(Uri customerAccountId)
@@ -467,7 +467,7 @@ namespace OpenActive.Server.NET.CustomBooking
             // Ignore null (if not authenticated with a Customer Account)
             if (customerAccountId == null) return null;
 
-            // Return empty SellerIdComponents in Single Seller mode, as it is not required in the API Key
+            // Return empty SimpleIdComponents in Single Seller mode, as it is not required in the API Key
             if (settings.CustomerAccountIdTemplate == null) throw new OpenBookingException(new InternalLibraryConfigurationError(), "CustomerAccount bookings are not enabled. Please set a CustomerAccountIdTemplate.");
 
             var customerAccountIdComponents = settings.CustomerAccountIdTemplate.GetIdComponents(customerAccountId);
@@ -480,7 +480,7 @@ namespace OpenActive.Server.NET.CustomBooking
             var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = ConvertToGuid(uuidString) };
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
-                var result = await ProcessOrderDeletion(orderId, GetSellerIdComponentsFromApiKey(sellerId), GetCustomerAccountIdComponentsFromApiKey(customerAccountId));
+                var result = await ProcessOrderDeletion(orderId, GetSimpleIdComponentsFromApiKey(sellerId), GetCustomerAccountIdComponentsFromApiKey(customerAccountId));
                 switch (result)
                 {
                     case DeleteOrderResult.OrderSuccessfullyDeleted:
@@ -500,7 +500,7 @@ namespace OpenActive.Server.NET.CustomBooking
             var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = ConvertToGuid(uuidString) };
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
-                await ProcessOrderQuoteDeletion(orderId, GetSellerIdComponentsFromApiKey(sellerId), GetCustomerAccountIdComponentsFromApiKey(customerAccountId));
+                await ProcessOrderQuoteDeletion(orderId, GetSimpleIdComponentsFromApiKey(sellerId), GetCustomerAccountIdComponentsFromApiKey(customerAccountId));
                 return ResponseContent.OpenBookingNoContentResponse();
             }
         }
@@ -513,7 +513,7 @@ namespace OpenActive.Server.NET.CustomBooking
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
-                SimpleIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
+                SimpleIdComponents simpleIdComponents = GetSimpleIdComponentsFromApiKey(sellerId);
                 SimpleIdComponents customerAccountIdComponents = GetCustomerAccountIdComponentsFromApiKey(customerAccountId);
 
                 if (order == null || order.GetType() != typeof(Order))
@@ -559,7 +559,7 @@ namespace OpenActive.Server.NET.CustomBooking
                     throw new OpenBookingException(new OrderItemNotWithinOrderError());
                 }
 
-                await ProcessCustomerCancellation(orderId, sellerIdComponents, customerAccountIdComponents, settings.OrderIdTemplate, orderItemIds);
+                await ProcessCustomerCancellation(orderId, simpleIdComponents, customerAccountIdComponents, settings.OrderIdTemplate, orderItemIds);
 
                 return ResponseContent.OpenBookingNoContentResponse();
             }
@@ -574,7 +574,7 @@ namespace OpenActive.Server.NET.CustomBooking
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 OrderProposal orderProposal = OpenActiveSerializer.Deserialize<OrderProposal>(orderProposalJson);
-                SimpleIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(sellerId);
+                SimpleIdComponents simpleIdComponents = GetSimpleIdComponentsFromApiKey(sellerId);
                 SimpleIdComponents customerAccountIdComponents = GetCustomerAccountIdComponentsFromApiKey(customerAccountId);
 
                 if (orderProposal == null || orderProposal.GetType() != typeof(Order))
@@ -599,7 +599,7 @@ namespace OpenActive.Server.NET.CustomBooking
                     throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerRejected' is permitted for this property.");
                 }
 
-                await ProcessOrderProposalCustomerRejection(orderId, sellerIdComponents, customerAccountIdComponents, settings.OrderIdTemplate);
+                await ProcessOrderProposalCustomerRejection(orderId, simpleIdComponents, customerAccountIdComponents, settings.OrderIdTemplate);
 
                 return ResponseContent.OpenBookingNoContentResponse();
             }
@@ -706,11 +706,11 @@ namespace OpenActive.Server.NET.CustomBooking
             }
 
             if (seller?.Id == null) throw new OpenBookingException(new SellerMismatchError(), "No seller ID was specified");
-            var sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(seller.Id);
-            if (sellerIdComponents == null) throw new OpenBookingException(new SellerMismatchError(), "Seller ID format was invalid");
+            var simpleIdComponents = settings.SellerIdTemplate.GetIdComponents(seller.Id);
+            if (simpleIdComponents == null) throw new OpenBookingException(new SellerMismatchError(), "Seller ID format was invalid");
 
             // Returns a matching Event subclass that will only include "@type" and "@id" properties
-            var createdEvent = await this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, genericEvent.TestOpenBookingFlow.Value, sellerIdComponents);
+            var createdEvent = await this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, genericEvent.TestOpenBookingFlow.Value, simpleIdComponents);
 
             if (createdEvent.Type != genericEvent.Type)
             {
@@ -752,7 +752,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         protected abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdTemplate orderIdTemplate);
 
-        private async Task<(OrderIdComponents orderId, SimpleIdComponents sellerIdComponents, ILegalEntity seller, SimpleIdComponents customerAccountIdComponents)> ConstructIdsFromRequest(string clientId, Uri authenticationSellerId, Uri authenticationCustomerAccountId, string uuidString, OrderType orderType)
+        private async Task<(OrderIdComponents orderId, SimpleIdComponents simpleIdComponents, ILegalEntity seller, SimpleIdComponents customerAccountIdComponents)> ConstructIdsFromRequest(string clientId, Uri authenticationSellerId, Uri authenticationCustomerAccountId, string uuidString, OrderType orderType)
         {
             var orderId = new OrderIdComponents
             {
@@ -763,22 +763,22 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // TODO: Add more request validation rules here
 
-            SimpleIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(authenticationSellerId);
+            SimpleIdComponents simpleIdComponents = GetSimpleIdComponentsFromApiKey(authenticationSellerId);
 
             SimpleIdComponents customerAccountIdComponents = GetCustomerAccountIdComponentsFromApiKey(authenticationCustomerAccountId);
 
-            ILegalEntity seller = await settings.SellerStore.GetSellerById(sellerIdComponents);
+            ILegalEntity seller = await settings.SellerStore.GetSellerById(simpleIdComponents);
 
             if (seller == null)
             {
                 throw new OpenBookingException(new SellerNotFoundError());
             }
 
-            return (orderId, sellerIdComponents, seller, customerAccountIdComponents);
+            return (orderId, simpleIdComponents, seller, customerAccountIdComponents);
         }
 
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
-        protected BookingFlowContext ValidateFlowRequest<TOrder>(OrderIdComponents orderId, SimpleIdComponents sellerIdComponents, ILegalEntity seller, SimpleIdComponents customerAccountIdComponents, FlowStage stage, TOrder order) where TOrder : Order, new()
+        protected BookingFlowContext ValidateFlowRequest<TOrder>(OrderIdComponents orderId, SimpleIdComponents simpleIdComponents, ILegalEntity seller, SimpleIdComponents customerAccountIdComponents, FlowStage stage, TOrder order) where TOrder : Order, new()
         {
             // If being called from Order Status then expect Seller to already be a full object
             var sellerIdFromOrder = stage == FlowStage.OrderStatus ? order?.Seller.Object?.Id : order?.Seller.IdReference;
@@ -843,7 +843,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 OrderId = orderId,
                 OrderIdTemplate = settings.OrderIdTemplate,
                 Seller = seller,
-                SellerId = sellerIdComponents,
+                SellerId = simpleIdComponents,
                 CustomerAccountId = customerAccountIdComponents,
                 TaxPayeeRelationship = taxPayeeRelationship,
                 Payer = payer,
