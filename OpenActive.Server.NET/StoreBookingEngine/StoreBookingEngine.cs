@@ -478,14 +478,14 @@ namespace OpenActive.Server.NET.StoreBooking
                 }
 
                 /*
-                TODO: Check if Customer Account auth and throw if not
+                TODO: Check if Customer Account auth and only throw the error below if not
+                */
                 if (acceptedOfferId == null)
                 {
                     return new UnknownOrderItemContext(index, orderItem,
                         new IncompleteOrderItemError(), "acceptedOffer @id was not provided");
                 }
-                */
-
+                
                 var idComponents = base.ResolveOpportunityID(orderedItemId, acceptedOfferId);
 
                 if (idComponents == null)

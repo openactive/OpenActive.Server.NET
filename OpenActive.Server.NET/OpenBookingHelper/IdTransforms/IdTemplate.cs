@@ -123,7 +123,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             // Require both opportunityId and offerId to not be null
             if (opportunityId == null) throw new ArgumentNullException(nameof(opportunityId));
-            // if (offerId == null) throw new ArgumentNullException(nameof(offerId));
+            if (offerId == null) throw new ArgumentNullException(nameof(offerId));
 
             // As inheritance is in use, the Offer must be resolved against either: Opportunity with Offer; or Opportunity and _parent_ Offer
             // Note in OpenActive Modelling Specification 2.0 this behaviour is only applicable to SessionSeries and ScheduledSession
@@ -229,7 +229,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
             // Require both opportunityId and offerId to not be null
             if (opportunityId == null) throw new ArgumentNullException(nameof(opportunityId));
-            // if (offerId == null) throw new ArgumentNullException(nameof(offerId));
+            if (offerId == null) throw new ArgumentNullException(nameof(offerId));
 
             // Without inheritance, the Offer must be resolved against either: Opportunity with Offer; or _parent_ Opportunity and parent Offer
             // Note that if any URL templates to be used for one of the checks below are null, the result for that check will be null
