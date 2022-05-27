@@ -32,9 +32,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return this.OrderIdTemplate.RenderOrderItemId(orderType, uuid, orderItemId);
         }
 
-        protected Uri RenderSellerId(SimpleIdComponents simpleIdComponents)
+        protected Uri RenderSellerId(SimpleIdComponents sellerIdComponents)
         {
-            return this.SellerIdTemplate.RenderId(simpleIdComponents);
+            return this.SellerIdTemplate.RenderId(sellerIdComponents);
         }
 
         protected Uri RenderSingleSellerId()

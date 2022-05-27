@@ -14,9 +14,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             this.IdTemplate = template;
         }
 
-        protected Uri RenderSellerId(SimpleIdComponents simpleIdComponents)
+        protected Uri RenderSellerId(SimpleIdComponents sellerIdComponents)
         {
-            return this.IdTemplate.RenderId(simpleIdComponents);
+            return this.IdTemplate.RenderId(sellerIdComponents);
         }
 
         protected Uri RenderSingleSellerId()
@@ -24,10 +24,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return this.IdTemplate.RenderId(new SimpleIdComponents());
         }
 
-        internal async ValueTask<ILegalEntity> GetSellerById(SimpleIdComponents simpleIdComponents)
+        internal async ValueTask<ILegalEntity> GetSellerById(SimpleIdComponents sellerIdComponents)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            return await GetSeller(simpleIdComponents);
+            return await GetSeller(sellerIdComponents);
         }
 
         protected abstract ValueTask<ILegalEntity> GetSeller(SimpleIdComponents sellerId);

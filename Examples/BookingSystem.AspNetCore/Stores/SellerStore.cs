@@ -23,12 +23,12 @@ namespace BookingSystem
         }
 
         // If the Seller is not found, simply return null to generate the correct Open Booking error
-        protected override async ValueTask<ILegalEntity> GetSeller(SimpleIdComponents simpleIdComponents)
+        protected override async ValueTask<ILegalEntity> GetSeller(SimpleIdComponents sellerIdComponents)
         {
             // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required for an actual implementation.
             if (_useSingleSellerMode)
             {
-                // For Single Seller booking systems, no ID will be available from simpleIdComponents, and this data should instead come from your configuration table
+                // For Single Seller booking systems, no ID will be available from sellerIdComponents, and this data should instead come from your configuration table
                 return new Organization
                 {
                     Id = RenderSingleSellerId(),
@@ -56,10 +56,10 @@ namespace BookingSystem
                 };
             }
 
-            // Otherwise it may be looked up based on supplied simpleIdComponents which are extracted from the sellerId.
+            // Otherwise it may be looked up based on supplied sellerIdComponents which are extracted from the sellerId.
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
-                var seller = db.SingleById<SellerTable>(simpleIdComponents.IdLong);
+                var seller = db.SingleById<SellerTable>(sellerIdComponents.IdLong);
                 if (seller == null)
                 {
                     // Seller not found
