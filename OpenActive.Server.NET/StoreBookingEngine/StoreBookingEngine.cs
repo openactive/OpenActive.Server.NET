@@ -685,6 +685,8 @@ namespace OpenActive.Server.NET.StoreBooking
                     // Do not continue to process the Order if there are already OrderItem level errors
                     switch (responseGenericOrder)
                     {
+                        case OrderProposal _:
+                            break;
                         case OrderQuote responseOrderQuote:
                             // Note OrderRequiresApproval is only required during C1 and C2
                             responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
