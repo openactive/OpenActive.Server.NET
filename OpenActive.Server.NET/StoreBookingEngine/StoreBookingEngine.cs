@@ -679,11 +679,20 @@ namespace OpenActive.Server.NET.StoreBooking
                 };
 
                 // TODO: AugmentOrderWithTotals is currently running twice - once here and once after the [Lease/Book/Propose]OrderItems calls in case the price has changed due to the Customer Account's entitlements. This could be optimised, and perhaps it could be moved into the if block below.
+                // Ensure that the Order is augmented with totals
                 OrderCalculations.AugmentOrderWithTotals(responseGenericOrder, flowContext, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation, storeBookingEngineSettings.PrepaymentAlwaysRequired);
                 if (HasOrderItemErrors(responseGenericOrder))
                 {
-                    // Ensure that the Order is augmented with totals, and do not continue to process the Order if there are already OrderItem level errors
+                    // Do not continue to process the Order if there are already OrderItem level errors
                     Console.WriteLine($"## {flowContext.OrderId.uuid} | LEAVING CRITICAL SECTION {flowContext.Stage.ToString()} for {flowContext?.Customer?.Email ?? "?"}");
+
+                    switch (responseGenericOrder)
+                    {
+                        case OrderQuote responseOrderQuote:
+                            // Note OrderRequiresApproval is only required during C1 and C2
+                            responseOrderQuote.OrderRequiresApproval = orderItemContexts.Any(x => x.RequiresApproval);
+                            break;
+                    }
                     return responseGenericOrder;
                 }
 
