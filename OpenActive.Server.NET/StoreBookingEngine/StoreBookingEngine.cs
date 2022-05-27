@@ -695,14 +695,14 @@ namespace OpenActive.Server.NET.StoreBooking
                     OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList()
                 };
 
-                // TODO: AugmentOrderWithTotals is currently running twice - once here and once after the [Lease/Book/Propose]OrderItems calls in case the price has changed due to the Customer Account's entitlements. This could be optimised.
-                //if (HasOrderItemErrors(responseGenericOrder))
-                //{
+                // TODO: AugmentOrderWithTotals is currently running twice - once here and once after the [Lease/Book/Propose]OrderItems calls in case the price has changed due to the Customer Account's entitlements. This could be optimised, and perhaps it could be moved into the if block below.
+                OrderCalculations.AugmentOrderWithTotals(responseGenericOrder, flowContext, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation, storeBookingEngineSettings.PrepaymentAlwaysRequired);
+                if (HasOrderItemErrors(responseGenericOrder))
+                {
                     // Ensure that the Order is augmented with totals, and do not continue to process the Order if there are already OrderItem level errors
-                    OrderCalculations.AugmentOrderWithTotals(responseGenericOrder, flowContext, storeBookingEngineSettings.BusinessToConsumerTaxCalculation, storeBookingEngineSettings.BusinessToBusinessTaxCalculation, storeBookingEngineSettings.PrepaymentAlwaysRequired);
                     Console.WriteLine($"## {flowContext.OrderId.uuid} | LEAVING CRITICAL SECTION {flowContext.Stage.ToString()} for {flowContext?.Customer?.Email ?? "?"}");
                     return responseGenericOrder;
-                //}
+                }
 
                 try
                     {
