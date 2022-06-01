@@ -10,7 +10,7 @@
       "launchUrl": "https://localhost:5001/openactive",
       "applicationUrl": "https://localhost:5001",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ENVIRONMENT": "no-auth",
         "ApplicationHostBaseUrl": "https://localhost:5001"
       }
     }

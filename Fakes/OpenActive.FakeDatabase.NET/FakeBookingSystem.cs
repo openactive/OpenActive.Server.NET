@@ -838,7 +838,11 @@ namespace OpenActive.FakeDatabase.NET
             Uri opportunityJsonLdId,
             Uri offerJsonLdId,
             long numberOfSpaces,
-            bool proposal
+            bool proposal,
+            List<string> attendeeEmail,
+            List<string> attendeeGivenName,
+            List<string> attendeeFamilyName,
+            List<string> attendeeTelephone
             )
         {
             var db = transaction.DatabaseConnection;
@@ -882,8 +886,13 @@ namespace OpenActive.FakeDatabase.NET
                     BarCodeText = thisClass.AttendanceMode != AttendanceMode.Online ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
                     MeetingUrl = thisClass.AttendanceMode != AttendanceMode.Offline ? new Uri(Faker.Internet.Url()) : null,
                     MeetingId = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
-                    MeetingPassword = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null
+                    MeetingPassword = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
+                    AttendeeEmail = attendeeEmail[i] ?? null,
+                    AttendeeGivenName = attendeeGivenName[i] ?? null,
+                    AttendeeFamilyName = attendeeFamilyName[i] ?? null,
+                    AttendeeTelephone = attendeeTelephone[i] ?? null,
                 };
+
                 await db.SaveAsync(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {

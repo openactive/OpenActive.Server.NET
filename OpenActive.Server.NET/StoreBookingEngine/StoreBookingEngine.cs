@@ -79,8 +79,10 @@ namespace OpenActive.Server.NET.StoreBooking
 
         private List<OpenBookingError> Errors = null;
 
-        public bool HasErrors {
-            get {
+        public bool HasErrors
+        {
+            get
+            {
                 return Errors?.Count > 0;
             }
         }
@@ -231,7 +233,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
             item.Error = Errors;
             item.Position = RequestOrderItem?.Position;
-            
+
             ResponseOrderItem = item;
         }
 
@@ -261,7 +263,7 @@ namespace OpenActive.Server.NET.StoreBooking
     /// </summary>
     public class StoreBookingEngine : CustomBookingEngine
     {
-        private class SilentRollbackException : Exception {}
+        private class SilentRollbackException : Exception { }
 
         /// <summary>
         /// Simple constructor
@@ -486,7 +488,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     return new UnknownOrderItemContext(index, orderItem,
                         new IncompleteOrderItemError(), "acceptedOffer @id was not provided");
                 }
-                
+
                 var idComponents = base.ResolveOpportunityID(orderedItemId, acceptedOfferId);
 
                 if (idComponents == null)
@@ -629,12 +631,14 @@ namespace OpenActive.Server.NET.StoreBooking
             return context;
         }
 
-        public void AugmentWithOpenBookingPrepaymentConflictErrors(List<IOrderItemContext> orderItemContexts) {
+        public void AugmentWithOpenBookingPrepaymentConflictErrors(List<IOrderItemContext> orderItemContexts)
+        {
             var contextsWithOpenBookingPrepaymentRequired = orderItemContexts.Where(x => x.ResponseOrderItem?.AcceptedOffer.Object?.Price > 0 && (x.ResponseOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == null || x.ResponseOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Required)).ToList();
             var contextsWithOpenBookingPrepaymentUnavailable = orderItemContexts.Where(x => x.ResponseOrderItem?.AcceptedOffer.Object?.Price > 0 && x.ResponseOrderItem?.AcceptedOffer.Object?.OpenBookingPrepayment == RequiredStatusType.Unavailable).ToList();
 
             // Add errors to any items with conflicting openBookingPrepayment values
-            if (contextsWithOpenBookingPrepaymentRequired.Count > 0 && contextsWithOpenBookingPrepaymentUnavailable.Count > 0) {
+            if (contextsWithOpenBookingPrepaymentRequired.Count > 0 && contextsWithOpenBookingPrepaymentUnavailable.Count > 0)
+            {
                 foreach (var ctx in contextsWithOpenBookingPrepaymentRequired.Concat(contextsWithOpenBookingPrepaymentUnavailable))
                 {
                     ctx.AddError(new OpportunityIsInConflictError(), "A single Order cannot contain items with prepayment Unavailable, and also items with prepayment Required.");

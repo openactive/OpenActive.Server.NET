@@ -30,5 +30,9 @@ namespace OpenActive.FakeDatabase.NET
         public Uri MeetingUrl { get; set; }
         public string MeetingId { get; set; }
         public string MeetingPassword { get; set; }
+        public string AttendeeEmail { get; set; }
+        public string AttendeeGivenName { get; set; }
+        public string AttendeeFamilyName { get; set; }
+        public string AttendeeTelephone { get; set; }
     }
 }
