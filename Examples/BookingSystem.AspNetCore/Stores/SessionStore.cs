@@ -563,10 +563,16 @@ namespace BookingSystem
                     RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
                     false,
-                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.Email).ToList(),
-                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.GivenName).ToList(),
-                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.FamilyName).ToList(),
-                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.Telephone).ToList()
+                    ctxGroup
+                        .Where(x => x.RequestOrderItem.Attendee != null)
+                        .Select(x => new FakeDbPerson
+                        {
+                            GivenName = x.RequestOrderItem.Attendee.GivenName,
+                            FamilyName = x.RequestOrderItem.Attendee.FamilyName,
+                            Email = x.RequestOrderItem.Attendee.Email,
+                            Telephone = x.RequestOrderItem.Attendee.Telephone,
+                        })
+                        .ToList()
                     );
 
                 switch (result)
@@ -618,10 +624,16 @@ namespace BookingSystem
                     RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
                     true,
-                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.Email).ToList(),
-                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.GivenName).ToList(),
-                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.FamilyName).ToList(),
-                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.Telephone).ToList()
+                    ctxGroup
+                        .Where(x => x.RequestOrderItem.Attendee != null)
+                        .Select(x => new FakeDbPerson
+                        {
+                            GivenName = x.RequestOrderItem.Attendee.GivenName,
+                            FamilyName = x.RequestOrderItem.Attendee.FamilyName,
+                            Email = x.RequestOrderItem.Attendee.Email,
+                            Telephone = x.RequestOrderItem.Attendee.Telephone,
+                        })
+                        .ToList()
                     );
 
                 switch (result)

@@ -470,10 +470,10 @@ namespace BookingSystem
                                 orderItem.Status == BookingStatus.Absent ? OrderItemStatus.AttendeeAbsent : (OrderItemStatus?)null,
                     Attendee = hasAttendeeDetails ? new Person
                     {
-                        GivenName = orderItem.AttendeeGivenName ?? null,
-                        FamilyName = orderItem.AttendeeFamilyName ?? null,
-                        Email = orderItem.AttendeeEmail ?? null,
-                        Telephone = orderItem.AttendeeTelephone ?? null,
+                        GivenName = orderItem.AttendeeGivenName,
+                        FamilyName = orderItem.AttendeeFamilyName,
+                        Email = orderItem.AttendeeEmail,
+                        Telephone = orderItem.AttendeeTelephone,
                     } : null,
                 };
             }).ToList();
