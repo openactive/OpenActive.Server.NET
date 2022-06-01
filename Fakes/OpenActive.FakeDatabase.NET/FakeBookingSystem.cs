@@ -847,7 +847,8 @@ namespace OpenActive.FakeDatabase.NET
             Uri offerJsonLdId,
             long numberOfSpaces,
             bool proposal,
-            List<FakeDbPerson> attendees
+            List<FakeDbPerson> attendees,
+            List<string> additionalDetailsString
             )
         {
             var db = transaction.DatabaseConnection;
@@ -896,6 +897,7 @@ namespace OpenActive.FakeDatabase.NET
                     AttendeeGivenName = attendees.Count > 0 ? attendees[i].GivenName : null,
                     AttendeeFamilyName = attendees.Count > 0 ? attendees[i].FamilyName : null,
                     AttendeeTelephone = attendees.Count > 0 ? attendees[i].Telephone : null,
+                    AdditionalDetailsString = additionalDetailsString.Count > 0 ? additionalDetailsString[i] : null,
                 };
 
                 await db.SaveAsync(orderItem);
@@ -926,7 +928,8 @@ namespace OpenActive.FakeDatabase.NET
             Uri offerJsonLdId,
             long numberOfSpaces,
             bool proposal,
-            List<FakeDbPerson> attendees
+            List<FakeDbPerson> attendees,
+            List<string> additionalDetailsString
             )
         {
             var db = transaction.DatabaseConnection;
@@ -972,6 +975,7 @@ namespace OpenActive.FakeDatabase.NET
                     AttendeeGivenName = attendees.Count > 0 ? attendees[i].GivenName : null,
                     AttendeeFamilyName = attendees.Count > 0 ? attendees[i].FamilyName : null,
                     AttendeeTelephone = attendees.Count > 0 ? attendees[i].Telephone : null,
+                    AdditionalDetailsString = additionalDetailsString.Count > 0 ? additionalDetailsString[i] : null,
                 };
 
                 await db.SaveAsync(orderItem);

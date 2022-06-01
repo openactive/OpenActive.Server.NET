@@ -34,5 +34,6 @@ namespace OpenActive.FakeDatabase.NET
         public string AttendeeGivenName { get; set; }
         public string AttendeeFamilyName { get; set; }
         public string AttendeeTelephone { get; set; }
+        public string AdditionalDetailsString { get; set; }
     }
 }
