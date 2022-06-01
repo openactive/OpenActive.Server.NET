@@ -562,7 +562,11 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key),
                     RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
-                    false
+                    false,
+                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.Email).ToList(),
+                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.GivenName).ToList(),
+                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.FamilyName).ToList(),
+                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.Telephone).ToList()
                     );
 
                 switch (result)
@@ -613,7 +617,11 @@ namespace BookingSystem
                     RenderOpportunityId(ctxGroup.Key),
                     RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
-                    true
+                    true,
+                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.Email).ToList(),
+                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.GivenName).ToList(),
+                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.FamilyName).ToList(),
+                    ctxGroup.Select(x => x.RequestOrderItem.Attendee.Telephone).ToList()
                     );
 
                 switch (result)

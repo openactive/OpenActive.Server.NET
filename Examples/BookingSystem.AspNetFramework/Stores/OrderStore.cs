@@ -13,7 +13,7 @@ namespace BookingSystem
     {
         // OrderStateContext will be disposed at the end of the flow
         public void Dispose()
-        { 
+        {
         }
     }
 
@@ -449,21 +449,33 @@ namespace BookingSystem
             if (getOrderResult == FakeDatabaseGetOrderResult.OrderWasNotFound) throw new OpenBookingException(new UnknownOrderError());
 
             var orderIdUri = RenderOrderId(dbOrder.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : dbOrder.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, new Guid(dbOrder.OrderId));
-            var orderItems = dbOrderItems.Select((orderItem) => new OrderItem
+            var orderItems = dbOrderItems.Select((orderItem) =>
             {
-                Id = dbOrder.OrderMode != OrderMode.Lease ? RenderOrderItemId(OrderType.Order, new Guid(dbOrder.OrderId), orderItem.Id) : null,
-                AcceptedOffer = new Offer
+                var hasAttendeeDetails = orderItem.AttendeeEmail != null || orderItem.AttendeeGivenName != null
+                || orderItem.AttendeeFamilyName != null || orderItem.AttendeeTelephone != null;
+                return new OrderItem
                 {
-                    Id = orderItem.OfferJsonLdId,
-                    Price = orderItem.Price
-                },
-                OrderedItem = orderItem.OpportunityJsonLdId,
-                OrderItemStatus =
-                            orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
-                            orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
-                            orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
-                            orderItem.Status == BookingStatus.Attended ? OrderItemStatus.AttendeeAttended :
-                            orderItem.Status == BookingStatus.Absent ? OrderItemStatus.AttendeeAbsent : (OrderItemStatus?)null
+                    Id = dbOrder.OrderMode != OrderMode.Lease ? RenderOrderItemId(OrderType.Order, new Guid(dbOrder.OrderId), orderItem.Id) : null,
+                    AcceptedOffer = new Offer
+                    {
+                        Id = orderItem.OfferJsonLdId,
+                        Price = orderItem.Price
+                    },
+                    OrderedItem = orderItem.OpportunityJsonLdId,
+                    OrderItemStatus =
+                                orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
+                                orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
+                                orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
+                                orderItem.Status == BookingStatus.Attended ? OrderItemStatus.AttendeeAttended :
+                                orderItem.Status == BookingStatus.Absent ? OrderItemStatus.AttendeeAbsent : (OrderItemStatus?)null,
+                    Attendee = hasAttendeeDetails ? new Person
+                    {
+                        GivenName = orderItem.AttendeeGivenName ?? null,
+                        FamilyName = orderItem.AttendeeFamilyName ?? null,
+                        Email = orderItem.AttendeeEmail ?? null,
+                        Telephone = orderItem.AttendeeTelephone ?? null,
+                    } : null,
+                };
             }).ToList();
             var order = RenderOrderFromDatabaseResult(orderIdUri, dbOrder, orderItems);
 
@@ -473,7 +485,8 @@ namespace BookingSystem
                 Id = orderItem.Id,
                 AcceptedOffer = orderItem.AcceptedOffer.Object.Id,
                 OrderedItem = orderItem.OrderedItem,
-                OrderItemStatus = orderItem.OrderItemStatus
+                OrderItemStatus = orderItem.OrderItemStatus,
+                Attendee = orderItem.Attendee
             }).ToList();
             order.OrderedItem = mappedOrderItems;
 
