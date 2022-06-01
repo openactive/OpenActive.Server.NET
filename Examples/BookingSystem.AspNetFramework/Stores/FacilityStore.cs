@@ -520,6 +520,10 @@ namespace BookingSystem
                             Email = x.RequestOrderItem.Attendee.Email,
                             Telephone = x.RequestOrderItem.Attendee.Telephone,
                         })
+                        .ToList(),
+                    ctxGroup
+                        .Where(x => x.RequestOrderItem.OrderItemIntakeFormResponse != null)
+                        .Select(x => OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
                         .ToList()
                     );
 
@@ -581,6 +585,10 @@ namespace BookingSystem
                             Email = x.RequestOrderItem.Attendee.Email,
                             Telephone = x.RequestOrderItem.Attendee.Telephone,
                         })
+                        .ToList(),
+                    ctxGroup
+                        .Where(x => x.RequestOrderItem.OrderItemIntakeFormResponse != null)
+                        .Select(x => OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
                         .ToList()
                     );
 

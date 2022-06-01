@@ -475,6 +475,7 @@ namespace BookingSystem
                         Email = orderItem.AttendeeEmail,
                         Telephone = orderItem.AttendeeTelephone,
                     } : null,
+                    OrderItemIntakeFormResponse = orderItem.AdditionalDetailsString != null ? OpenActiveSerializer.DeserializeList<PropertyValue>(orderItem.AdditionalDetailsString) : null,
                 };
             }).ToList();
             var order = RenderOrderFromDatabaseResult(orderIdUri, dbOrder, orderItems);
@@ -486,7 +487,8 @@ namespace BookingSystem
                 AcceptedOffer = orderItem.AcceptedOffer.Object.Id,
                 OrderedItem = orderItem.OrderedItem,
                 OrderItemStatus = orderItem.OrderItemStatus,
-                Attendee = orderItem.Attendee
+                Attendee = orderItem.Attendee,
+                OrderItemIntakeFormResponse = orderItem.OrderItemIntakeFormResponse,
             }).ToList();
             order.OrderedItem = mappedOrderItems;
 
