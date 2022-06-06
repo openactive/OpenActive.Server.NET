@@ -512,18 +512,16 @@ namespace BookingSystem
                     ctxGroup.Count(),
                     false,
                     ctxGroup
-                        .Where(x => x.RequestOrderItem.Attendee != null)
-                        .Select(x => new FakeDbPerson
-                        {
-                            GivenName = x.RequestOrderItem.Attendee.GivenName,
-                            FamilyName = x.RequestOrderItem.Attendee.FamilyName,
-                            Email = x.RequestOrderItem.Attendee.Email,
-                            Telephone = x.RequestOrderItem.Attendee.Telephone,
-                        })
+                        .Select(x =>
+                            x.RequestOrderItem.Attendee == null
+                            ? null
+                            : OpenActiveSerializer.Serialize(x.RequestOrderItem.Attendee))
                         .ToList(),
                     ctxGroup
-                        .Where(x => x.RequestOrderItem.OrderItemIntakeFormResponse != null)
-                        .Select(x => OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
+                        .Select(x =>
+                        x.RequestOrderItem.OrderItemIntakeFormResponse != null
+                        ? null
+                        : OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
                         .ToList()
                     );
 
@@ -577,18 +575,16 @@ namespace BookingSystem
                     ctxGroup.Count(),
                     true,
                     ctxGroup
-                        .Where(x => x.RequestOrderItem.Attendee != null)
-                        .Select(x => new FakeDbPerson
-                        {
-                            GivenName = x.RequestOrderItem.Attendee.GivenName,
-                            FamilyName = x.RequestOrderItem.Attendee.FamilyName,
-                            Email = x.RequestOrderItem.Attendee.Email,
-                            Telephone = x.RequestOrderItem.Attendee.Telephone,
-                        })
+                        .Select(x =>
+                            x.RequestOrderItem.Attendee == null
+                            ? null
+                            : OpenActiveSerializer.Serialize(x.RequestOrderItem.Attendee))
                         .ToList(),
                     ctxGroup
-                        .Where(x => x.RequestOrderItem.OrderItemIntakeFormResponse != null)
-                        .Select(x => OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
+                        .Select(x =>
+                        x.RequestOrderItem.OrderItemIntakeFormResponse != null
+                        ? null
+                        : OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
                         .ToList()
                     );
 

@@ -161,14 +161,6 @@ namespace OpenActive.FakeDatabase.NET
         public List<Claim> Claims { get; set; }
     }
 
-    public class FakeDbPerson
-    {
-        public string GivenName { get; set; }
-        public string FamilyName { get; set; }
-        public string Email { get; set; }
-        public string Telephone { get; set; }
-    }
-
     public class FakeDatabase
     {
         private const float ProportionWithRequiresAttendeeValidation = 1f / 10;
@@ -847,7 +839,7 @@ namespace OpenActive.FakeDatabase.NET
             Uri offerJsonLdId,
             long numberOfSpaces,
             bool proposal,
-            List<FakeDbPerson> attendees,
+            List<string> attendees,
             List<string> additionalDetailsString
             )
         {
@@ -893,11 +885,8 @@ namespace OpenActive.FakeDatabase.NET
                     MeetingUrl = thisClass.AttendanceMode != AttendanceMode.Offline ? new Uri(Faker.Internet.Url()) : null,
                     MeetingId = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
                     MeetingPassword = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
-                    AttendeeEmail = attendees.Count > 0 ? attendees[i].Email : null,
-                    AttendeeGivenName = attendees.Count > 0 ? attendees[i].GivenName : null,
-                    AttendeeFamilyName = attendees.Count > 0 ? attendees[i].FamilyName : null,
-                    AttendeeTelephone = attendees.Count > 0 ? attendees[i].Telephone : null,
-                    AdditionalDetailsString = additionalDetailsString.Count > 0 ? additionalDetailsString[i] : null,
+                    AttendeeString = attendees.Count > i ? attendees[i] : null,
+                    AdditionalDetailsString = additionalDetailsString.Count > i ? additionalDetailsString[i] : null,
                 };
 
                 await db.SaveAsync(orderItem);
@@ -928,7 +917,7 @@ namespace OpenActive.FakeDatabase.NET
             Uri offerJsonLdId,
             long numberOfSpaces,
             bool proposal,
-            List<FakeDbPerson> attendees,
+            List<string> attendees,
             List<string> additionalDetailsString
             )
         {
@@ -971,11 +960,8 @@ namespace OpenActive.FakeDatabase.NET
                     PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9'),
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
                     BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9'),
-                    AttendeeEmail = attendees.Count > 0 ? attendees[i].Email : null,
-                    AttendeeGivenName = attendees.Count > 0 ? attendees[i].GivenName : null,
-                    AttendeeFamilyName = attendees.Count > 0 ? attendees[i].FamilyName : null,
-                    AttendeeTelephone = attendees.Count > 0 ? attendees[i].Telephone : null,
-                    AdditionalDetailsString = additionalDetailsString.Count > 0 ? additionalDetailsString[i] : null,
+                    AttendeeString = attendees.Count > i ? attendees[i] : null,
+                    AdditionalDetailsString = additionalDetailsString.Count > i ? additionalDetailsString[i] : null,
                 };
 
                 await db.SaveAsync(orderItem);
