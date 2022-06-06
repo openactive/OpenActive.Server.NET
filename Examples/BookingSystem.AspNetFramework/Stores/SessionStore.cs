@@ -29,12 +29,12 @@ namespace BookingSystem
             OpportunityType opportunityType,
             TestOpportunityCriteriaEnumeration criteria,
             TestOpenBookingFlowEnumeration openBookingFlow,
-            SellerIdComponents seller)
+            SimpleIdComponents seller)
         {
-            if (!_appSettings.FeatureFlags.SingleSeller && !seller.SellerIdLong.HasValue)
+            if (!_appSettings.FeatureFlags.SingleSeller && !seller.IdLong.HasValue)
                 throw new OpenBookingException(new OpenBookingError(), "Seller must have an ID in Multiple Seller Mode");
 
-            long? sellerId = _appSettings.FeatureFlags.SingleSeller ? null : seller.SellerIdLong;
+            long? sellerId = _appSettings.FeatureFlags.SingleSeller ? null : seller.IdLong;
             var requiresApproval = openBookingFlow == TestOpenBookingFlowEnumeration.OpenBookingApprovalFlow;
 
             switch (opportunityType)
@@ -306,7 +306,7 @@ namespace BookingSystem
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
         protected override async Task GetOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
-            // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
+            // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerId (this is not required if using a Single Seller)
 
             // Additionally this method must check that there are enough spaces in each entry
 
@@ -398,7 +398,7 @@ namespace BookingSystem
                                      : null,
                         OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse,
                     },
-                    SellerId = _appSettings.FeatureFlags.SingleSeller ? new SellerIdComponents() : new SellerIdComponents { SellerIdLong = @class.SellerId },
+                    SellerId = _appSettings.FeatureFlags.SingleSeller ? new SimpleIdComponents() : new SimpleIdComponents { IdLong = @class.SellerId },
                     @class.RequiresApproval,
                     BookedOrderItemInfo = bookedOrderItemInfo,
                     occurrence.RemainingSpaces
@@ -472,7 +472,7 @@ namespace BookingSystem
                     var (result, capacityErrors, capacityLeaseErrors) = await FakeDatabase.LeaseOrderItemsForClassOccurrence(
                         databaseTransaction.FakeDatabaseTransaction,
                         flowContext.OrderId.ClientId,
-                        flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                        flowContext.SellerId.IdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                         flowContext.OrderId.uuid,
                         ctxGroup.Key.ScheduledSessionId.Value,
                         ctxGroup.Count());
@@ -556,13 +556,25 @@ namespace BookingSystem
                 var (result, bookedOrderItemInfos) = await FakeDatabase.BookOrderItemsForClassOccurrence(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
-                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.SellerId.IdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
                     ctxGroup.Key.ScheduledSessionId.Value,
                     RenderOpportunityId(ctxGroup.Key),
                     RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
-                    false
+                    false,
+                    ctxGroup
+                        .Select(x =>
+                            x.RequestOrderItem.Attendee == null
+                            ? null
+                            : OpenActiveSerializer.Serialize(x.RequestOrderItem.Attendee))
+                        .ToList(),
+                    ctxGroup
+                        .Select(x =>
+                        x.RequestOrderItem.OrderItemIntakeFormResponse == null
+                        ? null
+                        : OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
+                        .ToList()
                     );
 
                 switch (result)
@@ -607,13 +619,25 @@ namespace BookingSystem
                 var (result, bookedOrderItemInfos) = await FakeDatabase.BookOrderItemsForClassOccurrence(
                     databaseTransaction.FakeDatabaseTransaction,
                     flowContext.OrderId.ClientId,
-                    flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                    flowContext.SellerId.IdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     flowContext.OrderId.uuid,
                     ctxGroup.Key.ScheduledSessionId.Value,
                     RenderOpportunityId(ctxGroup.Key),
                     RenderOfferId(ctxGroup.Key),
                     ctxGroup.Count(),
-                    true
+                    true,
+                    ctxGroup
+                        .Select(x =>
+                            x.RequestOrderItem.Attendee == null
+                            ? null
+                            : OpenActiveSerializer.Serialize(x.RequestOrderItem.Attendee))
+                        .ToList(),
+                    ctxGroup
+                        .Select(x =>
+                        x.RequestOrderItem.OrderItemIntakeFormResponse == null
+                        ? null
+                        : OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
+                        .ToList()
                     );
 
                 switch (result)

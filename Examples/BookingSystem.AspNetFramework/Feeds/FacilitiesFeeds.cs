@@ -72,7 +72,7 @@ namespace BookingSystem
                                 IsOpenBookingAllowed = true,
                             } : new Organization
                             {
-                                Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
+                                Id = RenderSellerId(new SimpleIdComponents { IdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
                                 TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
                                 TermsOfService = new List<Terms>

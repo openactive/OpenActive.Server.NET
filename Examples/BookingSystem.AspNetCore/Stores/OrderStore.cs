@@ -13,7 +13,7 @@ namespace BookingSystem
     {
         // OrderStateContext will be disposed at the end of the flow
         public void Dispose()
-        { 
+        {
         }
     }
 
@@ -31,13 +31,13 @@ namespace BookingSystem
         /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if Order found, False if Order not found</returns>
-        public override async Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, List<OrderIdComponents> orderItemIds)
+        public override async Task<bool> CustomerCancelOrderItems(OrderIdComponents orderId, SimpleIdComponents sellerId, List<OrderIdComponents> orderItemIds)
         {
             try
             {
                 return await FakeBookingSystem.Database.CancelOrderItems(
                     orderId.ClientId,
-                    sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                    sellerId.IdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                     orderId.uuid,
                     orderItemIds.Where(x => x.OrderItemIdLong.HasValue).Select(x => x.OrderItemIdLong.Value).ToList(), true);
             }
@@ -52,9 +52,9 @@ namespace BookingSystem
         /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if OrderProposal found, False if OrderProposal not found</returns>
-        public override async Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public override async Task<bool> CustomerRejectOrderProposal(OrderIdComponents orderId, SimpleIdComponents sellerId)
         {
-            return await FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
+            return await FakeBookingSystem.Database.RejectOrderProposal(orderId.ClientId, sellerId.IdLong ?? null /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, true);
         }
 
         public override async Task TriggerTestAction(OpenBookingSimulateAction simulateAction, OrderIdComponents orderId)
@@ -240,7 +240,7 @@ namespace BookingSystem
                 flowContext.Broker.Name,
                 flowContext.Broker.Url,
                 flowContext.Broker.Telephone,
-                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
+                flowContext.SellerId.IdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer?.Email,
                 leaseExpires,
                 databaseTransaction.FakeDatabaseTransaction);
@@ -264,13 +264,13 @@ namespace BookingSystem
             return new ValueTask();
         }
 
-        public override async Task DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public override async Task DeleteLease(OrderIdComponents orderId, SimpleIdComponents sellerId)
         {
             // Note if no lease support, simply do nothing here
             await FakeBookingSystem.Database.DeleteLease(
                 orderId.ClientId,
                 orderId.uuid,
-                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */
+                sellerId.IdLong ?? null /* Hack to allow this to work in Single Seller mode too */
                 );
         }
 
@@ -287,7 +287,7 @@ namespace BookingSystem
                 flowContext.Broker.Name,
                 flowContext.Broker.Url,
                 flowContext.Broker.Telephone,
-                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
+                flowContext.SellerId.IdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 customerType == CustomerType.None ? null : flowContext.Customer.Email,
                 customerType,
                 customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? flowContext.Customer.Name : null),
@@ -327,7 +327,7 @@ namespace BookingSystem
                 flowContext.Broker.Name,
                 flowContext.Broker.Url,
                 flowContext.Broker.Telephone,
-                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
+                flowContext.SellerId.IdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 customerType == CustomerType.None ? null : flowContext.Customer.Email,
                 customerType,
                 customerType == CustomerType.None ? null : (customerType == CustomerType.Organization ? flowContext.Customer.Name : null),
@@ -356,12 +356,12 @@ namespace BookingSystem
             return new ValueTask();
         }
 
-        public override async Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
+        public override async Task<DeleteOrderResult> DeleteOrder(OrderIdComponents orderId, SimpleIdComponents sellerId)
         {
             var result = await FakeBookingSystem.Database.DeleteOrder(
                 orderId.ClientId,
                 orderId.uuid,
-                sellerId.SellerIdLong ?? null /* Small hack to allow use of FakeDatabase when in Single Seller mode */);
+                sellerId.IdLong ?? null /* Small hack to allow use of FakeDatabase when in Single Seller mode */);
             switch (result)
             {
                 case FakeDatabaseDeleteOrderResult.OrderSuccessfullyDeleted:
@@ -377,14 +377,14 @@ namespace BookingSystem
             }
         }
 
-        public override async Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SellerIdComponents sellerId, Uri orderProposalVersion, Order order)
+        public override async Task<bool> CreateOrderFromOrderProposal(OrderIdComponents orderId, SimpleIdComponents sellerId, Uri orderProposalVersion, Order order)
         {
             // TODO more elegantly extract version UUID from orderProposalVersion (probably much further up the stack?)
             var version = new Guid(orderProposalVersion.ToString().Split('/').Last());
 
             var result = await FakeBookingSystem.Database.BookOrderProposal(
                 orderId.ClientId,
-                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                sellerId.IdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid,
                 version);
             // TODO return enum to allow errors cases to be handled in the engine
@@ -440,30 +440,35 @@ namespace BookingSystem
             return order;
         }
 
-        public override async Task<Order> GetOrderStatus(OrderIdComponents orderId, SellerIdComponents sellerId, ILegalEntity seller)
+        public override async Task<Order> GetOrderStatus(OrderIdComponents orderId, SimpleIdComponents sellerId, ILegalEntity seller)
         {
             var (getOrderResult, dbOrder, dbOrderItems) = await FakeBookingSystem.Database.GetOrderAndOrderItems(
                 orderId.ClientId,
-                sellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
+                sellerId.IdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid);
             if (getOrderResult == FakeDatabaseGetOrderResult.OrderWasNotFound) throw new OpenBookingException(new UnknownOrderError());
 
             var orderIdUri = RenderOrderId(dbOrder.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : dbOrder.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, new Guid(dbOrder.OrderId));
-            var orderItems = dbOrderItems.Select((orderItem) => new OrderItem
+            var orderItems = dbOrderItems.Select((orderItem) =>
             {
-                Id = dbOrder.OrderMode != OrderMode.Lease ? RenderOrderItemId(OrderType.Order, new Guid(dbOrder.OrderId), orderItem.Id) : null,
-                AcceptedOffer = new Offer
+                return new OrderItem
                 {
-                    Id = orderItem.OfferJsonLdId,
-                    Price = orderItem.Price
-                },
-                OrderedItem = orderItem.OpportunityJsonLdId,
-                OrderItemStatus =
-                            orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
-                            orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
-                            orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
-                            orderItem.Status == BookingStatus.Attended ? OrderItemStatus.AttendeeAttended :
-                            orderItem.Status == BookingStatus.Absent ? OrderItemStatus.AttendeeAbsent : (OrderItemStatus?)null
+                    Id = dbOrder.OrderMode != OrderMode.Lease ? RenderOrderItemId(OrderType.Order, new Guid(dbOrder.OrderId), orderItem.Id) : null,
+                    AcceptedOffer = new Offer
+                    {
+                        Id = orderItem.OfferJsonLdId,
+                        Price = orderItem.Price
+                    },
+                    OrderedItem = orderItem.OpportunityJsonLdId,
+                    OrderItemStatus =
+                                orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
+                                orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
+                                orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
+                                orderItem.Status == BookingStatus.Attended ? OrderItemStatus.AttendeeAttended :
+                                orderItem.Status == BookingStatus.Absent ? OrderItemStatus.AttendeeAbsent : (OrderItemStatus?)null,
+                    Attendee = orderItem.AttendeeString != null ? OpenActiveSerializer.Deserialize<Person>(orderItem.AttendeeString) : null,
+                    OrderItemIntakeFormResponse = orderItem.AdditionalDetailsString != null ? OpenActiveSerializer.DeserializeList<PropertyValue>(orderItem.AdditionalDetailsString) : null,
+                };
             }).ToList();
             var order = RenderOrderFromDatabaseResult(orderIdUri, dbOrder, orderItems);
 
@@ -473,7 +478,9 @@ namespace BookingSystem
                 Id = orderItem.Id,
                 AcceptedOffer = orderItem.AcceptedOffer.Object.Id,
                 OrderedItem = orderItem.OrderedItem,
-                OrderItemStatus = orderItem.OrderItemStatus
+                OrderItemStatus = orderItem.OrderItemStatus,
+                Attendee = orderItem.Attendee,
+                OrderItemIntakeFormResponse = orderItem.OrderItemIntakeFormResponse,
             }).ToList();
             order.OrderedItem = mappedOrderItems;
 

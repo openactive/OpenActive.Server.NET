@@ -33,7 +33,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
+                (string clientId, Uri sellerId, _) = User.GetAccessTokenOpenBookingClaims();
                 return (await bookingEngine.ProcessCheckpoint1(clientId, sellerId, uuid, orderQuote)).GetContentResult();
             }
             catch (OpenBookingException obe)
@@ -52,7 +52,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
+                (string clientId, Uri sellerId, _) = User.GetAccessTokenOpenBookingClaims();
                 return (await bookingEngine.ProcessCheckpoint2(clientId, sellerId, uuid, orderQuote)).GetContentResult();
             }
             catch (OpenBookingException obe)
@@ -71,7 +71,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
+                (string clientId, Uri sellerId, _) = User.GetAccessTokenOpenBookingClaims();
                 return (await bookingEngine.ProcessOrderProposalCreationP(clientId, sellerId, uuid, orderProposal)).GetContentResult();
             }
             catch (OpenBookingException obe)
@@ -90,7 +90,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
+                (string clientId, Uri sellerId, _) = User.GetAccessTokenOpenBookingClaims();
                 return (await bookingEngine.DeleteOrderQuote(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)
@@ -109,7 +109,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
+                (string clientId, Uri sellerId, _) = User.GetAccessTokenOpenBookingClaims();
                 return (await bookingEngine.ProcessOrderCreationB(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
@@ -128,7 +128,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
+                (string clientId, Uri sellerId, _) = User.GetAccessTokenOpenBookingClaims();
                 return (await bookingEngine.DeleteOrder(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)
@@ -147,7 +147,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
+                (string clientId, Uri sellerId, _) = User.GetAccessTokenOpenBookingClaims();
                 return (await bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
@@ -167,7 +167,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
+                (string clientId, Uri sellerId, _) = User.GetAccessTokenOpenBookingClaims();
                 return (await bookingEngine.ProcessOrderProposalUpdate(clientId, sellerId, uuid, order)).GetContentResult();
             }
             catch (OpenBookingException obe)
@@ -183,7 +183,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                (string clientId, Uri sellerId) = User.GetAccessTokenOpenBookingClaims();
+                (string clientId, Uri sellerId, _) = User.GetAccessTokenOpenBookingClaims();
                 return (await bookingEngine.GetOrderStatus(clientId, sellerId, uuid)).GetContentResult();
             }
             catch (OpenBookingException obe)

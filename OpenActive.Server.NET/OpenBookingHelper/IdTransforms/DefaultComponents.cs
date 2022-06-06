@@ -5,17 +5,19 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 {
     // Note in future we may make these more flexible (and configurable), but for now they are set for the simple case
 
-    public class SellerIdComponents : IEquatable<SellerIdComponents>
+    public class SimpleIdComponents : IEquatable<SimpleIdComponents>
     {
-        public long? SellerIdLong { get; set; }
-        public string SellerIdString { get; set; }
+        public long? IdLong { get; set; }
+        public Guid? IdGuid { get; set; }
+        public string IdString { get; set; }
 
-        public bool Equals(SellerIdComponents other)
+        public bool Equals(SimpleIdComponents other)
         {
             if (ReferenceEquals(other, null)) return false;
-            if (other.SellerIdLong != null && this.SellerIdLong != null) return other.SellerIdLong == this.SellerIdLong;
-            if (other.SellerIdString != null && this.SellerIdString != null) return other.SellerIdString == this.SellerIdString;
-            if (other.SellerIdString == null && this.SellerIdString == null && other.SellerIdLong == null && this.SellerIdLong == null) return true;
+            if (other.IdLong != null && this.IdLong != null) return other.IdLong == this.IdLong;
+            if (other.IdGuid != null && this.IdGuid != null) return other.IdGuid == this.IdGuid;
+            if (other.IdString != null && this.IdString != null) return other.IdString == this.IdString;
+            if (other.IdString == null && this.IdString == null && other.IdLong == null && this.IdLong == null) return true;
             return false;                
         }
         
@@ -27,7 +29,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static bool operator ==(SellerIdComponents left, SellerIdComponents right) {
+        public static bool operator ==(SimpleIdComponents left, SimpleIdComponents right) {
             if (ReferenceEquals(left, right))
             {
                 return true;
@@ -53,7 +55,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static bool operator !=(SellerIdComponents left, SellerIdComponents right) => !(left == right);
+        public static bool operator !=(SimpleIdComponents left, SimpleIdComponents right) => !(left == right);
 
         /// <summary>
         /// Determines whether the specified <see cref="object" />, is equal to this instance.
@@ -62,7 +64,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <returns>
         /// <c>true</c> if the specified <see cref="object" /> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
-        public override bool Equals(object obj) => this.Equals(obj as SellerIdComponents);
+        public override bool Equals(object obj) => this.Equals(obj as SimpleIdComponents);
 
         /// <summary>
         /// Returns a hash code for this instance.
@@ -70,7 +72,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <returns>
         /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
         /// </returns>
-        public override int GetHashCode() => Schema.NET.HashCode.Of(this.SellerIdLong).And(this.SellerIdString);
+        public override int GetHashCode() => Schema.NET.HashCode.Of(this.IdLong).And(this.IdString);
     }
 
     public class OrderIdComponents
