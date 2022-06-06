@@ -306,7 +306,7 @@ namespace BookingSystem
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
         protected override async Task GetOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
-            // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SimpleIdComponents (this is not required if using a Single Seller)
+            // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerId (this is not required if using a Single Seller)
 
             // Additionally this method must check that there are enough spaces in each entry
 
