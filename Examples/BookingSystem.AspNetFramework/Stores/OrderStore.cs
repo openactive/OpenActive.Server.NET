@@ -451,8 +451,6 @@ namespace BookingSystem
             var orderIdUri = RenderOrderId(dbOrder.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : dbOrder.OrderMode == OrderMode.Lease ? OrderType.OrderQuote : OrderType.Order, new Guid(dbOrder.OrderId));
             var orderItems = dbOrderItems.Select((orderItem) =>
             {
-                var hasAttendeeDetails = orderItem.AttendeeEmail != null || orderItem.AttendeeGivenName != null
-                || orderItem.AttendeeFamilyName != null || orderItem.AttendeeTelephone != null;
                 return new OrderItem
                 {
                     Id = dbOrder.OrderMode != OrderMode.Lease ? RenderOrderItemId(OrderType.Order, new Guid(dbOrder.OrderId), orderItem.Id) : null,
@@ -468,13 +466,7 @@ namespace BookingSystem
                                 orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
                                 orderItem.Status == BookingStatus.Attended ? OrderItemStatus.AttendeeAttended :
                                 orderItem.Status == BookingStatus.Absent ? OrderItemStatus.AttendeeAbsent : (OrderItemStatus?)null,
-                    Attendee = hasAttendeeDetails ? new Person
-                    {
-                        GivenName = orderItem.AttendeeGivenName,
-                        FamilyName = orderItem.AttendeeFamilyName,
-                        Email = orderItem.AttendeeEmail,
-                        Telephone = orderItem.AttendeeTelephone,
-                    } : null,
+                    Attendee = orderItem.AttendeeString != null ? OpenActiveSerializer.Deserialize<Person>(orderItem.AttendeeString) : null,
                     OrderItemIntakeFormResponse = orderItem.AdditionalDetailsString != null ? OpenActiveSerializer.DeserializeList<PropertyValue>(orderItem.AdditionalDetailsString) : null,
                 };
             }).ToList();

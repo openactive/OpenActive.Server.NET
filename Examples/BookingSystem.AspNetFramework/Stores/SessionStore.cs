@@ -571,7 +571,7 @@ namespace BookingSystem
                         .ToList(),
                     ctxGroup
                         .Select(x =>
-                        x.RequestOrderItem.OrderItemIntakeFormResponse != null
+                        x.RequestOrderItem.OrderItemIntakeFormResponse == null
                         ? null
                         : OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
                         .ToList()
@@ -634,7 +634,7 @@ namespace BookingSystem
                         .ToList(),
                     ctxGroup
                         .Select(x =>
-                        x.RequestOrderItem.OrderItemIntakeFormResponse != null
+                        x.RequestOrderItem.OrderItemIntakeFormResponse == null
                         ? null
                         : OpenActiveSerializer.SerializeList(x.RequestOrderItem.OrderItemIntakeFormResponse))
                         .ToList()
