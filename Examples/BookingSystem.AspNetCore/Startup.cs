@@ -69,10 +69,6 @@ namespace BookingSystem.AspNetCore
             }
 
             services
-                .AddResponseCaching(options =>
-                {
-                    options.SizeLimit = 750 * 1024 * 1024; // 750 MB.
-                })
                 .AddControllers()
                 .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()));
 
@@ -98,7 +94,6 @@ namespace BookingSystem.AspNetCore
             app.UseStaticFiles();
             app.UseRouting();
 
-            app.UseResponseCaching();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>

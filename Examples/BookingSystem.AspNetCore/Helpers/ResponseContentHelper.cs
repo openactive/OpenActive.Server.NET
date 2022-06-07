@@ -39,13 +39,6 @@ namespace BookingSystem.AspNetCore.Helpers
                         MaxAge = CacheControlMaxAge,
                         SharedMaxAge = CacheControlMaxAge,
                     };
-
-                // For internal response caching, uses a single value equal to "*" in VaryByQueryKeys to vary the cache by all request query parameters.
-                var responseCachingFeature = context.HttpContext.Features.Get<IResponseCachingFeature>();
-                if (responseCachingFeature != null)
-                {
-                    responseCachingFeature.VaryByQueryKeys = new[] { "*" };
-                }
             }
 
             await base.ExecuteResultAsync(context);
