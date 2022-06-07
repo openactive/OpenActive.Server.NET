@@ -18,11 +18,11 @@ namespace OpenActive.Server.NET.StoreBooking
             base.Payer = bookingFlowContext.Payer;
             base.Seller = bookingFlowContext.Seller;
             base.SellerId = bookingFlowContext.SellerId;
+            base.CustomerAccountId = bookingFlowContext.CustomerAccountId;
             base.BrokerRole = bookingFlowContext.BrokerRole;
         }
 
         public ILegalEntity Customer { get; internal set; }
-        public AuthenticatedPerson AuthenticatedCustomer { get; internal set; }
         public Organization Broker { get; internal set; }
         public BookingService BookingService { get; internal set; }
         public Payment Payment { get; internal set; }

@@ -10,9 +10,9 @@ namespace OpenActive.Server.NET.StoreBooking
 {
     public interface IOpportunityStore
     {
-        void SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SellerIdComponents> sellerTemplate);
+        void SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SimpleIdComponents> sellerTemplate);
         Task GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext);
-        Task<Event> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller);
+        Task<Event> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SimpleIdComponents seller);
         Task DeleteTestDataset(string testDatasetIdentifier);
         Task TriggerTestAction(OpenBookingSimulateAction simulateAction, IBookableIdComponents idComponents);
 
@@ -36,8 +36,8 @@ namespace OpenActive.Server.NET.StoreBooking
     //TODO: Remove duplication between this and RpdeBase if possible as they are using the same pattern?
     public abstract class OpportunityStore<TComponents, TDatabaseTransaction, TStateContext> : ModelSupport<TComponents>, IOpportunityStore where TComponents : class, IBookableIdComponents, new() where TDatabaseTransaction : IDatabaseTransaction where TStateContext : IStateContext
     {
-        // async methoids that are never called in transactions
-        void IOpportunityStore.SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SellerIdComponents> sellerTemplate)
+        // async methods that are never called in transactions
+        void IOpportunityStore.SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SimpleIdComponents> sellerTemplate)
         {
             if (template as BookablePairIdTemplate<TComponents> == null)
             {
@@ -53,7 +53,7 @@ namespace OpenActive.Server.NET.StoreBooking
             return GetOrderItems(ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext);
         }
 
-        async Task<Event> IOpportunityStore.CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller)
+        async Task<Event> IOpportunityStore.CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SimpleIdComponents seller)
         {
             var components = await CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, openBookingFlow, seller);
             return OrderCalculations.RenderOpportunityWithOnlyId(opportunityType, RenderOpportunityId(components));
@@ -87,7 +87,7 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
         protected abstract Task GetOrderItems(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext);
-        protected abstract Task<TComponents> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SellerIdComponents seller);
+        protected abstract Task<TComponents> CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, TestOpenBookingFlowEnumeration openBookingFlow, SimpleIdComponents seller);
         protected abstract Task DeleteTestDataset(string testDatasetIdentifier);
         protected abstract Task TriggerTestAction(OpenBookingSimulateAction simulateAction, TComponents idComponents);
 

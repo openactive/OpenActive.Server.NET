@@ -111,15 +111,15 @@ namespace BookingSystem
                     /*
                     // Multiple Seller Mode
                     SellerStore = new AcmeSellerStore(),
-                    SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
-                        "{+BaseUrl}/sellers/{SellerIdLong}"
+                    SellerIdTemplate = new SingleIdTemplate<SimpleIdComponents>(
+                        "{+BaseUrl}/sellers/{IdLong}"
                         ),
                     */
 
                     /*
                     // Single Seller Mode
                     SellerStore = new AcmeSellerStore(),
-                    SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
+                    SellerIdTemplate = new SingleIdTemplate<SimpleIdComponents>(
                         "{+BaseUrl}/seller"
                         ),
                     HasSingleSeller = true,
@@ -128,11 +128,11 @@ namespace BookingSystem
                     // Reference implementation is configurable to allow both modes to be tested
                     SellerStore = new AcmeSellerStore(appSettings.FeatureFlags.SingleSeller),
                     SellerIdTemplate = appSettings.FeatureFlags.SingleSeller ?
-                        new SingleIdTemplate<SellerIdComponents>(
+                        new SingleIdTemplate<SimpleIdComponents>(
                             "{+BaseUrl}/seller"
                         ) :
-                        new SingleIdTemplate<SellerIdComponents>(
-                            "{+BaseUrl}/sellers/{SellerIdLong}"
+                        new SingleIdTemplate<SimpleIdComponents>(
+                            "{+BaseUrl}/sellers/{IdLong}"
                         ),
                     HasSingleSeller = appSettings.FeatureFlags.SingleSeller,
 

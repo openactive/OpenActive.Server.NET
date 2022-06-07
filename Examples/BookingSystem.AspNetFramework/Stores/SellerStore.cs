@@ -23,7 +23,7 @@ namespace BookingSystem
         }
 
         // If the Seller is not found, simply return null to generate the correct Open Booking error
-        protected override async ValueTask<ILegalEntity> GetSeller(SellerIdComponents sellerIdComponents)
+        protected override async ValueTask<ILegalEntity> GetSeller(SimpleIdComponents sellerIdComponents)
         {
             // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required for an actual implementation.
             if (_useSingleSellerMode)
@@ -59,7 +59,7 @@ namespace BookingSystem
             // Otherwise it may be looked up based on supplied sellerIdComponents which are extracted from the sellerId.
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
             {
-                var seller = db.SingleById<SellerTable>(sellerIdComponents.SellerIdLong);
+                var seller = db.SingleById<SellerTable>(sellerIdComponents.IdLong);
                 if (seller == null)
                 {
                     // Seller not found
@@ -68,7 +68,7 @@ namespace BookingSystem
 
                 return seller.IsIndividual ? new Person
                 {
-                    Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                    Id = RenderSellerId(new SimpleIdComponents { IdLong = seller.Id }),
                     Name = seller.Name,
                     TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
                     LegalName = seller.Name,
@@ -84,7 +84,7 @@ namespace BookingSystem
                     IsOpenBookingAllowed = true,
                 } : (ILegalEntity)new Organization
                 {
-                    Id = RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                    Id = RenderSellerId(new SimpleIdComponents { IdLong = seller.Id }),
                     Name = seller.Name,
                     TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
                     LegalName = seller.Name,

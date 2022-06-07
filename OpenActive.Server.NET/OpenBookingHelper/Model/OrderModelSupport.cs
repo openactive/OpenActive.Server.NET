@@ -5,9 +5,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     public class OrdersModelSupport
     {
         protected OrderIdTemplate OrderIdTemplate { get; set; }
-        private SingleIdTemplate<SellerIdComponents> SellerIdTemplate { get; set; }
+        private SingleIdTemplate<SimpleIdComponents> SellerIdTemplate { get; set; }
 
-        protected internal void SetConfiguration(OrderIdTemplate orderIdTemplate, SingleIdTemplate<SellerIdComponents> sellerIdTemplate)
+        protected internal void SetConfiguration(OrderIdTemplate orderIdTemplate, SingleIdTemplate<SimpleIdComponents> sellerIdTemplate)
         {
             this.OrderIdTemplate = orderIdTemplate;
             this.SellerIdTemplate = sellerIdTemplate;
@@ -32,14 +32,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return this.OrderIdTemplate.RenderOrderItemId(orderType, uuid, orderItemId);
         }
 
-        protected Uri RenderSellerId(SellerIdComponents sellerIdComponents)
+        protected Uri RenderSellerId(SimpleIdComponents sellerIdComponents)
         {
             return this.SellerIdTemplate.RenderId(sellerIdComponents);
         }
 
         protected Uri RenderSingleSellerId()
         {
-            return this.SellerIdTemplate.RenderId(new SellerIdComponents());
+            return this.SellerIdTemplate.RenderId(new SimpleIdComponents());
         }
     }
 }

@@ -27,14 +27,10 @@ jobs:
         repository: openactive/openactive-test-suite
         ref: ${{ steps.refs.outputs.mirror_ref }}
         path: tests
-    - name: Setup .NET Core 2.1.808 for Booking Server Reference Implementation
+    - name: Setup .NET Core SDK 3.1.419
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 2.1.808
-    - name: Setup .NET Core SDK 3.1.411 for Authentication Authority Reference Implementation
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.411
+        dotnet-version: 3.1.419
     - name: Setup Node.js 14.x
       uses: actions/setup-node@v1
       with:
@@ -83,7 +79,7 @@ jobs:
         connection_string: ${{ secrets.CONFORMANCE_CERTIFICATE_BLOB_STORAGE_CONNECTION_STRING }}
         sync: false
   framework:
-    runs-on: windows-latest
+    runs-on: windows-2019
     strategy:
       fail-fast: false
       matrix:
@@ -150,14 +146,10 @@ jobs:
       # Checkout the repo
       - uses: actions/checkout@master
       # Setup .NET Core SDK
-      - name: Setup .NET Core 2.1.808
+      - name: Setup .NET Core SDK 3.1.419
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 2.1.808
-      - name: Setup .NET Core SDK 3.1.411 for Authentication Authority Reference Implementation
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 3.1.411
+          dotnet-version: 3.1.419
       # Run dotnet build and publish
       - name: Install OpenActive.Server.NET dependencies
         run: dotnet restore
