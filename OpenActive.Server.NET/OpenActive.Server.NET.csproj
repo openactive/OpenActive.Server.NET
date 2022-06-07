@@ -12,7 +12,7 @@
     <PackageTags>OpenActive booking</PackageTags>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.10.0</Version>
+    <Version>0.11.0</Version>
     <Description>.NET server library for OpenActive implementation</Description>
     <PackageId>OpenActive.Server.NET</PackageId>
   </PropertyGroup>

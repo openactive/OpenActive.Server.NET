@@ -69,9 +69,8 @@ namespace BookingSystem.AspNetCore
             }
 
             services
-                .AddMvc()
-                .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()))
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+                .AddControllers()
+                .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()));
 
             services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(AppSettings));
         }
@@ -93,8 +92,14 @@ namespace BookingSystem.AspNetCore
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+            app.UseRouting();
+
             app.UseAuthentication();
-            app.UseMvc();
+            app.UseAuthorization();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapDefaultControllerRoute();
+            });
         }
     }
 }
