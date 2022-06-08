@@ -581,9 +581,9 @@ namespace OpenActive.Server.NET.CustomBooking
                 SimpleIdComponents sellerIdComponents = GetSimpleIdComponentsFromApiKey(sellerId);
                 SimpleIdComponents customerAccountIdComponents = GetCustomerAccountIdComponentsFromApiKey(customerAccountId);
 
-                if (orderProposal == null || orderProposal.GetType() != typeof(Order))
+                if (orderProposal == null || orderProposal.GetType() != typeof(OrderProposal))
                 {
-                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for Order Cancellation");
+                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for Order Rejection");
                 }
 
                 // Check for PatchContainsExcessiveProperties
