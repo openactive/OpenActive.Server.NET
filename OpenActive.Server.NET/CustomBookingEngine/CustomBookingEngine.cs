@@ -583,7 +583,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
                 if (orderProposal == null || orderProposal.GetType() != typeof(OrderProposal))
                 {
-                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for Order Rejection");
+                    throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal type is required for OrderProposal Customer Rejection");
                 }
 
                 // Check for PatchContainsExcessiveProperties
