@@ -346,15 +346,14 @@ namespace BookingSystem
                                         Longitude = facility.LocationLng,
                                     }
                                 },
-                                Activity = new List<Concept>
-                                             {
-                                                 new Concept
-                                                 {
-                                                     Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
-                                                     PrefLabel = "Rave Fitness",
-                                                     InScheme = new Uri("https://openactive.io/activity-list")
-                                                 }
-                                             },
+                                FacilityType = new List<Concept> {
+                                    new Concept
+                                    {
+                                        Id = new Uri("https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651"),
+                                        PrefLabel = "Squash Court",
+                                        InScheme = new Uri("https://openactive.io/facility-types")
+                                    }
+                                }
                             },
                             StartDate = (DateTimeOffset)slot.Start,
                             EndDate = (DateTimeOffset)slot.End,
