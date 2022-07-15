@@ -104,12 +104,12 @@ namespace BookingSystem
                                 }
                             },
                             Url = new Uri("https://www.example.com/a-session-age"),
-                            Activity = new List<Concept> {
+                            FacilityType = new List<Concept> {
                                 new Concept
                                 {
-                                    Id = new Uri("https://openactive.io/activity-list#c07d63a0-8eb9-4602-8bcc-23be6deb8f83"),
-                                    PrefLabel = "Jet Skiing",
-                                    InScheme = new Uri("https://openactive.io/activity-list")
+                                    Id = new Uri("https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651"),
+                                    PrefLabel = "Squash Court",
+                                    InScheme = new Uri("https://openactive.io/facility-types")
                                 }
                             }
                         }
