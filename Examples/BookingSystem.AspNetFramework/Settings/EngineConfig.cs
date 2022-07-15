@@ -182,7 +182,8 @@ namespace BookingSystem
                     DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
                     OpenBookingAPIBaseUrl = $"{appSettings.ApplicationHostBaseUrl}/api/openbooking".ParseUrlOrNull(),
                     OpenBookingAPIRegistrationUrl = new Uri("https://example.com/api-landing-page"),
-                    OpenBookingAPITermsOfServiceUrl = new Uri("https://example.com/api-terms-page")
+                    OpenBookingAPITermsOfServiceUrl = new Uri("https://example.com/api-terms-page"),
+                    TestSuiteCertificateUrl = new Uri("https://certificates.reference-implementation.openactive.io/examples/all-features/controlled/")
                 },
                 new StoreBookingEngineSettings
                 {
