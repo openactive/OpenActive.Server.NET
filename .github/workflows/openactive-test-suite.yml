@@ -11,8 +11,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      with:
-        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
     - name: Setup .NET Core 3.1.419
       uses: actions/setup-dotnet@v1
       with:
@@ -27,8 +25,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      with:
-        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
     - name: Setup .NET Core 3.1.419
       uses: actions/setup-dotnet@v1
       with:
@@ -52,7 +48,6 @@ jobs:
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
       with:
-        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
         path: server
     - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
       if: ${{ startsWith(github.head_ref, 'coverage/') }}
@@ -130,7 +125,6 @@ jobs:
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
       with:
-        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
         path: server
     - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
       if: ${{ startsWith(github.head_ref, 'coverage/') }}
