@@ -11,10 +11,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Setup .NET Core 3.1.419
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET 6.0.x
+      uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: 3.1.419
+        dotnet-version: 6.0.x
     - name: Build OpenActive.Server.NET.Tests and dependencies
       run: dotnet build ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release
     - name: Run OpenActive.Server.NET.Tests
@@ -25,10 +25,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Setup .NET Core 3.1.419
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET 6.0.x
+      uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: 3.1.419
+        dotnet-version: 6.0.x
     - name: Build OpenActive.FakeDatabase.NET.Tests
       run: dotnet build ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release
     - name: Run OpenActive.FakeDatabase.NET.Tests
@@ -235,8 +235,6 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build ./OpenActive.Server.NET/OpenActive.Server.NET.csproj --configuration Release --no-restore
-      - name: Test
-        run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
       - name: Pack
         run: dotnet pack  ./OpenActive.Server.NET/OpenActive.Server.NET.csproj  --configuration Release --include-source --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
       - name: Push to Nuget
@@ -281,8 +279,6 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build ./Fakes/OpenActive.FakeDatabase.NET/OpenActive.FakeDatabase.NET.csproj --configuration Release --no-restore
-      - name: Test
-        run: dotnet test ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
       - name: Pack
         run: dotnet pack  ./Fakes/OpenActive.FakeDatabase.NET/OpenActive.FakeDatabase.NET.csproj  --configuration Release --include-source --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
       - name: Push to Nuget
