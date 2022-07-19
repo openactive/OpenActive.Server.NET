@@ -133,7 +133,7 @@ jobs:
         fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
         path: server
     - name: Remove Nerdbank.GitVersioning as it interferes with the .NET Framework build
-      run: del Directory.Build.props
+      run: git rm Directory.Build.props
       working-directory: server
     - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
       if: ${{ startsWith(github.head_ref, 'coverage/') }}
