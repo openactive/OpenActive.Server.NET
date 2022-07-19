@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         mode: ['random', 'controlled']
-        profile: ['all-features', 'single-seller', 'no-payment-reconciliation', 'no-auth']
+        profile: ['all-features', 'single-seller', 'no-payment-reconciliation', 'no-auth', 'no-tax-calculation', 'prepayment-always-required']
     steps:
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2

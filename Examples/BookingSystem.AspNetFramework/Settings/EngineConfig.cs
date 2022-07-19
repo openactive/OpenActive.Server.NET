@@ -141,13 +141,13 @@ namespace BookingSystem
                             OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator()
                         },
                         {
-                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
+                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(appSettings)
                         },
                         {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
+                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings)
                         },
                         {
-                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
+                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator(appSettings)
                         }
                     },
 
@@ -259,7 +259,7 @@ namespace BookingSystem
                     BusinessToBusinessTaxCalculation = appSettings.Payment.TaxCalculationB2B,
                     BusinessToConsumerTaxCalculation = appSettings.Payment.TaxCalculationB2C,
                     EnforceSyncWithinOrderTransactions = false,
-                    PrepaymentAlwaysRequired = false
+                    PrepaymentAlwaysRequired = appSettings.FeatureFlags.PrepaymentAlwaysRequired
                 });
         }
     }
