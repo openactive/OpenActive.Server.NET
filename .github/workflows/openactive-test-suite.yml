@@ -4,18 +4,55 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+
 jobs:
+  test-server:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
+    - name: Setup .NET Core 3.1.419
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.419
+    - name: Build OpenActive.Server.NET.Tests and dependencies
+      run: dotnet build ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release
+    - name: Run OpenActive.Server.NET.Tests
+      run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-build --verbosity normal
+  
+  test-fake-database:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
+    - name: Setup .NET Core 3.1.419
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.419
+    - name: Build OpenActive.FakeDatabase.NET.Tests
+      run: dotnet build ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release
+    - name: Run OpenActive.FakeDatabase.NET.Tests
+      run: dotnet test ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release --no-build --verbosity normal
+  
   core:
+    needs:
+      - test-server
+      - test-fake-database
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         mode: ['random', 'controlled']
-        profile: ['all-features', 'single-seller', 'no-payment-reconciliation', 'no-auth']
+        profile: ['all-features', 'single-seller', 'no-payment-reconciliation', 'no-auth', 'no-tax-calculation', 'prepayment-always-required']
     steps:
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
       with:
+        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
         path: server
     - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
       if: ${{ startsWith(github.head_ref, 'coverage/') }}
@@ -78,7 +115,11 @@ jobs:
         container_name: '$web'
         connection_string: ${{ secrets.CONFORMANCE_CERTIFICATE_BLOB_STORAGE_CONNECTION_STRING }}
         sync: false
+  
   framework:
+    needs:
+      - test-server
+      - test-fake-database
     runs-on: windows-2019
     strategy:
       fail-fast: false
@@ -89,7 +130,11 @@ jobs:
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
       with:
+        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
         path: server
+    - name: Remove Nerdbank.GitVersioning as it interferes with the .NET Framework build
+      run: del Directory.Build.props
+      working-directory: server
     - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
       if: ${{ startsWith(github.head_ref, 'coverage/') }}
       id: refs
@@ -135,6 +180,7 @@ jobs:
       with:
         name: framework.${{ matrix.mode }}.${{ matrix.profile }}
         path: ./tests/output/
+
   deploy-reference-implementation:
     # Master branch only
     if: ${{ github.ref == 'refs/heads/master' }}
@@ -174,3 +220,80 @@ jobs:
           app-name: openactive-reference-implementation-auth
           publish-profile: ${{ secrets.AZURE_WEBAPP_AUTH_PUBLISH_PROFILE  }} # Define secret variable in repository settings as per action documentation
           package: './web-app-package/BookingSystem.AspNetCore.IdentityServer'
+  
+  publish-server:
+    # Master branch only
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs:
+      - core
+      - framework
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
+      - name: Get current version
+        uses: dotnet/nbgv@master
+        id: nbgv
+      - name: Setup .NET Core 3.1.419
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.419
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build ./OpenActive.Server.NET/OpenActive.Server.NET.csproj --configuration Release --no-restore
+      - name: Test
+        run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
+      - name: Pack
+        run: dotnet pack  ./OpenActive.Server.NET/OpenActive.Server.NET.csproj  --configuration Release --include-source --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+      - name: Push to Nuget
+        if: "! contains(toJSON(github.event.commits.*.message), '[no-release]')"
+        run: dotnet nuget push "./OpenActive.Server.NET/**/*.nupkg" -k ${{secrets.NUGET_API_KEY}} --skip-duplicate -s https://api.nuget.org/v3/index.json
+      - name: Create Release
+        if: "! contains(toJSON(github.event.commits.*.message), '[no-release]')"
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.nbgv.outputs.SimpleVersion }}
+          release_name: Release ${{ steps.nbgv.outputs.SimpleVersion }}
+          body: |
+            This release contains minor amendments based on updates to the [OpenActive Vocabulary](https://openactive.io/ns/) (codified by the [Data Models](https://github.com/openactive/data-models)), and the latest version of the [Dataset Site Template](https://github.com/openactive/dataset-site-template).
+            
+            Published to [Nuget](https://www.nuget.org/packages/OpenActive.Server.NET/${{ steps.nbgv.outputs.SimpleVersion }}).
+          draft: false
+          prerelease: false
+
+  publish-fake-database:
+    # Master branch only
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs:
+      - core
+      - framework
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
+      - name: Get current version
+        uses: dotnet/nbgv@master
+        id: nbgv
+      - name: Setup .NET Core 3.1.419
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.419
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build ./Fakes/OpenActive.FakeDatabase.NET/OpenActive.FakeDatabase.NET.csproj --configuration Release --no-restore
+      - name: Test
+        run: dotnet test ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
+      - name: Pack
+        run: dotnet pack  ./Fakes/OpenActive.FakeDatabase.NET/OpenActive.FakeDatabase.NET.csproj  --configuration Release --include-source --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+      - name: Push to Nuget
+        if: "! contains(toJSON(github.event.commits.*.message), '[no-release]')"
+        run: dotnet nuget push "./Fakes/OpenActive.FakeDatabase.NET/**/*.nupkg" -k ${{secrets.NUGET_API_KEY}} --skip-duplicate -s https://api.nuget.org/v3/index.json
