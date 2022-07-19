@@ -14,6 +14,13 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
+        private readonly AppSettings _appSettings;
+
+        public AcmeOrdersFeedRpdeGenerator(AppSettings appSettings)
+        {
+            _appSettings = appSettings;
+        }
+
         protected override async Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
             // Note if using SQL Server it is best to use rowversion as the modified value for the Orders table,
@@ -52,7 +59,7 @@ namespace BookingSystem
                         Modified = result.OrderTable.OrderModified,
                         State = result.OrderTable.Deleted || result.OrderTable.VisibleInOrdersFeed == FeedVisibility.Archived ? RpdeState.Deleted : RpdeState.Updated,
                         Data = result.OrderTable.Deleted || result.OrderTable.VisibleInOrdersFeed == FeedVisibility.Archived ? null :
-                            AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, new Guid(result.OrderTable.OrderId)), result.OrderTable,
+                            AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, new Guid(result.OrderTable.OrderId)), result.OrderTable, _appSettings.FeatureFlags.PrepaymentAlwaysRequired,
                                 result.OrderItemsTable.Select(orderItem => new OrderItem
                                 {
                                     Id = RenderOrderItemId(OrderType.Order, new Guid(result.OrderTable.OrderId), orderItem.Id),
@@ -110,6 +117,13 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
+        private readonly AppSettings _appSettings;
+
+        public AcmeOrderProposalsFeedRpdeGenerator(AppSettings appSettings)
+        {
+            _appSettings = appSettings;
+        }
+
         protected override async Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
             using (var db = FakeBookingSystem.Database.Mem.Database.Open())
@@ -144,7 +158,7 @@ namespace BookingSystem
                         Modified = result.OrderTable.OrderProposalModified,
                         State = result.OrderTable.Deleted || result.OrderTable.VisibleInOrderProposalsFeed == FeedVisibility.Archived ? RpdeState.Deleted : RpdeState.Updated,
                         Data = result.OrderTable.Deleted || result.OrderTable.VisibleInOrderProposalsFeed == FeedVisibility.Archived ? null :
-                            AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, new Guid(result.OrderTable.OrderId)), result.OrderTable,
+                            AcmeOrderStore.RenderOrderFromDatabaseResult(RenderOrderId(result.OrderTable.OrderMode == OrderMode.Proposal ? OrderType.OrderProposal : OrderType.Order, new Guid(result.OrderTable.OrderId)), result.OrderTable, _appSettings.FeatureFlags.PrepaymentAlwaysRequired,
                                 result.OrderItemsTable.Select(orderItem => new OrderItem
                                 {
                                     Id = RenderOrderItemId(OrderType.Order, new Guid(result.OrderTable.OrderId), orderItem.Id),

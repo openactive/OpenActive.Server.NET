@@ -64,12 +64,12 @@ namespace BookingSystem
 
     public class AcmeSessionSeriesRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<SessionOpportunity, SessionSeries>
     {
-        private readonly bool _useSingleSellerMode;
+        private readonly AppSettings _appSettings;
 
         // Example constructor that can set state from EngineConfig
-        public AcmeSessionSeriesRpdeGenerator(bool useSingleSellerMode)
+        public AcmeSessionSeriesRpdeGenerator(AppSettings appSettings)
         {
-            this._useSingleSellerMode = useSingleSellerMode;
+            this._appSettings = appSettings;
         }
 
         protected override async Task<List<RpdeItem<SessionSeries>>> GetRpdeItems(long? afterTimestamp, long? afterId)
@@ -106,7 +106,7 @@ namespace BookingSystem
                             }),
                             Name = result.Item1.Title,
                             EventAttendanceMode = MapAttendanceMode(result.Item1.AttendanceMode),
-                            Organizer = _useSingleSellerMode ? new Organization
+                            Organizer = _appSettings.FeatureFlags.SingleSeller ? new Organization
                             {
                                 Id = RenderSingleSellerId(),
                                 Name = "Test Seller",
@@ -156,7 +156,7 @@ namespace BookingSystem
                                     OpenBookingFlowRequirement = OpenBookingFlowRequirement(result.Item1),
                                     ValidFromBeforeStartDate = result.Item1.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = result.Item1.LatestCancellationBeforeStartDate,
-                                    OpenBookingPrepayment = result.Item1.Prepayment.Convert(),
+                                    OpenBookingPrepayment = _appSettings.FeatureFlags.PrepaymentAlwaysRequired ? null : result.Item1.Prepayment.Convert(),
                                     AllowCustomerCancellationFullRefund = result.Item1.AllowCustomerCancellationFullRefund
                                 }
                             },

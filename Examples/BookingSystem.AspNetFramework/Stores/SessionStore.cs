@@ -336,7 +336,7 @@ namespace BookingSystem
                             Price = @class.Price,
                             PriceCurrency = "GBP",
                             LatestCancellationBeforeStartDate = @class.LatestCancellationBeforeStartDate,
-                            OpenBookingPrepayment = @class.Prepayment.Convert(),
+                            OpenBookingPrepayment = _appSettings.FeatureFlags.PrepaymentAlwaysRequired ? null : @class.Prepayment.Convert(),
                             ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
                             AllowCustomerCancellationFullRefund = @class.AllowCustomerCancellationFullRefund,
                         },

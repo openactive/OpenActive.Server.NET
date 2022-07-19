@@ -424,7 +424,7 @@ namespace BookingSystem
             }
         }
 
-        public static Order RenderOrderFromDatabaseResult(Uri orderId, OrderTable dbOrder, List<OrderItem> orderItems)
+        public static Order RenderOrderFromDatabaseResult(Uri orderId, OrderTable dbOrder, bool prepaymentAlwaysRequired, List<OrderItem> orderItems)
         {
             var order = CreateOrderFromOrderMode(dbOrder.OrderMode, orderId, dbOrder.ProposalVersionId, dbOrder.ProposalStatus);
             order.Id = orderId;
@@ -433,7 +433,7 @@ namespace BookingSystem
             {
                 Price = dbOrder.TotalOrderPrice,
                 PriceCurrency = "GBP",
-                OpenBookingPrepayment = OrderCalculations.GetRequiredStatusType(orderItems)
+                OpenBookingPrepayment = prepaymentAlwaysRequired ? null : OrderCalculations.GetRequiredStatusType(orderItems)
             };
             order.OrderedItem = orderItems;
 
@@ -470,7 +470,7 @@ namespace BookingSystem
                     OrderItemIntakeFormResponse = orderItem.AdditionalDetailsString != null ? OpenActiveSerializer.DeserializeList<PropertyValue>(orderItem.AdditionalDetailsString) : null,
                 };
             }).ToList();
-            var order = RenderOrderFromDatabaseResult(orderIdUri, dbOrder, orderItems);
+            var order = RenderOrderFromDatabaseResult(orderIdUri, dbOrder, _appSettings.FeatureFlags.PrepaymentAlwaysRequired, orderItems);
 
             // Map AcceptedOffer from object to IdReference
             var mappedOrderItems = order.OrderedItem.Select((orderItem) => new OrderItem
