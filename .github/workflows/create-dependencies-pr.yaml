@@ -32,14 +32,6 @@ jobs:
         run: dotnet add package OpenActive.NET
         working-directory: ./Fakes/OpenActive.FakeDatabase.NET/
 
-      - name: Update OpenActive.NET to latest version in BookingSystem.AspNetFramework
-        run: dotnet add package OpenActive.NET
-        working-directory: ./Examples/BookingSystem.AspNetFramework/
-
-      - name: Update OpenActive.DatasetSite.NET to latest version in BookingSystem.AspNetFramework
-        run: dotnet add package OpenActive.DatasetSite.NET
-        working-directory: ./Examples/BookingSystem.AspNetFramework/
-
       - name: git stash if material changes have not been made
         # When considering whether it's worth making a PR, ignore the following:
         # - Any updates to the package.json or package-lock.json files in OpenActive.DatasetSite.NET.Generator (not worth creating a PR JUST for these if the template itself has not been updated)
