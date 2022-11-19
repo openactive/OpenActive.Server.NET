@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using AsyncKeyedLock;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
@@ -130,7 +131,7 @@ namespace OpenActive.Server.NET.CustomBooking
         private Uri openDataFeedBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
-        private static readonly AsyncDuplicateLock asyncDuplicateLock = new AsyncDuplicateLock();
+        private static readonly AsyncKeyedLocker<string> asyncKeyedLock = new AsyncKeyedLocker<string>();
 
         protected Dictionary<OpportunityType, IBookablePairIdTemplate> OpportunityTemplateLookup { get; }
 
@@ -403,7 +404,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
             var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, orderType);
-            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            using (await asyncKeyedLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 var orderResponse = await ProcessFlowRequest(ValidateFlowRequest<OrderQuote>(orderId, sellerIdComponents, seller, customerAccountIdComponents, flowStage, orderQuote), orderQuote);
 
@@ -423,7 +424,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for B");
             }
             var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.Order);
-            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            using (await asyncKeyedLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 var response = order.OrderProposalVersion != null ?
                      await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, customerAccountIdComponents, order) :
@@ -446,7 +447,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderProposal is required for P");
             }
             var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.OrderProposal);
-            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            using (await asyncKeyedLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 var response = await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, customerAccountIdComponents, FlowStage.P, order), order);
 
@@ -482,7 +483,7 @@ namespace OpenActive.Server.NET.CustomBooking
         public async Task<ResponseContent> DeleteOrder(string clientId, Uri sellerId, string uuidString, Uri customerAccountId = null)
         {
             var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = ConvertToGuid(uuidString) };
-            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            using (await asyncKeyedLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 var result = await ProcessOrderDeletion(orderId, GetSimpleIdComponentsFromApiKey(sellerId), GetCustomerAccountIdComponentsFromApiKey(customerAccountId));
                 switch (result)
@@ -502,7 +503,7 @@ namespace OpenActive.Server.NET.CustomBooking
         public async Task<ResponseContent> DeleteOrderQuote(string clientId, Uri sellerId, string uuidString, Uri customerAccountId = null)
         {
             var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderQuote, uuid = ConvertToGuid(uuidString) };
-            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            using (await asyncKeyedLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 await ProcessOrderQuoteDeletion(orderId, GetSimpleIdComponentsFromApiKey(sellerId), GetCustomerAccountIdComponentsFromApiKey(customerAccountId));
                 return ResponseContent.OpenBookingNoContentResponse();
@@ -514,7 +515,7 @@ namespace OpenActive.Server.NET.CustomBooking
         public async Task<ResponseContent> ProcessOrderUpdate(string clientId, Uri sellerId, string uuidString, string orderJson, Uri customerAccountId = null)
         {
             var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = ConvertToGuid(uuidString) };
-            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            using (await asyncKeyedLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
                 SimpleIdComponents sellerIdComponents = GetSimpleIdComponentsFromApiKey(sellerId);
@@ -575,7 +576,7 @@ namespace OpenActive.Server.NET.CustomBooking
         public async Task<ResponseContent> ProcessOrderProposalUpdate(string clientId, Uri sellerId, string uuidString, string orderProposalJson, Uri customerAccountId = null)
         {
             var orderId = new OrderIdComponents { ClientId = clientId, OrderType = OrderType.OrderProposal, uuid = ConvertToGuid(uuidString) };
-            using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
+            using (await asyncKeyedLock.LockAsync(GetParallelLockKey(orderId)))
             {
                 OrderProposal orderProposal = OpenActiveSerializer.Deserialize<OrderProposal>(orderProposalJson);
                 SimpleIdComponents sellerIdComponents = GetSimpleIdComponentsFromApiKey(sellerId);
