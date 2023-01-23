@@ -135,7 +135,7 @@ namespace OpenActive.Server.NET.CustomBooking
         {
             o.PoolSize = 20;
             o.PoolInitialFill = 1;
-        }));
+        });
 
         protected Dictionary<OpportunityType, IBookablePairIdTemplate> OpportunityTemplateLookup { get; }
 
