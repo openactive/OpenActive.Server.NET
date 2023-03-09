@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <Authors>OpenActive Community</Authors>
     <Company>OpenActive</Company>
     <Copyright>OpenActive</Copyright>
@@ -12,7 +12,7 @@
     <PackageTags>OpenActive booking</PackageTags>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.10.0</Version>
+    <Version>0.11.0</Version>
     <Description>.NET server library for OpenActive implementation</Description>
     <PackageId>OpenActive.Server.NET</PackageId>
   </PropertyGroup>
@@ -30,8 +30,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenActive.DatasetSite.NET" Version="4.2.0" />
-    <PackageReference Include="OpenActive.NET" Version="15.2.5" />
+    <PackageReference Include="OpenActive.DatasetSite.NET" Version="7.0.1" />
+    <PackageReference Include="OpenActive.NET" Version="15.2.21" />
     <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
   </ItemGroup>
 

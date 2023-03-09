@@ -14,12 +14,12 @@ namespace BookingSystem
     public class AcmeFacilityUseRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<FacilityOpportunity, FacilityUse>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
-        private readonly bool _useSingleSellerMode;
+        private readonly AppSettings _appSettings;
 
         // Example constructor that can set state
-        public AcmeFacilityUseRpdeGenerator(bool useSingleSellerMode)
+        public AcmeFacilityUseRpdeGenerator(AppSettings appSettings)
         {
-            _useSingleSellerMode = useSingleSellerMode;
+            this._appSettings = appSettings;
         }
 
         protected override async Task<List<RpdeItem<FacilityUse>>> GetRpdeItems(long? afterTimestamp, long? afterId)
@@ -55,7 +55,7 @@ namespace BookingSystem
                                 FacilityUseId = result.Item1.Id
                             }),
                             Name = result.Item1.Name,
-                            Provider = _useSingleSellerMode ? new Organization
+                            Provider = _appSettings.FeatureFlags.SingleSeller ? new Organization
                             {
                                 Id = RenderSingleSellerId(),
                                 Name = "Test Seller",
@@ -72,7 +72,7 @@ namespace BookingSystem
                                 IsOpenBookingAllowed = true,
                             } : new Organization
                             {
-                                Id = RenderSellerId(new SellerIdComponents { SellerIdLong = result.Item2.Id }),
+                                Id = RenderSellerId(new SimpleIdComponents { IdLong = result.Item2.Id }),
                                 Name = result.Item2.Name,
                                 TaxMode = result.Item2.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
                                 TermsOfService = new List<Terms>
@@ -104,12 +104,12 @@ namespace BookingSystem
                                 }
                             },
                             Url = new Uri("https://www.example.com/a-session-age"),
-                            Activity = new List<Concept> {
+                            FacilityType = new List<Concept> {
                                 new Concept
                                 {
-                                    Id = new Uri("https://openactive.io/activity-list#c07d63a0-8eb9-4602-8bcc-23be6deb8f83"),
-                                    PrefLabel = "Jet Skiing",
-                                    InScheme = new Uri("https://openactive.io/activity-list")
+                                    Id = new Uri("https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651"),
+                                    PrefLabel = "Squash Court",
+                                    InScheme = new Uri("https://openactive.io/facility-types")
                                 }
                             }
                         }
@@ -123,6 +123,13 @@ namespace BookingSystem
     public class AcmeFacilityUseSlotRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<FacilityOpportunity, Slot>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
+        private readonly AppSettings _appSettings;
+
+        // Example constructor that can set state
+        public AcmeFacilityUseSlotRpdeGenerator(AppSettings appSettings)
+        {
+            this._appSettings = appSettings;
+        }
 
         protected override async Task<List<RpdeItem<Slot>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
@@ -178,7 +185,7 @@ namespace BookingSystem
                                     OpenBookingFlowRequirement = OpenBookingFlowRequirement(x),
                                     ValidFromBeforeStartDate = x.ValidFromBeforeStartDate,
                                     LatestCancellationBeforeStartDate = x.LatestCancellationBeforeStartDate,
-                                    OpenBookingPrepayment = x.Prepayment.Convert(),
+                                    OpenBookingPrepayment = _appSettings.FeatureFlags.PrepaymentAlwaysRequired ? null : x.Prepayment.Convert(),
                                     AllowCustomerCancellationFullRefund = x.AllowCustomerCancellationFullRefund,
                                 }
                             },

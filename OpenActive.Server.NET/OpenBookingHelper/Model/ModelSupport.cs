@@ -6,22 +6,22 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     public class ModelSupport<TComponents> where TComponents : class, IBookableIdComponents, new()
     {
         private BookablePairIdTemplate<TComponents> IdTemplate { get; set; }
-        public SingleIdTemplate<SellerIdComponents> SellerIdTemplate { get; private set; }
+        public SingleIdTemplate<SimpleIdComponents> SellerIdTemplate { get; private set; }
 
-        protected internal void SetConfiguration(BookablePairIdTemplate<TComponents> template, SingleIdTemplate<SellerIdComponents> sellerTemplate)
+        protected internal void SetConfiguration(BookablePairIdTemplate<TComponents> template, SingleIdTemplate<SimpleIdComponents> sellerTemplate)
         {
             this.IdTemplate = template;
             this.SellerIdTemplate = sellerTemplate;
         }
 
-        protected Uri RenderSellerId(SellerIdComponents components)
+        protected Uri RenderSellerId(SimpleIdComponents components)
         {
             return SellerIdTemplate.RenderId(components);
         }
 
         protected Uri RenderSingleSellerId()
         {
-            return SellerIdTemplate.RenderId(new SellerIdComponents());
+            return SellerIdTemplate.RenderId(new SimpleIdComponents());
         }
 
         /// <summary>
