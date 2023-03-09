@@ -40,17 +40,28 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         }
 
         /// <summary>
+        /// Gets the GetCustomerAccountId custom claim from the JWT
+        /// </summary>
+        /// <param name="principal"></param>
+        /// <returns></returns>
+        public static string GetCustomerAccountId(this ClaimsPrincipal principal)
+        {
+            return principal?.FindFirst(x => x.Type == OpenActiveCustomClaimNames.CustomerAccountId)?.Value;
+        }
+
+        /// <summary>
         /// Gets the SellerId and ClientId custom claims from the JWT
         /// </summary>
         /// <param name="principal"></param>
         /// <returns></returns>
-        public static (string clientId, Uri sellerId) GetAccessTokenOpenBookingClaims(this ClaimsPrincipal principal)
+        public static (string ClientId, Uri SellerId, Uri CustomerAccountId) GetAccessTokenOpenBookingClaims(this ClaimsPrincipal principal)
         {
             var clientId = principal.GetClientId();
             var sellerId = principal.GetSellerId().ParseUrlOrNull();
-            if (clientId != null && sellerId != null)
+            var customerAccountId = principal.GetCustomerAccountId().ParseUrlOrNull();
+            if (clientId != null) // TODO: Add  && sellerId != null, and ensure sellerId is always passed in even in single seller mode
             {
-                return (clientId, sellerId);
+                return (clientId, sellerId, customerAccountId);
             }
             else
             {
@@ -63,7 +74,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// </summary>
         /// <param name="principal"></param>
         /// <returns></returns>
-        public static string GetAccessTokenOrdersFeedClaim(this ClaimsPrincipal principal)
+        public static string GetClientIdFromAccessToken(this ClaimsPrincipal principal)
         {
             var clientId = principal.GetClientId();
             if (clientId != null)
@@ -75,6 +86,5 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 throw new OpenBookingException(new InvalidAPITokenError());
             }
         }
-
     }
 }

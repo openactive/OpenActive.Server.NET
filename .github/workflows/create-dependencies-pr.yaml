@@ -1,0 +1,67 @@
+name: Update Dependencies
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [OpenActive.NET-update,OpenActive.DatasetSite.NET-update]
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout OpenActive.Server.NET
+        uses: actions/checkout@v2
+        with:
+          ref: master
+
+      - name: Setup .NET 6.0.x
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Update OpenActive.NET to latest version in OpenActive.Server.NET
+        run: dotnet add package OpenActive.NET
+        working-directory: ./OpenActive.Server.NET/
+
+      - name: Update OpenActive.DatasetSite.NET to latest version in OpenActive.Server.NET
+        run: dotnet add package OpenActive.DatasetSite.NET
+        working-directory: ./OpenActive.Server.NET/
+
+      - name: Update OpenActive.NET to latest version in OpenActive.FakeDatabase.NET
+        run: dotnet add package OpenActive.NET
+        working-directory: ./Fakes/OpenActive.FakeDatabase.NET/
+
+      - name: git stash if material changes have not been made
+        # When considering whether it's worth making a PR, ignore the following:
+        # - Any updates to the package.json or package-lock.json files in OpenActive.DatasetSite.NET.Generator (not worth creating a PR JUST for these if the template itself has not been updated)
+        # git stashing if no material changes allows the next step to close the PR if one is already open
+        run: if [ "$(git diff --numstat | grep -vc '^.*package\.json\|.*package-lock\.json$')" -eq "0" ]; then git stash; else echo "Material changes found"; fi
+        working-directory: ./
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v3
+        with:
+          path: .
+          token: ${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
+          commit-message: Update dependencies
+          committer: openactive-bot <openactive-bot@users.noreply.github.com>
+          author: openactive-bot <openactive-bot@users.noreply.github.com>
+          signoff: false
+          branch: ci/update-data-models
+          delete-branch: true
+          title: 'Update dependencies'
+          body: |
+            Update to use latest version of [OpenActive.NET](https://github.com/openactive/OpenActive.NET/) and [OpenActive.DatasetSite.NET](https://github.com/openactive/OpenActive.DatasetSite.NET/)
+          labels: |
+            automated pr
+          team-reviewers: |
+            owners
+            maintainers
+          draft: false
+
+      - name: Check outputs
+        run: |
+          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"

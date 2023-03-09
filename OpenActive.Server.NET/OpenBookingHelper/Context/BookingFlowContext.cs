@@ -10,7 +10,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public TaxPayeeRelationship TaxPayeeRelationship { get; internal set; }
         public ILegalEntity Payer { get; internal set; }
         public ILegalEntity Seller { get; internal set; }
-        public SellerIdComponents SellerId { get; internal set; }
+        public SimpleIdComponents SellerId { get; internal set; }
+        public SimpleIdComponents CustomerAccountId { get; internal set; }
         public BrokerType BrokerRole { get; internal set; }
     }
 }

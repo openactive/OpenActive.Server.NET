@@ -111,15 +111,15 @@ namespace BookingSystem
                     /*
                     // Multiple Seller Mode
                     SellerStore = new AcmeSellerStore(),
-                    SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
-                        "{+BaseUrl}/sellers/{SellerIdLong}"
+                    SellerIdTemplate = new SingleIdTemplate<SimpleIdComponents>(
+                        "{+BaseUrl}/sellers/{IdLong}"
                         ),
                     */
 
                     /*
                     // Single Seller Mode
                     SellerStore = new AcmeSellerStore(),
-                    SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
+                    SellerIdTemplate = new SingleIdTemplate<SimpleIdComponents>(
                         "{+BaseUrl}/seller"
                         ),
                     HasSingleSeller = true,
@@ -128,11 +128,11 @@ namespace BookingSystem
                     // Reference implementation is configurable to allow both modes to be tested
                     SellerStore = new AcmeSellerStore(appSettings.FeatureFlags.SingleSeller),
                     SellerIdTemplate = appSettings.FeatureFlags.SingleSeller ?
-                        new SingleIdTemplate<SellerIdComponents>(
+                        new SingleIdTemplate<SimpleIdComponents>(
                             "{+BaseUrl}/seller"
                         ) :
-                        new SingleIdTemplate<SellerIdComponents>(
-                            "{+BaseUrl}/sellers/{SellerIdLong}"
+                        new SingleIdTemplate<SimpleIdComponents>(
+                            "{+BaseUrl}/sellers/{IdLong}"
                         ),
                     HasSingleSeller = appSettings.FeatureFlags.SingleSeller,
 
@@ -141,13 +141,13 @@ namespace BookingSystem
                             OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator()
                         },
                         {
-                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
+                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(appSettings)
                         },
                         {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings.FeatureFlags.SingleSeller)
+                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings)
                         },
                         {
-                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator()
+                            OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator(appSettings)
                         }
                     },
 
@@ -157,14 +157,14 @@ namespace BookingSystem
                         "{+BaseUrl}/{OrderType}/{uuid}",
                         "{+BaseUrl}/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"),
 
-                    OrdersFeedGenerator = new AcmeOrdersFeedRpdeGenerator(),
-                    OrderProposalsFeedGenerator = new AcmeOrderProposalsFeedRpdeGenerator()
+                    OrdersFeedGenerator = new AcmeOrdersFeedRpdeGenerator(appSettings),
+                    OrderProposalsFeedGenerator = new AcmeOrderProposalsFeedRpdeGenerator(appSettings)
                 },
                 new DatasetSiteGeneratorSettings
                 {
                     // QUESTION: Do the Base URLs need to come from config, or should they be detected from the request?
                     OpenDataFeedBaseUrl = $"{appSettings.ApplicationHostBaseUrl}/feeds".ParseUrlOrNull(),
-                    OpenBookingAPIAuthenticationAuthority = appSettings.FeatureFlags.EnableTokenAuth ? appSettings.OpenIdIssuerUrl.ParseUrlOrNull() : null,
+                    OpenBookingAPIAuthenticationAuthorityUrl = appSettings.FeatureFlags.EnableTokenAuth ? appSettings.OpenIdIssuerUrl.ParseUrlOrNull() : null,
                     DatasetSiteUrl = $"{appSettings.ApplicationHostBaseUrl}/openactive/".ParseUrlOrNull(),
                     DatasetDiscussionUrl = "https://github.com/openactive/OpenActive.Server.NET/issues".ParseUrlOrNull(),
                     DatasetDocumentationUrl = "https://developer.openactive.io/".ParseUrlOrNull(),
@@ -182,7 +182,8 @@ namespace BookingSystem
                     DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
                     OpenBookingAPIBaseUrl = $"{appSettings.ApplicationHostBaseUrl}/api/openbooking".ParseUrlOrNull(),
                     OpenBookingAPIRegistrationUrl = new Uri("https://example.com/api-landing-page"),
-                    OpenBookingAPITermsOfServiceUrl = new Uri("https://example.com/api-terms-page")
+                    OpenBookingAPITermsOfServiceUrl = new Uri("https://example.com/api-terms-page"),
+                    TestSuiteCertificateUrl = new Uri("https://certificates.reference-implementation.openactive.io/examples/all-features/controlled/")
                 },
                 new StoreBookingEngineSettings
                 {
@@ -258,7 +259,7 @@ namespace BookingSystem
                     BusinessToBusinessTaxCalculation = appSettings.Payment.TaxCalculationB2B,
                     BusinessToConsumerTaxCalculation = appSettings.Payment.TaxCalculationB2C,
                     EnforceSyncWithinOrderTransactions = false,
-                    PrepaymentAlwaysRequired = false
+                    PrepaymentAlwaysRequired = appSettings.FeatureFlags.PrepaymentAlwaysRequired
                 });
         }
     }

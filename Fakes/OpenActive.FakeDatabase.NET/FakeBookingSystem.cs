@@ -938,7 +938,9 @@ namespace OpenActive.FakeDatabase.NET
             Uri opportunityJsonLdId,
             Uri offerJsonLdId,
             long numberOfSpaces,
-            bool proposal
+            bool proposal,
+            List<string> attendees,
+            List<string> additionalDetailsString
             )
         {
             var db = transaction.DatabaseConnection;
@@ -982,8 +984,11 @@ namespace OpenActive.FakeDatabase.NET
                     BarCodeText = thisClass.AttendanceMode != AttendanceMode.Online ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
                     MeetingUrl = thisClass.AttendanceMode != AttendanceMode.Offline ? new Uri(Faker.Internet.Url()) : null,
                     MeetingId = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
-                    MeetingPassword = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null
+                    MeetingPassword = thisClass.AttendanceMode != AttendanceMode.Offline ? Faker.Random.String(length: 10, minChar: '0', maxChar: '9') : null,
+                    AttendeeString = attendees.Count > i ? attendees[i] : null,
+                    AdditionalDetailsString = additionalDetailsString.Count > i ? additionalDetailsString[i] : null,
                 };
+
                 await db.SaveAsync(orderItem);
                 bookedOrderItemInfos.Add(new BookedOrderItemInfo
                 {
@@ -1011,7 +1016,9 @@ namespace OpenActive.FakeDatabase.NET
             Uri opportunityJsonLdId,
             Uri offerJsonLdId,
             long numberOfSpaces,
-            bool proposal
+            bool proposal,
+            List<string> attendees,
+            List<string> additionalDetailsString
             )
         {
             var db = transaction.DatabaseConnection;
@@ -1052,7 +1059,9 @@ namespace OpenActive.FakeDatabase.NET
                     Price = thisSlot.Price.Value,
                     PinCode = Faker.Random.String(6, minChar: '0', maxChar: '9'),
                     ImageUrl = Faker.Image.PlaceholderUrl(width: 25, height: 25),
-                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9')
+                    BarCodeText = Faker.Random.String(length: 10, minChar: '0', maxChar: '9'),
+                    AttendeeString = attendees.Count > i ? attendees[i] : null,
+                    AdditionalDetailsString = additionalDetailsString.Count > i ? additionalDetailsString[i] : null,
                 };
 
                 await db.SaveAsync(orderItem);
@@ -1787,7 +1796,7 @@ namespace OpenActive.FakeDatabase.NET
                 return await db.SingleAsync<GrantTable>(x => x.Key == key);
             }
         }
-        public async Task<IEnumerable<GrantTable>> GetAllGrants(string subjectId, string sessionId, string clientId, string type)
+        public async Task<List<GrantTable>> GetAllGrants(string subjectId, string sessionId, string clientId, string type)
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
@@ -1813,7 +1822,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public async Task AddGrant(string key, string type, string subjectId, string sessionId, string clientId, DateTime creationTime, DateTime? expiration, string data)
+        public async Task<bool> AddGrant(string key, string type, string subjectId, string sessionId, string clientId, DateTime creationTime, DateTime? consumedTime, DateTime? expiration, string data)
         {
             using (var db = await DatabaseWrapper.Database.OpenAsync())
             {
@@ -1825,10 +1834,11 @@ namespace OpenActive.FakeDatabase.NET
                     SessionId = sessionId,
                     ClientId = clientId,
                     CreationTime = creationTime,
+                    ConsumedTime = consumedTime,
                     Expiration = expiration,
                     Data = data
                 };
-                await db.SaveAsync(grant);
+                return await db.SaveAsync(grant);
             }
         }
 
