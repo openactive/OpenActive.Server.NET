@@ -14,7 +14,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureADB2C.UI" Version="2.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
-    <PackageReference Include="OpenActive.NET" Version="15.2.5" />
+    <PackageReference Include="OpenActive.NET" Version="15.2.21" />
     <PackageReference Include="Microsoft.AspNetCore.AzureAppServicesIntegration" Version="3.1.16" />
     <PackageReference Include="Microsoft.AspNetCore.AzureAppServices.HostingStartup" Version="3.1.16" />
     <PackageReference Include="Microsoft.Extensions.Logging.AzureAppServices" Version="5.0.8" />
