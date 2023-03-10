@@ -121,7 +121,7 @@ namespace OpenActive.FakeDatabase.NET
             Database = new OrmLiteConnectionFactory(connectionString, SqlServerDialect.Provider);
 
             // Create empty tables
-            var dropTablesOnRestart = bool.TryParse(Environment.GetEnvironmentVariable("DROP_TABLES_ON_RESTART"), out var dropTablesEnvVar) ? dropTablesEnvVar : false;
+            var dropTablesOnRestart = bool.TryParse(Environment.GetEnvironmentVariable("DROP_TABLES_ON_RESTART"), out var dropTablesEnvVar) ? dropTablesEnvVar : true;
             DatabaseCreator.CreateTables(Database, dropTablesOnRestart);
         }
 
@@ -1511,7 +1511,7 @@ namespace OpenActive.FakeDatabase.NET
         {
             var fakeDatabase = new FakeDatabase();
             var useRemoteStorage = bool.TryParse(Environment.GetEnvironmentVariable("USE_REMOTE_STORAGE"), out var remoteStorageEnvVar) ? remoteStorageEnvVar : false;
-            var dropTablesOnRestart = bool.TryParse(Environment.GetEnvironmentVariable("DROP_TABLES_ON_RESTART"), out var dropTablesEnvVar) ? dropTablesEnvVar : false;
+            var dropTablesOnRestart = bool.TryParse(Environment.GetEnvironmentVariable("DROP_TABLES_ON_RESTART"), out var dropTablesEnvVar) ? dropTablesEnvVar : true;
             var opportunityCount =
             int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCountEnvVar) ? opportunityCountEnvVar : 2000;
             if (!useRemoteStorage || dropTablesOnRestart)
