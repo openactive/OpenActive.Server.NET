@@ -44,8 +44,6 @@ namespace BookingSystem.AspNetCore.Helpers
                     new Microsoft.Net.Http.Headers.CacheControlHeaderValue()
                     {
                         Public = false,
-                        MaxAge = null,
-                        SharedMaxAge = null,
                     };
             }
 

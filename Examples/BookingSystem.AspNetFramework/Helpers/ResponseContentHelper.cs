@@ -28,8 +28,6 @@ namespace BookingSystem.AspNetFramework.Helpers
                 resp.Headers.CacheControl = new CacheControlHeaderValue()
                 {
                     Public = false,
-                    MaxAge = null,
-                    SharedMaxAge = null
                 };
             }
             // Ensure custom error messages do not override responses
