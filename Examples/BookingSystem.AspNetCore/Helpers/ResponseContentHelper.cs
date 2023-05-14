@@ -26,7 +26,7 @@ namespace BookingSystem.AspNetCore.Helpers
     /// </summary>
     public class CacheableContentResult : Microsoft.AspNetCore.Mvc.ContentResult
     {
-        public TimeSpan CacheControlMaxAge { get; set; }
+        public TimeSpan? CacheControlMaxAge { get; set; }
 
         public override async Task ExecuteResultAsync(ActionContext context)
         {
@@ -36,8 +36,8 @@ namespace BookingSystem.AspNetCore.Helpers
                     new Microsoft.Net.Http.Headers.CacheControlHeaderValue()
                     {
                         Public = true,
-                        MaxAge = CacheControlMaxAge,
-                        SharedMaxAge = CacheControlMaxAge,
+                        MaxAge = CacheControlMaxAge.Value,
+                        SharedMaxAge = CacheControlMaxAge.Value,
                     };
             }
 

@@ -88,7 +88,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         //
         // Summary:
         //     The Cache-Control header intended for the response (public, max-age=X)
-        public TimeSpan CacheControlMaxAge { get; internal set; }
+        public TimeSpan? CacheControlMaxAge { get; internal set; } = null;
 
         public override string ToString()
         {
