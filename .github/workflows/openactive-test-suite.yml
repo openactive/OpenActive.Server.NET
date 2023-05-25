@@ -306,7 +306,7 @@ jobs:
       packages: write
     env: 
       REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
+      # IMAGE_NAME: ${{ github.repository }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -329,7 +329,7 @@ jobs:
         id: meta-booking
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/OpenActive/Reference.BookingSystem
           labels: |
             org.opencontainers.image.title=OpenActive Reference Implementation - Booking System
             org.opencontainers.image.description=Reference Implementation for open data publishing and Open Booking API implementation
@@ -354,8 +354,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-booking.outputs.tags }}
+          labels: ${{ steps.meta-booking.outputs.labels }}
           target: booking-server
 
       - name: Build and push Docker image for Identity Server
