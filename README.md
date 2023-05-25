@@ -7,10 +7,24 @@ A readme is available within the [`OpenActive.Server.NET`](https://github.com/op
 
 Further documentation, including a step-by-step tutorial, can be found at https://tutorials.openactive.io/open-booking-sdk/.
 
-# OpenActive Reference Implementation [![OpenActive Test Suite](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive%20Reference%20Implementation/badge.svg?branch=master)](https://certificates.reference-implementation.openactive.io/examples/all-features/controlled/)
+# OpenActive Reference Implementation [![OpenActive Reference Implementation](https://github.com/openactive/OpenActive.Server.NET/actions/workflows/openactive-test-suite.yml/badge.svg?branch=master))](https://certificates.reference-implementation.openactive.io/examples/all-features/controlled/)
 [`BookingSystem.AspNetCore`](https://github.com/openactive/OpenActive.Server.NET/tree/master/Examples/BookingSystem.AspNetCore) provides an example use of the OpenActive.Server.NET library, as a fully standards compliant reference implementation of the OpenActive specifications, including the Open Booking API.
 
 This is designed to have its code copied-and-pasted to provide a quick working starting point for any implementation.
 
+## Docker
+
+Docker can be used to run the reference implementation locally or within a CI environment:
+
+```
+docker run -it --rm -p 5000:80 --name openactive_refimpl -e ASPNETCORE_ENVIRONMENT=no-auth ghcr.io/openactive/reference.bookingsystem:0.14.12
+```
+
+Then visit `http://localhost:5000/OpenActive`.
+
+See https://learn.microsoft.com/en-us/aspnet/core/security/docker-https to run `https://localhost:5001/OpenActive`.
+
+
 # OpenActive.FakeDatabase.NET [![Nuget](https://img.shields.io/nuget/v/OpenActive.FakeDatabase.NET.svg)](https://www.nuget.org/packages/OpenActive.FakeDatabase.NET/) [![OpenActive.FakeDatabase.NET.Tests](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive.FakeDatabase.NET.Tests/badge.svg?branch=master)](https://github.com/openactive/OpenActive.Server.NET/actions?query=workflow%3AOpenActive.FakeDatabase.NET.Tests)
 [`OpenActive.FakeDatabase.NET`](https://github.com/openactive/OpenActive.Server.NET/tree/master/Fakes/OpenActive.FakeDatabase.NET) is an in-memory database that is used by BookingSystem.AspNetCore for illustration purposes. It can be added as a dependency to your project during the initial stages of implementation, to get a conformant test implementation as a starting position.
+
