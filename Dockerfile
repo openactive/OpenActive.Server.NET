@@ -34,8 +34,8 @@ WORKDIR /app-id
 COPY --from=build /app-id ./
 ENTRYPOINT ["dotnet", "BookingSystem.AspNetCore.IdentityServer.dll"]
 
-# default target
-FROM mcr.microsoft.com/dotnet/aspnet:3.1
+# default target; for booking-server
+FROM mcr.microsoft.com/dotnet/aspnet:3.1 AS booking-server
 WORKDIR /app
 COPY --from=build /app ./
 ENTRYPOINT ["dotnet", "BookingSystem.AspNetCore.dll"]

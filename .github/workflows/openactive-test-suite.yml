@@ -306,10 +306,17 @@ jobs:
       packages: write
     env: 
       REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
+      #IMAGE_NAME: ${{ github.repository }}
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
+      - name: Install Nerdbank.GitVersioning
+        run: cp Directory.Build.props.template Directory.Build.props
+      - name: Get current version
+        uses: dotnet/nbgv@master
+        id: nbgv
 
       - name: Log in to the Container registry
         uses: docker/login-action@v2
@@ -318,16 +325,44 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      - name: Extract metadata (tags, labels) for Booking System
+        id: meta-booking
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/OpenActive/Reference.BookingSystem
+          labels: |
+            org.opencontainers.image.title=OpenActive Reference Implementation - Booking System
+            org.opencontainers.image.description=Reference Implementation for open data publishing and Open Booking API implementation
+            org.opencontainers.image.vendor=OpenActive
+          tags: |
+            type=semver,pattern={{version}},value=v${{ steps.nbgv.outputs.SimpleVersion }}
 
-      - name: Build and push Docker image
+      - name: Extract metadata (tags, labels) for Identity Server
+        id: meta-id
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/OpenActive/Reference.BookingSystem.Identity
+          labels: |
+            org.opencontainers.image.title=OpenActive Reference Implementation - Identity Server
+            org.opencontainers.image.description=Reference Implementation for OpenID Connect identity server implementation for OpenActive
+            org.opencontainers.image.vendor=OpenActive
+          tags: |
+            type=semver,pattern={{version}},value=v${{ steps.nbgv.outputs.SimpleVersion }}
+
+      - name: Build and push Docker image for Booking System
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          target: booking-server
+
+      - name: Build and push Docker image for Identity Server
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta-id.outputs.tags }}
+          labels: ${{ steps.meta-id.outputs.labels }}
+          target: identity-server
