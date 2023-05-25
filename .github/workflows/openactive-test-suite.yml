@@ -296,10 +296,10 @@ jobs:
   build-and-push-docker-image:
     # Publish to GitHub Container Registry
     # Master branch only
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs:
-      - core
-      - framework
+    # if: ${{ github.ref == 'refs/heads/master' }}
+    # needs:
+    #  - core
+    #  - framework
     runs-on: ubuntu-latest
     permissions:
       contents: read
