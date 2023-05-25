@@ -257,6 +257,8 @@ jobs:
             This release contains minor amendments based on updates to the [OpenActive Vocabulary](https://openactive.io/ns/) (codified by the [Data Models](https://github.com/openactive/data-models)), and the latest version of the [Dataset Site Template](https://github.com/openactive/dataset-site-template).
             
             Published to Nuget: [OpenActive.Server.NET](https://www.nuget.org/packages/OpenActive.Server.NET/${{ steps.nbgv.outputs.SimpleVersion }}) and [OpenActive.FakeDatabase.NET](https://www.nuget.org/packages/OpenActive.FakeDatabase.NET/${{ steps.nbgv.outputs.SimpleVersion }}).
+
+            Published to GitHub Container Registry: [reference.bookingsystem](https://github.com/openactive/OpenActive.Server.NET/pkgs/container/reference.bookingsystem) and [reference.bookingsystem.identity](https://github.com/openactive/OpenActive.Server.NET/pkgs/container/reference.bookingsystem.identity)
           draft: false
           prerelease: false
 
@@ -332,7 +334,7 @@ jobs:
           images: ${{ env.REGISTRY }}/OpenActive/Reference.BookingSystem
           labels: |
             org.opencontainers.image.title=OpenActive Reference Implementation - Booking System
-            org.opencontainers.image.description=Reference Implementation for open data publishing and Open Booking API implementation
+            org.opencontainers.image.description=Reference Implementation for OpenActive data publishing and Open Booking API implementation
             org.opencontainers.image.vendor=OpenActive
           tags: |
             type=semver,pattern={{version}},value=v${{ steps.nbgv.outputs.SimpleVersion }}
@@ -344,7 +346,7 @@ jobs:
           images: ${{ env.REGISTRY }}/OpenActive/Reference.BookingSystem.Identity
           labels: |
             org.opencontainers.image.title=OpenActive Reference Implementation - Identity Server
-            org.opencontainers.image.description=Reference Implementation for OpenID Connect identity server implementation for OpenActive
+            org.opencontainers.image.description=Reference Implementation for OpenID Connect implementation for OpenActive
             org.opencontainers.image.vendor=OpenActive
           tags: |
             type=semver,pattern={{version}},value=v${{ steps.nbgv.outputs.SimpleVersion }}
