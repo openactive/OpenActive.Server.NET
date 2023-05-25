@@ -1,0 +1,78 @@
+name: Docker Image Integration Test
+
+on:
+  registry_package:
+    types: [ published ]
+  push:
+    branches: [ feature/docker-image ]
+
+jobs:
+  tests:
+    # Only run after 'reference.bookingsystem' is published 
+    # if: ${{ github.event.package.name == 'reference.bookingsystem' }}
+    runs-on: ubuntu-latest
+    container: node:14
+    
+    services:
+      # Label used to access the service container
+      reference-bookingsystem:
+        # Docker Hub image
+        image: ghcr.io/openactive/reference.bookingsystem:latest # ${{ github.event.package.package_version.version }}
+        # Config for postgres
+        env:
+          ASPNETCORE_ENVIRONMENT: all-features
+          ApplicationHostBaseUrl: https://reference-bookingsystem
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd "curl -f http://localhost/OpenActive"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 80 and 443 on service container to the host
+          - 80:80
+          - 443:443
+
+      # Label used to access the service container
+      reference-bookingsystem-identity:
+        # Docker Hub image
+        image: ghcr.io/openactive/reference.bookingsystem.identity:latest # ${{ github.event.package.package_version.version }}
+        # Config for postgres
+        env:
+          ASPNETCORE_ENVIRONMENT: all-features
+          ApplicationHostBaseUrl: https://reference-bookingsystem-identity
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd "curl -f http://localhost/.well-known/openid-configuration"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 80 and 443 on service container to the host
+          - 80:80
+          - 443:443
+
+    steps:
+      - name: Checkout OpenActive Test Suite
+        uses: actions/checkout@v2
+        with:
+          repository: openactive/openactive-test-suite
+          path: tests
+      - name: Install OpenActive Test Suite
+        run: npm install
+        working-directory: tests
+      - name: Run OpenActive Integration Tests
+        run: npm start
+        env:
+          FORCE_COLOR: 1
+          NODE_CONFIG: |
+            {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "https://reference-bookingsystem/openactive"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": true }}
+          NODE_ENV: .example.all-features
+          NODE_APP_INSTANCE: ci
+        working-directory: tests
+      - name: Upload test output as artifact
+        uses: actions/upload-artifact@v2
+        if: ${{ success() || failure() }}
+        with:
+          name: docker-test
+          path: ./tests/output/
