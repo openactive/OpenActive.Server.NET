@@ -329,7 +329,7 @@ jobs:
         id: meta-booking
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/OpenActive/Reference.BookingSystem
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           labels: |
             org.opencontainers.image.title=OpenActive Reference Implementation - Booking System
             org.opencontainers.image.description=Reference Implementation for open data publishing and Open Booking API implementation
