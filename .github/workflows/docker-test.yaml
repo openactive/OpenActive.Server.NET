@@ -28,10 +28,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          # Maps tcp port 80 and 443 on service container to the host
-          - 80:80
-          - 443:443
 
       # Label used to access the service container
       reference-bookingsystem-identity:
@@ -47,10 +43,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          # Maps tcp port 80 and 443 on service container to the host
-          - 80:80
-          - 443:443
 
     steps:
       - name: Checkout OpenActive Test Suite
