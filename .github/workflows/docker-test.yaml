@@ -11,7 +11,7 @@ jobs:
     # Only run after 'reference.bookingsystem' is published 
     # if: ${{ github.event.package.name == 'reference.bookingsystem' }}
     runs-on: ubuntu-latest
-    container: node:14.19.1-bullseye
+    container: node:14.19.1
     
     services:
       # Label used to access the service container
