@@ -20,7 +20,7 @@ jobs:
         image: ghcr.io/openactive/reference.bookingsystem:latest # ${{ github.event.package.package_version.version }}
         # Config for postgres
         env:
-          ASPNETCORE_ENVIRONMENT: all-features
+          ASPNETCORE_ENVIRONMENT: no-auth
           ApplicationHostBaseUrl: http://localhost:5000
         # Set health checks to wait until postgres has started
         options: >-
@@ -29,7 +29,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 80:5000
+          - 5000:80
 
       # Label used to access the service container
       # reference-bookingsystem-identity:
