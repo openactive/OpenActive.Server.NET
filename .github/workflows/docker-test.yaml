@@ -11,7 +11,7 @@ jobs:
     # Only run after 'reference.bookingsystem' is published 
     # if: ${{ github.event.package.name == 'reference.bookingsystem' }}
     runs-on: ubuntu-latest
-    container: ghcr.io/openactive/test-suite:pr-539
+    container: node:14.17.0
     
     services:
       # Label used to access the service container
@@ -47,10 +47,9 @@ jobs:
       #     --health-retries 5
 
     steps:
-      - name: Run OpenActive Integration Tests
-        run: npm start
-        env:
-          FORCE_COLOR: 1
+      - name: Run OpenActive Test Suite
+        uses: openactive/openactive-test-suite@77b235dc4662fb915ef66dd6cc0f8f47d723504d
+        with:
           NODE_CONFIG: |
             {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://reference-bookingsystem/openactive"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": true }, "sellers": {"primary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/1","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/1"}}},"secondary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/2","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/2"}}}}}
           NODE_ENV: .example.no-auth
