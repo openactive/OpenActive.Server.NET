@@ -48,10 +48,10 @@ jobs:
 
     steps:
       - name: Run OpenActive Test Suite
-        uses: openactive/openactive-test-suite@77b235dc4662fb915ef66dd6cc0f8f47d723504d
+        uses: openactive/openactive-test-suite@9acf8cd468c51004a6f143e0bb57eb63fab275f2
         with:
           NODE_CONFIG: |
-            {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://reference-bookingsystem/openactive"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": true }, "sellers": {"primary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/1","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/1"}}},"secondary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/2","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/2"}}}}}
+            {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://reference-bookingsystem/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "useRandomOpportunities": true }, "sellers": {"primary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/1","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/1"}}},"secondary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/2","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/2"}}}}}
           NODE_ENV: .example.no-auth
           NODE_APP_INSTANCE: ci
       - name: Upload test output as artifact
