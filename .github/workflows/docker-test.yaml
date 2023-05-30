@@ -55,10 +55,10 @@ jobs:
             {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://reference-bookingsystem/openactive"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": true }, "sellers": {"primary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/1","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/1"}}},"secondary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/2","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/2"}}}}}
           NODE_ENV: .example.no-auth
           NODE_APP_INSTANCE: ci
-        working-directory: openactive-test-suite # Included in the docker image
+        working-directory: /openactive-test-suite # Included in the docker image
       - name: Upload test output as artifact
         uses: actions/upload-artifact@v2
         if: ${{ success() || failure() }}
         with:
           name: docker-test
-          path: ./openactive-test-suite/output/
+          path: /openactive-test-suite/output/
