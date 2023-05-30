@@ -11,7 +11,7 @@ jobs:
     # Only run after 'reference.bookingsystem' is published 
     # if: ${{ github.event.package.name == 'reference.bookingsystem' }}
     runs-on: ubuntu-latest
-    # container: node:14.19.1
+    container: ghcr.io/openactive/test-suite:pr-539
     
     services:
       # Label used to access the service container
@@ -21,7 +21,7 @@ jobs:
         # Config for postgres
         env:
           ASPNETCORE_ENVIRONMENT: no-auth
-          ApplicationHostBaseUrl: http://localhost:5000
+          ApplicationHostBaseUrl: http://reference-bookingsystem
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd "curl -f http://localhost/OpenActive"
@@ -29,7 +29,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5000:80
+          - 80:80
 
       # Label used to access the service container
       # reference-bookingsystem-identity:
@@ -47,30 +47,18 @@ jobs:
       #     --health-retries 5
 
     steps:
-      - name: Checkout OpenActive Test Suite
-        uses: actions/checkout@v3
-        with:
-          repository: openactive/openactive-test-suite
-          path: tests
-      - name: Setup Node.js 14.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-      - name: Install OpenActive Test Suite
-        run: npm install
-        working-directory: tests
       - name: Run OpenActive Integration Tests
         run: npm start
         env:
           FORCE_COLOR: 1
           NODE_CONFIG: |
-            {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://localhost:5000/openactive"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": true }}
-          NODE_ENV: .example.all-features
+            {"broker": {"outputPath": "../../output/", "datasetSiteUrl": "http://reference-bookingsystem/openactive"}, "integrationTests": { "outputPath": "../../output/", "useRandomOpportunities": true }, "sellers": {"primary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/1","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/1"}}},"secondary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/2","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/2"}}}}}
+          NODE_ENV: .example.no-auth
           NODE_APP_INSTANCE: ci
-        working-directory: tests
+        working-directory: openactive-test-suite # Included in the docker image
       - name: Upload test output as artifact
         uses: actions/upload-artifact@v2
         if: ${{ success() || failure() }}
         with:
           name: docker-test
-          path: ./tests/output/
+          path: ./openactive-test-suite/output/
