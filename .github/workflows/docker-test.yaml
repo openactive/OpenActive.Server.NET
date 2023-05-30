@@ -32,13 +32,13 @@ jobs:
           - 80:80
 
       # Label used to access the service container
-      # reference.bookingsystem-identity:
+      # reference.bookingsystem.identity:
       #   # Docker Hub image
       #   image: ghcr.io/openactive/reference.bookingsystem.identity:latest # ${{ github.event.package.package_version.version }}
       #   # Config for postgres
       #   env:
       #     ASPNETCORE_ENVIRONMENT: all-features
-      #     ApplicationHostBaseUrl: https://identity.reference.bookingsystem
+      #     ApplicationHostBaseUrl: https://reference.bookingsystem.identity
       #   # Set health checks to wait until postgres has started
       #   options: >-
       #     --health-cmd "curl -f http://localhost/.well-known/openid-configuration"
@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Run OpenActive Test Suite
-        uses: openactive/openactive-test-suite@02808909b9293a6383664e1ff301537339f297bf
+        uses: openactive/openactive-test-suite@c9d08389eecdfd1637a62dfb28c4d8b73a4297f2
         with:
           NODE_CONFIG: |
             {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://reference.bookingsystem/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "useRandomOpportunities": true }, "sellers": {"primary": {  "@id": "http://reference.bookingsystem/api/identifiers/sellers/1","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference.bookingsystem/api/identifiers/sellers/1"}}},"secondary": {  "@id": "http://reference.bookingsystem/api/identifiers/sellers/2","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference.bookingsystem/api/identifiers/sellers/2"}}}}}
