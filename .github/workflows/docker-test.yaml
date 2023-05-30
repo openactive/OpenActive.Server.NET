@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Run OpenActive Test Suite
-        uses: openactive/openactive-test-suite@9acf8cd468c51004a6f143e0bb57eb63fab275f2
+        uses: openactive/openactive-test-suite@02808909b9293a6383664e1ff301537339f297bf
         with:
           NODE_CONFIG: |
             {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://reference-bookingsystem/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "useRandomOpportunities": true }, "sellers": {"primary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/1","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/1"}}},"secondary": {  "@id": "http://reference-bookingsystem/api/identifiers/sellers/2","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference-bookingsystem/api/identifiers/sellers/2"}}}}}
