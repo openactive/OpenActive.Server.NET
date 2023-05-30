@@ -17,7 +17,7 @@ jobs:
       # Label used to access the service container
       reference.bookingsystem:
         # Docker Hub image
-        image: ghcr.io/openactive/reference-bookingsystem:latest # ${{ github.event.package.package_version.version }}
+        image: ghcr.io/openactive/reference.bookingsystem:latest # ${{ github.event.package.package_version.version }}
         # Config for postgres
         env:
           ASPNETCORE_ENVIRONMENT: no-auth
@@ -34,7 +34,7 @@ jobs:
       # Label used to access the service container
       # reference.bookingsystem-identity:
       #   # Docker Hub image
-      #   image: ghcr.io/openactive/reference-bookingsystem.identity:latest # ${{ github.event.package.package_version.version }}
+      #   image: ghcr.io/openactive/reference.bookingsystem.identity:latest # ${{ github.event.package.package_version.version }}
       #   # Config for postgres
       #   env:
       #     ASPNETCORE_ENVIRONMENT: all-features
