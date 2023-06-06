@@ -6,6 +6,9 @@ on:
 jobs:
   core:
     runs-on: ubuntu-latest
+    container:
+      image: ubuntu
+      options: --name refimpl.api
     strategy:
       fail-fast: false
       matrix:
@@ -42,7 +45,7 @@ jobs:
       uses: openactive/openactive-test-suite@d7cbdac7f03ce75f282927fe67c9a375f1e440a8
       with:
         NODE_CONFIG: |
-          {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "https://host.docker.internal:5001/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
+          {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "https://refimpl.api:5001/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
 
