@@ -5,7 +5,6 @@ on:
 
 jobs:
   core:
-    needs:
     runs-on: ubuntu-latest
     container:
       image: ubuntu
