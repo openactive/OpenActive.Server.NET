@@ -47,6 +47,8 @@ jobs:
       #     --health-retries 5
 
     steps:
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
       - name: Run OpenActive Test Suite
         uses: openactive/openactive-test-suite@d7cbdac7f03ce75f282927fe67c9a375f1e440a8
         with:
