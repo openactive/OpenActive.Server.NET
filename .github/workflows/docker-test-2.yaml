@@ -1,0 +1,58 @@
+name: Test using Docker for CI
+on:
+  push:
+    branches: [ feature/docker-image ]
+
+jobs:
+  core:
+    needs:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu
+      options: --name refimpl.api
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ['random']
+        profile: ['all-features']
+    steps:
+    - name: Checkout OpenActive.Server.NET
+      uses: actions/checkout@v2
+      with:
+        path: server
+    - name: Setup .NET Core SDK 3.1.419
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.419
+    - name: Install OpenActive.Server.NET dependencies
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
+      run: dotnet restore ./server/
+    - name: Build .NET Core Authentication Authority Reference Implementation
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-restore
+    - name: Start .NET Core Authentication Authority Reference Implementation
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
+      run: |
+        dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-build &
+    - name: Build .NET Core Booking Server Reference Implementation
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' && '--no-restore' || '' }}
+    - name: Start .NET Core Booking Server Reference Implementation
+      run: |
+        dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
+      env:
+        ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
+    
+    - name: Run OpenActive Test Suite
+      uses: openactive/openactive-test-suite@d7cbdac7f03ce75f282927fe67c9a375f1e440a8
+      with:
+        NODE_CONFIG: |
+          {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://refimpl.api/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
+        NODE_ENV: .example.${{ matrix.profile }}
+        NODE_APP_INSTANCE: ci
+
+    - name: Upload test output for ${{ matrix.mode }} mode as artifact
+      uses: actions/upload-artifact@v2
+      if: ${{ success() || failure() }}
+      with:
+        name: core.${{ matrix.mode }}.${{ matrix.profile }}
+        path: ./output/
