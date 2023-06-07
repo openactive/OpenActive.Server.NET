@@ -44,7 +44,7 @@ namespace BookingSystem
                     switch (criteria)
                     {
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Event",
@@ -55,7 +55,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFree:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableUsingPayment:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event",
@@ -67,7 +67,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
                             {
                                 var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate;
-                                (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                                (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                     testDatasetIdentifier,
                                     sellerId,
                                     $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Window",
@@ -81,7 +81,7 @@ namespace BookingSystem
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableOutsideWindow:
                             {
                                 var isValid = criteria == TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow;
-                                (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                                (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                     testDatasetIdentifier,
                                     sellerId,
                                     $"[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event {(isValid ? "Within" : "Outside")} Cancellation Window",
@@ -92,7 +92,7 @@ namespace BookingSystem
                             }
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Optional",
@@ -102,7 +102,7 @@ namespace BookingSystem
                                 prepayment: RequiredStatusType.Optional);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Unavailable",
@@ -112,7 +112,7 @@ namespace BookingSystem
                                 prepayment: RequiredStatusType.Unavailable);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Prepayment Required",
@@ -122,7 +122,7 @@ namespace BookingSystem
                                 prepayment: RequiredStatusType.Required);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event",
@@ -131,7 +131,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event No Spaces",
@@ -140,7 +140,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event Five Spaces",
@@ -149,7 +149,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOneSpace:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Event One Space",
@@ -158,7 +158,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 2,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Net",
@@ -167,7 +167,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxGross:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event Tax Gross",
@@ -176,7 +176,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableSellerTermsOfService:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 1,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Event With Seller Terms Of Service",
@@ -185,7 +185,7 @@ namespace BookingSystem
                                 requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Requires Attendee Details",
@@ -195,7 +195,7 @@ namespace BookingSystem
                                 requiresAttendeeValidation: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAdditionalDetails:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Requires Additional Details",
@@ -205,7 +205,7 @@ namespace BookingSystem
                                 requiresAdditionalDetails: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityOnlineBookable:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Virtual Event",
@@ -215,7 +215,7 @@ namespace BookingSystem
                                 isOnlineOrMixedAttendanceMode: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityOfflineBookable:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Offline Event",
@@ -225,7 +225,7 @@ namespace BookingSystem
                                 isOnlineOrMixedAttendanceMode: false);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithNegotiation:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Event That Allows Proposal Amendment",
@@ -235,7 +235,7 @@ namespace BookingSystem
                                 allowProposalAmendment: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid That Does Not Allow Full Refund",
@@ -245,7 +245,7 @@ namespace BookingSystem
                                 allowCustomerCancellationFullRefund: false);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableInPast:
-                            (classId, occurrenceId) = await FakeBookingSystem.Database.AddClass(
+                            (classId, occurrenceId) = await FakeBookingSystem.FakeDatabase.AddClass(
                                 testDatasetIdentifier,
                                 sellerId,
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Sesssion in the Past",
@@ -272,7 +272,7 @@ namespace BookingSystem
 
         protected override async Task DeleteTestDataset(string testDatasetIdentifier)
         {
-            await FakeBookingSystem.Database.DeleteTestClassesFromDataset(testDatasetIdentifier);
+            await FakeBookingSystem.FakeDatabase.DeleteTestClassesFromDataset(testDatasetIdentifier);
         }
 
         protected override async Task TriggerTestAction(OpenBookingSimulateAction simulateAction, SessionOpportunity idComponents)
@@ -280,19 +280,19 @@ namespace BookingSystem
             switch (simulateAction)
             {
                 case ChangeOfLogisticsTimeSimulateAction _:
-                    if (!await FakeBookingSystem.Database.UpdateScheduledSessionStartAndEndTimeByPeriodInMins(idComponents.ScheduledSessionId.Value, 60))
+                    if (!await FakeBookingSystem.FakeDatabase.UpdateScheduledSessionStartAndEndTimeByPeriodInMins(idComponents.ScheduledSessionId.Value, 60))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
                     return;
                 case ChangeOfLogisticsNameSimulateAction _:
-                    if (!await FakeBookingSystem.Database.UpdateClassTitle(idComponents.ScheduledSessionId.Value, "Updated Class Title"))
+                    if (!await FakeBookingSystem.FakeDatabase.UpdateClassTitle(idComponents.ScheduledSessionId.Value, "Updated Class Title"))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
                     return;
                 case ChangeOfLogisticsLocationSimulateAction _:
-                    if (!await FakeBookingSystem.Database.UpdateSessionSeriesLocationLatLng(idComponents.ScheduledSessionId.Value, 0.2m, 0.3m))
+                    if (!await FakeBookingSystem.FakeDatabase.UpdateSessionSeriesLocationLatLng(idComponents.ScheduledSessionId.Value, 0.2m, 0.3m))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
@@ -314,14 +314,14 @@ namespace BookingSystem
 
             var query = await Task.WhenAll(orderItemContexts.Select(async orderItemContext =>
             {
-                var getOccurrenceResultAndRows = await FakeBookingSystem.Database.GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
+                var getOccurrenceResultAndRows = await FakeBookingSystem.FakeDatabase.GetOccurrenceAndBookedOrderItemInfoByOccurrenceId(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
                 var (hasFoundOccurrence, @class, occurrence, bookedOrderItemInfo) = getOccurrenceResultAndRows;
 
                 if (hasFoundOccurrence == false)
                 {
                     return null;
                 }
-                var remainingUsesIncludingOtherLeases = await FakeBookingSystem.Database.GetNumberOfOtherLeaseForOccurrence(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
+                var remainingUsesIncludingOtherLeases = await FakeBookingSystem.FakeDatabase.GetNumberOfOtherLeaseForOccurrence(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.ScheduledSessionId);
 
                 return new
                 {

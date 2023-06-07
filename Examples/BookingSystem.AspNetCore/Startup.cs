@@ -60,7 +60,8 @@ namespace BookingSystem.AspNetCore
                 services.AddAuthorization(options =>
                 {
                     // No authorization checks are performed, this just ensures that the required claims are supplied
-                    options.AddPolicy(OpenActiveScopes.OpenBooking, policy => {
+                    options.AddPolicy(OpenActiveScopes.OpenBooking, policy =>
+                    {
                         policy.RequireClaim(OpenActiveCustomClaimNames.ClientId);
                         policy.RequireClaim(OpenActiveCustomClaimNames.SellerId);
                     });
@@ -72,7 +73,13 @@ namespace BookingSystem.AspNetCore
                 .AddControllers()
                 .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()));
 
+            // Add config as a singleton to pipe it through DI to the booking engine and stores
+            services.AddSingleton(x => AppSettings);
+
             services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(AppSettings));
+
+            // Add background OrderItem polling
+            services.AddHostedService<FakeDataRefresherService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -93,7 +100,6 @@ namespace BookingSystem.AspNetCore
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
-
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>

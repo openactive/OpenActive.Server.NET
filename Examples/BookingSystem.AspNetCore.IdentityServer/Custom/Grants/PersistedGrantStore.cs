@@ -22,7 +22,7 @@ namespace IdentityServer
         {
             filter.Validate();
 
-            var grants = await FakeBookingSystem.Database.GetAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
+            var grants = await FakeBookingSystem.FakeDatabase.GetAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
 
             _logger.LogDebug("{persistedGrantCount} persisted grants found for {@filter}", grants.Count, filter);
 
@@ -44,7 +44,7 @@ namespace IdentityServer
 
         public async Task<PersistedGrant> GetAsync(string key)
         {
-            var grant = await FakeBookingSystem.Database.GetGrant(key);
+            var grant = await FakeBookingSystem.FakeDatabase.GetGrant(key);
 
             _logger.LogDebug("{persistedGrantKey} found in database: {persistedGrantKeyFound}", key, grant != null);
 
@@ -68,19 +68,19 @@ namespace IdentityServer
 
             _logger.LogDebug("removing all persisted grants from database for {@filter}", filter);
 
-            await FakeBookingSystem.Database.RemoveAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
+            await FakeBookingSystem.FakeDatabase.RemoveAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
         }
 
         public async Task RemoveAsync(string key)
         {
             _logger.LogDebug("removing {persistedGrantKey} persisted grant from database", key);
 
-            await FakeBookingSystem.Database.RemoveGrant(key);
+            await FakeBookingSystem.FakeDatabase.RemoveGrant(key);
         }
         
         public async Task StoreAsync(PersistedGrant grant)
         {
-            if (await FakeBookingSystem.Database.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.SessionId, grant.ClientId, grant.CreationTime, grant.ConsumedTime, grant.Expiration, grant.Data))
+            if (await FakeBookingSystem.FakeDatabase.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.SessionId, grant.ClientId, grant.CreationTime, grant.ConsumedTime, grant.Expiration, grant.Data))
             {
                 _logger.LogDebug("{persistedGrantKey} not found in database, and so was inserted", grant.Key);
             }

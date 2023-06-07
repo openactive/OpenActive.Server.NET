@@ -16,19 +16,19 @@ namespace IdentityServer
 
         public Task<bool> ValidateCredentials(string username, string password)
         {
-            return FakeBookingSystem.Database.ValidateSellerUserCredentials(username, password);
+            return FakeBookingSystem.FakeDatabase.ValidateSellerUserCredentials(username, password);
         }
 
         public async Task<UserWithClaims> FindBySubjectId(string subjectId)
         {
             return long.TryParse(subjectId, out var longSubjectId)
-                ? GetUserFromSellerUserWithClaims(await FakeBookingSystem.Database.GetSellerUserById(longSubjectId))
+                ? GetUserFromSellerUserWithClaims(await FakeBookingSystem.FakeDatabase.GetSellerUserById(longSubjectId))
                 : null;
         }
 
         public async Task<User> FindByUsername(string username)
         {
-            return GetUserFromSellerUser(await FakeBookingSystem.Database.GetSellerUser(username));
+            return GetUserFromSellerUser(await FakeBookingSystem.FakeDatabase.GetSellerUser(username));
         }
 
         // TODO: Make this an extension method

@@ -24,7 +24,10 @@ namespace BookingSystem
 
         protected override async Task<List<RpdeItem<FacilityUse>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            var facilityTypeId = Environment.GetEnvironmentVariable("FACILITY_TYPE_ID") ?? "https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651";
+            var facilityTypePrefLabel = Environment.GetEnvironmentVariable("FACILITY_TYPE_PREF_LABEL") ?? "Squash Court";
+
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var q = db.From<FacilityUseTable>()
                 .Join<SellerTable>()
@@ -107,8 +110,8 @@ namespace BookingSystem
                             FacilityType = new List<Concept> {
                                 new Concept
                                 {
-                                    Id = new Uri("https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651"),
-                                    PrefLabel = "Squash Court",
+                                    Id = new Uri(facilityTypeId),
+                                    PrefLabel = facilityTypePrefLabel,
                                     InScheme = new Uri("https://openactive.io/facility-types")
                                 }
                             }
@@ -133,7 +136,7 @@ namespace BookingSystem
 
         protected override async Task<List<RpdeItem<Slot>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var query = db.Select<SlotTable>()
                 .OrderBy(x => x.Modified)

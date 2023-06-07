@@ -17,7 +17,7 @@ namespace BookingSystem
 
         protected override async Task<List<RpdeItem<ScheduledSession>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var query = db.Select<OccurrenceTable>()
                 .OrderBy(x => x.Modified)
@@ -74,7 +74,10 @@ namespace BookingSystem
 
         protected override async Task<List<RpdeItem<SessionSeries>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            var activityId = Environment.GetEnvironmentVariable("ACTIVITY_ID") ?? "https://openactive.io/activity-list#c07d63a0-8eb9-4602-8bcc-23be6deb8f83";
+            var activityPrefLabel = Environment.GetEnvironmentVariable("ACTIVITY_PREF_LABEL") ?? "Jet Skiing";
+
+            using (var db = FakeBookingSystem.FakeDatabase.DatabaseWrapper.Database.Open())
             {
                 var q = db.From<ClassTable>()
                 .Join<SellerTable>()
@@ -199,8 +202,8 @@ namespace BookingSystem
                             {
                                 new Concept
                                 {
-                                    Id = new Uri("https://openactive.io/activity-list#c07d63a0-8eb9-4602-8bcc-23be6deb8f83"),
-                                    PrefLabel = "Jet Skiing",
+                                    Id = new Uri(activityId),
+                                    PrefLabel = activityPrefLabel,
                                     InScheme = new Uri("https://openactive.io/activity-list")
                                 }
                             }

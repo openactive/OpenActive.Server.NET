@@ -10,7 +10,7 @@ namespace BookingSystem
 
         public OrderTransaction()
         {
-            FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.Database);
+            FakeDatabaseTransaction = new FakeDatabaseTransaction(FakeBookingSystem.FakeDatabase);
         }
 
         public async ValueTask Commit()
