@@ -19,10 +19,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: server
-
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-
     - name: Install OpenActive.Server.NET dependencies
       if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: dotnet restore ./server/
@@ -48,6 +44,10 @@ jobs:
           {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "https://refimpl.api:5001/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
+
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      if: ${{ failure() }}
 
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
       uses: actions/upload-artifact@v2
