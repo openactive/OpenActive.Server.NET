@@ -13,12 +13,14 @@ namespace BookingSystem
     public class AcmeOrdersFeedRpdeGenerator : OrdersRPDEFeedModifiedTimestampAndID
     {
         //public override string FeedPath { get; protected set; } = "example path override";
-
         private readonly AppSettings _appSettings;
+        private readonly FakeBookingSystem _fakeBookingSystem;
 
-        public AcmeOrdersFeedRpdeGenerator(AppSettings appSettings)
+
+        public AcmeOrdersFeedRpdeGenerator(AppSettings appSettings, FakeBookingSystem fakeBookingSystem)
         {
             _appSettings = appSettings;
+            _fakeBookingSystem = fakeBookingSystem;
         }
 
         protected override async Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
@@ -27,7 +29,7 @@ namespace BookingSystem
             // and update this class to inherit from OrdersRPDEFeedIncrementingUniqueChangeNumber
             // (to use afterChangeNumber, instead of afterTimestamp and afterId)
 
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = _fakeBookingSystem.database.Mem.Database.Open())
             {
                 long afterTimestampLong = afterTimestamp ?? 0;
                 var q = db.From<OrderTable>()
@@ -118,15 +120,17 @@ namespace BookingSystem
         //public override string FeedPath { get; protected set; } = "example path override";
 
         private readonly AppSettings _appSettings;
+        private readonly FakeBookingSystem _fakeBookingSystem;
 
-        public AcmeOrderProposalsFeedRpdeGenerator(AppSettings appSettings)
+        public AcmeOrderProposalsFeedRpdeGenerator(AppSettings appSettings, FakeBookingSystem fakeBookingSystem)
         {
             _appSettings = appSettings;
+            _fakeBookingSystem = fakeBookingSystem;
         }
 
         protected override async Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = _fakeBookingSystem.database.Mem.Database.Open())
             {
                 long afterTimestampLong = afterTimestamp ?? 0;
                 var q = db.From<OrderTable>()

@@ -9,7 +9,7 @@ namespace BookingSystem.AspNetCore
         public static void Main(string[] args)
         {
             // Initialising fake database (shared with IdentityServer)
-            FakeBookingSystem.Initialise();
+            //FakeBookingSystem.Initialise();
             CreateWebHostBuilder(args).Build().Run();
         }
 

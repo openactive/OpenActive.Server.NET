@@ -19,34 +19,39 @@ namespace OpenActive.FakeDatabase.NET
     /// This class models the database schema within an actual booking system.
     /// It is designed to simulate the database that woFuld be available in a full implementation.
     /// </summary>
-    public static class FakeBookingSystem
+    public class FakeBookingSystem
     {
+        public FakeDatabase database { get; set; }
+        public FakeBookingSystem()
+        {
+            database = FakeDatabase.GetPrepopulatedFakeDatabase().Result;
+
+        }
         /// <summary>
         /// The Database is created as static, to simulate the persistence of a real database
         /// </summary>
-        public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase().Result;
 
-        public static void Initialise()
-        {
-            // Make an arbitrary call to the database to force the static instance to be instantiated, wiped and repopulated
-            // This SQLite database file is shared between the Booking System and Identity Server, and
-            // Initialise() must be called on startup of each to ensure they do not wipe the database
-            // on the first call to it
-#pragma warning disable 4014
-            BookingPartnerTable.Get().Wait();
-#pragma warning restore 4014
-        }
+        //        public void Initialise()
+        //        {
+        //            // Make an arbitrary call to the database to force the static instance to be instantiated, wiped and repopulated
+        //            // This SQLite database file is shared between the Booking System and Identity Server, and
+        //            // Initialise() must be called on startup of each to ensure they do not wipe the database
+        //            // on the first call to it
+        //#pragma warning disable 4014
+        //            BookingPartnerTable.Get().Wait();
+        //#pragma warning restore 4014
+        //        }
 
-        public static DateTime Truncate(this DateTime dateTime, TimeSpan timeSpan)
-        {
-            if (timeSpan == TimeSpan.Zero)
-                return dateTime; // Or could throw an ArgumentException
+        //public static DateTime Truncate(this DateTime dateTime, TimeSpan timeSpan)
+        //{
+        //    if (timeSpan == TimeSpan.Zero)
+        //        return dateTime; // Or could throw an ArgumentException
 
-            if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
-                return dateTime; // do not modify "guard" values
+        //    if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
+        //        return dateTime; // do not modify "guard" values
 
-            return dateTime.AddTicks(-(dateTime.Ticks % timeSpan.Ticks));
-        }
+        //    return dateTime.AddTicks(-(dateTime.Ticks % timeSpan.Ticks));
+        //}
     }
 
     /// <summary>

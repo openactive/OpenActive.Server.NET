@@ -11,15 +11,17 @@ namespace BookingSystem
     public class AcmeSellerStore : SellerStore
     {
         private readonly bool _useSingleSellerMode;
+        private readonly FakeBookingSystem _fakeBookingSystem;
 
         /// <summary>
         /// Example constructor that can set state from EngineConfig.
         /// This is not required for an actual implementation.
         /// </summary>
         /// <param name="useSingleSellerMode">Single seller mode feature-flag</param>
-        public AcmeSellerStore(bool useSingleSellerMode)
+        public AcmeSellerStore(bool useSingleSellerMode, FakeBookingSystem fakeBookingSystem)
         {
             _useSingleSellerMode = useSingleSellerMode;
+            _fakeBookingSystem = fakeBookingSystem;
         }
 
         // If the Seller is not found, simply return null to generate the correct Open Booking error
@@ -57,7 +59,7 @@ namespace BookingSystem
             }
 
             // Otherwise it may be looked up based on supplied sellerIdComponents which are extracted from the sellerId.
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = _fakeBookingSystem.database.Mem.Database.Open())
             {
                 var seller = db.SingleById<SellerTable>(sellerIdComponents.IdLong);
                 if (seller == null)

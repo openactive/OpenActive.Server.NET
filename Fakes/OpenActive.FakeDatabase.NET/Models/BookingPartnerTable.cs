@@ -71,17 +71,17 @@ namespace OpenActive.FakeDatabase.NET
             // To populate GrantTable locally, run the tests, e.g. `NODE_APP_INSTANCE=dev npm run start auth non-free`
         }
 
-        public static async Task<List<BookingPartnerTable>> Get()
+        public static async Task<List<BookingPartnerTable>> Get(FakeBookingSystem fakeBookingSystem)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
             {
                 return await db.SelectAsync<BookingPartnerTable>();
             }
         }
 
-        public static async Task<List<BookingPartnerTable>> GetBySellerUserId(long sellerUserId)
+        public static async Task<List<BookingPartnerTable>> GetBySellerUserId(FakeBookingSystem fakeBookingSystem, long sellerUserId)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
             {
                 var query = db.From<BookingPartnerTable>()
                               .Join<BookingPartnerTable, GrantTable>((b, g) => b.ClientId == g.ClientId && g.Type == "user_consent")
@@ -91,34 +91,34 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static async Task<BookingPartnerTable> GetByInitialAccessToken(string registrationKey)
+        public static async Task<BookingPartnerTable> GetByInitialAccessToken(FakeBookingSystem fakeBookingSystem, string registrationKey)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
             {
                 var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.InitialAccessToken == registrationKey);
                 return bookingPartner?.InitialAccessTokenKeyValidUntil > DateTime.Now ? bookingPartner : null;
             }
         }
 
-        public static async Task<BookingPartnerTable> GetByClientId(string clientId)
+        public static async Task<BookingPartnerTable> GetByClientId(FakeBookingSystem fakeBookingSystem, string clientId)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
             {
                 return await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
             }
         }
 
-        public static async Task Save(BookingPartnerTable bookingPartnerTable)
+        public static async Task Save(FakeBookingSystem fakeBookingSystem, BookingPartnerTable bookingPartnerTable)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
             {
                 await db.SaveAsync(bookingPartnerTable);
             }
         }
 
-        public static async Task ResetCredentials(string clientId, string key)
+        public static async Task ResetCredentials(FakeBookingSystem fakeBookingSystem, string clientId, string key)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
             {
                 var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
                 bookingPartner.Registered = false;
@@ -129,9 +129,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static async Task SetKey(string clientId, string key)
+        public static async Task SetKey(FakeBookingSystem fakeBookingSystem, string clientId, string key)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
             {
                 var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
                 bookingPartner.InitialAccessToken = key;
@@ -140,9 +140,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static async Task UpdateScope(string clientId, string scope, bool bookingsSuspended)
+        public static async Task UpdateScope(FakeBookingSystem fakeBookingSystem, string clientId, string scope, bool bookingsSuspended)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
             {
                 var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
                 bookingPartner.Scope = scope;
@@ -151,9 +151,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static async Task Add(BookingPartnerTable newBookingPartner)
+        public static async Task Add(FakeBookingSystem fakeBookingSystem, BookingPartnerTable newBookingPartner)
         {
-            using (var db = await FakeBookingSystem.Database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
             {
                 await db.SaveAsync(newBookingPartner);
             }

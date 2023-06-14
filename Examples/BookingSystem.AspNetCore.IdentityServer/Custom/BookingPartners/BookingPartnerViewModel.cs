@@ -13,14 +13,14 @@ namespace IdentityServer
     {
         public IEnumerable<BookingPartnerModel> BookingPartners { get; set; }
 
-        public static async Task<BookingPartnerViewModel> Build(long? sellerUserId = null)
+        public static async Task<BookingPartnerViewModel> Build(FakeBookingSystem fakeBookingSystem, long? sellerUserId = null)
         {
             var bookingPartners = sellerUserId.HasValue
-                ? await BookingPartnerTable.GetBySellerUserId(sellerUserId.Value)
-                : await BookingPartnerTable.Get();
+                ? await BookingPartnerTable.GetBySellerUserId(fakeBookingSystem, sellerUserId.Value)
+                : await BookingPartnerTable.Get(fakeBookingSystem);
             var list = (await Task.WhenAll(bookingPartners.Select(async bookingPartner =>
             {
-                var bookingStatistics = await BookingStatistics.Get(bookingPartner.ClientId);
+                var bookingStatistics = await BookingStatistics.Get(fakeBookingSystem, bookingPartner.ClientId);
                 return new BookingPartnerModel
                 {
                     ClientId = bookingPartner.ClientId,
