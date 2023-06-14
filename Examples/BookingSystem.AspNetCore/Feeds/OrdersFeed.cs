@@ -29,7 +29,7 @@ namespace BookingSystem
             // and update this class to inherit from OrdersRPDEFeedIncrementingUniqueChangeNumber
             // (to use afterChangeNumber, instead of afterTimestamp and afterId)
 
-            using (var db = _fakeBookingSystem.database.Mem.Database.Open())
+            using (var db = _fakeBookingSystem.Database.Mem.Database.Open())
             {
                 long afterTimestampLong = afterTimestamp ?? 0;
                 var q = db.From<OrderTable>()
@@ -130,7 +130,7 @@ namespace BookingSystem
 
         protected override async Task<List<RpdeItem>> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
-            using (var db = _fakeBookingSystem.database.Mem.Database.Open())
+            using (var db = _fakeBookingSystem.Database.Mem.Database.Open())
             {
                 long afterTimestampLong = afterTimestamp ?? 0;
                 var q = db.From<OrderTable>()

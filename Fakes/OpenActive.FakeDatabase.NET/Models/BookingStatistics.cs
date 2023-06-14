@@ -15,7 +15,7 @@ namespace OpenActive.FakeDatabase.NET
         // ToDo: this is N+1 - if we nuke the ORM, we can re-write the main query to avoid this
         public static async Task<BookingStatistics> Get(FakeBookingSystem fakeBookingSystem, string clientId)
         {
-            using (var db = await fakeBookingSystem.database.Mem.Database.OpenAsync())
+            using (var db = await fakeBookingSystem.Database.Mem.Database.OpenAsync())
             {
                 var thirtyDaysAgo = DateTimeOffset.Now.AddDays(-30);
                 var bookingsByBroker = (await db.SelectAsync<OrderTable>(o => o.ClientId == clientId && o.OrderCreated > thirtyDaysAgo))

@@ -111,7 +111,7 @@ namespace IdentityServer
         public async Task<IActionResult> Delete([FromForm] string clientId)
         {
             await _interaction.RevokeUserConsentAsync(clientId);
-            await _fakeBookingSystem.database.DeleteBookingPartner(clientId);
+            await _fakeBookingSystem.Database.DeleteBookingPartner(clientId);
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
             return Redirect("/booking-partners/sys-admin");
