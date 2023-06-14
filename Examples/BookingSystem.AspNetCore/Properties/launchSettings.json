@@ -1,4 +1,8 @@
 {
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true
+  },
   "profiles": {
     "BookingSystem.AspNetCore": {
       "commandName": "Project",
@@ -6,9 +10,8 @@
       "launchUrl": "https://localhost:5001/openactive",
       "applicationUrl": "https://localhost:5001",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "single-seller",
-        "GENERATE_INDIVIDUAL_FACILITY_USES": "true",
-        "OPPORTUNITY_COUNT": "200"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ApplicationHostBaseUrl": "https://localhost:5001"
       }
     }
   }
