@@ -21,10 +21,10 @@ namespace OpenActive.FakeDatabase.NET
     /// </summary>
     public class FakeBookingSystem
     {
-        public FakeDatabase database { get; set; }
+        public FakeDatabase Database { get; set; }
         public FakeBookingSystem()
         {
-            database = FakeDatabase.GetPrepopulatedFakeDatabase().Result;
+            Database = FakeDatabase.GetPrepopulatedFakeDatabase().Result;
 
         }
         /// <summary>
