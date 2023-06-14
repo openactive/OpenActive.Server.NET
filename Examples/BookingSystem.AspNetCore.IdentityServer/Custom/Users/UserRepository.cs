@@ -8,27 +8,29 @@ namespace IdentityServer
     public class UserRepository : IUserRepository
     {
         private readonly string _jsonLdIdBaseUrl;
+        private readonly FakeBookingSystem _fakeBookingSystem;
 
-        public UserRepository(string jsonLdIdBaseUrl)
+        public UserRepository(string jsonLdIdBaseUrl, FakeBookingSystem fakeBookingSystem)
         {
             this._jsonLdIdBaseUrl = jsonLdIdBaseUrl;
+            this._fakeBookingSystem = fakeBookingSystem;
         }
 
         public Task<bool> ValidateCredentials(string username, string password)
         {
-            return FakeBookingSystem.Database.ValidateSellerUserCredentials(username, password);
+            return _fakeBookingSystem.database.ValidateSellerUserCredentials(username, password);
         }
 
         public async Task<UserWithClaims> FindBySubjectId(string subjectId)
         {
             return long.TryParse(subjectId, out var longSubjectId)
-                ? GetUserFromSellerUserWithClaims(await FakeBookingSystem.Database.GetSellerUserById(longSubjectId))
+                ? GetUserFromSellerUserWithClaims(await _fakeBookingSystem.database.GetSellerUserById(longSubjectId))
                 : null;
         }
 
         public async Task<User> FindByUsername(string username)
         {
-            return GetUserFromSellerUser(await FakeBookingSystem.Database.GetSellerUser(username));
+            return GetUserFromSellerUser(await _fakeBookingSystem.database.GetSellerUser(username));
         }
 
         // TODO: Make this an extension method

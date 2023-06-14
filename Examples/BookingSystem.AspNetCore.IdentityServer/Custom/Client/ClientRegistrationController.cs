@@ -19,10 +19,12 @@ namespace IdentityServer
     public class ClientRegistrationController : ControllerBase
     {
         private readonly IClientStore _clients;
+        private readonly FakeBookingSystem _fakeBookingSystem;
 
-        public ClientRegistrationController(IClientStore clients)
+        public ClientRegistrationController(IClientStore clients, FakeBookingSystem fakeBookingSystem)
         {
             _clients = clients;
+            _fakeBookingSystem = fakeBookingSystem;
         }
 
         // POST: connect/register
@@ -31,7 +33,7 @@ namespace IdentityServer
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PostAsync([FromBody] ClientRegistrationModel model)
         {
-            model.GrantTypes ??= new[] {OidcConstants.GrantTypes.AuthorizationCode, OidcConstants.GrantTypes.RefreshToken};
+            model.GrantTypes ??= new[] { OidcConstants.GrantTypes.AuthorizationCode, OidcConstants.GrantTypes.RefreshToken };
 
             if (model.GrantTypes.Any(x => x == OidcConstants.GrantTypes.Implicit) || model.GrantTypes.Any(x => x == OidcConstants.GrantTypes.AuthorizationCode))
             {
@@ -50,7 +52,7 @@ namespace IdentityServer
                 registrationKey = headerValues.FirstOrDefault().Substring("Bearer ".Length);
 
             // update the booking system
-            var bookingPartner = await BookingPartnerTable.GetByInitialAccessToken(registrationKey);
+            var bookingPartner = await BookingPartnerTable.GetByInitialAccessToken(_fakeBookingSystem, registrationKey);
             if (bookingPartner == null)
                 return Unauthorized("Initial Access Token is not valid, or is expired");
 
@@ -64,7 +66,7 @@ namespace IdentityServer
             bookingPartner.RedirectUris = model.RedirectUris;
             bookingPartner.Scope = model.Scope;
 
-            await BookingPartnerTable.Save(bookingPartner);
+            await BookingPartnerTable.Save(_fakeBookingSystem, bookingPartner);
 
             // Read the updated client from the database and reflect back in the request
             var client = await _clients.FindClientByIdAsync(bookingPartner.ClientId);
@@ -106,7 +108,7 @@ namespace IdentityServer
         public string[] GrantTypes { get; set; }
 
         [JsonPropertyName(OidcConstants.ClientMetadata.RedirectUris)]
-        public string[] RedirectUris { get; set; } = {};
+        public string[] RedirectUris { get; set; } = { };
 
         public string Scope { get; set; } = "openid profile email";
     }
