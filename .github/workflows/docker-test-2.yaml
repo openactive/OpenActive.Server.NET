@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/dotnet/sdk:3.1
-      options: --network-alias refimpl.api
+      options: --network-alias refimpl-api --hostname refimpl-api
     strategy:
       fail-fast: false
       matrix:
@@ -37,17 +37,17 @@ jobs:
       env:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
     
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      if: ${{ failure() }}
+
     - name: Run OpenActive Test Suite
       uses: openactive/openactive-test-suite@d7cbdac7f03ce75f282927fe67c9a375f1e440a8
       with:
         NODE_CONFIG: |
-          {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "https://refimpl.api:5001/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
+          {"ci": false, "broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "https://refimpl-api:5001/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
-
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-      if: ${{ failure() }}
 
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
       uses: actions/upload-artifact@v2
