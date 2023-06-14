@@ -45,7 +45,6 @@ jobs:
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
 
-
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v3
       if: ${{ failure() }}
