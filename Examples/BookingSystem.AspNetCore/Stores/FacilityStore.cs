@@ -37,7 +37,6 @@ namespace BookingSystem
 
             long? sellerId = _appSettings.FeatureFlags.SingleSeller ? null : seller.IdLong;
             var requiresApproval = openBookingFlow == TestOpenBookingFlowEnumeration.OpenBookingApprovalFlow;
-            var generateIndividualFacilityUses = _appSettings.FeatureFlags.GenerateIndividualFacilityUses;
 
             switch (opportunityType)
             {
@@ -55,8 +54,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Facility",
                                  rnd.Next(2) == 0 ? 0M : 14.99M,
                                 10,
-                                requiresApproval,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellable:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFree:
@@ -67,8 +65,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility",
                                 14.99M,
                                 10,
-                                requiresApproval,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFree:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -77,8 +74,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility",
                                 0M,
                                 10,
-                                requiresApproval,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithinValidFromBeforeStartDate:
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOutsideValidFromBeforeStartDate:
@@ -92,8 +88,7 @@ namespace BookingSystem
                                     14.99M,
                                     10,
                                     requiresApproval,
-                                    validFromStartDate: isValid,
-                                    generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                    validFromStartDate: isValid);
                             }
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableCancellableWithinWindow:
@@ -107,8 +102,7 @@ namespace BookingSystem
                                     14.99M,
                                     10,
                                     requiresApproval,
-                                    latestCancellationBeforeStartDate: isValid,
-                                    generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                    latestCancellationBeforeStartDate: isValid);
                             }
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentOptional:
@@ -119,8 +113,7 @@ namespace BookingSystem
                                 14.99M,
                                 10,
                                 requiresApproval,
-                                prepayment: RequiredStatusType.Optional,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                prepayment: RequiredStatusType.Optional);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentUnavailable:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -130,8 +123,7 @@ namespace BookingSystem
                                 14.99M,
                                 10,
                                 requiresApproval,
-                                prepayment: RequiredStatusType.Unavailable,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                prepayment: RequiredStatusType.Unavailable);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreePrepaymentRequired:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -141,8 +133,7 @@ namespace BookingSystem
                                 14.99M,
                                 10,
                                 requiresApproval,
-                                prepayment: RequiredStatusType.Required,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                prepayment: RequiredStatusType.Required);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNoSpaces:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -151,8 +142,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility No Spaces",
                                 14.99M,
                                 0,
-                                requiresApproval,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableFiveSpaces:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -161,8 +151,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility Five Spaces",
                                 14.99M,
                                 5,
-                                requiresApproval,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableOneSpace:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -171,8 +160,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Free Facility One Space",
                                 14.99M,
                                 1,
-                                requiresApproval,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxNet:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -181,8 +169,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Tax Net",
                                 14.99M,
                                 10,
-                                requiresApproval,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNonFreeTaxGross:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -191,8 +178,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Paid Facility Tax Gross",
                                 14.99M,
                                 10,
-                                requiresApproval,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableSellerTermsOfService:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -201,8 +187,7 @@ namespace BookingSystem
                                 "[OPEN BOOKING API TEST INTERFACE] Bookable Facility With Seller Terms Of Service",
                                 14.99M,
                                 10,
-                                requiresApproval,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresApproval);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAttendeeDetails:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -212,8 +197,7 @@ namespace BookingSystem
                                 14.99M,
                                 10,
                                 requiresApproval,
-                                requiresAttendeeValidation: true,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresAttendeeValidation: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableAdditionalDetails:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -223,8 +207,7 @@ namespace BookingSystem
                                 10M,
                                 10,
                                 requiresApproval,
-                                requiresAdditionalDetails: true,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                requiresAdditionalDetails: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableWithNegotiation:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -234,8 +217,7 @@ namespace BookingSystem
                                 10M,
                                 10,
                                 requiresApproval,
-                                allowProposalAmendment: true,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                allowProposalAmendment: true);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableNotCancellable:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -245,8 +227,7 @@ namespace BookingSystem
                                 10M,
                                 10,
                                 requiresApproval,
-                                allowCustomerCancellationFullRefund: false,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                allowCustomerCancellationFullRefund: false);
                             break;
                         case TestOpportunityCriteriaEnumeration.TestOpportunityBookableInPast:
                             (facilityId, individualFacilityUseId, slotId) = await _fakeBookingSystem.Database.AddFacility(
@@ -257,8 +238,7 @@ namespace BookingSystem
                                 10,
                                 requiresApproval,
                                 allowCustomerCancellationFullRefund: false,
-                                inPast: true,
-                                generateIndividualFacilityUses: generateIndividualFacilityUses);
+                                inPast: true);
                             break;
                         default:
                             throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");

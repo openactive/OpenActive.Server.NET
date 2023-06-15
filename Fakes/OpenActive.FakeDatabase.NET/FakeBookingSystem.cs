@@ -23,9 +23,9 @@ namespace OpenActive.FakeDatabase.NET
     public class FakeBookingSystem
     {
         public FakeDatabase Database { get; set; }
-        public FakeBookingSystem()
+        public FakeBookingSystem(bool generateIndividualFacilityUses)
         {
-            Database = FakeDatabase.GetPrepopulatedFakeDatabase().Result;
+            Database = FakeDatabase.GetPrepopulatedFakeDatabase(generateIndividualFacilityUses).Result;
 
         }
     }
@@ -146,10 +146,15 @@ namespace OpenActive.FakeDatabase.NET
     {
         private const float ProportionWithRequiresAttendeeValidation = 1f / 10;
         private const float ProportionWithRequiresAdditionalDetails = 1f / 10;
-
+        private bool _generateIndividualFacilityUses;
         public readonly InMemorySQLite Mem = new InMemorySQLite();
 
         private static readonly Faker Faker = new Faker();
+
+        public FakeDatabase(bool generateIndividualFacilityUses)
+        {
+            _generateIndividualFacilityUses = generateIndividualFacilityUses;
+        }
 
         static FakeDatabase()
         {
@@ -1352,10 +1357,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase()
+        public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase(bool generateIndividualFacilityUses)
         {
-            var database = new FakeDatabase();
-            var generateIndividualFacilityUses = bool.TryParse(Environment.GetEnvironmentVariable("GENERATE_INDIVIDUAL_FACILITY_USES"), out var generateIfuEnvVar) ? generateIfuEnvVar : false;
+            var database = new FakeDatabase(generateIndividualFacilityUses);
             using (var db = await database.Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
@@ -1881,8 +1885,7 @@ namespace OpenActive.FakeDatabase.NET
             decimal locationLat = 0.1m,
             decimal locationLng = 0.1m,
             bool allowProposalAmendment = false,
-            bool inPast = false,
-            bool generateIndividualFacilityUses = false
+            bool inPast = false
             )
         {
             var startTime = DateTime.Now.AddDays(inPast ? -1 : 1);
@@ -1902,7 +1905,7 @@ namespace OpenActive.FakeDatabase.NET
                     LocationLng = locationLng,
                     Modified = DateTimeOffset.Now.UtcTicks,
                 };
-                if (generateIndividualFacilityUses)
+                if (_generateIndividualFacilityUses)
                 {
                     facility.IndividualFacilityUses = new List<IndividualFacilityUse> {
                         new IndividualFacilityUse {
@@ -1940,7 +1943,7 @@ namespace OpenActive.FakeDatabase.NET
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
                     Modified = DateTimeOffset.Now.UtcTicks
                 };
-                if (generateIndividualFacilityUses)
+                if (_generateIndividualFacilityUses)
                 {
                     individualFacilityUseId = 1;
                     slot.IndividualFacilityUseId = individualFacilityUseId;
