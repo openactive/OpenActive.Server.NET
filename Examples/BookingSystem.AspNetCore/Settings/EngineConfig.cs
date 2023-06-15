@@ -1,4 +1,5 @@
 ﻿using OpenActive.DatasetSite.NET;
+using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.Server.NET.StoreBooking;
@@ -9,7 +10,7 @@ namespace BookingSystem
 {
     public static class EngineConfig
     {
-        public static StoreBookingEngine CreateStoreBookingEngine(AppSettings appSettings)
+        public static StoreBookingEngine CreateStoreBookingEngine(AppSettings appSettings, FakeBookingSystem fakeBookingSystem)
         {
             var facilityBookablePaidIdTemplate = appSettings.FeatureFlags.GenerateIndividualFacilityUses ?
                 new BookablePairIdTemplate<FacilityOpportunity>(
@@ -155,7 +156,7 @@ namespace BookingSystem
                     */
 
                     // Reference implementation is configurable to allow both modes to be tested
-                    SellerStore = new AcmeSellerStore(appSettings.FeatureFlags.SingleSeller),
+                    SellerStore = new AcmeSellerStore(appSettings.FeatureFlags.SingleSeller, fakeBookingSystem),
                     SellerIdTemplate = appSettings.FeatureFlags.SingleSeller ?
                         new SingleIdTemplate<SimpleIdComponents>(
                             "{+BaseUrl}/seller"
@@ -167,16 +168,16 @@ namespace BookingSystem
 
                     OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> {
                         {
-                            OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator()
+                            OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator(fakeBookingSystem)
                         },
                         {
-                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(appSettings)
+                            OpportunityType.SessionSeries, new AcmeSessionSeriesRpdeGenerator(appSettings, fakeBookingSystem)
                         },
                         {
-                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings)
+                            OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings, fakeBookingSystem)
                         },
                         {
-                            appSettings.FeatureFlags.GenerateIndividualFacilityUses ? OpportunityType.IndividualFacilityUseSlot : OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator(appSettings)
+                            appSettings.FeatureFlags.GenerateIndividualFacilityUses ? OpportunityType.IndividualFacilityUseSlot : OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator(appSettings,fakeBookingSystem)
                         }
                     },
 
@@ -186,8 +187,8 @@ namespace BookingSystem
                         "{+BaseUrl}/{OrderType}/{uuid}",
                         "{+BaseUrl}/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"),
 
-                    OrdersFeedGenerator = new AcmeOrdersFeedRpdeGenerator(appSettings),
-                    OrderProposalsFeedGenerator = new AcmeOrderProposalsFeedRpdeGenerator(appSettings)
+                    OrdersFeedGenerator = new AcmeOrdersFeedRpdeGenerator(appSettings, fakeBookingSystem),
+                    OrderProposalsFeedGenerator = new AcmeOrderProposalsFeedRpdeGenerator(appSettings, fakeBookingSystem)
                 },
                 new DatasetSiteGeneratorSettings
                 {
@@ -278,13 +279,13 @@ namespace BookingSystem
                     // List of _bookable_ opportunity types and which store to route to for each
                     OpportunityStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                         {
-                            new SessionStore(appSettings), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                            new SessionStore(appSettings, fakeBookingSystem), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStore(appSettings), new List<OpportunityType> { appSettings.FeatureFlags.GenerateIndividualFacilityUses ? OpportunityType.IndividualFacilityUseSlot : OpportunityType.FacilityUseSlot }
+                            new FacilityStore(appSettings, fakeBookingSystem), new List<OpportunityType> { appSettings.FeatureFlags.GenerateIndividualFacilityUses ? OpportunityType.IndividualFacilityUseSlot : OpportunityType.FacilityUseSlot }
                         }
                     },
-                    OrderStore = new AcmeOrderStore(appSettings),
+                    OrderStore = new AcmeOrderStore(appSettings, fakeBookingSystem),
                     BusinessToBusinessTaxCalculation = appSettings.Payment.TaxCalculationB2B,
                     BusinessToConsumerTaxCalculation = appSettings.Payment.TaxCalculationB2C,
                     EnforceSyncWithinOrderTransactions = false,

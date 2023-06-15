@@ -12,17 +12,19 @@ namespace IdentityServer
     public class AcmePersistedGrantStore : IPersistedGrantStore
     {
         protected readonly ILogger _logger;
+        private readonly FakeBookingSystem _fakeBookingSystem;
 
-        public AcmePersistedGrantStore(ILogger<AcmePersistedGrantStore> logger)
+        public AcmePersistedGrantStore(ILogger<AcmePersistedGrantStore> logger, FakeBookingSystem fakeBookingSystem)
         {
             _logger = logger;
+            _fakeBookingSystem = fakeBookingSystem;
         }
 
         public async Task<IEnumerable<PersistedGrant>> GetAllAsync(PersistedGrantFilter filter)
         {
             filter.Validate();
 
-            var grants = await FakeBookingSystem.Database.GetAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
+            var grants = await _fakeBookingSystem.Database.GetAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
 
             _logger.LogDebug("{persistedGrantCount} persisted grants found for {@filter}", grants.Count, filter);
 
@@ -44,7 +46,7 @@ namespace IdentityServer
 
         public async Task<PersistedGrant> GetAsync(string key)
         {
-            var grant = await FakeBookingSystem.Database.GetGrant(key);
+            var grant = await _fakeBookingSystem.Database.GetGrant(key);
 
             _logger.LogDebug("{persistedGrantKey} found in database: {persistedGrantKeyFound}", key, grant != null);
 
@@ -68,23 +70,23 @@ namespace IdentityServer
 
             _logger.LogDebug("removing all persisted grants from database for {@filter}", filter);
 
-            await FakeBookingSystem.Database.RemoveAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
+            await _fakeBookingSystem.Database.RemoveAllGrants(filter.SubjectId, filter.SessionId, filter.ClientId, filter.Type);
         }
 
         public async Task RemoveAsync(string key)
         {
             _logger.LogDebug("removing {persistedGrantKey} persisted grant from database", key);
 
-            await FakeBookingSystem.Database.RemoveGrant(key);
+            await _fakeBookingSystem.Database.RemoveGrant(key);
         }
-        
+
         public async Task StoreAsync(PersistedGrant grant)
         {
-            if (await FakeBookingSystem.Database.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.SessionId, grant.ClientId, grant.CreationTime, grant.ConsumedTime, grant.Expiration, grant.Data))
+            if (await _fakeBookingSystem.Database.AddGrant(grant.Key, grant.Type, grant.SubjectId, grant.SessionId, grant.ClientId, grant.CreationTime, grant.ConsumedTime, grant.Expiration, grant.Data))
             {
                 _logger.LogDebug("{persistedGrantKey} not found in database, and so was inserted", grant.Key);
             }
-                else
+            else
             {
                 _logger.LogDebug("{persistedGrantKey} found in database, and updated", grant.Key);
             }

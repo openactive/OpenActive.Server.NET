@@ -27,25 +27,27 @@ namespace IdentityServer
         private readonly IIdentityServerInteractionService _interaction;
         private readonly IClientStore _clients;
         private readonly IEventService _events;
+        private readonly FakeBookingSystem _fakeBookingSystem;
 
-        public BookingPartnersController(IIdentityServerInteractionService interaction, IClientStore clients, IEventService events)
+        public BookingPartnersController(IIdentityServerInteractionService interaction, IClientStore clients, IEventService events, FakeBookingSystem fakeBookingSystem)
         {
             _interaction = interaction;
             _clients = clients;
             _events = events;
+            _fakeBookingSystem = fakeBookingSystem;
         }
 
         [HttpGet("seller-admin")]
         public async Task<IActionResult> SellerAdmin()
         {
             var sellerUserId = long.Parse(User.GetSubjectId());
-            return View("SellerAdmin", await BookingPartnerViewModel.Build(sellerUserId));
+            return View("SellerAdmin", await BookingPartnerViewModel.Build(_fakeBookingSystem, sellerUserId));
         }
 
         [HttpGet("sys-admin")]
         public async Task<IActionResult> SysAdmin()
         {
-            return View("SysAdmin", await BookingPartnerViewModel.Build());
+            return View("SysAdmin", await BookingPartnerViewModel.Build(_fakeBookingSystem));
         }
 
         [HttpGet("edit/{id}")]
@@ -84,7 +86,7 @@ namespace IdentityServer
                 BookingsSuspended = false
             };
 
-            await BookingPartnerTable.Add(newBookingPartner);
+            await _fakeBookingSystem.Database.BookingPartnerAdd(newBookingPartner);
             return Redirect($"/booking-partners/edit/{newBookingPartner.ClientId}");
         }
 
@@ -109,7 +111,7 @@ namespace IdentityServer
         public async Task<IActionResult> Delete([FromForm] string clientId)
         {
             await _interaction.RevokeUserConsentAsync(clientId);
-            await FakeBookingSystem.Database.DeleteBookingPartner(clientId);
+            await _fakeBookingSystem.Database.DeleteBookingPartner(clientId);
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
             return Redirect("/booking-partners/sys-admin");
@@ -126,7 +128,7 @@ namespace IdentityServer
             client.AllowedScopes.Remove("openactive-openbooking");
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
-            await BookingPartnerTable.UpdateScope(clientId, "openid profile openactive-ordersfeed", true);
+            await _fakeBookingSystem.Database.BookingPartnerUpdateScope(clientId, "openid profile openactive-ordersfeed", true);
             return Redirect("/booking-partners/seller-admin");
         }
 
@@ -137,8 +139,8 @@ namespace IdentityServer
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegenerateKey([FromForm] string clientId)
         {
-            var bookingPartner = await BookingPartnerTable.GetByClientId(clientId);
-            await BookingPartnerTable.SetKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
+            var bookingPartner = await _fakeBookingSystem.Database.BookingPartnerGetByClientId(clientId);
+            await _fakeBookingSystem.Database.BookingPartnerSetKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
 
             return Redirect($"/booking-partners/edit/{clientId}");
         }
@@ -150,16 +152,16 @@ namespace IdentityServer
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetClientCredentials([FromForm] string clientId)
         {
-            var bookingPartner = await BookingPartnerTable.GetByClientId(clientId);
-            await BookingPartnerTable.ResetCredentials(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
+            var bookingPartner = await _fakeBookingSystem.Database.BookingPartnerGetByClientId(clientId);
+            await _fakeBookingSystem.Database.BookingPartnerResetCredentials(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
 
             return Redirect($"/booking-partners/edit/{clientId}");
         }
 
-        private static async Task<BookingPartnerModel> BuildBookingPartnerModel(string clientId)
+        private async Task<BookingPartnerModel> BuildBookingPartnerModel(string clientId)
         {
             // var client = await _clients.FindClientByIdAsync(clientId);
-            var bookingPartner = await BookingPartnerTable.GetByClientId(clientId);
+            var bookingPartner = await _fakeBookingSystem.Database.BookingPartnerGetByClientId(clientId);
             if (bookingPartner == null)
                 return null;
 
