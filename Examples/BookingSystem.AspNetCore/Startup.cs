@@ -8,6 +8,7 @@ using BookingSystem.AspNetCore.Helpers;
 using System.Net.Http;
 using OpenActive.Server.NET.OpenBookingHelper;
 using Microsoft.AspNetCore.Authorization;
+using OpenActive.FakeDatabase.NET;
 
 namespace BookingSystem.AspNetCore
 {
@@ -60,7 +61,8 @@ namespace BookingSystem.AspNetCore
                 services.AddAuthorization(options =>
                 {
                     // No authorization checks are performed, this just ensures that the required claims are supplied
-                    options.AddPolicy(OpenActiveScopes.OpenBooking, policy => {
+                    options.AddPolicy(OpenActiveScopes.OpenBooking, policy =>
+                    {
                         policy.RequireClaim(OpenActiveCustomClaimNames.ClientId);
                         policy.RequireClaim(OpenActiveCustomClaimNames.SellerId);
                     });
@@ -72,7 +74,7 @@ namespace BookingSystem.AspNetCore
                 .AddControllers()
                 .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()));
 
-            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(AppSettings));
+            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(AppSettings, new FakeBookingSystem()));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -35,8 +35,6 @@ namespace IdentityServer
 
             try
             {
-                Log.Information("Initialising fake database (shared with Booking System)...");
-                FakeBookingSystem.Initialise();
                 Log.Information("Starting host...");
                 CreateHostBuilder(args).Build().Run();
                 return 0;
