@@ -86,7 +86,7 @@ namespace IdentityServer
                 BookingsSuspended = false
             };
 
-            await BookingPartnerTable.Add(_fakeBookingSystem, newBookingPartner);
+            await _fakeBookingSystem.Database.BookingPartnerAdd(newBookingPartner);
             return Redirect($"/booking-partners/edit/{newBookingPartner.ClientId}");
         }
 
@@ -128,7 +128,7 @@ namespace IdentityServer
             client.AllowedScopes.Remove("openactive-openbooking");
             await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
 
-            await BookingPartnerTable.UpdateScope(_fakeBookingSystem, clientId, "openid profile openactive-ordersfeed", true);
+            await _fakeBookingSystem.Database.BookingPartnerUpdateScope(clientId, "openid profile openactive-ordersfeed", true);
             return Redirect("/booking-partners/seller-admin");
         }
 
@@ -139,8 +139,8 @@ namespace IdentityServer
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegenerateKey([FromForm] string clientId)
         {
-            var bookingPartner = await BookingPartnerTable.GetByClientId(_fakeBookingSystem, clientId);
-            await BookingPartnerTable.SetKey(_fakeBookingSystem, clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
+            var bookingPartner = await _fakeBookingSystem.Database.BookingPartnerGetByClientId(clientId);
+            await _fakeBookingSystem.Database.BookingPartnerSetKey(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
 
             return Redirect($"/booking-partners/edit/{clientId}");
         }
@@ -152,8 +152,8 @@ namespace IdentityServer
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetClientCredentials([FromForm] string clientId)
         {
-            var bookingPartner = await BookingPartnerTable.GetByClientId(_fakeBookingSystem, clientId);
-            await BookingPartnerTable.ResetCredentials(_fakeBookingSystem, clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
+            var bookingPartner = await _fakeBookingSystem.Database.BookingPartnerGetByClientId(clientId);
+            await _fakeBookingSystem.Database.BookingPartnerResetCredentials(clientId, KeyGenerator.GenerateInitialAccessToken(bookingPartner.Name));
 
             return Redirect($"/booking-partners/edit/{clientId}");
         }
@@ -161,7 +161,7 @@ namespace IdentityServer
         private async Task<BookingPartnerModel> BuildBookingPartnerModel(string clientId)
         {
             // var client = await _clients.FindClientByIdAsync(clientId);
-            var bookingPartner = await BookingPartnerTable.GetByClientId(_fakeBookingSystem, clientId);
+            var bookingPartner = await _fakeBookingSystem.Database.BookingPartnerGetByClientId(clientId);
             if (bookingPartner == null)
                 return null;
 

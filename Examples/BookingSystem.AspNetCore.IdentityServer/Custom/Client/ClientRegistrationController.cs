@@ -52,7 +52,7 @@ namespace IdentityServer
                 registrationKey = headerValues.FirstOrDefault().Substring("Bearer ".Length);
 
             // update the booking system
-            var bookingPartner = await BookingPartnerTable.GetByInitialAccessToken(_fakeBookingSystem, registrationKey);
+            var bookingPartner = await _fakeBookingSystem.Database.BookingPartnerGetByInitialAccessToken(registrationKey);
             if (bookingPartner == null)
                 return Unauthorized("Initial Access Token is not valid, or is expired");
 
@@ -66,7 +66,7 @@ namespace IdentityServer
             bookingPartner.RedirectUris = model.RedirectUris;
             bookingPartner.Scope = model.Scope;
 
-            await BookingPartnerTable.Save(_fakeBookingSystem, bookingPartner);
+            await _fakeBookingSystem.Database.BookingPartnerSave(bookingPartner);
 
             // Read the updated client from the database and reflect back in the request
             var client = await _clients.FindClientByIdAsync(bookingPartner.ClientId);

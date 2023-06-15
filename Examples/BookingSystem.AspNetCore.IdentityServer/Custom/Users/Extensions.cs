@@ -8,6 +8,7 @@ namespace IdentityServer
     {
         public static IIdentityServerBuilder AddFakeUserStore(this IIdentityServerBuilder builder, string jsonLdIdBaseUrl)
         {
+            // TODO Think GetRequiredService() is an anti-pattern, so change when proper pattern is found
             builder.Services.AddSingleton<IUserRepository>(repo => new UserRepository(jsonLdIdBaseUrl, repo.GetRequiredService<FakeBookingSystem>()));
             builder.AddProfileService<ProfileService>();
 

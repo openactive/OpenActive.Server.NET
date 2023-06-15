@@ -16,8 +16,8 @@ namespace IdentityServer
         public static async Task<BookingPartnerViewModel> Build(FakeBookingSystem fakeBookingSystem, long? sellerUserId = null)
         {
             var bookingPartners = sellerUserId.HasValue
-                ? await BookingPartnerTable.GetBySellerUserId(fakeBookingSystem, sellerUserId.Value)
-                : await BookingPartnerTable.Get(fakeBookingSystem);
+                ? await fakeBookingSystem.Database.BookingPartnerGetBySellerUserId(sellerUserId.Value)
+                : await fakeBookingSystem.Database.BookingPartnerGet();
             var list = (await Task.WhenAll(bookingPartners.Select(async bookingPartner =>
             {
                 var bookingStatistics = await BookingStatistics.Get(fakeBookingSystem, bookingPartner.ClientId);

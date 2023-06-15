@@ -30,13 +30,13 @@ namespace OpenActive.FakeDatabase.NET
         /// <summary>
         /// The Database is created as static, to simulate the persistence of a real database
         /// </summary>
-
         //        public void Initialise()
         //        {
         //            // Make an arbitrary call to the database to force the static instance to be instantiated, wiped and repopulated
         //            // This SQLite database file is shared between the Booking System and Identity Server, and
         //            // Initialise() must be called on startup of each to ensure they do not wipe the database
         //            // on the first call to it
+        //            TODO is this still needed now that the database is initialised in the constructor?
         //#pragma warning disable 4014
         //            BookingPartnerTable.Get().Wait();
         //#pragma warning restore 4014
@@ -1908,6 +1908,95 @@ namespace OpenActive.FakeDatabase.NET
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
         }
+
+        public async Task<List<BookingPartnerTable>> BookingPartnerGet()
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                return await db.SelectAsync<BookingPartnerTable>();
+            }
+        }
+
+        public async Task<List<BookingPartnerTable>> BookingPartnerGetBySellerUserId(long sellerUserId)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var query = db.From<BookingPartnerTable>()
+                              .Join<BookingPartnerTable, GrantTable>((b, g) => b.ClientId == g.ClientId && g.Type == "user_consent")
+                              .Join<GrantTable, SellerUserTable>((g, s) => g.SubjectId == s.Id.ToString())
+                              .Where<SellerUserTable>(s => s.Id == sellerUserId);
+                return await db.SelectAsync(query);
+            }
+        }
+
+        public async Task<BookingPartnerTable> BookingPartnerGetByInitialAccessToken(string registrationKey)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.InitialAccessToken == registrationKey);
+                return bookingPartner?.InitialAccessTokenKeyValidUntil > DateTime.Now ? bookingPartner : null;
+            }
+        }
+
+        public async Task<BookingPartnerTable> BookingPartnerGetByClientId(string clientId)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                return await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+            }
+        }
+
+        public async Task BookingPartnerSave(BookingPartnerTable bookingPartnerTable)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                await db.SaveAsync(bookingPartnerTable);
+            }
+        }
+
+        public async Task BookingPartnerResetCredentials(string clientId, string key)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.Registered = false;
+                bookingPartner.InitialAccessToken = key;
+                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
+                bookingPartner.ClientSecret = null;
+                await db.SaveAsync(bookingPartner);
+            }
+        }
+
+        public async Task BookingPartnerSetKey(string clientId, string key)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.InitialAccessToken = key;
+                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
+                await db.SaveAsync(bookingPartner);
+            }
+        }
+
+        public async Task BookingPartnerUpdateScope(string clientId, string scope, bool bookingsSuspended)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.Scope = scope;
+                bookingPartner.BookingsSuspended = true;
+                await db.SaveAsync(bookingPartner);
+            }
+        }
+
+        public async Task BookingPartnerAdd(BookingPartnerTable newBookingPartner)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                await db.SaveAsync(newBookingPartner);
+            }
+        }
+
         private static readonly (Bounds, Bounds?, bool)[] BucketDefinitions =
         {
             // Approval not required

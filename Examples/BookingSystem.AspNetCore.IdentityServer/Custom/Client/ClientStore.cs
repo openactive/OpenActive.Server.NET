@@ -19,7 +19,7 @@ namespace IdentityServer
 
         public async Task<Client> FindClientByIdAsync(string clientId)
         {
-            var bookingPartner = await BookingPartnerTable.GetByClientId(_fakeBookingSystem, clientId);
+            var bookingPartner = await _fakeBookingSystem.Database.BookingPartnerGetByClientId(clientId);
             return ConvertToIs4Client(bookingPartner);
         }
 
