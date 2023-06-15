@@ -27,20 +27,6 @@ namespace OpenActive.FakeDatabase.NET
             Database = FakeDatabase.GetPrepopulatedFakeDatabase().Result;
 
         }
-        /// <summary>
-        /// The Database is created as static, to simulate the persistence of a real database
-        /// </summary>
-        //        public void Initialise()
-        //        {
-        //            // Make an arbitrary call to the database to force the static instance to be instantiated, wiped and repopulated
-        //            // This SQLite database file is shared between the Booking System and Identity Server, and
-        //            // Initialise() must be called on startup of each to ensure they do not wipe the database
-        //            // on the first call to it
-        //            TODO is this still needed now that the database is initialised in the constructor?
-        //#pragma warning disable 4014
-        //            BookingPartnerTable.Get().Wait();
-        //#pragma warning restore 4014
-        //        }
     }
 
     /// <summary>
