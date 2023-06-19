@@ -1412,7 +1412,7 @@ namespace OpenActive.FakeDatabase.NET
                    {
                        StartDate = seed.RandomStartDate(),
                        TotalUses = 1,
-                       Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                       Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
                        IndividualFacilityUseId = ifu.Id,
                    })
                    .Select(slot =>
@@ -1452,7 +1452,7 @@ namespace OpenActive.FakeDatabase.NET
                        {
                            StartDate = seed.RandomStartDate(),
                            TotalUses = Faker.Random.Int(0, 8),
-                           Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                           Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
                        })
                        .Select(slot =>
                        {
@@ -1501,7 +1501,7 @@ namespace OpenActive.FakeDatabase.NET
                 .Select(seed => new
                 {
                     seed.Id,
-                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
                     ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                     seed.RequiresApproval
                 })
