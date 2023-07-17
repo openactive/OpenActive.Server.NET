@@ -26,6 +26,9 @@ namespace BookingSystem
 
         protected override async Task<List<RpdeItem<FacilityUse>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
+            var facilityTypeId = Environment.GetEnvironmentVariable("FACILITY_TYPE_ID") ?? "https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651";
+            var facilityTypePrefLabel = Environment.GetEnvironmentVariable("FACILITY_TYPE_PREF_LABEL") ?? "Squash Court";
+
             using (var db = _fakeBookingSystem.Database.Mem.Database.Open())
             {
                 var q = db.From<FacilityUseTable>()
@@ -109,8 +112,8 @@ namespace BookingSystem
                             FacilityType = new List<Concept> {
                                 new Concept
                                 {
-                                    Id = new Uri("https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651"),
-                                    PrefLabel = "Squash Court",
+                                    Id = new Uri(facilityTypeId),
+                                    PrefLabel = facilityTypePrefLabel,
                                     InScheme = new Uri("https://openactive.io/facility-types")
                                 }
                             },
