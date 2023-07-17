@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+using OpenActive.FakeDatabase.NET;
 
 namespace IdentityServer
 {
@@ -26,6 +27,7 @@ namespace IdentityServer
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddTransient<IClientStore, ClientStore>();
+            services.AddSingleton<FakeBookingSystem>();
 
             var builder = services.AddIdentityServer(options =>
                 {
