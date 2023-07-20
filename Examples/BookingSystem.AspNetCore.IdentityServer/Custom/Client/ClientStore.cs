@@ -1,5 +1,6 @@
 ﻿using IdentityServer4.Models;
 using IdentityServer4.Stores;
+using Microsoft.Extensions.Logging;
 using OpenActive.FakeDatabase.NET;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,16 @@ namespace IdentityServer
 {
     public class ClientStore : IClientStore
     {
+        private readonly FakeBookingSystem _fakeBookingSystem;
+
+        public ClientStore(FakeBookingSystem fakeBookingSystem)
+        {
+            _fakeBookingSystem = fakeBookingSystem;
+        }
+
         public async Task<Client> FindClientByIdAsync(string clientId)
         {
-            var bookingPartner = await BookingPartnerTable.GetByClientId(clientId);
+            var bookingPartner = await _fakeBookingSystem.Database.BookingPartnerGetByClientId(clientId);
             return ConvertToIs4Client(bookingPartner);
         }
 

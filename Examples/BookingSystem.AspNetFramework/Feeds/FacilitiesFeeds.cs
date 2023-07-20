@@ -15,16 +15,18 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
         private readonly AppSettings _appSettings;
+        private readonly FakeBookingSystem _fakeBookingSystem;
 
         // Example constructor that can set state
-        public AcmeFacilityUseRpdeGenerator(AppSettings appSettings)
+        public AcmeFacilityUseRpdeGenerator(AppSettings appSettings, FakeBookingSystem fakeBookingSystem)
         {
             this._appSettings = appSettings;
+            this._fakeBookingSystem = fakeBookingSystem;
         }
 
         protected override async Task<List<RpdeItem<FacilityUse>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = _fakeBookingSystem.Database.Mem.Database.Open())
             {
                 var q = db.From<FacilityUseTable>()
                 .Join<SellerTable>()
@@ -124,16 +126,18 @@ namespace BookingSystem
     {
         //public override string FeedPath { get; protected set; } = "example path override";
         private readonly AppSettings _appSettings;
+        private readonly FakeBookingSystem _fakeBookingSystem;
 
         // Example constructor that can set state
-        public AcmeFacilityUseSlotRpdeGenerator(AppSettings appSettings)
+        public AcmeFacilityUseSlotRpdeGenerator(AppSettings appSettings, FakeBookingSystem fakeBookingSystem)
         {
             this._appSettings = appSettings;
+            this._fakeBookingSystem = fakeBookingSystem;
         }
 
         protected override async Task<List<RpdeItem<Slot>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = _fakeBookingSystem.Database.Mem.Database.Open())
             {
                 var query = db.Select<SlotTable>()
                 .OrderBy(x => x.Modified)
