@@ -11,7 +11,6 @@ namespace OpenActive.FakeDatabase.NET
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; } // Provider
-        public decimal LocationLat { get; set; }
-        public decimal LocationLng { get; set; }
+        public long PlaceId { get; set; }
     }
 }
