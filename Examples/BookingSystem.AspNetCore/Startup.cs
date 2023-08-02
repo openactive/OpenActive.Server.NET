@@ -23,6 +23,11 @@ namespace BookingSystem.AspNetCore
             if (System.Environment.GetEnvironmentVariable("DISABLE_TOKEN_AUTH") == "true") {
                 AppSettings.FeatureFlags.EnableTokenAuth = false;
             }
+
+            // Provide a simple way to enable FacilityUseHasSlots for some testing scenarios
+            if (System.Environment.GetEnvironmentVariable("FACILITY_USE_HAS_SLOTS") == "true") {
+                AppSettings.FeatureFlags.FacilityUseHasSlots = true;
+            }
         }
 
         public AppSettings AppSettings { get; }
