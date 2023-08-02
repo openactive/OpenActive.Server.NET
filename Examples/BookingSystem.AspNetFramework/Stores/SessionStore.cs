@@ -361,15 +361,7 @@ namespace BookingSystem
                                 }),
                                 Name = @class.Title,
                                 Url = new Uri("https://example.com/events/" + occurrence.ClassId),
-                                Location = new Place
-                                {
-                                    Name = "Fake fitness studio",
-                                    Geo = new GeoCoordinates
-                                    {
-                                        Latitude = 51.6201M,
-                                        Longitude = 0.302396M
-                                    }
-                                },
+                                Location = _fakeBookingSystem.Database.GetPlaceById(@class.PlaceId),
                                 Activity = new List<Concept>
                                 {
                                     new Concept
