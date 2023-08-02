@@ -177,7 +177,6 @@ jobs:
     if: ${{ github.ref == 'refs/heads/master' }}
     needs:
       - core
-      - framework
     runs-on: ubuntu-latest
     steps:
       # Checkout the repo
