@@ -100,7 +100,17 @@ namespace BookingSystem
                                     PrefLabel = facilityTypePrefLabel,
                                     InScheme = new Uri("https://openactive.io/facility-types")
                                 }
-                            }
+                            },
+                            IndividualFacilityUse = result.Item1.IndividualFacilityUses != null ? result.Item1.IndividualFacilityUses.Select(ifu => new OpenActive.NET.IndividualFacilityUse
+                            {
+                                Id = RenderOpportunityId(new FacilityOpportunity
+                                {
+                                    OpportunityType = OpportunityType.IndividualFacilityUse,
+                                    IndividualFacilityUseId = ifu.Id,
+                                    FacilityUseId = result.Item1.Id
+                                }),
+                                Name = ifu.Name
+                            }).ToList() : null,
                         }
                     });
 
@@ -136,7 +146,7 @@ namespace BookingSystem
                 .Take(RpdePageSize)
                 .Select(x => new RpdeItem<Slot>
                 {
-                    Kind = RpdeKind.FacilityUseSlot,
+                    Kind = _appSettings.FeatureFlags.FacilityUseHasSlots ? RpdeKind.FacilityUseSlot : RpdeKind.IndividualFacilityUseSlot,
                     Id = x.Id,
                     Modified = x.Modified,
                     State = x.Deleted ? RpdeState.Deleted : RpdeState.Updated,
@@ -147,14 +157,22 @@ namespace BookingSystem
                         // constant as power of configuration through underlying class grows (i.e. as new properties are added)
                         Id = RenderOpportunityId(new FacilityOpportunity
                         {
-                            OpportunityType = OpportunityType.FacilityUseSlot,
+                            OpportunityType = _appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot : OpportunityType.IndividualFacilityUseSlot,
                             FacilityUseId = x.FacilityUseId,
-                            SlotId = x.Id
+                            SlotId = x.Id,
+                            IndividualFacilityUseId = !_appSettings.FeatureFlags.FacilityUseHasSlots ? x.IndividualFacilityUseId : null,
                         }),
-                        FacilityUse = RenderOpportunityId(new FacilityOpportunity
+                        FacilityUse = _appSettings.FeatureFlags.FacilityUseHasSlots ?
+                        RenderOpportunityId(new FacilityOpportunity
                         {
                             OpportunityType = OpportunityType.FacilityUse,
                             FacilityUseId = x.FacilityUseId
+                        })
+                        : RenderOpportunityId(new FacilityOpportunity
+                        {
+                            OpportunityType = OpportunityType.IndividualFacilityUse,
+                            IndividualFacilityUseId = x.IndividualFacilityUseId,
+                            FacilityUseId = x.FacilityUseId,
                         }),
                         Identifier = x.Id,
                         StartDate = (DateTimeOffset)x.Start,
@@ -167,9 +185,10 @@ namespace BookingSystem
                                     Id = RenderOfferId(new FacilityOpportunity
                                     {
                                         OfferId = 0,
-                                        OpportunityType = OpportunityType.FacilityUseSlot,
+                                        OpportunityType = _appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot : OpportunityType.IndividualFacilityUseSlot,
                                         FacilityUseId = x.FacilityUseId,
-                                        SlotId = x.Id
+                                        SlotId = x.Id,
+                                        IndividualFacilityUseId = !_appSettings.FeatureFlags.FacilityUseHasSlots ? x.IndividualFacilityUseId : null,
                                     }),
                                     Price = x.Price,
                                     PriceCurrency = "GBP",
