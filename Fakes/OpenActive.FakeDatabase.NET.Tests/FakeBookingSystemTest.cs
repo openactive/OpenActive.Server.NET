@@ -10,7 +10,7 @@ namespace OpenActive.FakeDatabase.NET.Test
     public class FakeBookingSystemTest
     {
         private readonly ITestOutputHelper output;
-        private readonly FakeBookingSystem fakeBookingSystem = new FakeBookingSystem();
+        private readonly FakeBookingSystem fakeBookingSystem = new FakeBookingSystem(false);
 
         public FakeBookingSystemTest(ITestOutputHelper output)
         {

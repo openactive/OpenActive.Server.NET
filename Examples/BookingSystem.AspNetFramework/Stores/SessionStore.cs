@@ -295,7 +295,7 @@ namespace BookingSystem
                     }
                     return;
                 case ChangeOfLogisticsLocationSimulateAction _:
-                    if (!await _fakeBookingSystem.Database.UpdateSessionSeriesLocationLatLng(idComponents.ScheduledSessionId.Value, 0.2m, 0.3m))
+                    if (!await _fakeBookingSystem.Database.UpdateSessionSeriesLocationPlaceId(idComponents.ScheduledSessionId.Value))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }

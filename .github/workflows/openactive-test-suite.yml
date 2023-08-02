@@ -43,7 +43,7 @@ jobs:
       fail-fast: false
       matrix:
         mode: ['random', 'controlled']
-        profile: ['all-features', 'single-seller', 'no-payment-reconciliation', 'no-auth', 'no-tax-calculation', 'prepayment-always-required']
+        profile: ['all-features', 'single-seller', 'no-payment-reconciliation', 'no-auth', 'no-tax-calculation', 'prepayment-always-required', 'facilityuse-has-slots']
     steps:
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
@@ -177,7 +177,6 @@ jobs:
     if: ${{ github.ref == 'refs/heads/master' }}
     needs:
       - core
-      - framework
     runs-on: ubuntu-latest
     steps:
       # Checkout the repo

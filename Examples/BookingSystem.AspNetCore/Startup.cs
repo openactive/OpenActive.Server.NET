@@ -18,6 +18,11 @@ namespace BookingSystem.AspNetCore
         {
             AppSettings = new AppSettings();
             configuration.Bind(AppSettings);
+
+            // Provide a simple way to disable token auth for some testing scenarios
+            if (System.Environment.GetEnvironmentVariable("DISABLE_TOKEN_AUTH") == "true") {
+                AppSettings.FeatureFlags.EnableTokenAuth = false;
+            }
         }
 
         public AppSettings AppSettings { get; }
@@ -74,7 +79,7 @@ namespace BookingSystem.AspNetCore
                 .AddControllers()
                 .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()));
 
-            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(AppSettings, new FakeBookingSystem()));
+            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(AppSettings, new FakeBookingSystem(AppSettings.FeatureFlags.FacilityUseHasSlots)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -26,6 +26,9 @@ namespace BookingSystem
 
         protected override async Task<List<RpdeItem<FacilityUse>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
+            var facilityTypeId = Environment.GetEnvironmentVariable("FACILITY_TYPE_ID") ?? "https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651";
+            var facilityTypePrefLabel = Environment.GetEnvironmentVariable("FACILITY_TYPE_PREF_LABEL") ?? "Squash Court";
+
             using (var db = _fakeBookingSystem.Database.Mem.Database.Open())
             {
                 var q = db.From<FacilityUseTable>()
@@ -88,32 +91,26 @@ namespace BookingSystem
                                 },
                                 IsOpenBookingAllowed = true,
                             },
-                            Location = new Place
-                            {
-                                Name = "Fake Pond",
-                                Address = new PostalAddress
-                                {
-                                    StreetAddress = "1 Fake Park",
-                                    AddressLocality = "Another town",
-                                    AddressRegion = "Oxfordshire",
-                                    PostalCode = "OX1 1AA",
-                                    AddressCountry = "GB"
-                                },
-                                Geo = new GeoCoordinates
-                                {
-                                    Latitude = result.Item1.LocationLat,
-                                    Longitude = result.Item1.LocationLng
-                                }
-                            },
+                            Location = _fakeBookingSystem.Database.GetPlaceById(result.Item1.PlaceId),
                             Url = new Uri("https://www.example.com/a-session-age"),
                             FacilityType = new List<Concept> {
                                 new Concept
                                 {
-                                    Id = new Uri("https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651"),
-                                    PrefLabel = "Squash Court",
+                                    Id = new Uri(facilityTypeId),
+                                    PrefLabel = facilityTypePrefLabel,
                                     InScheme = new Uri("https://openactive.io/facility-types")
                                 }
-                            }
+                            },
+                            IndividualFacilityUse = result.Item1.IndividualFacilityUses != null ? result.Item1.IndividualFacilityUses.Select(ifu => new OpenActive.NET.IndividualFacilityUse
+                            {
+                                Id = RenderOpportunityId(new FacilityOpportunity
+                                {
+                                    OpportunityType = OpportunityType.IndividualFacilityUse,
+                                    IndividualFacilityUseId = ifu.Id,
+                                    FacilityUseId = result.Item1.Id
+                                }),
+                                Name = ifu.Name
+                            }).ToList() : null,
                         }
                     });
 
@@ -149,7 +146,7 @@ namespace BookingSystem
                 .Take(RpdePageSize)
                 .Select(x => new RpdeItem<Slot>
                 {
-                    Kind = RpdeKind.FacilityUseSlot,
+                    Kind = _appSettings.FeatureFlags.FacilityUseHasSlots ? RpdeKind.FacilityUseSlot : RpdeKind.IndividualFacilityUseSlot,
                     Id = x.Id,
                     Modified = x.Modified,
                     State = x.Deleted ? RpdeState.Deleted : RpdeState.Updated,
@@ -160,14 +157,22 @@ namespace BookingSystem
                         // constant as power of configuration through underlying class grows (i.e. as new properties are added)
                         Id = RenderOpportunityId(new FacilityOpportunity
                         {
-                            OpportunityType = OpportunityType.FacilityUseSlot,
+                            OpportunityType = _appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot : OpportunityType.IndividualFacilityUseSlot,
                             FacilityUseId = x.FacilityUseId,
-                            SlotId = x.Id
+                            SlotId = x.Id,
+                            IndividualFacilityUseId = !_appSettings.FeatureFlags.FacilityUseHasSlots ? x.IndividualFacilityUseId : null,
                         }),
-                        FacilityUse = RenderOpportunityId(new FacilityOpportunity
+                        FacilityUse = _appSettings.FeatureFlags.FacilityUseHasSlots ?
+                        RenderOpportunityId(new FacilityOpportunity
                         {
                             OpportunityType = OpportunityType.FacilityUse,
                             FacilityUseId = x.FacilityUseId
+                        })
+                        : RenderOpportunityId(new FacilityOpportunity
+                        {
+                            OpportunityType = OpportunityType.IndividualFacilityUse,
+                            IndividualFacilityUseId = x.IndividualFacilityUseId,
+                            FacilityUseId = x.FacilityUseId,
                         }),
                         Identifier = x.Id,
                         StartDate = (DateTimeOffset)x.Start,
@@ -180,9 +185,10 @@ namespace BookingSystem
                                     Id = RenderOfferId(new FacilityOpportunity
                                     {
                                         OfferId = 0,
-                                        OpportunityType = OpportunityType.FacilityUseSlot,
+                                        OpportunityType = _appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot : OpportunityType.IndividualFacilityUseSlot,
                                         FacilityUseId = x.FacilityUseId,
-                                        SlotId = x.Id
+                                        SlotId = x.Id,
+                                        IndividualFacilityUseId = !_appSettings.FeatureFlags.FacilityUseHasSlots ? x.IndividualFacilityUseId : null,
                                     }),
                                     Price = x.Price,
                                     PriceCurrency = "GBP",
