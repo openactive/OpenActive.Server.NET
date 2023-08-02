@@ -23,9 +23,9 @@ namespace OpenActive.FakeDatabase.NET
     public class FakeBookingSystem
     {
         public FakeDatabase Database { get; set; }
-        public FakeBookingSystem(bool generateIndividualFacilityUses)
+        public FakeBookingSystem(bool facilityUseHasSlots)
         {
-            Database = FakeDatabase.GetPrepopulatedFakeDatabase(generateIndividualFacilityUses).Result;
+            Database = FakeDatabase.GetPrepopulatedFakeDatabase(facilityUseHasSlots).Result;
 
         }
     }
@@ -146,14 +146,14 @@ namespace OpenActive.FakeDatabase.NET
     {
         private const float ProportionWithRequiresAttendeeValidation = 1f / 10;
         private const float ProportionWithRequiresAdditionalDetails = 1f / 10;
-        private bool _generateIndividualFacilityUses;
+        private bool _facilityUseHasSlots;
         public readonly InMemorySQLite Mem = new InMemorySQLite();
 
         private static readonly Faker Faker = new Faker();
 
-        public FakeDatabase(bool generateIndividualFacilityUses)
+        public FakeDatabase(bool facilityUseHasSlots)
         {
-            _generateIndividualFacilityUses = generateIndividualFacilityUses;
+            _facilityUseHasSlots = facilityUseHasSlots;
         }
 
         static FakeDatabase()
@@ -1469,9 +1469,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase(bool generateIndividualFacilityUses)
+        public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase(bool facilityUseHasSlots)
         {
-            var database = new FakeDatabase(generateIndividualFacilityUses);
+            var database = new FakeDatabase(facilityUseHasSlots);
             using (var db = await database.Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
@@ -1479,7 +1479,7 @@ namespace OpenActive.FakeDatabase.NET
                 await CreateSellers(db);
                 await CreateSellerUsers(db);
                 await CreateFakeClasses(db);
-                await CreateFakeFacilitiesAndSlots(db, generateIndividualFacilityUses);
+                await CreateFakeFacilitiesAndSlots(db, facilityUseHasSlots);
                 await CreateOrders(db); // Add these in to generate your own orders and grants, otherwise generate them using the test suite
                 await CreateGrants(db);
                 await BookingPartnerTable.Create(db);
@@ -1490,120 +1490,93 @@ namespace OpenActive.FakeDatabase.NET
             return database;
         }
 
-        private static async Task CreateFakeFacilitiesAndSlots(IDbConnection db, bool generateIndividualFacilityUses)
+        private static async Task CreateFakeFacilitiesAndSlots(IDbConnection db, bool facilityUseHasSlots)
         {
             var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
 
             var slotId = 0;
             List<(FacilityUseTable facility, List<SlotTable> slots)> facilitiesAndSlots = opportunitySeeds.Select((seed) =>
-           {
-               var facilityUseName = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}";
-               // Create random FacilityUses
-               var facility = new FacilityUseTable
-               {
-                   Id = seed.Id,
-                   Deleted = false,
-                   Name = facilityUseName,
-                   SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5  
-                   PlaceId = Faker.PickRandom(new[] { 1, 2, 3 })
-               };
+            {
+                var facilityUseName = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}";
+                var facility = new FacilityUseTable
+                {
+                    Id = seed.Id,
+                    Deleted = false,
+                    Name = facilityUseName,
+                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5 
+                    PlaceId = Faker.PickRandom(new[] { 1, 2, 3 })
+                };
 
-               // If generateIndividualFacilityUses=true, generate 10 IFUs with each with a randomly generated number of Slots each with MaximumUses=1
-               if (generateIndividualFacilityUses)
-               {
-                   // Create random Individual Facility Uses
-                   var individualFacilityUses = Enumerable.Range(0, 10).Select(i => new IndividualFacilityUse
-                   {
-                       Id = i,
-                       Name = $"Court {i} at {facility.Name}",
-                       SportActivityLocationName = $"Court {i}"
-                   }).AsList();
-                   facility.IndividualFacilityUses = individualFacilityUses;
+                // If facilityUseHasSlots=false, generate 10 IFUs with each with a randomly generated number of Slots each with MaximumUses=1
+                List<SlotTable> slots;
+                if (!facilityUseHasSlots)
+                {
+                    // Create random Individual Facility Uses
+                    var individualFacilityUses = Enumerable.Range(0, 10).Select(i => new IndividualFacilityUse
+                    {
+                        Id = i,
+                        Name = $"Court {i} at {facility.Name}",
+                        SportActivityLocationName = $"Court {i}"
+                    }).AsList();
+                    facility.IndividualFacilityUses = individualFacilityUses;
 
-                   // Create random Slots
-                   var slots = individualFacilityUses.Select(ifu => new
-                   {
-                       StartDate = seed.RandomStartDate(),
-                       TotalUses = 1,
-                       Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
-                       IndividualFacilityUseId = ifu.Id,
-                   })
-                   .Select(slot =>
-                   {
-                       var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
-                       return new SlotTable
-                       {
-                           FacilityUseId = seed.Id,
-                           IndividualFacilityUseId = slot.IndividualFacilityUseId,
-                           Id = slotId++,
-                           Deleted = false,
-                           Start = slot.StartDate,
-                           End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                           MaximumUses = slot.TotalUses,
-                           RemainingUses = slot.TotalUses,
-                           Price = slot.Price,
-                           Prepayment = slot.Price == 0
-                               ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
-                               : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
-                           RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
-                           RequiresAdditionalDetails = requiresAdditionalDetails,
-                           RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
-                           RequiresApproval = seed.RequiresApproval,
-                           AllowsProposalAmendment = seed.RequiresApproval && Faker.Random.Bool(),
-                           ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
-                           LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
-                           AllowCustomerCancellationFullRefund = Faker.Random.Bool()
-                       };
-                   }).AsList();
-                   return (facility, slots);
-               }
+                    slots = individualFacilityUses.Select(ifu => new
+                    {
+                        StartDate = seed.RandomStartDate(),
+                        TotalUses = 1,
+                        Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
+                        IndividualFacilityUseId = ifu.Id,
+                    })
+                    .Select(slot => GenerateSlot(seed, ref slotId, slot.StartDate, slot.TotalUses, slot.Price))
+                    .AsList();
+                }
+                else
+                {
+                    slots = Enumerable.Range(0, 10)
+                        .Select(_ => new
+                        {
+                            StartDate = seed.RandomStartDate(),
+                            TotalUses = Faker.Random.Int(0, 8),
+                            Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
+                        })
+                        .Select(slot => GenerateSlot(seed, ref slotId, slot.StartDate, slot.TotalUses, slot.Price))
+                        .AsList();
+                }
 
-               else
-               {
-                   var slots = Enumerable.Range(0, 10)
-                       .Select(_ => new
-                       {
-                           StartDate = seed.RandomStartDate(),
-                           TotalUses = Faker.Random.Int(0, 8),
-                           Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
-                       })
-                       .Select(slot =>
-                       {
-                           var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
-                           return new SlotTable
-                           {
-                               FacilityUseId = seed.Id,
-                               Id = slotId++,
-                               Deleted = false,
-                               Start = slot.StartDate,
-                               End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                               MaximumUses = slot.TotalUses,
-                               RemainingUses = slot.TotalUses,
-                               Price = slot.Price,
-                               Prepayment = slot.Price == 0
-                                   ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
-                                   : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
-                               RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
-                               RequiresAdditionalDetails = requiresAdditionalDetails,
-                               RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
-                               RequiresApproval = seed.RequiresApproval,
-                               AllowsProposalAmendment = seed.RequiresApproval && Faker.Random.Bool(),
-                               ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
-                               LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
-                               AllowCustomerCancellationFullRefund = Faker.Random.Bool()
-                           };
-                       }
-                       ).AsList();
-                   return (facility, slots);
-               }
-
-           })
-               .AsList();
+                return (facility, slots);
+            })
+            .AsList();
 
             var facilities = facilitiesAndSlots.Select(facilityAndSlots => facilityAndSlots.facility);
             var slotTableSlots = facilitiesAndSlots.SelectMany(facilityAndSlots => facilityAndSlots.slots);
             await db.InsertAllAsync(facilities);
             await db.InsertAllAsync(slotTableSlots);
+        }
+        private static SlotTable GenerateSlot(OpportunitySeed seed, ref int slotId, DateTime startDate, int totalUses, decimal price)
+        {
+            var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
+            return new SlotTable
+            {
+                FacilityUseId = seed.Id,
+                Id = slotId++,
+                Deleted = false,
+                Start = startDate,
+                End = startDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                MaximumUses = totalUses,
+                RemainingUses = totalUses,
+                Price = price,
+                Prepayment = price == 0
+                    ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
+                    : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
+                RequiresAdditionalDetails = requiresAdditionalDetails,
+                RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
+                RequiresApproval = seed.RequiresApproval,
+                AllowsProposalAmendment = seed.RequiresApproval && Faker.Random.Bool(),
+                ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
+                LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
+                AllowCustomerCancellationFullRefund = Faker.Random.Bool()
+            };
         }
 
         public static async Task CreateFakeClasses(IDbConnection db)
@@ -2014,7 +1987,7 @@ namespace OpenActive.FakeDatabase.NET
                     PlaceId = Faker.PickRandom(new[] { 1, 2, 3 }),
                     Modified = DateTimeOffset.Now.UtcTicks
                 };
-                if (_generateIndividualFacilityUses)
+                if (!_facilityUseHasSlots)
                 {
                     facility.IndividualFacilityUses = new List<IndividualFacilityUse> {
                         new IndividualFacilityUse {
@@ -2052,7 +2025,7 @@ namespace OpenActive.FakeDatabase.NET
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
                     Modified = DateTimeOffset.Now.UtcTicks
                 };
-                if (_generateIndividualFacilityUses)
+                if (!_facilityUseHasSlots)
                 {
                     individualFacilityUseId = 1;
                     slot.IndividualFacilityUseId = individualFacilityUseId;

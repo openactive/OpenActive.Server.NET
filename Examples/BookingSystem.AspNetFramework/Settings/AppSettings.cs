@@ -19,7 +19,7 @@ namespace BookingSystem
         public bool PaymentReconciliationDetailValidation { get; set; } = true;
         public bool OnlyFreeOpportunities { get; set; } = false;
         public bool PrepaymentAlwaysRequired { get; set; } = false;
-        public bool GenerateIndividualFacilityUses { get; set; } = false;
+        public bool FacilityUseHasSlots { get; set; } = false;
     }
 
     public class PaymentSettings

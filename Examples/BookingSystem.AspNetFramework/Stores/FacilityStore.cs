@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -308,6 +308,26 @@ namespace BookingSystem
                 }
                 var remainingUsesIncludingOtherLeases = await _fakeBookingSystem.Database.GetNumberOfOtherLeasesForSlot(flowContext.OrderId.uuid, orderItemContext.RequestBookableOpportunityOfferId.SlotId);
 
+                var facilityUse = new FacilityUse
+                {
+                    Id = RenderOpportunityId(new FacilityOpportunity
+                    {
+                        OpportunityType = OpportunityType.FacilityUse,
+                        FacilityUseId = slot.FacilityUseId
+                    }),
+                    Name = facility.Name,
+                    Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
+                    Location = _fakeBookingSystem.Database.GetPlaceById(facility.PlaceId),
+                    FacilityType = new List<Concept> {
+                            new Concept
+                            {
+                                Id = new Uri("https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651"),
+                                PrefLabel = "Squash Court",
+                                InScheme = new Uri("https://openactive.io/facility-types")
+                            }
+                        }
+                };
+
                 FacilityUse slotParent;
                 if (slot.IndividualFacilityUseId != null)
                 {
@@ -321,48 +341,12 @@ namespace BookingSystem
                             FacilityUseId = facility.Id,
                         }),
                         Name = individualFacilityUse.Name,
-                        AggregateFacilityUse = new FacilityUse
-                        {
-                            Id = RenderOpportunityId(new FacilityOpportunity
-                            {
-                                OpportunityType = OpportunityType.FacilityUse,
-                                FacilityUseId = slot.FacilityUseId
-                            }),
-                            Name = facility.Name,
-                            Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
-                            Location = _fakeBookingSystem.Database.GetPlaceById(facility.PlaceId),
-                            FacilityType = new List<Concept> {
-                                    new Concept
-                                    {
-                                        Id = new Uri("https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651"),
-                                        PrefLabel = "Squash Court",
-                                        InScheme = new Uri("https://openactive.io/facility-types")
-                                    }
-                                }
-                        }
+                        AggregateFacilityUse = facilityUse,
                     };
                 }
                 else
                 {
-                    slotParent = new FacilityUse
-                    {
-                        Id = RenderOpportunityId(new FacilityOpportunity
-                        {
-                            OpportunityType = OpportunityType.FacilityUse,
-                            FacilityUseId = slot.FacilityUseId
-                        }),
-                        Name = facility.Name,
-                        Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
-                        Location = _fakeBookingSystem.Database.GetPlaceById(facility.PlaceId),
-                        FacilityType = new List<Concept> {
-                                    new Concept
-                                    {
-                                        Id = new Uri("https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651"),
-                                        PrefLabel = "Squash Court",
-                                        InScheme = new Uri("https://openactive.io/facility-types")
-                                    }
-                                }
-                    };
+                    slotParent = facilityUse;
                 }
 
                 return new
@@ -387,10 +371,10 @@ namespace BookingSystem
                             // Note this should always be driven from the database, with new FacilityOpportunity's instantiated
                             Id = RenderOpportunityId(new FacilityOpportunity
                             {
-                                OpportunityType = _appSettings.FeatureFlags.GenerateIndividualFacilityUses ? OpportunityType.IndividualFacilityUseSlot : OpportunityType.FacilityUseSlot,
+                                OpportunityType = _appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot :  OpportunityType.IndividualFacilityUseSlot,
                                 FacilityUseId = slot.FacilityUseId,
                                 SlotId = slot.Id,
-                                IndividualFacilityUseId = _appSettings.FeatureFlags.GenerateIndividualFacilityUses ? slot.IndividualFacilityUseId : null,
+                                IndividualFacilityUseId = !_appSettings.FeatureFlags.FacilityUseHasSlots ? slot.IndividualFacilityUseId : null,
                             }), 
                             FacilityUse = slotParent,
                             StartDate = (DateTimeOffset)slot.Start,

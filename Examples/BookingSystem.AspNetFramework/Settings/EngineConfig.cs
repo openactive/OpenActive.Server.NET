@@ -12,25 +12,18 @@ namespace BookingSystem
     {
         public static StoreBookingEngine CreateStoreBookingEngine(AppSettings appSettings, FakeBookingSystem fakeBookingSystem)
         {
-            var facilityBookablePaidIdTemplate = appSettings.FeatureFlags.GenerateIndividualFacilityUses ?
+            var facilityBookablePaidIdTemplate = appSettings.FeatureFlags.FacilityUseHasSlots ?
                 new BookablePairIdTemplate<FacilityOpportunity>(
                             // Opportunity
                             new OpportunityIdConfiguration
                             {
-                                OpportunityType = OpportunityType.IndividualFacilityUseSlot,
-                                AssignedFeed = OpportunityType.IndividualFacilityUseSlot,
-                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/individual-facility-uses/{IndividualFacilityUseId}/facility-use-slots/{SlotId}",
-                                OfferIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/individual-facility-uses/{IndividualFacilityUseId}/facility-use-slots/{SlotId}#/offers/{OfferId}",
+                                OpportunityType = OpportunityType.FacilityUseSlot,
+                                AssignedFeed = OpportunityType.FacilityUseSlot,
+                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/slots/{SlotId}",
+                                OfferIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/slots/{SlotId}#/offers/{OfferId}",
                                 Bookable = true
                             },
                             // Parent
-                            new OpportunityIdConfiguration
-                            {
-                                OpportunityType = OpportunityType.IndividualFacilityUse,
-                                AssignedFeed = OpportunityType.FacilityUse,
-                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/individual-facility-uses/{IndividualFacilityUseId}"
-                            },
-                            // Grandparent
                             new OpportunityIdConfiguration
                             {
                                 OpportunityType = OpportunityType.FacilityUse,
@@ -42,13 +35,20 @@ namespace BookingSystem
                             // Opportunity
                             new OpportunityIdConfiguration
                             {
-                                OpportunityType = OpportunityType.FacilityUseSlot,
-                                AssignedFeed = OpportunityType.FacilityUseSlot,
-                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}",
-                                OfferIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}#/offers/{OfferId}",
+                                OpportunityType = OpportunityType.IndividualFacilityUseSlot,
+                                AssignedFeed = OpportunityType.IndividualFacilityUseSlot,
+                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/individual-facility-uses/{IndividualFacilityUseId}/slots/{SlotId}",
+                                OfferIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/individual-facility-uses/{IndividualFacilityUseId}/slots/{SlotId}#/offers/{OfferId}",
                                 Bookable = true
                             },
                             // Parent
+                            new OpportunityIdConfiguration
+                            {
+                                OpportunityType = OpportunityType.IndividualFacilityUse,
+                                AssignedFeed = OpportunityType.FacilityUse,
+                                OpportunityIdTemplate = "{+BaseUrl}/facility-uses/{FacilityUseId}/individual-facility-uses/{IndividualFacilityUseId}"
+                            },
+                            // Grandparent
                             new OpportunityIdConfiguration
                             {
                                 OpportunityType = OpportunityType.FacilityUse,
@@ -177,7 +177,7 @@ namespace BookingSystem
                             OpportunityType.FacilityUse, new AcmeFacilityUseRpdeGenerator(appSettings, fakeBookingSystem)
                         },
                         {
-                            appSettings.FeatureFlags.GenerateIndividualFacilityUses ? OpportunityType.IndividualFacilityUseSlot : OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator(appSettings,fakeBookingSystem)
+                            appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot : OpportunityType.IndividualFacilityUseSlot, new AcmeFacilityUseSlotRpdeGenerator(appSettings,fakeBookingSystem)
                         }
                     },
 
@@ -282,7 +282,7 @@ namespace BookingSystem
                             new SessionStore(appSettings, fakeBookingSystem), new List<OpportunityType> { OpportunityType.ScheduledSession }
                         },
                         {
-                            new FacilityStore(appSettings, fakeBookingSystem), new List<OpportunityType> { appSettings.FeatureFlags.GenerateIndividualFacilityUses ? OpportunityType.IndividualFacilityUseSlot : OpportunityType.FacilityUseSlot }
+                            new FacilityStore(appSettings, fakeBookingSystem), new List<OpportunityType> { appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot : OpportunityType.IndividualFacilityUseSlot }
                         }
                     },
                     OrderStore = new AcmeOrderStore(appSettings, fakeBookingSystem),

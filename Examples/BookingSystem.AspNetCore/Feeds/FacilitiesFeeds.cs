@@ -143,7 +143,7 @@ namespace BookingSystem
                 .Take(RpdePageSize)
                 .Select(x => new RpdeItem<Slot>
                 {
-                    Kind = _appSettings.FeatureFlags.GenerateIndividualFacilityUses ? RpdeKind.IndividualFacilityUseSlot : RpdeKind.FacilityUseSlot,
+                    Kind = _appSettings.FeatureFlags.FacilityUseHasSlots ? RpdeKind.FacilityUseSlot : RpdeKind.IndividualFacilityUseSlot,
                     Id = x.Id,
                     Modified = x.Modified,
                     State = x.Deleted ? RpdeState.Deleted : RpdeState.Updated,
@@ -154,22 +154,22 @@ namespace BookingSystem
                         // constant as power of configuration through underlying class grows (i.e. as new properties are added)
                         Id = RenderOpportunityId(new FacilityOpportunity
                         {
-                            OpportunityType = _appSettings.FeatureFlags.GenerateIndividualFacilityUses ? OpportunityType.IndividualFacilityUseSlot : OpportunityType.FacilityUseSlot,
+                            OpportunityType = _appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot : OpportunityType.IndividualFacilityUseSlot,
                             FacilityUseId = x.FacilityUseId,
                             SlotId = x.Id,
-                            IndividualFacilityUseId = _appSettings.FeatureFlags.GenerateIndividualFacilityUses ? x.IndividualFacilityUseId : null,
+                            IndividualFacilityUseId = !_appSettings.FeatureFlags.FacilityUseHasSlots ? x.IndividualFacilityUseId : null,
                         }),
-                        FacilityUse = _appSettings.FeatureFlags.GenerateIndividualFacilityUses ?
+                        FacilityUse = _appSettings.FeatureFlags.FacilityUseHasSlots ?
                         RenderOpportunityId(new FacilityOpportunity
+                        {
+                            OpportunityType = OpportunityType.FacilityUse,
+                            FacilityUseId = x.FacilityUseId
+                        })
+                        : RenderOpportunityId(new FacilityOpportunity
                         {
                             OpportunityType = OpportunityType.IndividualFacilityUse,
                             IndividualFacilityUseId = x.IndividualFacilityUseId,
                             FacilityUseId = x.FacilityUseId,
-                        })
-                        : RenderOpportunityId(new FacilityOpportunity
-                        {
-                            OpportunityType = OpportunityType.FacilityUse,
-                            FacilityUseId = x.FacilityUseId
                         }),
                         Identifier = x.Id,
                         StartDate = (DateTimeOffset)x.Start,
@@ -182,10 +182,10 @@ namespace BookingSystem
                                     Id = RenderOfferId(new FacilityOpportunity
                                     {
                                         OfferId = 0,
-                                        OpportunityType = _appSettings.FeatureFlags.GenerateIndividualFacilityUses ? OpportunityType.IndividualFacilityUseSlot : OpportunityType.FacilityUseSlot,
+                                        OpportunityType = _appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot : OpportunityType.IndividualFacilityUseSlot,
                                         FacilityUseId = x.FacilityUseId,
                                         SlotId = x.Id,
-                                        IndividualFacilityUseId = _appSettings.FeatureFlags.GenerateIndividualFacilityUses ? x.IndividualFacilityUseId : null,
+                                        IndividualFacilityUseId = !_appSettings.FeatureFlags.FacilityUseHasSlots ? x.IndividualFacilityUseId : null,
                                     }),
                                     Price = x.Price,
                                     PriceCurrency = "GBP",

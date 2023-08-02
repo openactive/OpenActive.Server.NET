@@ -27,7 +27,7 @@ namespace IdentityServer
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddTransient<IClientStore, ClientStore>();
-            services.AddSingleton(x => new FakeBookingSystem(AppSettings.GenerateIndividualFacilityUses));
+            services.AddSingleton(x => new FakeBookingSystem(AppSettings.FeatureFlags.FacilityUseHasSlots));
 
             var builder = services.AddIdentityServer(options =>
                 {
