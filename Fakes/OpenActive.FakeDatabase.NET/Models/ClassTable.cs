@@ -21,8 +21,7 @@ namespace OpenActive.FakeDatabase.NET
         public bool RequiresApproval { get; set; }
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
         public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
-        public decimal LocationLat { get; set; }
-        public decimal LocationLng { get; set; }
+        public long PlaceId { get; set; }
         public AttendanceMode AttendanceMode { get; set; }
         public bool AllowsProposalAmendment { get; set; }
     }
