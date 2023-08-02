@@ -497,7 +497,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 }
                 catch (RequiredBaseUrlMismatchException e)
                 {
-                    throw new OpenBookingException(new InvalidOpportunityOrOfferIdError(), $"Opportunity @id or Offer @id does not originate from this system, {e.Message}. Opportunity @id: {orderedItemId}, Offer @id {acceptedOfferId}");
+                    throw new OpenBookingException(new InvalidOpportunityOrOfferIdError(), $"Opportunity @id or Offer @id does not originate from this system, {e.Message}. Opportunity @id '{orderedItemId}'; Offer @id '{acceptedOfferId}'");
                 }
 
 
