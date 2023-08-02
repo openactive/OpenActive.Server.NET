@@ -174,40 +174,8 @@ namespace BookingSystem
                                     AllowCustomerCancellationFullRefund = result.Item1.AllowCustomerCancellationFullRefund
                                 }
                             },
-                            Location = result.Item1.AttendanceMode == AttendanceMode.Online ? null : new Place
-                            {
-                                Name = "Fake Pond",
-                                Address = new PostalAddress
-                                {
-                                    StreetAddress = "1 Fake Park",
-                                    AddressLocality = "Another town",
-                                    AddressRegion = "Oxfordshire",
-                                    PostalCode = "OX1 1AA",
-                                    AddressCountry = "GB"
-                                },
-                                Geo = new GeoCoordinates
-                                {
-                                    Latitude = result.Item1.LocationLat,
-                                    Longitude = result.Item1.LocationLng,
-                                }
-                            },
-                            AffiliatedLocation = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : new Place
-                            {
-                                Name = "Fake Pond",
-                                Address = new PostalAddress
-                                {
-                                    StreetAddress = "1 Fake Park",
-                                    AddressLocality = "Another town",
-                                    AddressRegion = "Oxfordshire",
-                                    PostalCode = "OX1 1AA",
-                                    AddressCountry = "GB"
-                                },
-                                Geo = new GeoCoordinates
-                                {
-                                    Latitude = result.Item1.LocationLat,
-                                    Longitude = result.Item1.LocationLng,
-                                }
-                            },
+                            Location = result.Item1.AttendanceMode == AttendanceMode.Online ? null : _fakeBookingSystem.Database.GetPlaceById(result.Item1.PlaceId),
+                            AffiliatedLocation = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : _fakeBookingSystem.Database.GetPlaceById(result.Item1.PlaceId),
                             Url = new Uri("https://www.example.com/a-session-age"),
                             Activity = new List<Concept>
                             {
