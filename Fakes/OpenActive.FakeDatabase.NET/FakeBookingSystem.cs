@@ -1527,7 +1527,7 @@ namespace OpenActive.FakeDatabase.NET
                         Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
                         IndividualFacilityUseId = ifu.Id,
                     })
-                    .Select(slot => GenerateSlot(seed, ref slotId, slot.StartDate, slot.TotalUses, slot.Price))
+                    .Select(slot => GenerateSlot(seed, slot.IndividualFacilityUseId, ref slotId, slot.StartDate, slot.TotalUses, slot.Price))
                     .AsList();
                 }
                 else
@@ -1539,7 +1539,7 @@ namespace OpenActive.FakeDatabase.NET
                             TotalUses = Faker.Random.Int(0, 8),
                             Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
                         })
-                        .Select(slot => GenerateSlot(seed, ref slotId, slot.StartDate, slot.TotalUses, slot.Price))
+                        .Select(slot => GenerateSlot(seed, null, ref slotId, slot.StartDate, slot.TotalUses, slot.Price))
                         .AsList();
                 }
 
@@ -1552,12 +1552,13 @@ namespace OpenActive.FakeDatabase.NET
             await db.InsertAllAsync(facilities);
             await db.InsertAllAsync(slotTableSlots);
         }
-        private static SlotTable GenerateSlot(OpportunitySeed seed, ref int slotId, DateTime startDate, int totalUses, decimal price)
+        private static SlotTable GenerateSlot(OpportunitySeed seed, long? individualFacilityUseId, ref int slotId, DateTime startDate, int totalUses, decimal price)
         {
             var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
             return new SlotTable
             {
                 FacilityUseId = seed.Id,
+                IndividualFacilityUseId = individualFacilityUseId,
                 Id = slotId++,
                 Deleted = false,
                 Start = startDate,
