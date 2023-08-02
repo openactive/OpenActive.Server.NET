@@ -18,6 +18,11 @@ namespace BookingSystem.AspNetCore
         {
             AppSettings = new AppSettings();
             configuration.Bind(AppSettings);
+
+            // Provide a simple way to disable token auth for some testing scenarios
+            if (System.Environment.GetEnvironmentVariable("DISABLE_TOKEN_AUTH") == "true") {
+                AppSettings.FeatureFlags.EnableTokenAuth = false;
+            }
         }
 
         public AppSettings AppSettings { get; }
