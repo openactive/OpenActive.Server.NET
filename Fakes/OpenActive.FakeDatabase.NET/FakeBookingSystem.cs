@@ -1536,7 +1536,7 @@ namespace OpenActive.FakeDatabase.NET
                         .Select(_ => new
                         {
                             StartDate = seed.RandomStartDate(),
-                            TotalUses = Faker.Random.Int(0, 8),
+                            TotalUses = Faker.Random.Int(1, 8),
                             Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
                         })
                         .Select(slot => GenerateSlot(seed, null, ref slotId, slot.StartDate, slot.TotalUses, slot.Price))
@@ -1564,7 +1564,7 @@ namespace OpenActive.FakeDatabase.NET
                 Start = startDate,
                 End = startDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
                 MaximumUses = totalUses,
-                RemainingUses = totalUses,
+                RemainingUses = Faker.PickRandom(new[] { 0, totalUses, totalUses, totalUses, totalUses, totalUses, totalUses, totalUses, totalUses }),
                 Price = price,
                 Prepayment = price == 0
                     ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
@@ -1625,7 +1625,7 @@ namespace OpenActive.FakeDatabase.NET
                     .Select(_ => new
                     {
                         Start = seed.RandomStartDate(),
-                        TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
+                        TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(1, 50) : Faker.Random.Int(1, 3)
                     })
                     .Select(occurrence => new OccurrenceTable
                     {
@@ -1635,7 +1635,7 @@ namespace OpenActive.FakeDatabase.NET
                         Start = occurrence.Start,
                         End = occurrence.Start + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
                         TotalSpaces = occurrence.TotalSpaces,
-                        RemainingSpaces = occurrence.TotalSpaces
+                        RemainingSpaces = Faker.PickRandom(new[] { 0, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces })
                     })).SelectMany(os => os);
 
             await db.InsertAllAsync(classes);
