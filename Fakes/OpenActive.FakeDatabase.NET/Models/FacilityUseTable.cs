@@ -21,21 +21,7 @@ namespace OpenActive.FakeDatabase.NET
         public SellerTable SellerTable { get; set; }
         [ForeignKey(typeof(SellerTable), OnDelete = "CASCADE")]
         public long SellerId { get; set; } // Provider
-        public decimal LocationLat { get; set; }
-        public decimal LocationLng { get; set; }
-        //private string IndividualFacilityUseString { get; set; }
-        //[Ignore]
-        //public List<IndividualFacilityUse> IndividualFacilityUses
-        //{
-        //    get
-        //    {
-        //        return JsonConvert.DeserializeObject<List<IndividualFacilityUse>>(IndividualFacilityUseString);
-        //    }
-        //    set
-        //    {
-        //        IndividualFacilityUseString = JsonConvert.SerializeObject(IndividualFacilityUses);
-        //    }
-        //}
+        public long PlaceId { get; set; }
         public List<IndividualFacilityUse> IndividualFacilityUses { get; set; }
     }
 }

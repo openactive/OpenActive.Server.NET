@@ -88,23 +88,7 @@ namespace BookingSystem
                                 },
                                 IsOpenBookingAllowed = true,
                             },
-                            Location = new Place
-                            {
-                                Name = "Fake Pond",
-                                Address = new PostalAddress
-                                {
-                                    StreetAddress = "1 Fake Park",
-                                    AddressLocality = "Another town",
-                                    AddressRegion = "Oxfordshire",
-                                    PostalCode = "OX1 1AA",
-                                    AddressCountry = "GB"
-                                },
-                                Geo = new GeoCoordinates
-                                {
-                                    Latitude = result.Item1.LocationLat,
-                                    Longitude = result.Item1.LocationLng
-                                }
-                            },
+                            Location = _fakeBookingSystem.Database.GetPlaceById(result.Item1.PlaceId),
                             Url = new Uri("https://www.example.com/a-session-age"),
                             FacilityType = new List<Concept> {
                                 new Concept

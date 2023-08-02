@@ -289,7 +289,7 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="newLat"></param>
         /// <param name="newLng"></param>
         /// <returns></returns>
-        public async Task<bool> UpdateFacilityUseLocationLatLng(long slotId, decimal newLat, decimal newLng)
+        public async Task<bool> UpdateFacilityUseLocationPlaceId(long slotId)
         {
             using (var db = await Mem.Database.OpenAsync())
             {
@@ -301,8 +301,8 @@ namespace OpenActive.FakeDatabase.NET
                 if (facilityUse == null)
                     return false;
 
-                facilityUse.LocationLat = newLat;
-                facilityUse.LocationLng = newLng;
+                // Round-robin to a different place
+                facilityUse.PlaceId = (facilityUse.PlaceId + 1) % 3 + 1;
                 facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
                 await db.UpdateAsync(facilityUse);
                 return true;
@@ -363,7 +363,7 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="newLat"></param>
         /// <param name="newLng"></param>
         /// <returns></returns>
-        public async Task<bool> UpdateSessionSeriesLocationLatLng(long occurrenceId, decimal newLat, decimal newLng)
+        public async Task<bool> UpdateSessionSeriesLocationPlaceId(long occurrenceId)
         {
             using (var db = await Mem.Database.OpenAsync())
             {
@@ -375,8 +375,8 @@ namespace OpenActive.FakeDatabase.NET
                 if (classInstance == null)
                     return false;
 
-                classInstance.LocationLat = newLat;
-                classInstance.LocationLng = newLng;
+                // Round-robin to a different place
+                classInstance.PlaceId = (classInstance.PlaceId + 1) % 3 + 1;
                 classInstance.Modified = DateTimeOffset.Now.UtcTicks;
                 await db.UpdateAsync(classInstance);
                 return true;
@@ -641,6 +641,118 @@ namespace OpenActive.FakeDatabase.NET
                     occurrence,
                     bookedOrderItemInfo
                 );
+            }
+        }
+
+        public OpenActive.NET.Place GetPlaceById(long placeId)
+        {
+            // Three hardcoded fake places
+            switch (placeId)
+            {
+                case 1:
+                    return new OpenActive.NET.Place
+                    {
+                        Identifier = 1,
+                        Name = "Post-ercise Plaza",
+                        Description = "Sorting Out Your Fitness One Parcel Lift at a Time! Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                        Address = new OpenActive.NET.PostalAddress
+                        {
+                            StreetAddress = "Kings Mead House",
+                            AddressLocality = "Oxford",
+                            AddressRegion = "Oxfordshire",
+                            PostalCode = "OX1 1AA",
+                            AddressCountry = "GB"
+                        },
+                        Geo = new OpenActive.NET.GeoCoordinates
+                        {
+                            Latitude = (decimal?)51.7502,
+                            Longitude = (decimal?)-1.2674
+                        },
+                        Image = new List<OpenActive.NET.ImageObject> {
+                            new OpenActive.NET.ImageObject
+                            {
+                                Url = new Uri("https://upload.wikimedia.org/wikipedia/commons/e/e5/Oxford_StAldates_PostOffice.jpg")
+                            },
+                        },
+                        Telephone = "01865 000001",
+                        Url = new Uri("https://en.wikipedia.org/wiki/Post_Office_Limited"),
+                        AmenityFeature = new List<OpenActive.NET.LocationFeatureSpecification>
+                        {
+                            new OpenActive.NET.ChangingFacilities { Name = "Changing Facilities", Value = true },
+                            new OpenActive.NET.Showers { Name = "Showers", Value = true },
+                            new OpenActive.NET.Lockers { Name = "Lockers", Value = true },
+                            new OpenActive.NET.Towels { Name = "Towels", Value = false },
+                            new OpenActive.NET.Creche { Name = "Creche", Value = false },
+                            new OpenActive.NET.Parking { Name = "Parking", Value = false }
+                        }
+                    };
+                case 2:
+                    return new OpenActive.NET.Place
+                    {
+                        Identifier = 2,
+                        Name = "Premier Lifters",
+                        Description = "Where your Fitness Goals are Always Inn-Sight. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                        Address = new OpenActive.NET.PostalAddress
+                        {
+                            StreetAddress = "Greyfriars Court, Paradise Square",
+                            AddressLocality = "Oxford",
+                            AddressRegion = "Oxfordshire",
+                            PostalCode = "OX1 1BB",
+                            AddressCountry = "GB"
+                        },
+                        Geo = new OpenActive.NET.GeoCoordinates
+                        {
+                            Latitude = (decimal?)51.7504933,
+                            Longitude = (decimal?)-1.2620685
+                        },
+                        Image = new List<OpenActive.NET.ImageObject> { 
+                            new OpenActive.NET.ImageObject
+                            {
+                                Url = new Uri("https://upload.wikimedia.org/wikipedia/commons/5/53/Cambridge_Orchard_Park_Premier_Inn.jpg")
+                            },
+                        },
+                        Telephone = "01865 000002",
+                        Url = new Uri("https://en.wikipedia.org/wiki/Premier_Inn"),
+                        AmenityFeature = new List<OpenActive.NET.LocationFeatureSpecification>
+                        {
+                            new OpenActive.NET.ChangingFacilities { Name = "Changing Facilities", Value = false },
+                            new OpenActive.NET.Showers { Name = "Showers", Value = false },
+                            new OpenActive.NET.Lockers { Name = "Lockers", Value = false },
+                            new OpenActive.NET.Towels { Name = "Towels", Value = true },
+                            new OpenActive.NET.Creche { Name = "Creche", Value = true },
+                            new OpenActive.NET.Parking { Name = "Parking", Value = true }
+                        }
+                    };
+                case 3:
+                    return new OpenActive.NET.Place
+                    {
+                        Identifier = 3,
+                        Name = "Stroll & Stretch",
+                        Description = "Casual Calisthenics in the Heart of Commerce. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                        Address = new OpenActive.NET.PostalAddress
+                        {
+                            StreetAddress = "Norfolk Street",
+                            AddressLocality = "Oxford",
+                            AddressRegion = "Oxfordshire",
+                            PostalCode = "OX1 1UU",
+                            AddressCountry = "GB"
+                        },
+                        Geo = new OpenActive.NET.GeoCoordinates
+                        {
+                            Latitude = (decimal?)51.749826,
+                            Longitude = (decimal?)-1.261492
+                        },
+                        Image = new List<OpenActive.NET.ImageObject> { 
+                            new OpenActive.NET.ImageObject
+                            {
+                                Url = new Uri("https://upload.wikimedia.org/wikipedia/commons/2/28/Westfield_Garden_State_Plaza_-_panoramio.jpg")
+                            },
+                        },
+                        Telephone = "01865 000003",
+                        Url = new Uri("https://en.wikipedia.org/wiki/Shopping_center"),
+                    };
+                default:
+                    return null;
             }
         }
 
@@ -1393,6 +1505,7 @@ namespace OpenActive.FakeDatabase.NET
                    Deleted = false,
                    Name = facilityUseName,
                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5  
+                   PlaceId = Faker.PickRandom(new[] { 1, 2, 3 })
                };
 
                // If generateIndividualFacilityUses=true, generate 10 IFUs with each with a randomly generated number of Slots each with MaximumUses=1
@@ -1526,7 +1639,8 @@ namespace OpenActive.FakeDatabase.NET
                         SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                         ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
                         AttendanceMode = Faker.PickRandom<AttendanceMode>(),
-                        AllowCustomerCancellationFullRefund = Faker.Random.Bool()
+                        AllowCustomerCancellationFullRefund = Faker.Random.Bool(),
+                        PlaceId = Faker.PickRandom(new[] { 1, 2, 3 })
                     };
                 })
                 .AsList();
@@ -1810,8 +1924,6 @@ namespace OpenActive.FakeDatabase.NET
             RequiredStatusType? prepayment = null,
             bool requiresAttendeeValidation = false,
             bool requiresAdditionalDetails = false,
-            decimal locationLat = 0.1m,
-            decimal locationLng = 0.1m,
             bool isOnlineOrMixedAttendanceMode = false,
             bool allowProposalAmendment = false,
             bool inPast = false)
@@ -1842,8 +1954,7 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresAdditionalDetails = requiresAdditionalDetails,
                     RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
                     AllowsProposalAmendment = allowProposalAmendment,
-                    LocationLat = locationLat,
-                    LocationLng = locationLng,
+                    PlaceId = Faker.PickRandom(new[] { 1, 2, 3 }),
                     AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
                     Modified = DateTimeOffset.Now.UtcTicks
@@ -1882,7 +1993,6 @@ namespace OpenActive.FakeDatabase.NET
             RequiredStatusType? prepayment = null,
             bool requiresAttendeeValidation = false,
             bool requiresAdditionalDetails = false,
-            decimal locationLat = 0.1m,
             decimal locationLng = 0.1m,
             bool allowProposalAmendment = false,
             bool inPast = false
@@ -1901,9 +2011,8 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     Name = title,
                     SellerId = sellerId ?? 1,
-                    LocationLat = locationLat,
-                    LocationLng = locationLng,
-                    Modified = DateTimeOffset.Now.UtcTicks,
+                    PlaceId = Faker.PickRandom(new[] { 1, 2, 3 }),
+                    Modified = DateTimeOffset.Now.UtcTicks
                 };
                 if (_generateIndividualFacilityUses)
                 {

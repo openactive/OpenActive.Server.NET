@@ -278,7 +278,7 @@ namespace BookingSystem
                     }
                     return;
                 case ChangeOfLogisticsLocationSimulateAction _:
-                    if (!await _fakeBookingSystem.Database.UpdateFacilityUseLocationLatLng(idComponents.SlotId.Value, 0.2m, 0.3m))
+                    if (!await _fakeBookingSystem.Database.UpdateFacilityUseLocationPlaceId(idComponents.SlotId.Value))
                     {
                         throw new OpenBookingException(new UnknownOpportunityError());
                     }
@@ -330,15 +330,7 @@ namespace BookingSystem
                             }),
                             Name = facility.Name,
                             Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
-                            Location = new Place
-                            {
-                                Name = "Fake fitness studio",
-                                Geo = new GeoCoordinates
-                                {
-                                    Latitude = facility.LocationLat,
-                                    Longitude = facility.LocationLng,
-                                }
-                            },
+                            Location = _fakeBookingSystem.Database.GetPlaceById(facility.PlaceId),
                             FacilityType = new List<Concept> {
                                     new Concept
                                     {
@@ -361,15 +353,7 @@ namespace BookingSystem
                         }),
                         Name = facility.Name,
                         Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
-                        Location = new Place
-                        {
-                            Name = "Fake fitness studio",
-                            Geo = new GeoCoordinates
-                            {
-                                Latitude = facility.LocationLat,
-                                Longitude = facility.LocationLng,
-                            }
-                        },
+                        Location = _fakeBookingSystem.Database.GetPlaceById(facility.PlaceId),
                         FacilityType = new List<Concept> {
                                     new Concept
                                     {
@@ -407,7 +391,7 @@ namespace BookingSystem
                                 FacilityUseId = slot.FacilityUseId,
                                 SlotId = slot.Id,
                                 IndividualFacilityUseId = _appSettings.FeatureFlags.GenerateIndividualFacilityUses ? slot.IndividualFacilityUseId : null,
-                            }),
+                            }), 
                             FacilityUse = slotParent,
                             StartDate = (DateTimeOffset)slot.Start,
                             EndDate = (DateTimeOffset)slot.End,
