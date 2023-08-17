@@ -28,6 +28,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public OrdersRPDEFeedGenerator OrdersFeedGenerator { get; set; }
         public OrdersRPDEFeedGenerator OrderProposalsFeedGenerator { get; set; }
         public SellerStore SellerStore { get; set; }
+        public IdempotencyStore IdempotencyStore { get; set; }
         public bool HasSingleSeller { get; set; } = false;
         /// <summary>
         /// TTL in the Cache-Control header for all RPDE pages that contain greater than zero items
@@ -44,5 +45,5 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// See https://developer.openactive.io/publishing-data/data-feeds/scaling-feeds for CDN configuration instructions
         /// </summary>
         public TimeSpan DatasetSiteCacheDuration { get; set; } = TimeSpan.FromMinutes(15);
-    }
+  }
 }
