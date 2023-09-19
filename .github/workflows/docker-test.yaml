@@ -4,7 +4,7 @@ on:
   registry_package:
     types: [ published ]
   push:
-    branches: [ feature/docker-image2 ]
+    branches: [ feature/docker-image ]
 
 jobs:
   tests:
