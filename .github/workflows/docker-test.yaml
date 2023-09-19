@@ -40,6 +40,7 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: all-features
           ApplicationHostBaseUrl: http://reference.bookingsystem.identity
+          Urls: ''
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd "curl -f http://localhost/.well-known/openid-configuration"
