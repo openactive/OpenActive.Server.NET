@@ -20,8 +20,9 @@ jobs:
         image: ghcr.io/openactive/reference.bookingsystem:latest # ${{ github.event.package.package_version.version }}
         # Config for postgres
         env:
-          ASPNETCORE_ENVIRONMENT: no-auth
+          ASPNETCORE_ENVIRONMENT: all-features
           ApplicationHostBaseUrl: http://reference.bookingsystem
+          OpenIdIssuerUrl: http://reference.bookingsystem.identity
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd "curl -f http://localhost/OpenActive"
@@ -32,19 +33,19 @@ jobs:
           - 80:80
 
       # Label used to access the service container
-      # reference.bookingsystem.identity:
-      #   # Docker Hub image
-      #   image: ghcr.io/openactive/reference.bookingsystem.identity:latest # ${{ github.event.package.package_version.version }}
-      #   # Config for postgres
-      #   env:
-      #     ASPNETCORE_ENVIRONMENT: all-features
-      #     ApplicationHostBaseUrl: https://reference.bookingsystem.identity
-      #   # Set health checks to wait until postgres has started
-      #   options: >-
-      #     --health-cmd "curl -f http://localhost/.well-known/openid-configuration"
-      #     --health-interval 10s
-      #     --health-timeout 5s
-      #     --health-retries 5
+      reference.bookingsystem.identity:
+        # Docker Hub image
+        image: ghcr.io/openactive/reference.bookingsystem.identity:latest # ${{ github.event.package.package_version.version }}
+        # Config for postgres
+        env:
+          ASPNETCORE_ENVIRONMENT: all-features
+          ApplicationHostBaseUrl: http://reference.bookingsystem.identity
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd "curl -f http://localhost/.well-known/openid-configuration"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Run OpenActive Test Suite
@@ -52,7 +53,7 @@ jobs:
         with:
           NODE_CONFIG: |
             {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://reference.bookingsystem/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "useRandomOpportunities": true }, "sellers": {"primary": {  "@id": "http://reference.bookingsystem/api/identifiers/sellers/1","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference.bookingsystem/api/identifiers/sellers/1"}}},"secondary": {  "@id": "http://reference.bookingsystem/api/identifiers/sellers/2","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference.bookingsystem/api/identifiers/sellers/2"}}}}}
-          NODE_ENV: .example.no-auth
+          NODE_ENV: .example.all-features
           NODE_APP_INSTANCE: ci
       - name: Upload test output as artifact
         uses: actions/upload-artifact@v2
