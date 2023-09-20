@@ -12,7 +12,7 @@ Note that to set up a development environment for this project on a Mac, you wil
 
 ## Test Suite
 
-[**OpenActive Test Suite**](https://github.com/openactive/openactive-test-suite) is a suite of tests that can verify the conformance of an Open Booking API implementation, such as the **reference implementation** contained within this project, [BookingSystem.AspNetCore](./Examples/BookingSystem.AspNetCore/). OpenActive.Server.NET's CI checks that Test Suite passes for its reference implementation.
+[**OpenActive Test Suite**](https://github.com/openactive/openactive-test-suite) is a suite of tests that can verify the conformance of an Open Booking API implementation, such as the **reference implementation** ([BookingSystem.AspNetCore](./Examples/BookingSystem.AspNetCore/)) contained within this project. OpenActive.Server.NET's CI checks that Test Suite passes for its reference implementation.
 
 ## Pull Request Process
 
