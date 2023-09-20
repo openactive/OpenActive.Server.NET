@@ -4,6 +4,12 @@ An example OpenActive.Server.NET implementation.
 
 This implementation is also used as a reference implementation for the [Test Suite](https://github.com/openactive/openactive-test-suite) to run its tests against.
 
+## Running with dotnet CLI
+
+TODO2 uhhh
+
+---
+
 ## Running Locally for the 1st time
 
 1. In Visual Studio, run the BookingSystem.AspNetCore project
