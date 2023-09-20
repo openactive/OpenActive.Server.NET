@@ -16,7 +16,7 @@ Note that to set up a development environment for this project on a Mac, you wil
 
 ## Pull Request Process
 
-Changes to [OpenActive.Server.Net](.) should be tested with the [Test Suite](#test-suite) before a Pull Request is submitted, to ensure that the reference implementation remains conformant. If changes are also required to Test Suite in order to properly test the new changes, then `coverage/*` branches should be used for both repositories, as documented in Test Suite's [Pull Request Process](https://github.com/openactive/openactive-test-suite/blob/master/CONTRIBUTING.md#pull-request-process) docs.
+Changes to [OpenActive.Server.Net](.) should be tested with the [Test Suite](#test-suite) before a Pull Request is submitted, to ensure that the reference implementation remains conformant. If changes are also required to Test Suite in order to properly test the new changes, then `coverage/*` branches should be used for both repositories, as documented in Test Suite's [Pull Request Process](https://github.com/openactive/openactive-test-suite/blob/master/CONTRIBUTING.md#pull-request-process) documentation.
 
 ## Locally running the reference implementation in order to run Test Suite
 
