@@ -47,7 +47,7 @@ namespace BookingSystem
                     .SelectMulti<FacilityUseTable, SellerTable>(q)
                     .Select(result =>
                     {
-                        var faker = new Faker() { Random = new Randomizer((int)result.Item1.Modified) };
+                        var faker = new Faker() { Random = new Randomizer(((int)result.Item1.Modified + (int)result.Item1.Id)) };
                         var isGoldenRecord = faker.Random.Bool();
 
                         return new RpdeItem<FacilityUse>
@@ -253,7 +253,7 @@ namespace BookingSystem
                 .Take(RpdePageSize)
                 .Select(x =>
                 {
-                    var faker = new Faker() { Random = new Randomizer((int)x.Modified) };
+                    var faker = new Faker() { Random = new Randomizer(((int)x.Modified + (int)x.Id)) };
                     return new RpdeItem<Slot>
                     {
                         Kind = _appSettings.FeatureFlags.FacilityUseHasSlots ? RpdeKind.FacilityUseSlot : RpdeKind.IndividualFacilityUseSlot,
