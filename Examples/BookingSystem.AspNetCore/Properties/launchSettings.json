@@ -7,10 +7,10 @@
     "BookingSystem.AspNetCore": {
       "commandName": "Project",
       "launchUrl": "https://localhost:5002/openactive",
-      "applicationUrl": "https://localhost:5003",
+      "applicationUrl": "https://localhost:5001",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ApplicationHostBaseUrl": "https://localhost:5003"
+        "ApplicationHostBaseUrl": "https://localhost:5001"
       }
     }
   }

@@ -103,11 +103,11 @@ namespace BookingSystem
 
                 var query = db
                     .SelectMulti<ClassTable, SellerTable>(q)
-                    // here we randomly decide whether the item is going to be a golden record or not by using Faker
-                    // See the README for more detail on golden records.
                     .Select(result =>
                     {
                         var faker = new Faker() { Random = new Randomizer((int)result.Item1.Modified) };
+                        // here we randomly decide whether the item is going to be a golden record or not by using Faker
+                        // See the README for more detail on golden records.
                         var isGoldenRecord = faker.Random.Bool();
 
                         return new RpdeItem<SessionSeries>
@@ -165,8 +165,6 @@ namespace BookingSystem
                 return query.ToList();
             }
         }
-        // differences between refimpl and lorem: location generation is one of 3 hardcoded not randomly genned, all schedules are partial, ss doesnt contain scs data like maxAttendeeCapacity, 
-
         private static EventAttendanceModeEnumeration MapAttendanceMode(AttendanceMode attendanceMode)
         {
             switch (attendanceMode)
