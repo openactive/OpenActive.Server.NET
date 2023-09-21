@@ -269,7 +269,7 @@ namespace BookingSystem
         {
             var ageRange = new QuantitativeValue();
             if (isGoldenRecord || faker.Random.Bool()) ageRange.MaxValue = faker.Random.Number(16, 100);
-            if (isGoldenRecord || faker.Random.Bool()) ageRange.MinValue = faker.Random.Number(0, ageRange.MaxValue == null ? (int)ageRange.MaxValue : 100);
+            if (isGoldenRecord || faker.Random.Bool()) ageRange.MinValue = faker.Random.Number(0, ageRange.MaxValue == null ? 100 : (int)ageRange.MaxValue);
 
             if (ageRange.MaxValue == null && ageRange.MinValue == null) ageRange.MinValue = 0;
             return ageRange;
