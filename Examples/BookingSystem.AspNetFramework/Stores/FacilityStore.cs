@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BookingSystem.AspNetCore.Helpers;
 using OpenActive.DatasetSite.NET;
 using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
@@ -320,7 +321,7 @@ namespace BookingSystem
                     }),
                     Name = facility.Name,
                     Url = new Uri("https://example.com/events/" + slot.FacilityUseId),
-                    Location = _fakeBookingSystem.Database.GetPlaceById(facility.PlaceId),
+                    Location = FeedGenerationHelper.GetPlaceById(facility.PlaceId),
                     FacilityType = new List<Concept> {
                             new Concept
                             {
@@ -374,11 +375,11 @@ namespace BookingSystem
                             // Note this should always be driven from the database, with new FacilityOpportunity's instantiated
                             Id = RenderOpportunityId(new FacilityOpportunity
                             {
-                                OpportunityType = _appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot :  OpportunityType.IndividualFacilityUseSlot,
+                                OpportunityType = _appSettings.FeatureFlags.FacilityUseHasSlots ? OpportunityType.FacilityUseSlot : OpportunityType.IndividualFacilityUseSlot,
                                 FacilityUseId = slot.FacilityUseId,
                                 SlotId = slot.Id,
                                 IndividualFacilityUseId = !_appSettings.FeatureFlags.FacilityUseHasSlots ? slot.IndividualFacilityUseId : null,
-                            }), 
+                            }),
                             FacilityUse = slotParent,
                             StartDate = (DateTimeOffset)slot.Start,
                             EndDate = (DateTimeOffset)slot.End,

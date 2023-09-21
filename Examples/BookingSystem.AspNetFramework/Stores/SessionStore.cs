@@ -8,7 +8,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 using System.Threading.Tasks;
-
+using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem
 {
@@ -361,7 +361,7 @@ namespace BookingSystem
                                 }),
                                 Name = @class.Title,
                                 Url = new Uri("https://example.com/events/" + occurrence.ClassId),
-                                Location = _fakeBookingSystem.Database.GetPlaceById(@class.PlaceId),
+                                Location = FeedGenerationHelper.GetPlaceById(@class.PlaceId),
                                 Activity = new List<Concept>
                                 {
                                     new Concept
