@@ -166,9 +166,6 @@ namespace BookingSystem
                         ),
                     HasSingleSeller = appSettings.FeatureFlags.SingleSeller,
 
-                    // IdempotencyStore used for storing the response to Order Creation B/P requests
-                    IdempotencyStore = new AcmeIdempotencyStore(),
-
                     OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRpdeFeedGenerator> {
                         {
                             OpportunityType.ScheduledSession, new AcmeScheduledSessionRpdeGenerator(fakeBookingSystem)
