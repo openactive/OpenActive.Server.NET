@@ -31,6 +31,7 @@ namespace BookingSystem.AspNetCore.Helpers
                     return new Place
                     {
                         Identifier = 1,
+                        Id = new Uri($"https://example.com/place/{placeId}"),
                         Name = "Post-ercise Plaza",
                         Description = "Sorting Out Your Fitness One Parcel Lift at a Time! Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
                         Address = new PostalAddress
@@ -78,6 +79,7 @@ namespace BookingSystem.AspNetCore.Helpers
                     return new Place
                     {
                         Identifier = 2,
+                        Id = new Uri($"https://example.com/place/{placeId}"),
                         Name = "Premier Lifters",
                         Description = "Where your Fitness Goals are Always Inn-Sight. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
                         Address = new PostalAddress
@@ -125,6 +127,7 @@ namespace BookingSystem.AspNetCore.Helpers
                     return new Place
                     {
                         Identifier = 3,
+                        Id = new Uri($"https://example.com/place/{placeId}"),
                         Name = "Stroll & Stretch",
                         Description = "Casual Calisthenics in the Heart of Commerce. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
                         Address = new PostalAddress
@@ -212,9 +215,9 @@ namespace BookingSystem.AspNetCore.Helpers
         {
             var listOfAccessibilitySupports = new List<Concept>
             {
-                new Concept {Id = new Uri("https://openactive.io/accessibility-support#1393f2dc-3fcc-4be9-a99f-f1e51f5ad277"), PrefLabel = "Visual Impairment"},
-                new Concept {Id = new Uri("https://openactive.io/accessibility-support#2bfb7228-5969-4927-8435-38b5005a8771"), PrefLabel = "Hearing Impairment"},
-                new Concept {Id = new Uri("https://openactive.io/accessibility-support#40b9b11f-bdd3-4aeb-8984-2ecf74a14c7a"), PrefLabel = "Mental health issues"}
+                new Concept {Id = new Uri("https://openactive.io/accessibility-support#1393f2dc-3fcc-4be9-a99f-f1e51f5ad277"), PrefLabel = "Visual Impairment",  InScheme = new Uri("https://openactive.io/accessibility-support")},
+                new Concept {Id = new Uri("https://openactive.io/accessibility-support#2bfb7228-5969-4927-8435-38b5005a8771"), PrefLabel = "Hearing Impairment",  InScheme = new Uri("https://openactive.io/accessibility-support")},
+                new Concept {Id = new Uri("https://openactive.io/accessibility-support#40b9b11f-bdd3-4aeb-8984-2ecf74a14c7a"), PrefLabel = "Mental health issues",  InScheme = new Uri("https://openactive.io/accessibility-support")}
             };
 
             return GetRandomElementsOf(faker, listOfAccessibilitySupports, isGoldenRecord, 1, 2).ToList();
@@ -241,7 +244,7 @@ namespace BookingSystem.AspNetCore.Helpers
                 var image = new ImageObject
                 {
                     Url = GenerateImageUrl(1024, 724, imageSeed),
-                    Thumbnail = GetRandomElementsOf(faker, thumbnails, isGoldenRecord, 0, 1).ToList()
+                    Thumbnail = GetRandomElementsOf(faker, thumbnails, isGoldenRecord, 1, 1).ToList()
                 };
                 images.Add(image);
             }

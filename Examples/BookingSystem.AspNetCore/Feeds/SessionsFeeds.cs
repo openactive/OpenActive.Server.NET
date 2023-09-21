@@ -136,7 +136,7 @@ namespace BookingSystem
                                 GenderRestriction = faker.Random.Enum<GenderRestrictionType>(),
                                 AgeRange = GenerateAgeRange(faker, isGoldenRecord),
                                 Level = faker.Random.ListItems(new List<string> { "Beginner", "Intermediate", "Advanced" }, 1).ToList(),
-                                Organizer = GenerateOrganizerOrPerson(result.Item2),
+                                Organizer = GenerateOrganizerOrPerson(faker, result.Item2),
                                 AccessibilitySupport = FeedGenerationHelper.GenerateAccessibilitySupport(faker, isGoldenRecord),
                                 AccessibilityInformation = faker.Lorem.Paragraphs(isGoldenRecord ? 2 : faker.Random.Number(2)),
                                 IsWheelchairAccessible = isGoldenRecord || faker.Random.Bool() ? faker.Random.Bool() : faker.Random.ListItem(new List<bool?> { true, false, null, null }),
@@ -268,14 +268,14 @@ namespace BookingSystem
         private QuantitativeValue GenerateAgeRange(Faker faker, bool isGoldenRecord)
         {
             var ageRange = new QuantitativeValue();
-            if (isGoldenRecord || faker.Random.Bool()) ageRange.MaxValue = faker.Random.Number(80);
-            if (isGoldenRecord || faker.Random.Bool()) ageRange.MinValue = faker.Random.Number(60);
+            if (isGoldenRecord || faker.Random.Bool()) ageRange.MaxValue = faker.Random.Number(16, 100);
+            if (isGoldenRecord || faker.Random.Bool()) ageRange.MinValue = faker.Random.Number(0, ageRange.MaxValue == null ? (int)ageRange.MaxValue : 100);
 
             if (ageRange.MaxValue == null && ageRange.MinValue == null) ageRange.MinValue = 0;
             return ageRange;
         }
 
-        private ILegalEntity GenerateOrganizerOrPerson(SellerTable seller)
+        private ILegalEntity GenerateOrganizerOrPerson(Faker faker, SellerTable seller)
         {
             if (_appSettings.FeatureFlags.SingleSeller)
                 return new Organization
@@ -293,6 +293,8 @@ namespace BookingSystem
                         }
                     },
                     IsOpenBookingAllowed = true,
+                    Telephone = faker.Phone.PhoneNumber("0#### ######"),
+                    SameAs = new List<Uri> { new Uri("https://socialmedia/testseller") }
                 };
             if (seller.IsIndividual)
                 return new OpenActive.NET.Person
@@ -301,6 +303,7 @@ namespace BookingSystem
                     Name = seller.Name,
                     TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
                     IsOpenBookingAllowed = true,
+                    Telephone = faker.Phone.PhoneNumber("07### ######")
                 };
             return new Organization
             {
@@ -317,6 +320,9 @@ namespace BookingSystem
                     }
                 },
                 IsOpenBookingAllowed = true,
+                Url = new Uri(faker.Internet.Url()),
+                Telephone = faker.Phone.PhoneNumber("0#### ######"),
+                SameAs = new List<Uri> { new Uri($"https://socialmedia/{seller.Name}") }
             };
         }
 
@@ -404,7 +410,7 @@ namespace BookingSystem
                 schedules.Add(GenerateSchedule(faker));
             }
 
-            return FeedGenerationHelper.GetRandomElementsOf(faker, schedules, isGoldenRecord, 0, 1).ToList();
+            return FeedGenerationHelper.GetRandomElementsOf(faker, schedules, isGoldenRecord, 1, 1).ToList();
         }
 
         private string GenerateSchedulingNote(Faker faker, bool isGoldenRecord)
@@ -442,6 +448,7 @@ namespace BookingSystem
                     }),
                     Price = @class.Price,
                     PriceCurrency = "GBP",
+                    Name = ageRange.Name,
                     OpenBookingFlowRequirement = FeedGenerationHelper.OpenBookingFlowRequirement(@class.RequiresApproval, @class.RequiresAttendeeValidation, @class.RequiresAdditionalDetails, @class.AllowsProposalAmendment),
                     ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
                     LatestCancellationBeforeStartDate = @class.LatestCancellationBeforeStartDate,
