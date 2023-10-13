@@ -86,7 +86,6 @@ namespace BookingSystem
                                         {
                                             Name = "Pin Code",
                                             Description = orderItem.PinCode,
-                                            Value = "defaultValue"
                                         }
                                     } : null,
                                     AccessPass = orderItem.BarCodeText != null ? new List<ImageObject>
