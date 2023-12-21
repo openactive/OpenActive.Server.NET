@@ -371,7 +371,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             else if (opportunityType == ParentIdConfiguration?.OpportunityType)
                 return RenderId(3, components, nameof(RenderOfferId), "parentOfferUriTemplate");
             else if (opportunityType == GrandparentIdConfiguration?.OpportunityType)
-                return RenderId(5, components, nameof(RenderOfferId), "parentOfferUriTemplate");
+                return RenderId(5, components, nameof(RenderOfferId), "grandparentOfferUriTemplate");
             else
                 throw new ArgumentOutOfRangeException(nameof(opportunityType), "OpportunityType was not found within this template");
         }

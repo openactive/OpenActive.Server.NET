@@ -12,6 +12,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using ServiceStack.OrmLite.Dapper;
+using OpenActive.NET;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -19,33 +20,13 @@ namespace OpenActive.FakeDatabase.NET
     /// This class models the database schema within an actual booking system.
     /// It is designed to simulate the database that woFuld be available in a full implementation.
     /// </summary>
-    public static class FakeBookingSystem
+    public class FakeBookingSystem
     {
-        /// <summary>
-        /// The Database is created as static, to simulate the persistence of a real database
-        /// </summary>
-        public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase().Result;
-
-        public static void Initialise()
+        public FakeDatabase Database { get; set; }
+        public FakeBookingSystem(bool facilityUseHasSlots)
         {
-            // Make an arbitrary call to the database to force the static instance to be instantiated, wiped and repopulated
-            // This SQLite database file is shared between the Booking System and Identity Server, and
-            // Initialise() must be called on startup of each to ensure they do not wipe the database
-            // on the first call to it
-#pragma warning disable 4014
-            BookingPartnerTable.Get().Wait();
-#pragma warning restore 4014
-        }
+            Database = FakeDatabase.GetPrepopulatedFakeDatabase(facilityUseHasSlots).Result;
 
-        public static DateTime Truncate(this DateTime dateTime, TimeSpan timeSpan)
-        {
-            if (timeSpan == TimeSpan.Zero)
-                return dateTime; // Or could throw an ArgumentException
-
-            if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
-                return dateTime; // do not modify "guard" values
-
-            return dateTime.AddTicks(-(dateTime.Ticks % timeSpan.Ticks));
         }
     }
 
@@ -165,10 +146,15 @@ namespace OpenActive.FakeDatabase.NET
     {
         private const float ProportionWithRequiresAttendeeValidation = 1f / 10;
         private const float ProportionWithRequiresAdditionalDetails = 1f / 10;
-
+        private bool _facilityUseHasSlots;
         public readonly InMemorySQLite Mem = new InMemorySQLite();
 
         private static readonly Faker Faker = new Faker();
+
+        public FakeDatabase(bool facilityUseHasSlots)
+        {
+            _facilityUseHasSlots = facilityUseHasSlots;
+        }
 
         static FakeDatabase()
         {
@@ -303,7 +289,7 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="newLat"></param>
         /// <param name="newLng"></param>
         /// <returns></returns>
-        public async Task<bool> UpdateFacilityUseLocationLatLng(long slotId, decimal newLat, decimal newLng)
+        public async Task<bool> UpdateFacilityUseLocationPlaceId(long slotId)
         {
             using (var db = await Mem.Database.OpenAsync())
             {
@@ -315,8 +301,8 @@ namespace OpenActive.FakeDatabase.NET
                 if (facilityUse == null)
                     return false;
 
-                facilityUse.LocationLat = newLat;
-                facilityUse.LocationLng = newLng;
+                // Round-robin to a different place
+                facilityUse.PlaceId = (facilityUse.PlaceId + 1) % 3 + 1;
                 facilityUse.Modified = DateTimeOffset.Now.UtcTicks;
                 await db.UpdateAsync(facilityUse);
                 return true;
@@ -377,7 +363,7 @@ namespace OpenActive.FakeDatabase.NET
         /// <param name="newLat"></param>
         /// <param name="newLng"></param>
         /// <returns></returns>
-        public async Task<bool> UpdateSessionSeriesLocationLatLng(long occurrenceId, decimal newLat, decimal newLng)
+        public async Task<bool> UpdateSessionSeriesLocationPlaceId(long occurrenceId)
         {
             using (var db = await Mem.Database.OpenAsync())
             {
@@ -389,8 +375,8 @@ namespace OpenActive.FakeDatabase.NET
                 if (classInstance == null)
                     return false;
 
-                classInstance.LocationLat = newLat;
-                classInstance.LocationLng = newLng;
+                // Round-robin to a different place
+                classInstance.PlaceId = (classInstance.PlaceId + 1) % 3 + 1;
                 classInstance.Modified = DateTimeOffset.Now.UtcTicks;
                 await db.UpdateAsync(classInstance);
                 return true;
@@ -655,6 +641,118 @@ namespace OpenActive.FakeDatabase.NET
                     occurrence,
                     bookedOrderItemInfo
                 );
+            }
+        }
+
+        public OpenActive.NET.Place GetPlaceById(long placeId)
+        {
+            // Three hardcoded fake places
+            switch (placeId)
+            {
+                case 1:
+                    return new OpenActive.NET.Place
+                    {
+                        Identifier = 1,
+                        Name = "Post-ercise Plaza",
+                        Description = "Sorting Out Your Fitness One Parcel Lift at a Time! Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                        Address = new OpenActive.NET.PostalAddress
+                        {
+                            StreetAddress = "Kings Mead House",
+                            AddressLocality = "Oxford",
+                            AddressRegion = "Oxfordshire",
+                            PostalCode = "OX1 1AA",
+                            AddressCountry = "GB"
+                        },
+                        Geo = new OpenActive.NET.GeoCoordinates
+                        {
+                            Latitude = (decimal?)51.7502,
+                            Longitude = (decimal?)-1.2674
+                        },
+                        Image = new List<OpenActive.NET.ImageObject> {
+                            new OpenActive.NET.ImageObject
+                            {
+                                Url = new Uri("https://upload.wikimedia.org/wikipedia/commons/e/e5/Oxford_StAldates_PostOffice.jpg")
+                            },
+                        },
+                        Telephone = "01865 000001",
+                        Url = new Uri("https://en.wikipedia.org/wiki/Post_Office_Limited"),
+                        AmenityFeature = new List<OpenActive.NET.LocationFeatureSpecification>
+                        {
+                            new OpenActive.NET.ChangingFacilities { Name = "Changing Facilities", Value = true },
+                            new OpenActive.NET.Showers { Name = "Showers", Value = true },
+                            new OpenActive.NET.Lockers { Name = "Lockers", Value = true },
+                            new OpenActive.NET.Towels { Name = "Towels", Value = false },
+                            new OpenActive.NET.Creche { Name = "Creche", Value = false },
+                            new OpenActive.NET.Parking { Name = "Parking", Value = false }
+                        }
+                    };
+                case 2:
+                    return new OpenActive.NET.Place
+                    {
+                        Identifier = 2,
+                        Name = "Premier Lifters",
+                        Description = "Where your Fitness Goals are Always Inn-Sight. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                        Address = new OpenActive.NET.PostalAddress
+                        {
+                            StreetAddress = "Greyfriars Court, Paradise Square",
+                            AddressLocality = "Oxford",
+                            AddressRegion = "Oxfordshire",
+                            PostalCode = "OX1 1BB",
+                            AddressCountry = "GB"
+                        },
+                        Geo = new OpenActive.NET.GeoCoordinates
+                        {
+                            Latitude = (decimal?)51.7504933,
+                            Longitude = (decimal?)-1.2620685
+                        },
+                        Image = new List<OpenActive.NET.ImageObject> { 
+                            new OpenActive.NET.ImageObject
+                            {
+                                Url = new Uri("https://upload.wikimedia.org/wikipedia/commons/5/53/Cambridge_Orchard_Park_Premier_Inn.jpg")
+                            },
+                        },
+                        Telephone = "01865 000002",
+                        Url = new Uri("https://en.wikipedia.org/wiki/Premier_Inn"),
+                        AmenityFeature = new List<OpenActive.NET.LocationFeatureSpecification>
+                        {
+                            new OpenActive.NET.ChangingFacilities { Name = "Changing Facilities", Value = false },
+                            new OpenActive.NET.Showers { Name = "Showers", Value = false },
+                            new OpenActive.NET.Lockers { Name = "Lockers", Value = false },
+                            new OpenActive.NET.Towels { Name = "Towels", Value = true },
+                            new OpenActive.NET.Creche { Name = "Creche", Value = true },
+                            new OpenActive.NET.Parking { Name = "Parking", Value = true }
+                        }
+                    };
+                case 3:
+                    return new OpenActive.NET.Place
+                    {
+                        Identifier = 3,
+                        Name = "Stroll & Stretch",
+                        Description = "Casual Calisthenics in the Heart of Commerce. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                        Address = new OpenActive.NET.PostalAddress
+                        {
+                            StreetAddress = "Norfolk Street",
+                            AddressLocality = "Oxford",
+                            AddressRegion = "Oxfordshire",
+                            PostalCode = "OX1 1UU",
+                            AddressCountry = "GB"
+                        },
+                        Geo = new OpenActive.NET.GeoCoordinates
+                        {
+                            Latitude = (decimal?)51.749826,
+                            Longitude = (decimal?)-1.261492
+                        },
+                        Image = new List<OpenActive.NET.ImageObject> { 
+                            new OpenActive.NET.ImageObject
+                            {
+                                Url = new Uri("https://upload.wikimedia.org/wikipedia/commons/2/28/Westfield_Garden_State_Plaza_-_panoramio.jpg")
+                            },
+                        },
+                        Telephone = "01865 000003",
+                        Url = new Uri("https://en.wikipedia.org/wiki/Shopping_center"),
+                    };
+                default:
+                    return null;
             }
         }
 
@@ -1371,9 +1469,9 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase()
+        public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase(bool facilityUseHasSlots)
         {
-            var database = new FakeDatabase();
+            var database = new FakeDatabase(facilityUseHasSlots);
             using (var db = await database.Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
@@ -1381,69 +1479,105 @@ namespace OpenActive.FakeDatabase.NET
                 await CreateSellers(db);
                 await CreateSellerUsers(db);
                 await CreateFakeClasses(db);
-                await CreateFakeFacilitiesAndSlots(db);
+                await CreateFakeFacilitiesAndSlots(db, facilityUseHasSlots);
                 await CreateOrders(db); // Add these in to generate your own orders and grants, otherwise generate them using the test suite
                 await CreateGrants(db);
                 await BookingPartnerTable.Create(db);
                 transaction.Commit();
+
             }
 
             return database;
         }
 
-        private static async Task CreateFakeFacilitiesAndSlots(IDbConnection db)
+        private static async Task CreateFakeFacilitiesAndSlots(IDbConnection db, bool facilityUseHasSlots)
         {
             var opportunitySeeds = GenerateOpportunitySeedDistribution(OpportunityCount);
 
-            var facilities = opportunitySeeds
-                .Select(seed => new FacilityUseTable
+            var slotId = 0;
+            List<(FacilityUseTable facility, List<SlotTable> slots)> facilitiesAndSlots = opportunitySeeds.Select((seed) =>
+            {
+                var facilityUseName = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}";
+                var facility = new FacilityUseTable
                 {
                     Id = seed.Id,
                     Deleted = false,
-                    Name = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}",
-                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5  
-                })
-                .AsList();
+                    Name = facilityUseName,
+                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5 
+                    PlaceId = Faker.PickRandom(new[] { 1, 2, 3 })
+                };
 
-            var slotId = 0;
-            var slots = opportunitySeeds.Select(seed =>
-                Enumerable.Range(0, 10)
-                    .Select(_ => new
+                // If facilityUseHasSlots=false, generate 10 IFUs with each with a randomly generated number of Slots each with MaximumUses=1
+                List<SlotTable> slots;
+                if (!facilityUseHasSlots)
+                {
+                    // Create random Individual Facility Uses
+                    var individualFacilityUses = Enumerable.Range(0, 10).Select(i => new IndividualFacilityUse
+                    {
+                        Id = i,
+                        Name = $"Court {i} at {facility.Name}",
+                        SportActivityLocationName = $"Court {i}"
+                    }).AsList();
+                    facility.IndividualFacilityUses = individualFacilityUses;
+
+                    slots = individualFacilityUses.Select(ifu => new
                     {
                         StartDate = seed.RandomStartDate(),
-                        TotalUses = Faker.Random.Int(0, 8),
-                        Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                        TotalUses = 1,
+                        Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
+                        IndividualFacilityUseId = ifu.Id,
                     })
-                    .Select(slot =>
-                    {
-                        var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
-                        return new SlotTable
+                    .Select(slot => GenerateSlot(seed, slot.IndividualFacilityUseId, ref slotId, slot.StartDate, slot.TotalUses, slot.Price))
+                    .AsList();
+                }
+                else
+                {
+                    slots = Enumerable.Range(0, 10)
+                        .Select(_ => new
                         {
-                            FacilityUseId = seed.Id,
-                            Id = slotId++,
-                            Deleted = false,
-                            Start = slot.StartDate,
-                            End = slot.StartDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
-                            MaximumUses = slot.TotalUses,
-                            RemainingUses = slot.TotalUses,
-                            Price = slot.Price,
-                            Prepayment = slot.Price == 0
-                                ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
-                                : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
-                            RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
-                            RequiresAdditionalDetails = requiresAdditionalDetails,
-                            RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
-                            RequiresApproval = seed.RequiresApproval,
-                            AllowsProposalAmendment = seed.RequiresApproval && Faker.Random.Bool(),
-                            ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
-                            LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
-                            AllowCustomerCancellationFullRefund = Faker.Random.Bool()
-                        };
-                    }
-                    )).SelectMany(os => os);
+                            StartDate = seed.RandomStartDate(),
+                            TotalUses = Faker.Random.Int(1, 8),
+                            Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
+                        })
+                        .Select(slot => GenerateSlot(seed, null, ref slotId, slot.StartDate, slot.TotalUses, slot.Price))
+                        .AsList();
+                }
 
+                return (facility, slots);
+            })
+            .AsList();
+
+            var facilities = facilitiesAndSlots.Select(facilityAndSlots => facilityAndSlots.facility);
+            var slotTableSlots = facilitiesAndSlots.SelectMany(facilityAndSlots => facilityAndSlots.slots);
             await db.InsertAllAsync(facilities);
-            await db.InsertAllAsync(slots);
+            await db.InsertAllAsync(slotTableSlots);
+        }
+        private static SlotTable GenerateSlot(OpportunitySeed seed, long? individualFacilityUseId, ref int slotId, DateTime startDate, int totalUses, decimal price)
+        {
+            var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
+            return new SlotTable
+            {
+                FacilityUseId = seed.Id,
+                IndividualFacilityUseId = individualFacilityUseId,
+                Id = slotId++,
+                Deleted = false,
+                Start = startDate,
+                End = startDate + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
+                MaximumUses = totalUses,
+                RemainingUses = Faker.PickRandom(new[] { 0, totalUses, totalUses, totalUses, totalUses, totalUses, totalUses, totalUses, totalUses }),
+                Price = price,
+                Prepayment = price == 0
+                    ? Faker.Random.Bool() ? RequiredStatusType.Unavailable : (RequiredStatusType?)null
+                    : Faker.Random.Bool() ? Faker.Random.Enum<RequiredStatusType>() : (RequiredStatusType?)null,
+                RequiresAttendeeValidation = Faker.Random.Bool(ProportionWithRequiresAttendeeValidation),
+                RequiresAdditionalDetails = requiresAdditionalDetails,
+                RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
+                RequiresApproval = seed.RequiresApproval,
+                AllowsProposalAmendment = seed.RequiresApproval && Faker.Random.Bool(),
+                ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
+                LatestCancellationBeforeStartDate = RandomLatestCancellationBeforeStartDate(),
+                AllowCustomerCancellationFullRefund = Faker.Random.Bool()
+            };
         }
 
         public static async Task CreateFakeClasses(IDbConnection db)
@@ -1454,7 +1588,7 @@ namespace OpenActive.FakeDatabase.NET
                 .Select(seed => new
                 {
                     seed.Id,
-                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price(0, 20)),
+                    Price = decimal.Parse(Faker.Random.Bool() ? "0.00" : Faker.Commerce.Price((decimal)0.5, 20)),
                     ValidFromBeforeStartDate = seed.RandomValidFromBeforeStartDate(),
                     seed.RequiresApproval
                 })
@@ -1479,7 +1613,8 @@ namespace OpenActive.FakeDatabase.NET
                         SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5
                         ValidFromBeforeStartDate = @class.ValidFromBeforeStartDate,
                         AttendanceMode = Faker.PickRandom<AttendanceMode>(),
-                        AllowCustomerCancellationFullRefund = Faker.Random.Bool()
+                        AllowCustomerCancellationFullRefund = Faker.Random.Bool(),
+                        PlaceId = Faker.PickRandom(new[] { 1, 2, 3 })
                     };
                 })
                 .AsList();
@@ -1490,7 +1625,7 @@ namespace OpenActive.FakeDatabase.NET
                     .Select(_ => new
                     {
                         Start = seed.RandomStartDate(),
-                        TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(0, 50) : Faker.Random.Int(0, 3)
+                        TotalSpaces = Faker.Random.Bool() ? Faker.Random.Int(1, 50) : Faker.Random.Int(1, 3)
                     })
                     .Select(occurrence => new OccurrenceTable
                     {
@@ -1500,7 +1635,7 @@ namespace OpenActive.FakeDatabase.NET
                         Start = occurrence.Start,
                         End = occurrence.Start + TimeSpan.FromMinutes(Faker.Random.Int(30, 360)),
                         TotalSpaces = occurrence.TotalSpaces,
-                        RemainingSpaces = occurrence.TotalSpaces
+                        RemainingSpaces = Faker.PickRandom(new[] { 0, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces, occurrence.TotalSpaces })
                     })).SelectMany(os => os);
 
             await db.InsertAllAsync(classes);
@@ -1763,8 +1898,6 @@ namespace OpenActive.FakeDatabase.NET
             RequiredStatusType? prepayment = null,
             bool requiresAttendeeValidation = false,
             bool requiresAdditionalDetails = false,
-            decimal locationLat = 0.1m,
-            decimal locationLng = 0.1m,
             bool isOnlineOrMixedAttendanceMode = false,
             bool allowProposalAmendment = false,
             bool inPast = false)
@@ -1795,8 +1928,7 @@ namespace OpenActive.FakeDatabase.NET
                     RequiresAdditionalDetails = requiresAdditionalDetails,
                     RequiredAdditionalDetails = requiresAdditionalDetails ? PickRandomAdditionalDetails() : null,
                     AllowsProposalAmendment = allowProposalAmendment,
-                    LocationLat = locationLat,
-                    LocationLng = locationLng,
+                    PlaceId = Faker.PickRandom(new[] { 1, 2, 3 }),
                     AttendanceMode = isOnlineOrMixedAttendanceMode ? Faker.PickRandom(new[] { AttendanceMode.Mixed, AttendanceMode.Online }) : AttendanceMode.Offline,
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
                     Modified = DateTimeOffset.Now.UtcTicks
@@ -1822,7 +1954,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public async Task<(int, int)> AddFacility(
+        public async Task<(int, int?, int)> AddFacility(
             string testDatasetIdentifier,
             long? sellerId,
             string title,
@@ -1835,10 +1967,10 @@ namespace OpenActive.FakeDatabase.NET
             RequiredStatusType? prepayment = null,
             bool requiresAttendeeValidation = false,
             bool requiresAdditionalDetails = false,
-            decimal locationLat = 0.1m,
             decimal locationLng = 0.1m,
             bool allowProposalAmendment = false,
-            bool inPast = false)
+            bool inPast = false
+            )
         {
             var startTime = DateTime.Now.AddDays(inPast ? -1 : 1);
             var endTime = DateTime.Now.AddDays(inPast ? -1 : 1).AddHours(1);
@@ -1846,18 +1978,29 @@ namespace OpenActive.FakeDatabase.NET
             using (var db = await Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
+
                 var facility = new FacilityUseTable
                 {
                     TestDatasetIdentifier = testDatasetIdentifier,
                     Deleted = false,
                     Name = title,
                     SellerId = sellerId ?? 1,
-                    LocationLat = locationLat,
-                    LocationLng = locationLng,
+                    PlaceId = Faker.PickRandom(new[] { 1, 2, 3 }),
                     Modified = DateTimeOffset.Now.UtcTicks
                 };
+                if (!_facilityUseHasSlots)
+                {
+                    facility.IndividualFacilityUses = new List<IndividualFacilityUse> {
+                        new IndividualFacilityUse {
+                             Id = 1,
+                            Name = $"Court {1} on {title}",
+                            SportActivityLocationName = $"Court {1}"
+                        }
+                    };
+                }
                 await db.SaveAsync(facility);
 
+                int? individualFacilityUseId = null;
                 var slot = new SlotTable
                 {
                     TestDatasetIdentifier = testDatasetIdentifier,
@@ -1883,11 +2026,17 @@ namespace OpenActive.FakeDatabase.NET
                     AllowCustomerCancellationFullRefund = allowCustomerCancellationFullRefund,
                     Modified = DateTimeOffset.Now.UtcTicks
                 };
+                if (!_facilityUseHasSlots)
+                {
+                    individualFacilityUseId = 1;
+                    slot.IndividualFacilityUseId = individualFacilityUseId;
+                }
                 await db.SaveAsync(slot);
 
                 transaction.Commit();
 
-                return ((int)facility.Id, (int)slot.Id);
+
+                return ((int)facility.Id, individualFacilityUseId, (int)slot.Id);
             }
         }
 
@@ -1914,6 +2063,95 @@ namespace OpenActive.FakeDatabase.NET
                     where: x => x.TestDatasetIdentifier == testDatasetIdentifier && !x.Deleted);
             }
         }
+
+        public async Task<List<BookingPartnerTable>> BookingPartnerGet()
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                return await db.SelectAsync<BookingPartnerTable>();
+            }
+        }
+
+        public async Task<List<BookingPartnerTable>> BookingPartnerGetBySellerUserId(long sellerUserId)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var query = db.From<BookingPartnerTable>()
+                              .Join<BookingPartnerTable, GrantTable>((b, g) => b.ClientId == g.ClientId && g.Type == "user_consent")
+                              .Join<GrantTable, SellerUserTable>((g, s) => g.SubjectId == s.Id.ToString())
+                              .Where<SellerUserTable>(s => s.Id == sellerUserId);
+                return await db.SelectAsync(query);
+            }
+        }
+
+        public async Task<BookingPartnerTable> BookingPartnerGetByInitialAccessToken(string registrationKey)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.InitialAccessToken == registrationKey);
+                return bookingPartner?.InitialAccessTokenKeyValidUntil > DateTime.Now ? bookingPartner : null;
+            }
+        }
+
+        public async Task<BookingPartnerTable> BookingPartnerGetByClientId(string clientId)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                return await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+            }
+        }
+
+        public async Task BookingPartnerSave(BookingPartnerTable bookingPartnerTable)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                await db.SaveAsync(bookingPartnerTable);
+            }
+        }
+
+        public async Task BookingPartnerResetCredentials(string clientId, string key)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.Registered = false;
+                bookingPartner.InitialAccessToken = key;
+                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
+                bookingPartner.ClientSecret = null;
+                await db.SaveAsync(bookingPartner);
+            }
+        }
+
+        public async Task BookingPartnerSetKey(string clientId, string key)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.InitialAccessToken = key;
+                bookingPartner.InitialAccessTokenKeyValidUntil = DateTime.Now.AddDays(2);
+                await db.SaveAsync(bookingPartner);
+            }
+        }
+
+        public async Task BookingPartnerUpdateScope(string clientId, string scope, bool bookingsSuspended)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                var bookingPartner = await db.SingleAsync<BookingPartnerTable>(x => x.ClientId == clientId);
+                bookingPartner.Scope = scope;
+                bookingPartner.BookingsSuspended = true;
+                await db.SaveAsync(bookingPartner);
+            }
+        }
+
+        public async Task BookingPartnerAdd(BookingPartnerTable newBookingPartner)
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                await db.SaveAsync(newBookingPartner);
+            }
+        }
+
         private static readonly (Bounds, Bounds?, bool)[] BucketDefinitions =
         {
             // Approval not required

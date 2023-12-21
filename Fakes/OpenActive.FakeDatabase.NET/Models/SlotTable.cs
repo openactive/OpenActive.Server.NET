@@ -11,6 +11,7 @@ namespace OpenActive.FakeDatabase.NET
         public FacilityUseTable FacilityUseTable { get; set; }
         [ForeignKey(typeof(FacilityUseTable), OnDelete = "CASCADE")]
         public long FacilityUseId { get; set; }
+        public long? IndividualFacilityUseId { get; set; }
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
         public long MaximumUses { get; set; }
@@ -26,5 +27,6 @@ namespace OpenActive.FakeDatabase.NET
         public TimeSpan? ValidFromBeforeStartDate { get; set; }
         public TimeSpan? LatestCancellationBeforeStartDate { get; set; }
         public bool AllowsProposalAmendment { get; set; }
+
     }
 }

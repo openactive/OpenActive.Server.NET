@@ -5,6 +5,7 @@ using OpenActive.Server.NET;
 using System.Configuration;
 using System.Web.Http;
 using BookingSystem.AspNetFramework.Utils;
+using OpenActive.FakeDatabase.NET;
 
 namespace BookingSystem.AspNetFramework
 {
@@ -16,7 +17,8 @@ namespace BookingSystem.AspNetFramework
             {
                 ApplicationHostBaseUrl = ConfigurationManager.AppSettings["ApplicationHostBaseUrl"],
                 FeatureFlags = new FeatureSettings(), // use default values for all features
-                Payment = new PaymentSettings {
+                Payment = new PaymentSettings
+                {
                     AccountId = ConfigurationManager.AppSettings["AccountId"],
                     PaymentProviderId = ConfigurationManager.AppSettings["PaymentProviderId"],
                     TaxCalculationB2B = ConfigurationManager.AppSettings["TaxCalculationB2B"] == "true",
@@ -30,7 +32,7 @@ namespace BookingSystem.AspNetFramework
             services.AddTransient<DatasetSiteController>();
             services.AddTransient<OpenDataController>();
             services.AddTransient<OpenBookingController>();
-            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(appSettings));
+            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(appSettings, new FakeBookingSystem(false)));
 
             var resolver = new DependencyResolver(services.BuildServiceProvider(true));
             config.DependencyResolver = resolver;

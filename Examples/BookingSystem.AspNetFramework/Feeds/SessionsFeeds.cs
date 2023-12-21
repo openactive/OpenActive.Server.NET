@@ -14,10 +14,17 @@ namespace BookingSystem
     public class AcmeScheduledSessionRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<SessionOpportunity, ScheduledSession>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
+        private readonly FakeBookingSystem _fakeBookingSystem;
+
+        // Example constructor that can set state
+        public AcmeScheduledSessionRpdeGenerator(FakeBookingSystem fakeBookingSystem)
+        {
+            this._fakeBookingSystem = fakeBookingSystem;
+        }
 
         protected override async Task<List<RpdeItem<ScheduledSession>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            using (var db = _fakeBookingSystem.Database.Mem.Database.Open())
             {
                 var query = db.Select<OccurrenceTable>()
                 .OrderBy(x => x.Modified)
@@ -65,16 +72,23 @@ namespace BookingSystem
     public class AcmeSessionSeriesRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<SessionOpportunity, SessionSeries>
     {
         private readonly AppSettings _appSettings;
+        private readonly FakeBookingSystem _fakeBookingSystem;
+
 
         // Example constructor that can set state from EngineConfig
-        public AcmeSessionSeriesRpdeGenerator(AppSettings appSettings)
+        public AcmeSessionSeriesRpdeGenerator(AppSettings appSettings, FakeBookingSystem fakeBookingSystem)
         {
             this._appSettings = appSettings;
+            this._fakeBookingSystem = fakeBookingSystem;
+
         }
 
         protected override async Task<List<RpdeItem<SessionSeries>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
-            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            var activityId = Environment.GetEnvironmentVariable("ACTIVITY_ID") ?? "https://openactive.io/activity-list#c07d63a0-8eb9-4602-8bcc-23be6deb8f83";
+            var activityPrefLabel = Environment.GetEnvironmentVariable("ACTIVITY_PREF_LABEL") ?? "Jet Skiing";
+
+            using (var db = _fakeBookingSystem.Database.Mem.Database.Open())
             {
                 var q = db.From<ClassTable>()
                 .Join<SellerTable>()
@@ -160,47 +174,15 @@ namespace BookingSystem
                                     AllowCustomerCancellationFullRefund = result.Item1.AllowCustomerCancellationFullRefund
                                 }
                             },
-                            Location = result.Item1.AttendanceMode == AttendanceMode.Online ? null : new Place
-                            {
-                                Name = "Fake Pond",
-                                Address = new PostalAddress
-                                {
-                                    StreetAddress = "1 Fake Park",
-                                    AddressLocality = "Another town",
-                                    AddressRegion = "Oxfordshire",
-                                    PostalCode = "OX1 1AA",
-                                    AddressCountry = "GB"
-                                },
-                                Geo = new GeoCoordinates
-                                {
-                                    Latitude = result.Item1.LocationLat,
-                                    Longitude = result.Item1.LocationLng,
-                                }
-                            },
-                            AffiliatedLocation = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : new Place
-                            {
-                                Name = "Fake Pond",
-                                Address = new PostalAddress
-                                {
-                                    StreetAddress = "1 Fake Park",
-                                    AddressLocality = "Another town",
-                                    AddressRegion = "Oxfordshire",
-                                    PostalCode = "OX1 1AA",
-                                    AddressCountry = "GB"
-                                },
-                                Geo = new GeoCoordinates
-                                {
-                                    Latitude = result.Item1.LocationLat,
-                                    Longitude = result.Item1.LocationLng,
-                                }
-                            },
+                            Location = result.Item1.AttendanceMode == AttendanceMode.Online ? null : _fakeBookingSystem.Database.GetPlaceById(result.Item1.PlaceId),
+                            AffiliatedLocation = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : _fakeBookingSystem.Database.GetPlaceById(result.Item1.PlaceId),
                             Url = new Uri("https://www.example.com/a-session-age"),
                             Activity = new List<Concept>
                             {
                                 new Concept
                                 {
-                                    Id = new Uri("https://openactive.io/activity-list#c07d63a0-8eb9-4602-8bcc-23be6deb8f83"),
-                                    PrefLabel = "Jet Skiing",
+                                    Id = new Uri(activityId),
+                                    PrefLabel = activityPrefLabel,
                                     InScheme = new Uri("https://openactive.io/activity-list")
                                 }
                             }

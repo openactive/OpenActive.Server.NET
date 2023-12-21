@@ -489,7 +489,17 @@ namespace OpenActive.Server.NET.StoreBooking
                         new IncompleteOrderItemError(), "acceptedOffer @id was not provided");
                 }
 
-                var idComponents = base.ResolveOpportunityID(orderedItemId, acceptedOfferId);
+                IBookableIdComponents idComponents;
+                try
+                {
+
+                    idComponents = base.ResolveOpportunityID(orderedItemId, acceptedOfferId);
+                }
+                catch (RequiredBaseUrlMismatchException e)
+                {
+                    throw new OpenBookingException(new InvalidOpportunityOrOfferIdError(), $"Opportunity @id or Offer @id does not originate from this system, {e.Message}. Opportunity @id '{orderedItemId}'; Offer @id '{acceptedOfferId}'");
+                }
+
 
                 if (idComponents == null)
                 {
