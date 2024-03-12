@@ -34,7 +34,6 @@ namespace BookingSystem
                                     {
                                         Name = "Pin Code",
                                         Description = bookedOrderItemInfo.PinCode,
-                                        Value = "defaultValue"
                                     }
                                 };
                 ctx.ResponseOrderItem.AccessPass = new List<ImageObject>

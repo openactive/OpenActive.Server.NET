@@ -4,7 +4,7 @@ An example OpenActive.Server.NET implementation.
 
 This implementation is also used as a reference implementation for the [Test Suite](https://github.com/openactive/openactive-test-suite) to run its tests against.
 
-## Running Locally for the 1st time
+## Running Locally
 
 1. In Visual Studio, run the BookingSystem.AspNetCore project
 
@@ -16,6 +16,7 @@ This implementation is also used as a reference implementation for the [Test Sui
     `ApplicationHostBaseUrl: http://localhost:{PORT}`
 3. Now, re-run the project. You're good to go 👍
 
+See the [project contribution documentation](/CONTRIBUTING.md) for details on how to run BookingSystem.AspNetCore locally.
 
 ## Reference Implementation Data Generation
 
