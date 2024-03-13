@@ -107,7 +107,7 @@ namespace BookingSystem
                     {
                         var intt = (int)result.Item1.Modified;
 
-                        var faker = new Faker() { Random = new Randomizer(((int)result.Item1.Modified + (int)result.Item1.Id)) };
+                        var faker = new Faker() { Random = new Randomizer((int)result.Item1.Id) };
                         // here we randomly decide whether the item is going to be a golden record or not by using Faker
                         // See the README for more detail on golden records.
                         var isGoldenRecord = faker.Random.Bool();
