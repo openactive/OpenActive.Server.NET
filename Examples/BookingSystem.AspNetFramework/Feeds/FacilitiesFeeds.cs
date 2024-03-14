@@ -47,7 +47,7 @@ namespace BookingSystem
                     .SelectMulti<FacilityUseTable, SellerTable>(q)
                     .Select(result =>
                     {
-                        var faker = new Faker() { Random = new Randomizer(((int)result.Item1.Modified + (int)result.Item1.Id)) };
+                        var faker = new Faker() { Random = new Randomizer((int)result.Item1.Id) };
                         var isGoldenRecord = faker.Random.Bool();
 
                         return new RpdeItem<FacilityUse>
@@ -69,7 +69,12 @@ namespace BookingSystem
                                 Identifier = result.Item1.Id,
                                 Name = GetNameAndFacilityTypeForFacility(result.Item1.Name, isGoldenRecord).Name,
                                 Description = faker.Lorem.Paragraphs(isGoldenRecord ? 4 : faker.Random.Number(4)),
-                                Provider = GenerateOrganizer(result.Item2),
+                                Provider = FeedGenerationHelper.GenerateOrganization(
+                                    faker,
+                                    result.Item2,
+                                    _appSettings.FeatureFlags.SingleSeller,
+                                    _appSettings.FeatureFlags.SingleSeller ? RenderSingleSellerId() : RenderSellerId(new SimpleIdComponents { IdLong = result.Item2.Id })
+                                    ),
                                 Url = new Uri($"https://www.example.com/facilities/{result.Item1.Id}"),
                                 AttendeeInstructions = FeedGenerationHelper.GenerateAttendeeInstructions(faker, isGoldenRecord),
                                 AccessibilitySupport = FeedGenerationHelper.GenerateAccessibilitySupport(faker, isGoldenRecord),
@@ -165,41 +170,6 @@ namespace BookingSystem
 
         }
 
-        private Organization GenerateOrganizer(SellerTable seller)
-        {
-            return _appSettings.FeatureFlags.SingleSeller ? new Organization
-            {
-                Id = RenderSingleSellerId(),
-                Name = "Test Seller",
-                TaxMode = TaxMode.TaxGross,
-                TermsOfService = new List<Terms>
-                                {
-                                    new PrivacyPolicy
-                                    {
-                                        Name = "Privacy Policy",
-                                        Url = new Uri("https://example.com/privacy.html"),
-                                        RequiresExplicitConsent = false
-                                    }
-                                },
-                IsOpenBookingAllowed = true,
-            } : new Organization
-            {
-                Id = RenderSellerId(new SimpleIdComponents { IdLong = seller.Id }),
-                Name = seller.Name,
-                TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
-                TermsOfService = new List<Terms>
-                                {
-                                    new PrivacyPolicy
-                                    {
-                                        Name = "Privacy Policy",
-                                        Url = new Uri("https://example.com/privacy.html"),
-                                        RequiresExplicitConsent = false
-                                    }
-                                },
-                IsOpenBookingAllowed = true,
-            };
-        }
-
         private List<string> GenerateCategory(Faker faker, bool isGoldenRecord)
         {
             var listOfPossibleCategories = new List<string>
@@ -253,7 +223,7 @@ namespace BookingSystem
                 .Take(RpdePageSize)
                 .Select(x =>
                 {
-                    var faker = new Faker() { Random = new Randomizer(((int)x.Modified + (int)x.Id)) };
+                    var faker = new Faker() { Random = new Randomizer((int)x.Id) };
                     return new RpdeItem<Slot>
                     {
                         Kind = _appSettings.FeatureFlags.FacilityUseHasSlots ? RpdeKind.FacilityUseSlot : RpdeKind.IndividualFacilityUseSlot,

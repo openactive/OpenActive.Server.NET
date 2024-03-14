@@ -33,7 +33,7 @@ namespace BookingSystem
                                     new PropertyValue()
                                     {
                                         Name = "Pin Code",
-                                        Description = bookedOrderItemInfo.PinCode,
+                                        Description = bookedOrderItemInfo.PinCode
                                     }
                                 };
                 ctx.ResponseOrderItem.AccessPass = new List<ImageObject>
