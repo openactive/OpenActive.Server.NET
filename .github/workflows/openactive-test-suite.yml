@@ -63,10 +63,10 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.419
-    - name: Setup Node.js 14.x
+    - name: Setup Node.js 18.17.1
       uses: actions/setup-node@v1
       with:
-        node-version: 14.x
+        node-version: 18.17.1
     - name: Install OpenActive.Server.NET dependencies
       if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: dotnet restore ./server/
@@ -136,10 +136,10 @@ jobs:
         repository: openactive/openactive-test-suite
         ref: ${{ steps.refs.outputs.mirror_ref }}
         path: tests
-    - name: Setup Node.js 14.x
+    - name: Setup Node.js 18.17.1
       uses: actions/setup-node@v1
       with:
-        node-version: 14.x
+        node-version: 18.17.1
     - name: Setup MSBuild path
       uses: microsoft/setup-msbuild@v1.0.2
     - name: Setup NuGet
