@@ -4,6 +4,11 @@ using System.Collections.Generic;
 using OpenActive.FakeDatabase.NET;
 using Bogus;
 using System.Linq;
+using Bogus.DataSets;
+using OpenActive.Server.NET.OpenBookingHelper;
+using System.Security.Policy;
+
+
 
 namespace BookingSystem.AspNetCore.Helpers
 {
@@ -231,7 +236,7 @@ namespace BookingSystem.AspNetCore.Helpers
             }
 
             var images = new List<ImageObject>();
-            var min = isGoldenRecord ? 4 : 0;
+            var min = isGoldenRecord ? 4 : 1;
             var imageCount = faker.Random.Number(min, 3);
             for (var i = 0; i < imageCount; i++)
             {
@@ -250,6 +255,52 @@ namespace BookingSystem.AspNetCore.Helpers
             }
             return images;
         }
+
+        public static Organization GenerateOrganization(Faker faker, SellerTable seller, bool isSingleSeller, Uri organizationId)
+        {
+            if (isSingleSeller)
+                return new Organization
+                {
+                    Id = organizationId,
+                    Name = "Test Seller",
+                    TaxMode = TaxMode.TaxGross,
+                    TermsOfService = new List<Terms>
+                    {
+                        new PrivacyPolicy
+                        {
+                            Name = "Privacy Policy",
+                            Url = new Uri("https://example.com/privacy.html"),
+                            RequiresExplicitConsent = false
+                        }
+                    },
+                    IsOpenBookingAllowed = true,
+                    Telephone = faker.Phone.PhoneNumber("0#### ######"),
+                    SameAs = new List<Uri> { new Uri("https://socialmedia.com/testseller") }
+                };
+
+            return new Organization
+            {
+                Id = organizationId,
+                Name = seller.Name,
+                TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
+                TermsOfService = new List<Terms>
+                {
+                    new PrivacyPolicy
+                    {
+                        Name = "Privacy Policy",
+                        Url = new Uri("https://example.com/privacy.html"),
+                        RequiresExplicitConsent = false
+                    }
+                },
+                IsOpenBookingAllowed = true,
+                Url = new Uri(faker.Internet.Url()),
+                Telephone = faker.Phone.PhoneNumber("0#### ######"),
+                SameAs = new List<Uri> { new Uri($"https://socialmedia.com/{seller.Name.Replace(" ", "")}") }
+            };
+
+
+        }
+
     }
 }
 

@@ -277,25 +277,6 @@ namespace BookingSystem
 
         private ILegalEntity GenerateOrganizerOrPerson(Faker faker, SellerTable seller)
         {
-            if (_appSettings.FeatureFlags.SingleSeller)
-                return new Organization
-                {
-                    Id = RenderSingleSellerId(),
-                    Name = "Test Seller",
-                    TaxMode = TaxMode.TaxGross,
-                    TermsOfService = new List<Terms>
-                    {
-                        new PrivacyPolicy
-                        {
-                            Name = "Privacy Policy",
-                            Url = new Uri("https://example.com/privacy.html"),
-                            RequiresExplicitConsent = false
-                        }
-                    },
-                    IsOpenBookingAllowed = true,
-                    Telephone = faker.Phone.PhoneNumber("0#### ######"),
-                    SameAs = new List<Uri> { new Uri("https://socialmedia/testseller") }
-                };
             if (seller.IsIndividual)
                 return new OpenActive.NET.Person
                 {
@@ -305,25 +286,8 @@ namespace BookingSystem
                     IsOpenBookingAllowed = true,
                     Telephone = faker.Phone.PhoneNumber("07### ######")
                 };
-            return new Organization
-            {
-                Id = RenderSellerId(new SimpleIdComponents { IdLong = seller.Id }),
-                Name = seller.Name,
-                TaxMode = seller.IsTaxGross ? TaxMode.TaxGross : TaxMode.TaxNet,
-                TermsOfService = new List<Terms>
-                {
-                    new PrivacyPolicy
-                    {
-                        Name = "Privacy Policy",
-                        Url = new Uri("https://example.com/privacy.html"),
-                        RequiresExplicitConsent = false
-                    }
-                },
-                IsOpenBookingAllowed = true,
-                Url = new Uri(faker.Internet.Url()),
-                Telephone = faker.Phone.PhoneNumber("0#### ######"),
-                SameAs = new List<Uri> { new Uri($"https://socialmedia/{seller.Name}") }
-            };
+            var organizationId = _appSettings.FeatureFlags.SingleSeller ? RenderSingleSellerId() : RenderSellerId(new SimpleIdComponents { IdLong = seller.Id });
+            return FeedGenerationHelper.GenerateOrganization(faker, seller, _appSettings.FeatureFlags.SingleSeller, organizationId);
         }
 
         private List<string> GenerateCategory(Faker faker, bool isGoldenRecord)
@@ -367,7 +331,7 @@ namespace BookingSystem
             }
 
             var output = new List<OpenActive.NET.Person>();
-            var max = isGoldenRecord ? possibleMax : faker.Random.Number(possibleMax);
+            var max = isGoldenRecord ? possibleMax : faker.Random.Number(1, possibleMax);
             for (var i = 0; i < max; i++)
             {
                 output.Add(GeneratePerson(faker, isGoldenRecord));
