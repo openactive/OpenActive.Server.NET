@@ -27,7 +27,7 @@ This job is very similar to the above but builds `OpenActive.Server.NET` using .
 
 
 ### deploy-reference-implementation job
-This job deploys the `master` branch of Reference Implementation Booking Server and Identity Server Reference Implementation to two Azure webapps
+This job deploys the `master` branch of Reference Implementation Booking Server ([see here](../../Examples/BookingSystem.AspNetCore/README.md)) and Identity Server Reference Implementation ([see here](../../Examples/BookingSystem.AspNetCore.IdentityServer/README.md)) to two Azure webapps
 
 
 ### publish-server job
@@ -45,7 +45,7 @@ This workflow can be triggered in two ways:
 
 - **workflow_dispatch**: This allows you to manually trigger the workflow through the GitHub Actions UI.
 
-- **repository_dispatch**: This allows the workflow to be triggered when a custom repository dispatch event is sent. It listens for dispatch events from two OA repos, specifically when they are updated: `OpenActive.NET-update` and `OpenActive.DatasetSite.NET-update`. 
+- **repository_dispatch**: This allows the workflow to be triggered when a custom repository dispatch event is sent. It listens for dispatch events from two OA repos: `OpenActive.NET` and `OpenActive.DatasetSite.NET`. For more information on repository dispatch events [see here](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#repository_dispatch)  
 
 This workflow defines one job: **generate**.
 
