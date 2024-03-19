@@ -100,8 +100,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.419
-    
-    # sets up Node.js version 18.17.1 in the job's environment. Node.js is required for Test Suite
     - name: Setup Node.js 18.17.1
       uses: actions/setup-node@v1
       with:
@@ -207,9 +205,12 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 18.17.1
+<<<<<<< HEAD
 
     # Building and deploying Framework is done using `msbuild` as opposed to `dotnet build`/`dotnet run`. It is started
     # using IIS Express    
+=======
+>>>>>>> master
     - name: Setup MSBuild path
       uses: microsoft/setup-msbuild@v1.0.2
     - name: Setup NuGet
