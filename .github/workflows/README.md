@@ -14,7 +14,7 @@ This workflow defines the following jobs:
 - **publish-fake-database**
 
 ### test-server job
-This job builds and runs the `OpenActive.Server.NET.Tests` project. 
+This job builds and runs the `OpenActive.Server.NET.Tests` project i.e. it runs unit tests against `OpenActive.Server.NET`.
 
 ### test-fake-database job
 This job is almost identical to the `test-server` job, but instead of building and running `OpenActive.Server.NET.Tests`, it builds and runs `Fakes/OpenActive.FakeDatabase.NET.Tests`.
