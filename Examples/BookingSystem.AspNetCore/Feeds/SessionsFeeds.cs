@@ -110,7 +110,7 @@ namespace BookingSystem
                         // here we randomly decide whether the item is going to be a golden record or not by using Faker
                         // See the README for more detail on golden records.
                         var isGoldenRecord = faker.Random.Bool();
-                        var isCI = _appSettings.FeatureFlags.IsCI;
+
 
                         var sessionSeriesRpdeItem = new RpdeItem<SessionSeries>
                         {
@@ -140,9 +140,10 @@ namespace BookingSystem
                             }
                         };
 
-                        // If this instance of the Reference Implementation is not for a CI run, then generate a comprehensive data.
-                        // If it is for a CI run, return only the minimal properties needed
-                        if (!isCI)
+                        // If this instance of the Reference Implementation is in Lorem Fitsum mode, then generate a comprehensive data.
+                        // If it is not (eg for a CI run), return only the minimal properties needed
+                        var IsLoremFitsumMode = _appSettings.FeatureFlags.IsLoremFitsumMode;
+                        if (IsLoremFitsumMode)
                         {
                             sessionSeriesRpdeItem.Data.Description = faker.Lorem.Paragraphs(isGoldenRecord ? 4 : faker.Random.Number(4));
                             sessionSeriesRpdeItem.Data.AttendeeInstructions = FeedGenerationHelper.GenerateAttendeeInstructions(faker, isGoldenRecord);

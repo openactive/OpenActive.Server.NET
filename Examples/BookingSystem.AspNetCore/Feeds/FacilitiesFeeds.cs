@@ -89,8 +89,10 @@ namespace BookingSystem
                             }
                         };
 
-                        var isCI = _appSettings.FeatureFlags.IsCI;
-                        if (!isCI)
+                        // If this instance of the Reference Implementation is in Lorem Fitsum mode, then generate a comprehensive data.
+                        // If it is not (eg for a CI run), return only the minimal properties needed
+                        var IsLoremFitsumMode = _appSettings.FeatureFlags.IsLoremFitsumMode;
+                        if (IsLoremFitsumMode)
                         {
                             facilityUseRpdeItem.Data.Description = faker.Lorem.Paragraphs(isGoldenRecord ? 4 : faker.Random.Number(4));
                             facilityUseRpdeItem.Data.AttendeeInstructions = FeedGenerationHelper.GenerateAttendeeInstructions(faker, isGoldenRecord);

@@ -36,6 +36,11 @@ Due to this split of functionality, the sample data in the feeds are created/tra
 or not. For example, `Price` is important to booking and there is generated in FakeBookingSystem at startup and stored in the in-memory database. However `Terms Of Service` is not
 needed for booking, and therefore is generated at request time.
 
-### Golden Records
-Golden records are randomly generated records that contain all possible fields specified by the OpenActive Modelling Specification.
+### Lorem Fitsum mode
+When Reference Implementation is run in Lorem Fitsum mode, the data generated contains all the possible fields specified by the OpenActive Modelling Specification.
 They are unrealistic representations of data, and the presence of all the fields should not be relied on when developing front-end representations of the data.
+However it is very useful for data consumers and deciding on how to present the data to the users.
+
+### Golden Records
+Golden records are randomly generated records that have maximally enriched properties in the generated data. For example where a record might have one image normally, a golden record will have four.
+
