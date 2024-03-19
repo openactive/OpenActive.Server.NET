@@ -20,7 +20,7 @@ This job builds and runs the `OpenActive.Server.NET.Tests` project i.e. it runs 
 This job builds and runs the `Fakes/OpenActive.FakeDatabase.NET.Tests` project i.e. it runs unit tests against `Fakes/OpenActive.FakeDatabase.NET`.
 
 ### core job
-This job builds and runs the `OpenActive.Server.NET` project. Then it checks out Test Suite and runs the matrix of tests the `OpenActive.Server.NET` project.
+This job uses Test Suite to run a matrix of tests against the `OpenActive.Server.NET` project.
 
 ### framework job
 This job is very similar to the above but builds `OpenActive.Server.NET` using .NET Framework and runs Test Suite against it.
