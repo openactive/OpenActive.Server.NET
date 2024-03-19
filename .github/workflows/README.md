@@ -17,7 +17,7 @@ This workflow defines the following jobs:
 This job builds and runs the `OpenActive.Server.NET.Tests` project i.e. it runs unit tests against `OpenActive.Server.NET`.
 
 ### test-fake-database job
-This job is almost identical to the `test-server` job, but instead of building and running `OpenActive.Server.NET.Tests`, it builds and runs `Fakes/OpenActive.FakeDatabase.NET.Tests`.
+This job builds and runs the `Fakes/OpenActive.FakeDatabase.NET.Tests` project i.e. it runs unit tests against `Fakes/OpenActive.FakeDatabase.NET`.
 
 ### core job
 This job builds and runs the `OpenActive.Server.NET` project. Then it checks out Test Suite and runs the matrix of tests the `OpenActive.Server.NET` project.
