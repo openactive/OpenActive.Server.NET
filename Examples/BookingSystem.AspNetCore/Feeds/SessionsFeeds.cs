@@ -105,14 +105,14 @@ namespace BookingSystem
                     .SelectMulti<ClassTable, SellerTable>(q)
                     .Select(result =>
                     {
-                        var intt = (int)result.Item1.Modified;
 
                         var faker = new Faker() { Random = new Randomizer((int)result.Item1.Id) };
                         // here we randomly decide whether the item is going to be a golden record or not by using Faker
                         // See the README for more detail on golden records.
                         var isGoldenRecord = faker.Random.Bool();
+                        var isCI = _appSettings.FeatureFlags.IsCI;
 
-                        return new RpdeItem<SessionSeries>
+                        var sessionSeriesRpdeItem = new RpdeItem<SessionSeries>
                         {
                             Kind = RpdeKind.SessionSeries,
                             Id = result.Item1.Id,
@@ -131,37 +131,47 @@ namespace BookingSystem
                                 Identifier = result.Item1.Id,
                                 Name = GetNameAndActivityForSessions(result.Item1.Title, isGoldenRecord).Name,
                                 EventAttendanceMode = MapAttendanceMode(result.Item1.AttendanceMode),
-                                Description = faker.Lorem.Paragraphs(isGoldenRecord ? 4 : faker.Random.Number(4)),
-                                AttendeeInstructions = FeedGenerationHelper.GenerateAttendeeInstructions(faker, isGoldenRecord),
-                                GenderRestriction = faker.Random.Enum<GenderRestrictionType>(),
-                                AgeRange = GenerateAgeRange(faker, isGoldenRecord),
-                                Level = faker.Random.ListItems(new List<string> { "Beginner", "Intermediate", "Advanced" }, 1).ToList(),
                                 Organizer = GenerateOrganizerOrPerson(faker, result.Item2),
-                                AccessibilitySupport = FeedGenerationHelper.GenerateAccessibilitySupport(faker, isGoldenRecord),
-                                AccessibilityInformation = faker.Lorem.Paragraphs(isGoldenRecord ? 2 : faker.Random.Number(2)),
-                                IsWheelchairAccessible = isGoldenRecord || faker.Random.Bool() ? faker.Random.Bool() : faker.Random.ListItem(new List<bool?> { true, false, null, null }),
-                                Category = GenerateCategory(faker, isGoldenRecord),
-                                Image = FeedGenerationHelper.GenerateImages(faker, isGoldenRecord),
-                                Video = isGoldenRecord || faker.Random.Bool() ? new List<VideoObject> { new VideoObject { Url = new Uri("https://www.youtube.com/watch?v=xvDZZLqlc-0") } } : null,
-                                Leader = GenerateListOfPersons(faker, isGoldenRecord, 2),
-                                Contributor = GenerateListOfPersons(faker, isGoldenRecord, 2),
-                                IsCoached = isGoldenRecord || faker.Random.Bool() ? faker.Random.Bool() : faker.Random.ListItem(new List<bool?> { true, false, null, null }),
                                 Offers = GenerateOffers(faker, isGoldenRecord, result.Item1),
                                 // location MUST not be provided for fully virtual sessions
                                 Location = result.Item1.AttendanceMode == AttendanceMode.Online ? null : FeedGenerationHelper.GetPlaceById(result.Item1.PlaceId),
-                                // beta:affiliatedLocation MAY be provided for fully virtual sessions
-                                AffiliatedLocation = (result.Item1.AttendanceMode == AttendanceMode.Offline && faker.Random.Bool()) ? null : FeedGenerationHelper.GetPlaceById(result.Item1.PlaceId),
-                                EventSchedule = GenerateSchedules(faker, isGoldenRecord),
-                                SchedulingNote = GenerateSchedulingNote(faker, isGoldenRecord),
-                                IsAccessibleForFree = result.Item1.Price == 0,
                                 Url = new Uri($"https://www.example.com/sessions/{result.Item1.Id}"),
                                 Activity = GetNameAndActivityForSessions(result.Item1.Title, isGoldenRecord).Activity,
-                                Programme = GenerateBrand(faker, isGoldenRecord),
-                                IsInteractivityPreferred = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : (isGoldenRecord ? true : faker.Random.ListItem(new List<bool?> { true, false, null })),
-                                IsVirtuallyCoached = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : (isGoldenRecord ? true : faker.Random.ListItem(new List<bool?> { true, false, null })),
-                                ParticipantSuppliedEquipment = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : (isGoldenRecord ? OpenActive.NET.RequiredStatusType.Optional : faker.Random.ListItem(new List<OpenActive.NET.RequiredStatusType?> { OpenActive.NET.RequiredStatusType.Optional, OpenActive.NET.RequiredStatusType.Required, OpenActive.NET.RequiredStatusType.Unavailable, null })),
                             }
                         };
+
+                        // If this instance of the Reference Implementation is not for a CI run, then generate a comprehensive data.
+                        // If it is for a CI run, return only the minimal properties needed
+                        if (!isCI)
+                        {
+                            sessionSeriesRpdeItem.Data.Description = faker.Lorem.Paragraphs(isGoldenRecord ? 4 : faker.Random.Number(4));
+                            sessionSeriesRpdeItem.Data.AttendeeInstructions = FeedGenerationHelper.GenerateAttendeeInstructions(faker, isGoldenRecord);
+                            sessionSeriesRpdeItem.Data.GenderRestriction = faker.Random.Enum<GenderRestrictionType>();
+                            sessionSeriesRpdeItem.Data.AccessibilitySupport = FeedGenerationHelper.GenerateAccessibilitySupport(faker, isGoldenRecord);
+                            sessionSeriesRpdeItem.Data.AccessibilityInformation = faker.Lorem.Paragraphs(isGoldenRecord ? 2 : faker.Random.Number(2));
+                            sessionSeriesRpdeItem.Data.IsWheelchairAccessible = isGoldenRecord || faker.Random.Bool() ? faker.Random.Bool() : faker.Random.ListItem(new List<bool?> { true, false, null, null });
+                            sessionSeriesRpdeItem.Data.Category = GenerateCategory(faker, isGoldenRecord);
+                            sessionSeriesRpdeItem.Data.Video = isGoldenRecord || faker.Random.Bool() ? new List<VideoObject> { new VideoObject { Url = new Uri("https://www.youtube.com/watch?v=xvDZZLqlc-0") } } : null;
+                            sessionSeriesRpdeItem.Data.Leader = GenerateListOfPersons(faker, isGoldenRecord, 2);
+                            sessionSeriesRpdeItem.Data.Contributor = GenerateListOfPersons(faker, isGoldenRecord, 2);
+                            sessionSeriesRpdeItem.Data.AgeRange = GenerateAgeRange(faker, isGoldenRecord);
+                            sessionSeriesRpdeItem.Data.Image = FeedGenerationHelper.GenerateImages(faker, isGoldenRecord);
+                            sessionSeriesRpdeItem.Data.Level = faker.Random.ListItems(new List<string> { "Beginner", "Intermediate", "Advanced" }, 1).ToList();
+                            sessionSeriesRpdeItem.Data.IsCoached = isGoldenRecord || faker.Random.Bool() ? faker.Random.Bool() : faker.Random.ListItem(new List<bool?> { true, false, null, null });
+                            // beta:affiliatedLocation MAY be provided for fully virtual sessions
+                            sessionSeriesRpdeItem.Data.AffiliatedLocation = (result.Item1.AttendanceMode == AttendanceMode.Offline && faker.Random.Bool()) ? null : FeedGenerationHelper.GetPlaceById(result.Item1.PlaceId);
+                            sessionSeriesRpdeItem.Data.EventSchedule = GenerateSchedules(faker, isGoldenRecord);
+                            sessionSeriesRpdeItem.Data.SchedulingNote = GenerateSchedulingNote(faker, isGoldenRecord);
+                            sessionSeriesRpdeItem.Data.IsAccessibleForFree = result.Item1.Price == 0;
+                            sessionSeriesRpdeItem.Data.Programme = GenerateBrand(faker, isGoldenRecord);
+                            sessionSeriesRpdeItem.Data.IsInteractivityPreferred = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : (isGoldenRecord ? true : faker.Random.ListItem(new List<bool?> { true, false, null }));
+                            sessionSeriesRpdeItem.Data.IsVirtuallyCoached = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : (isGoldenRecord ? true : faker.Random.ListItem(new List<bool?> { true, false, null }));
+                            sessionSeriesRpdeItem.Data.ParticipantSuppliedEquipment = result.Item1.AttendanceMode == AttendanceMode.Offline ? null : (isGoldenRecord ? OpenActive.NET.RequiredStatusType.Optional : faker.Random.ListItem(new List<OpenActive.NET.RequiredStatusType?> { OpenActive.NET.RequiredStatusType.Optional, OpenActive.NET.RequiredStatusType.Required, OpenActive.NET.RequiredStatusType.Unavailable, null }));
+
+                        }
+
+
+                        return sessionSeriesRpdeItem;
                     });
 
                 return query.ToList();

@@ -49,8 +49,7 @@ namespace BookingSystem
                     {
                         var faker = new Faker() { Random = new Randomizer((int)result.Item1.Id) };
                         var isGoldenRecord = faker.Random.Bool();
-
-                        return new RpdeItem<FacilityUse>
+                        var facilityUseRpdeItem = new RpdeItem<FacilityUse>
                         {
                             Kind = RpdeKind.FacilityUse,
                             Id = result.Item1.Id,
@@ -68,22 +67,14 @@ namespace BookingSystem
                                 }),
                                 Identifier = result.Item1.Id,
                                 Name = GetNameAndFacilityTypeForFacility(result.Item1.Name, isGoldenRecord).Name,
-                                Description = faker.Lorem.Paragraphs(isGoldenRecord ? 4 : faker.Random.Number(4)),
                                 Provider = FeedGenerationHelper.GenerateOrganization(
                                     faker,
                                     result.Item2,
                                     _appSettings.FeatureFlags.SingleSeller,
                                     _appSettings.FeatureFlags.SingleSeller ? RenderSingleSellerId() : RenderSellerId(new SimpleIdComponents { IdLong = result.Item2.Id })
                                     ),
-                                Url = new Uri($"https://www.example.com/facilities/{result.Item1.Id}"),
-                                AttendeeInstructions = FeedGenerationHelper.GenerateAttendeeInstructions(faker, isGoldenRecord),
-                                AccessibilitySupport = FeedGenerationHelper.GenerateAccessibilitySupport(faker, isGoldenRecord),
-                                AccessibilityInformation = faker.Lorem.Paragraphs(isGoldenRecord ? 2 : faker.Random.Number(2)),
-                                IsWheelchairAccessible = isGoldenRecord || faker.Random.Bool() ? faker.Random.Bool() : faker.Random.ListItem(new List<bool?> { true, false, null, null }),
-                                Category = GenerateCategory(faker, isGoldenRecord),
-                                Image = FeedGenerationHelper.GenerateImages(faker, isGoldenRecord),
-                                Video = isGoldenRecord || faker.Random.Bool() ? new List<VideoObject> { new VideoObject { Url = new Uri("https://www.youtube.com/watch?v=xvDZZLqlc-0") } } : null,
                                 Location = FeedGenerationHelper.GetPlaceById(result.Item1.PlaceId),
+                                Url = new Uri($"https://www.example.com/facilities/{result.Item1.Id}"),
                                 FacilityType = GetNameAndFacilityTypeForFacility(result.Item1.Name, isGoldenRecord).Facility,
                                 IndividualFacilityUse = result.Item1.IndividualFacilityUses != null ? result.Item1.IndividualFacilityUses.Select(ifu => new OpenActive.NET.IndividualFacilityUse
                                 {
@@ -97,6 +88,21 @@ namespace BookingSystem
                                 }).ToList() : null,
                             }
                         };
+
+                        var isCI = _appSettings.FeatureFlags.IsCI;
+                        if (!isCI)
+                        {
+                            facilityUseRpdeItem.Data.Description = faker.Lorem.Paragraphs(isGoldenRecord ? 4 : faker.Random.Number(4));
+                            facilityUseRpdeItem.Data.AttendeeInstructions = FeedGenerationHelper.GenerateAttendeeInstructions(faker, isGoldenRecord);
+                            facilityUseRpdeItem.Data.AccessibilitySupport = FeedGenerationHelper.GenerateAccessibilitySupport(faker, isGoldenRecord);
+                            facilityUseRpdeItem.Data.AccessibilityInformation = faker.Lorem.Paragraphs(isGoldenRecord ? 2 : faker.Random.Number(2));
+                            facilityUseRpdeItem.Data.IsWheelchairAccessible = isGoldenRecord || faker.Random.Bool() ? faker.Random.Bool() : faker.Random.ListItem(new List<bool?> { true, false, null, null });
+                            facilityUseRpdeItem.Data.Category = GenerateCategory(faker, isGoldenRecord);
+                            facilityUseRpdeItem.Data.Image = FeedGenerationHelper.GenerateImages(faker, isGoldenRecord);
+                            facilityUseRpdeItem.Data.Video = isGoldenRecord || faker.Random.Bool() ? new List<VideoObject> { new VideoObject { Url = new Uri("https://www.youtube.com/watch?v=xvDZZLqlc-0") } } : null;
+                        }
+
+                        return facilityUseRpdeItem;
                     });
 
                 return query.ToList();
@@ -181,19 +187,6 @@ namespace BookingSystem
             return FeedGenerationHelper.GetRandomElementsOf(faker, listOfPossibleCategories, isGoldenRecord, 1).ToList();
         }
 
-        private List<OpeningHoursSpecification> GenerateOpeningHours(Faker faker)
-        {
-            return new List<OpeningHoursSpecification>
-                        {
-                            new OpeningHoursSpecification {DayOfWeek = new List<Schema.NET.DayOfWeek> {Schema.NET.DayOfWeek.Sunday }, Opens = $"{faker.Random.Number(9,12)}:00", Closes = $"{faker.Random.Number(15,17)}:30"},
-                            new OpeningHoursSpecification {DayOfWeek = new List<Schema.NET.DayOfWeek> {Schema.NET.DayOfWeek.Monday }, Opens = $"{faker.Random.Number(6,10)}:00", Closes = $"{faker.Random.Number(18,21)}:30"},
-                            new OpeningHoursSpecification {DayOfWeek = new List<Schema.NET.DayOfWeek> {Schema.NET.DayOfWeek.Tuesday }, Opens = $"{faker.Random.Number(6,10)}:00", Closes = $"{faker.Random.Number(18,21)}:30"},
-                            new OpeningHoursSpecification {DayOfWeek = new List<Schema.NET.DayOfWeek> {Schema.NET.DayOfWeek.Wednesday }, Opens = $"{faker.Random.Number(6,10)}:00", Closes = $"{faker.Random.Number(18,21)}:30"},
-                            new OpeningHoursSpecification {DayOfWeek = new List<Schema.NET.DayOfWeek> {Schema.NET.DayOfWeek.Thursday }, Opens = $"{faker.Random.Number(6,10)}:00", Closes = $"{faker.Random.Number(18,21)}:30"},
-                            new OpeningHoursSpecification {DayOfWeek = new List<Schema.NET.DayOfWeek> {Schema.NET.DayOfWeek.Friday }, Opens = $"{faker.Random.Number(6,10)}:00", Closes = $"{faker.Random.Number(18,21)}:30"},
-                            new OpeningHoursSpecification {DayOfWeek = new List<Schema.NET.DayOfWeek> {Schema.NET.DayOfWeek.Saturday }, Opens = $"{faker.Random.Number(9,12)}:00", Closes = $"{faker.Random.Number(15,17)}:30"}
-                        };
-        }
     }
 
     public class AcmeFacilityUseSlotRpdeGenerator : RpdeFeedModifiedTimestampAndIdLong<FacilityOpportunity, Slot>

@@ -162,7 +162,7 @@ namespace OpenActive.FakeDatabase.NET
         }
 
         private static readonly int OpportunityCount =
-            int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCount) ? opportunityCount : 2000;
+            int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCount) ? opportunityCount : 20;
 
         /// <summary>
         /// TODO: Call this on a schedule from both .NET Core and .NET Framework reference implementations
