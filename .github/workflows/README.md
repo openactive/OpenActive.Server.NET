@@ -39,7 +39,7 @@ Very similar to the above `publish-server` job, this job publishes the Fake Data
 
 ## create-dependencies-pr.yaml
 
-This workflow updates OpenActive.Server.NET's OA dependencies if there has been a change in one of the projects. This therefore keeps Server.NET up-to-date with the rest of the OA ecosystem.
+This workflow creates a pull request to OpenActive.Server.NET's OpenActive (OA) dependencies if there has been a change in one of those projects. This therefore keeps Server.NET up-to-date with the rest of the OA ecosystem.
 
 This workflow can be triggered in two ways:
 
