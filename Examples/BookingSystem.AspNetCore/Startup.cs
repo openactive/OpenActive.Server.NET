@@ -32,9 +32,9 @@ namespace BookingSystem.AspNetCore
             }
 
             // Provide a simple way to enable CI mode 
-            if (System.Environment.GetEnvironmentVariable("IS_CI") == "true")
+            if (System.Environment.GetEnvironmentVariable("IS_LOREM_FITSUM_MODE") == "true")
             {
-                AppSettings.FeatureFlags.IsCI = true;
+                AppSettings.FeatureFlags.IsLoremFitsumMode = true;
             }
         }
 
