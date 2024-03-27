@@ -48,7 +48,7 @@ namespace BookingSystem
                     .Select(result =>
                     {
                         var faker = new Faker() { Random = new Randomizer((int)result.Item1.Id) };
-                        var isGoldenRecord = faker.Random.Bool();
+                        var isGoldenRecord = faker.Random.Number(0, 1) > 0.75;
                         var facilityUseRpdeItem = new RpdeItem<FacilityUse>
                         {
                             Kind = RpdeKind.FacilityUse,
