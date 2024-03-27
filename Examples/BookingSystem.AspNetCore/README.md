@@ -2,21 +2,35 @@
 
 An example OpenActive.Server.NET implementation.
 
-This implementation is also used as a reference implementation for the [Test Suite](https://github.com/openactive/openactive-test-suite) to run its tests against.
+This implementation is also used as a Reference Implementation for the [Test Suite](https://github.com/openactive/openactive-test-suite) to run its tests against.
 
-## Running Locally
+## Running Locally using Visual Studio
 
-1. In Visual Studio, run the BookingSystem.AspNetCore project
+In Visual Studio, run the BookingSystem.AspNetCore project
 
-    When it's finished building, it will open a page in your browser with a randomly assigned port e.g. http://localhost:55603/. Make note of this port.
+When it's finished building, it will open a page in your browser on port 5001.
 
-    Head to `http://localhost:{PORT}/openactive` to check that the project is running correctly. You should see an Open Data landing page.
-2. Head to BookingSystem.AspNetCore project options and add an env var using the port you made note of earlier:
-
-    `ApplicationHostBaseUrl: http://localhost:{PORT}`
-3. Now, re-run the project. You're good to go 👍
+Head to `http://localhost:5001/openactive` to check that the project is running correctly. You should see an Open Data landing page.
 
 See the [project contribution documentation](/CONTRIBUTING.md) for details on how to run BookingSystem.AspNetCore locally.
+
+## Running Locally using the CLI
+
+Open a terminal in `Examples/BookingSystem.AspNetCore` directory
+
+Run:
+
+```sh
+dotnet run
+```
+
+If you want to start the Reference Implementation in a specific environment run the following:
+
+```sh
+ASPNETCORE_ENVIRONMENT=no-auth dotnet run --no-launch-profile --project ./BookingSystem.AspNetCore.csproj --configuration Release --no-build
+```
+
+The above example starts the Reference Implementation in `no-auth` mode.
 
 ## Reference Implementation Data Generation
 
