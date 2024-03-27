@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>aspnet-BookingSystem.AspNetCore-443B4F82-A20C-41CE-9924-329A0BCF0D14</UserSecretsId>
+    <Configurations>Release;Debug</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,4 +23,5 @@
     <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' " />
 </Project>
