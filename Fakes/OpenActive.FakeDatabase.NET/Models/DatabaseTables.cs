@@ -27,7 +27,7 @@ namespace OpenActive.FakeDatabase.NET
         [AutoIncrement]
         public long Id { get; set; }
         public bool Deleted { get; set; }
-        public long Modified { get; set; } = new DateTimeOffset(DateTime.Today).UtcTicks;
+        public long Modified { get; set; } = new DateTimeOffset(DateTime.Now).UtcTicks;
     }
 
     public static class DatabaseCreator
