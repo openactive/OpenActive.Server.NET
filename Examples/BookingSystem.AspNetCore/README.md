@@ -37,7 +37,7 @@ or not. For example, `Price` is important to booking and there is generated in F
 needed for booking, and therefore is generated at request time.
 
 ### Lorem Fitsum mode
-When Reference Implementation is run in Lorem Fitsum mode, the data generated contains all the possible fields specified by the OpenActive Modelling Specification.
+When Reference Implementation is run in Lorem Fitsum (a play on [Lorem Ipsum](https://en.wikipedia.org/wiki/Lorem_ipsum)) mode, the data generated contains all the possible fields specified by the OpenActive Modelling Specification.
 They are unrealistic representations of data, and the presence of all the fields should not be relied on when developing front-end representations of the data.
 However it is very useful for data consumers and deciding on how to present the data to the users.
 
