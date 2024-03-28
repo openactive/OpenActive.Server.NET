@@ -70,8 +70,7 @@ namespace OpenActive.Server.NET.CustomBooking
             if (settings.CustomerAccountIdTemplate != null) settings.CustomerAccountIdTemplate.RequiredBaseUrl = settings.CustomerAccountIdBaseUrl;
 
             // Create a lookup of each IdTemplate to pass into the appropriate RpdeGenerator
-            // TODO: Output better error if there is a feed assigned across two templates
-            // (there should never be, as each template represents everyting you need in one feed)
+            // TODO: Output better error if there is a feed assigned across two templates (there should never be, as each template represents everyting you need in one feed)
             this.feedAssignedTemplates = settings.IdConfiguration.SelectMany(t => t.IdConfigurations.Select(x => new
             {
                 assignedFeed = x.AssignedFeed,
@@ -730,6 +729,7 @@ namespace OpenActive.Server.NET.CustomBooking
                     throw new OpenBookingException(new OpenBookingError(), "Only bookable opportunities are permitted in the test interface");
 
                     // TODO: add this error class to the library
+                    // CS: Is this still the case? Unclear where this library is, and hard to believe OpenBookingError would not be in the libary
             }
 
             if (!genericEvent.TestOpportunityCriteria.HasValue)
@@ -868,7 +868,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // Throw error if TotalPaymentDue is not specified at B or P
             if (order.TotalPaymentDue?.Price.HasValue != true && (stage == FlowStage.B || stage == FlowStage.P))
-                // TODO replace this with a more specific error
+                // TODO replace this with a more specific error ie a subclass of OpenBookingError like TotalPaymentMissingAtBOrPError
                 throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
 
             var payer = order.BrokerRole == BrokerType.ResellerBroker ? order.Broker : order.Customer;

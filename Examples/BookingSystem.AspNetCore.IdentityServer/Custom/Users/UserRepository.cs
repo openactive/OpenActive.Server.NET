@@ -33,7 +33,7 @@ namespace IdentityServer
             return GetUserFromSellerUser(await _fakeBookingSystem.Database.GetSellerUser(username));
         }
 
-        // TODO: Make this an extension method
+        // TODO: Make this an extension method to Claim class
         private static void AddClaimIfNotNull(List<Claim> claims, string key, string value)
         {
             if (!string.IsNullOrEmpty(value))

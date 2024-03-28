@@ -389,7 +389,7 @@ namespace BookingSystem
                 sellerId.IdLong ?? null /* Hack to allow this to work in Single Seller mode too */,
                 orderId.uuid,
                 version);
-            // TODO return enum to allow errors cases to be handled in the engine
+            // TODO return enum (something like CreateOrderStatus) to allow errors cases to be handled in the engine
             switch (result)
             {
                 case FakeDatabaseBookOrderProposalResult.OrderSuccessfullyBooked:
