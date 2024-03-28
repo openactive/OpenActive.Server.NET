@@ -623,6 +623,8 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+                            // Remove attendee capacity information from the OrderedItem. For more information see: https://github.com/openactive/open-booking-api/issues/156#issuecomment-926643733
+                            BookedOrderItemHelper.RemovePropertiesFromBookedOrderItem(ctx);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
