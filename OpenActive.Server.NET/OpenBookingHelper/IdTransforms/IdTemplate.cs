@@ -417,20 +417,24 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return this.RenderOrderId(new OrderIdComponents { OrderType = orderType, uuid = uuid });
         }
 
-        //TODO reduce duplication of the strings / logic below
-        public Uri RenderOrderItemId(OrderType orderType, Guid uuid, Guid orderItemId)
+        private void ValidateOrderType(OrderType orderType)
         {
             if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
+        }
+
+        public Uri RenderOrderItemId(OrderType orderType, Guid uuid, Guid orderItemId)
+        {
+            ValidateOrderType(orderType);
             return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdGuid = orderItemId });
         }
         public Uri RenderOrderItemId(OrderType orderType, Guid uuid, string orderItemId)
         {
-            if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
+            ValidateOrderType(orderType);
             return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdString = orderItemId });
         }
         public Uri RenderOrderItemId(OrderType orderType, Guid uuid, long orderItemId)
         {
-            if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
+            ValidateOrderType(orderType);
             return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdLong = orderItemId });
         }
 

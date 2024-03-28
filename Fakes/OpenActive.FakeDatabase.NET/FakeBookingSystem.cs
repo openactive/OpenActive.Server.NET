@@ -165,7 +165,7 @@ namespace OpenActive.FakeDatabase.NET
             int.TryParse(Environment.GetEnvironmentVariable("OPPORTUNITY_COUNT"), out var opportunityCount) ? opportunityCount : 2000;
 
         /// <summary>
-        /// TODO: Call this on a schedule from both .NET Core and .NET Framework reference implementations
+        /// TODO: Call this on a schedule from both .NET Core and .NET Framework reference implementations to ensure database is not cluttered
         /// </summary>
         public async Task CleanupExpiredLeases()
         {
@@ -1316,7 +1316,6 @@ namespace OpenActive.FakeDatabase.NET
             slot.RemainingUses = slot.MaximumUses - totalUsesTaken;
 
             // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition)
-            // TODO: Document this!
             slot.Modified = DateTimeOffset.Now.UtcTicks;
             await db.UpdateAsync(slot);
         }
@@ -1343,7 +1342,7 @@ namespace OpenActive.FakeDatabase.NET
             var totalSpacesTaken = (await db.LoadSelectAsync<OrderItemsTable>(x => x.OrderTable.OrderMode == OrderMode.Booking && x.OccurrenceId == occurrence.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended || x.Status == BookingStatus.Absent))).Count();
             occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
 
-            // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
+            // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition)
             occurrence.Modified = DateTimeOffset.Now.UtcTicks;
             await db.UpdateAsync(occurrence);
         }
