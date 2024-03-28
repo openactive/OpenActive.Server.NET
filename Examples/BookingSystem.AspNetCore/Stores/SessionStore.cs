@@ -524,7 +524,7 @@ namespace BookingSystem
                 }
             }
         }
-       // TODO: This should reuse code of LeaseOrderItem to be DRY. Similar logic is also used in ProposeOrderItems as well as
+        // TODO: This should reuse code of LeaseOrderItem to be DRY. Similar logic is also used in ProposeOrderItems as well as
         // in LeaseOrderItems, BookOrderItems, and ProposeOrderItems in the SessionStore. The issue for this is: https://github.com/openactive/OpenActive.Server.NET/issues/226
         protected override async ValueTask BookOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
@@ -581,6 +581,8 @@ namespace BookingSystem
                             // Set OrderItemId and access properties for each orderItemContext
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
                             BookedOrderItemHelper.AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo);
+                            // Remove attendee capacity information from the OrderedItem. For more information see: https://github.com/openactive/open-booking-api/issues/156#issuecomment-926643733
+                            //BookedOrderItemHelper.RemovePropertiesFromBookedOrderItem(ctx);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

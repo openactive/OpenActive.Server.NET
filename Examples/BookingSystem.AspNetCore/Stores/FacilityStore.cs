@@ -560,6 +560,8 @@ namespace BookingSystem
                             // Set OrderItemId and access properties for each orderItemContext
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
                             BookedOrderItemHelper.AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo);
+                            // Remove attendee capacity information from the OrderedItem. For more information see: https://github.com/openactive/open-booking-api/issues/156#issuecomment-926643733
+                            BookedOrderItemHelper.RemovePropertiesFromBookedOrderItem(ctx);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

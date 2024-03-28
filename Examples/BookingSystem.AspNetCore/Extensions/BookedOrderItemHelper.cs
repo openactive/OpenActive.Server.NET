@@ -52,5 +52,13 @@ namespace BookingSystem
             }
         }
 
+        public static void RemovePropertiesFromBookedOrderItem(IOrderItemContext ctx)
+        {
+            // Set RemainingAttendeeCapacity and MaximumAttendeeCapacity to null as the do not belong in the B and P responses.
+            // For more information see: https://github.com/openactive/open-booking-api/issues/156#issuecomment-926643733
+            ctx.ResponseOrderItem.OrderedItem.Object.RemainingAttendeeCapacity = null;
+            ctx.ResponseOrderItem.OrderedItem.Object.MaximumAttendeeCapacity = null;
+        }
+
     }
 }
