@@ -644,118 +644,6 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public OpenActive.NET.Place GetPlaceById(long placeId)
-        {
-            // Three hardcoded fake places
-            switch (placeId)
-            {
-                case 1:
-                    return new OpenActive.NET.Place
-                    {
-                        Identifier = 1,
-                        Name = "Post-ercise Plaza",
-                        Description = "Sorting Out Your Fitness One Parcel Lift at a Time! Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                        Address = new OpenActive.NET.PostalAddress
-                        {
-                            StreetAddress = "Kings Mead House",
-                            AddressLocality = "Oxford",
-                            AddressRegion = "Oxfordshire",
-                            PostalCode = "OX1 1AA",
-                            AddressCountry = "GB"
-                        },
-                        Geo = new OpenActive.NET.GeoCoordinates
-                        {
-                            Latitude = (decimal?)51.7502,
-                            Longitude = (decimal?)-1.2674
-                        },
-                        Image = new List<OpenActive.NET.ImageObject> {
-                            new OpenActive.NET.ImageObject
-                            {
-                                Url = new Uri("https://upload.wikimedia.org/wikipedia/commons/e/e5/Oxford_StAldates_PostOffice.jpg")
-                            },
-                        },
-                        Telephone = "01865 000001",
-                        Url = new Uri("https://en.wikipedia.org/wiki/Post_Office_Limited"),
-                        AmenityFeature = new List<OpenActive.NET.LocationFeatureSpecification>
-                        {
-                            new OpenActive.NET.ChangingFacilities { Name = "Changing Facilities", Value = true },
-                            new OpenActive.NET.Showers { Name = "Showers", Value = true },
-                            new OpenActive.NET.Lockers { Name = "Lockers", Value = true },
-                            new OpenActive.NET.Towels { Name = "Towels", Value = false },
-                            new OpenActive.NET.Creche { Name = "Creche", Value = false },
-                            new OpenActive.NET.Parking { Name = "Parking", Value = false }
-                        }
-                    };
-                case 2:
-                    return new OpenActive.NET.Place
-                    {
-                        Identifier = 2,
-                        Name = "Premier Lifters",
-                        Description = "Where your Fitness Goals are Always Inn-Sight. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                        Address = new OpenActive.NET.PostalAddress
-                        {
-                            StreetAddress = "Greyfriars Court, Paradise Square",
-                            AddressLocality = "Oxford",
-                            AddressRegion = "Oxfordshire",
-                            PostalCode = "OX1 1BB",
-                            AddressCountry = "GB"
-                        },
-                        Geo = new OpenActive.NET.GeoCoordinates
-                        {
-                            Latitude = (decimal?)51.7504933,
-                            Longitude = (decimal?)-1.2620685
-                        },
-                        Image = new List<OpenActive.NET.ImageObject> { 
-                            new OpenActive.NET.ImageObject
-                            {
-                                Url = new Uri("https://upload.wikimedia.org/wikipedia/commons/5/53/Cambridge_Orchard_Park_Premier_Inn.jpg")
-                            },
-                        },
-                        Telephone = "01865 000002",
-                        Url = new Uri("https://en.wikipedia.org/wiki/Premier_Inn"),
-                        AmenityFeature = new List<OpenActive.NET.LocationFeatureSpecification>
-                        {
-                            new OpenActive.NET.ChangingFacilities { Name = "Changing Facilities", Value = false },
-                            new OpenActive.NET.Showers { Name = "Showers", Value = false },
-                            new OpenActive.NET.Lockers { Name = "Lockers", Value = false },
-                            new OpenActive.NET.Towels { Name = "Towels", Value = true },
-                            new OpenActive.NET.Creche { Name = "Creche", Value = true },
-                            new OpenActive.NET.Parking { Name = "Parking", Value = true }
-                        }
-                    };
-                case 3:
-                    return new OpenActive.NET.Place
-                    {
-                        Identifier = 3,
-                        Name = "Stroll & Stretch",
-                        Description = "Casual Calisthenics in the Heart of Commerce. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                        Address = new OpenActive.NET.PostalAddress
-                        {
-                            StreetAddress = "Norfolk Street",
-                            AddressLocality = "Oxford",
-                            AddressRegion = "Oxfordshire",
-                            PostalCode = "OX1 1UU",
-                            AddressCountry = "GB"
-                        },
-                        Geo = new OpenActive.NET.GeoCoordinates
-                        {
-                            Latitude = (decimal?)51.749826,
-                            Longitude = (decimal?)-1.261492
-                        },
-                        Image = new List<OpenActive.NET.ImageObject> { 
-                            new OpenActive.NET.ImageObject
-                            {
-                                Url = new Uri("https://upload.wikimedia.org/wikipedia/commons/2/28/Westfield_Garden_State_Plaza_-_panoramio.jpg")
-                            },
-                        },
-                        Telephone = "01865 000003",
-                        Url = new Uri("https://en.wikipedia.org/wiki/Shopping_center"),
-                    };
-                default:
-                    return null;
-            }
-        }
-
         public async Task<(bool, FacilityUseTable, SlotTable, BookedOrderItemInfo)> GetSlotAndBookedOrderItemInfoBySlotId(Guid uuid, long? slotId)
         {
             using (var db = await Mem.Database.OpenAsync())
@@ -1497,13 +1385,13 @@ namespace OpenActive.FakeDatabase.NET
             var slotId = 0;
             List<(FacilityUseTable facility, List<SlotTable> slots)> facilitiesAndSlots = opportunitySeeds.Select((seed) =>
             {
-                var facilityUseName = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Swimming Pool Hall", "Running Hall", "Jumping Hall")}";
+                var facilityUseName = $"{Faker.Commerce.ProductMaterial()} {Faker.PickRandomParam("Sports Hall", "Squash Court", "Badminton Court", "Cricket Net")}";
                 var facility = new FacilityUseTable
                 {
                     Id = seed.Id,
                     Deleted = false,
                     Name = facilityUseName,
-                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 5), // distribution: 80% 1-2, 20% 3-5 
+                    SellerId = Faker.Random.Bool(0.8f) ? Faker.Random.Long(1, 2) : Faker.Random.Long(3, 4), // distribution: 80% 1-2, 20% 3-5 
                     PlaceId = Faker.PickRandom(new[] { 1, 2, 3 })
                 };
 

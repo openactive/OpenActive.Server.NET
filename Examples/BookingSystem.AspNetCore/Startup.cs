@@ -20,13 +20,21 @@ namespace BookingSystem.AspNetCore
             configuration.Bind(AppSettings);
 
             // Provide a simple way to disable token auth for some testing scenarios
-            if (System.Environment.GetEnvironmentVariable("DISABLE_TOKEN_AUTH") == "true") {
+            if (System.Environment.GetEnvironmentVariable("DISABLE_TOKEN_AUTH") == "true")
+            {
                 AppSettings.FeatureFlags.EnableTokenAuth = false;
             }
 
             // Provide a simple way to enable FacilityUseHasSlots for some testing scenarios
-            if (System.Environment.GetEnvironmentVariable("FACILITY_USE_HAS_SLOTS") == "true") {
+            if (System.Environment.GetEnvironmentVariable("FACILITY_USE_HAS_SLOTS") == "true")
+            {
                 AppSettings.FeatureFlags.FacilityUseHasSlots = true;
+            }
+
+            // Provide a simple way to enable CI mode 
+            if (System.Environment.GetEnvironmentVariable("IS_LOREM_FITSUM_MODE") == "true")
+            {
+                AppSettings.FeatureFlags.IsLoremFitsumMode = true;
             }
         }
 
