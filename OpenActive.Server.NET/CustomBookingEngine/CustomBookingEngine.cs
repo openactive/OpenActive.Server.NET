@@ -868,7 +868,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // Throw error if TotalPaymentDue is not specified at B or P
             if (order.TotalPaymentDue?.Price.HasValue != true && (stage == FlowStage.B || stage == FlowStage.P))
-                // TODO replace this with a more specific error ie a subclass of OpenBookingError like TotalPaymentMissingAtBOrPError
+                // TODO replace this with a more specific error ie a subclass of OpenBookingException like TotalPaymentMissingAtBOrPError
                 throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
 
             var payer = order.BrokerRole == BrokerType.ResellerBroker ? order.Broker : order.Customer;
