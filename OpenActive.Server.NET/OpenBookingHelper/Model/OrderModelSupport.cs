@@ -18,7 +18,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return this.OrderIdTemplate.RenderOrderId(orderType, uuid);
         }
 
-        //TODO reduce duplication of the strings / logic below
         protected Uri RenderOrderItemId(OrderType orderType, Guid uuid, Guid orderItemId)
         {
             return this.OrderIdTemplate.RenderOrderItemId(orderType, uuid, orderItemId);

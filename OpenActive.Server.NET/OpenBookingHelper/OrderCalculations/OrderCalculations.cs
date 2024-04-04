@@ -145,7 +145,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public static Event RenderOpportunityWithOnlyId(OpportunityType opportunityType, Uri id)
         {
-            // TODO: Create an extra prop in DatasetSite lib so that we don't need to parse the URL here
+            // TODO: Create an extra property in DatasetSite library called DatasetOpportunityType so that we don't need to parse the URL here
             switch (OpportunityTypes.Configurations[opportunityType].SameAs.AbsolutePath.Trim('/'))
             {
                 case nameof(Event):
