@@ -15,9 +15,12 @@ namespace BookingSystem
     {
         public bool EnableTokenAuth { get; set; } = true;
         public bool SingleSeller { get; set; } = false;
+        public bool CustomBuiltSystem { get; set; } = false;
         public bool PaymentReconciliationDetailValidation { get; set; } = true;
         public bool OnlyFreeOpportunities { get; set; } = false;
         public bool PrepaymentAlwaysRequired { get; set; } = false;
+        public bool FacilityUseHasSlots { get; set; } = false;
+        public bool IsLoremFitsumMode { get; set; } = false;
     }
 
     public class PaymentSettings

@@ -70,8 +70,7 @@ namespace OpenActive.Server.NET.CustomBooking
             if (settings.CustomerAccountIdTemplate != null) settings.CustomerAccountIdTemplate.RequiredBaseUrl = settings.CustomerAccountIdBaseUrl;
 
             // Create a lookup of each IdTemplate to pass into the appropriate RpdeGenerator
-            // TODO: Output better error if there is a feed assigned across two templates
-            // (there should never be, as each template represents everyting you need in one feed)
+            // TODO: Output better error if there is a feed assigned across two templates (there should never be, as each template represents everyting you need in one feed)
             this.feedAssignedTemplates = settings.IdConfiguration.SelectMany(t => t.IdConfigurations.Select(x => new
             {
                 assignedFeed = x.AssignedFeed,
@@ -375,7 +374,8 @@ namespace OpenActive.Server.NET.CustomBooking
             if (Guid.TryParse(uuidString, out Guid result))
             {
                 return result;
-            } else
+            }
+            else
             {
                 throw new OpenBookingException(new OpenBookingError(), "Invalid format for Order UUID");
             }
@@ -414,9 +414,6 @@ namespace OpenActive.Server.NET.CustomBooking
         }
         public async Task<ResponseContent> ProcessOrderCreationB(string clientId, Uri sellerId, string uuidString, string orderJson, Uri customerAccountId = null)
         {
-            
-            // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
-            // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
             if (order == null || order.GetType() != typeof(Order))
             {
@@ -425,21 +422,23 @@ namespace OpenActive.Server.NET.CustomBooking
             var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.Order);
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
+                // Attempt to use idempotency cache if it exists
+                var cachedResponse = await GetResponseFromIdempotencyStoreIfExists(settings, orderId, orderJson);
+                if (cachedResponse != null)
+                {
+                    return cachedResponse;
+                }
+
                 var response = order.OrderProposalVersion != null ?
                      await ProcessOrderCreationFromOrderProposal(orderId, settings.OrderIdTemplate, seller, sellerIdComponents, customerAccountIdComponents, order) :
                      await ProcessFlowRequest(ValidateFlowRequest<Order>(orderId, sellerIdComponents, seller, customerAccountIdComponents, FlowStage.B, order), order);
 
-                // Return a 409 status code if any OrderItem level errors exist
-                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response),
-                    response.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.Created);
+                return await CreateResponseViaIdempotencyStoreIfExists(settings, orderId, orderJson, response);
             }
         }
 
         public async Task<ResponseContent> ProcessOrderProposalCreationP(string clientId, Uri sellerId, string uuidString, string orderJson, Uri customerAccountId = null)
         {
-            
-            // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
-            // If C1 and C2 are used correctly, P should not fail except in very exceptional cases.
             OrderProposal order = OpenActiveSerializer.Deserialize<OrderProposal>(orderJson);
             if (order == null || order.GetType() != typeof(OrderProposal))
             {
@@ -448,12 +447,46 @@ namespace OpenActive.Server.NET.CustomBooking
             var (orderId, sellerIdComponents, seller, customerAccountIdComponents) = await ConstructIdsFromRequest(clientId, sellerId, customerAccountId, uuidString, OrderType.OrderProposal);
             using (await asyncDuplicateLock.LockAsync(GetParallelLockKey(orderId)))
             {
+                // Attempt to use idempotency cache if it exists
+                var cachedResponse = await GetResponseFromIdempotencyStoreIfExists(settings, orderId, orderJson);
+                if (cachedResponse != null)
+                {
+                    return cachedResponse;
+                }
+
                 var response = await ProcessFlowRequest(ValidateFlowRequest<OrderProposal>(orderId, sellerIdComponents, seller, customerAccountIdComponents, FlowStage.P, order), order);
 
-                // Return a 409 status code if any OrderItem level errors exist
-                return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(response),
-                    response.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.Created);
+                return await CreateResponseViaIdempotencyStoreIfExists(settings, orderId, orderJson, response);
             }
+        }
+
+        private async Task<ResponseContent> GetResponseFromIdempotencyStoreIfExists(BookingEngineSettings settings, OrderIdComponents orderId, string orderJson)
+        {
+            // Attempt to use idempotency cache if it exists
+            if (settings.IdempotencyStore != null)
+            {
+                var cachedResponse = await settings.IdempotencyStore.GetSuccessfulOrderCreationResponse(orderId, orderJson);
+                if (cachedResponse != null)
+                {
+                    return ResponseContent.OpenBookingResponse(cachedResponse, HttpStatusCode.Created);
+                }
+            }
+            return null;
+        }
+
+        private async Task<ResponseContent> CreateResponseViaIdempotencyStoreIfExists(BookingEngineSettings settings, OrderIdComponents orderId, string orderJson, Order response)
+        {
+            // Return a 409 status code if any OrderItem level errors exist
+            var httpStatusCode = response.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.Created;
+            var responseJson = OpenActiveSerializer.Serialize(response);
+
+            // Store response in idempotency cache if it exists, and if the response is successful
+            if (settings.IdempotencyStore != null && httpStatusCode == HttpStatusCode.Created)
+            {
+                await settings.IdempotencyStore.SetSuccessfulOrderCreationResponse(orderId, orderJson, responseJson);
+            }
+
+            return ResponseContent.OpenBookingResponse(responseJson, httpStatusCode);
         }
 
         private SimpleIdComponents GetSimpleIdComponentsFromApiKey(Uri sellerId)
@@ -698,6 +731,7 @@ namespace OpenActive.Server.NET.CustomBooking
                     throw new OpenBookingException(new OpenBookingError(), "Only bookable opportunities are permitted in the test interface");
 
                     // TODO: add this error class to the library
+                    // CS: Does this mean add a new specific error to OpenActive.Net, something like OnlyBookableOpportunitesPermittedInTestInterfaceError
             }
 
             if (!genericEvent.TestOpportunityCriteria.HasValue)
@@ -836,7 +870,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // Throw error if TotalPaymentDue is not specified at B or P
             if (order.TotalPaymentDue?.Price.HasValue != true && (stage == FlowStage.B || stage == FlowStage.P))
-                // TODO replace this with a more specific error
+                // TODO replace this with a more specific error ie a subclass of OpenBookingException like TotalPaymentMissingAtBOrPError
                 throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
 
             var payer = order.BrokerRole == BrokerType.ResellerBroker ? order.Broker : order.Customer;

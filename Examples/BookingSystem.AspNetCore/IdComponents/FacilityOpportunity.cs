@@ -17,6 +17,7 @@ namespace BookingSystem
         public long? FacilityUseId { get; set; }
         public long? SlotId { get; set; }
         public long? OfferId { get; set; }
+        public long? IndividualFacilityUseId { get; set; }
 
         public override bool Equals(object obj)
         {
@@ -27,7 +28,8 @@ namespace BookingSystem
             return OpportunityType == other.OpportunityType &&
                    FacilityUseId == other.FacilityUseId &&
                    SlotId == other.SlotId &&
-                   OfferId == other.OfferId;
+                   OfferId == other.OfferId &&
+                   IndividualFacilityUseId == other.IndividualFacilityUseId;
         }
 
         public override int GetHashCode()
@@ -39,6 +41,7 @@ namespace BookingSystem
                 hashCode = (hashCode * 397) ^ FacilityUseId.GetHashCode();
                 hashCode = (hashCode * 397) ^ SlotId.GetHashCode();
                 hashCode = (hashCode * 397) ^ OfferId.GetHashCode();
+                hashCode = (hashCode * 397) ^ IndividualFacilityUseId.GetHashCode();
                 // ReSharper enable NonReadonlyMemberInGetHashCode
                 return hashCode;
             }

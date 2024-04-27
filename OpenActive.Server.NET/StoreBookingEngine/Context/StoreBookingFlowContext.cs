@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace OpenActive.Server.NET.StoreBooking
 {
-    //TODO: Refactor to inherrit from BookingFlowContext (using constructor to copy params? Use Automapper?)
+    //TODO: Refactor to inherit from BookingFlowContext (using constructor to copy params? Use Automapper?)
     public class StoreBookingFlowContext : BookingFlowContext
     {
         public StoreBookingFlowContext(BookingFlowContext bookingFlowContext)
