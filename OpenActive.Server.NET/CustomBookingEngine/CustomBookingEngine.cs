@@ -71,8 +71,7 @@ namespace OpenActive.Server.NET.CustomBooking
             if (settings.CustomerAccountIdTemplate != null) settings.CustomerAccountIdTemplate.RequiredBaseUrl = settings.CustomerAccountIdBaseUrl;
 
             // Create a lookup of each IdTemplate to pass into the appropriate RpdeGenerator
-            // TODO: Output better error if there is a feed assigned across two templates
-            // (there should never be, as each template represents everyting you need in one feed)
+            // TODO: Output better error if there is a feed assigned across two templates (there should never be, as each template represents everyting you need in one feed)
             this.feedAssignedTemplates = settings.IdConfiguration.SelectMany(t => t.IdConfigurations.Select(x => new
             {
                 assignedFeed = x.AssignedFeed,
@@ -380,7 +379,8 @@ namespace OpenActive.Server.NET.CustomBooking
             if (Guid.TryParse(uuidString, out Guid result))
             {
                 return result;
-            } else
+            }
+            else
             {
                 throw new OpenBookingException(new OpenBookingError(), "Invalid format for Order UUID");
             }
@@ -429,7 +429,7 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 // Attempt to use idempotency cache if it exists
                 var cachedResponse = await GetResponseFromIdempotencyStoreIfExists(settings, orderId, orderJson);
-                if (cachedResponse != null) 
+                if (cachedResponse != null)
                 {
                     return cachedResponse;
                 }
@@ -454,7 +454,7 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 // Attempt to use idempotency cache if it exists
                 var cachedResponse = await GetResponseFromIdempotencyStoreIfExists(settings, orderId, orderJson);
-                if (cachedResponse != null) 
+                if (cachedResponse != null)
                 {
                     return cachedResponse;
                 }
@@ -467,7 +467,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         private async Task<ResponseContent> GetResponseFromIdempotencyStoreIfExists(BookingEngineSettings settings, OrderIdComponents orderId, string orderJson)
         {
-             // Attempt to use idempotency cache if it exists
+            // Attempt to use idempotency cache if it exists
             if (settings.IdempotencyStore != null)
             {
                 var cachedResponse = await settings.IdempotencyStore.GetSuccessfulOrderCreationResponse(orderId, orderJson);
@@ -479,7 +479,8 @@ namespace OpenActive.Server.NET.CustomBooking
             return null;
         }
 
-        private async Task<ResponseContent> CreateResponseViaIdempotencyStoreIfExists(BookingEngineSettings settings, OrderIdComponents orderId, string orderJson, Order response) {
+        private async Task<ResponseContent> CreateResponseViaIdempotencyStoreIfExists(BookingEngineSettings settings, OrderIdComponents orderId, string orderJson, Order response)
+        {
             // Return a 409 status code if any OrderItem level errors exist
             var httpStatusCode = response.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.Created;
             var responseJson = OpenActiveSerializer.Serialize(response);
@@ -735,6 +736,7 @@ namespace OpenActive.Server.NET.CustomBooking
                     throw new OpenBookingException(new OpenBookingError(), "Only bookable opportunities are permitted in the test interface");
 
                     // TODO: add this error class to the library
+                    // CS: Does this mean add a new specific error to OpenActive.Net, something like OnlyBookableOpportunitesPermittedInTestInterfaceError
             }
 
             if (!genericEvent.TestOpportunityCriteria.HasValue)
@@ -873,7 +875,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // Throw error if TotalPaymentDue is not specified at B or P
             if (order.TotalPaymentDue?.Price.HasValue != true && (stage == FlowStage.B || stage == FlowStage.P))
-                // TODO replace this with a more specific error
+                // TODO replace this with a more specific error ie a subclass of OpenBookingException like TotalPaymentMissingAtBOrPError
                 throw new OpenBookingException(new OpenBookingError(), "TotalPaymentDue must have a price set");
 
             var payer = order.BrokerRole == BrokerType.ResellerBroker ? order.Broker : order.Customer;

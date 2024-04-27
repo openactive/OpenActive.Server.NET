@@ -8,7 +8,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 using System.Threading.Tasks;
-
+using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem
 {
@@ -331,6 +331,7 @@ namespace BookingSystem
                     OrderItem = new OrderItem
                     {
                         // TODO: The static example below should come from the database (which doesn't currently support tax)
+                        // This is because it can be different for each Seller and needs to calculated at the time of booking
                         UnitTaxSpecification = GetUnitTaxSpecification(flowContext, @class),
                         AcceptedOffer = new Offer
                         {
@@ -361,7 +362,7 @@ namespace BookingSystem
                                 }),
                                 Name = @class.Title,
                                 Url = new Uri("https://example.com/events/" + occurrence.ClassId),
-                                Location = _fakeBookingSystem.Database.GetPlaceById(@class.PlaceId),
+                                Location = FeedGenerationHelper.GetPlaceById(@class.PlaceId),
                                 Activity = new List<Concept>
                                 {
                                     new Concept
@@ -523,8 +524,8 @@ namespace BookingSystem
                 }
             }
         }
-
-        //TODO: This should reuse code of LeaseOrderItem
+        // TODO: This should reuse code of LeaseOrderItem to be DRY. Similar logic is also used in ProposeOrderItems as well as
+        // in LeaseOrderItems, BookOrderItems, and ProposeOrderItems in the SessionStore. The issue for this is: https://github.com/openactive/OpenActive.Server.NET/issues/226
         protected override async ValueTask BookOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
@@ -580,6 +581,8 @@ namespace BookingSystem
                             // Set OrderItemId and access properties for each orderItemContext
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
                             BookedOrderItemHelper.AddPropertiesToBookedOrderItem(ctx, bookedOrderItemInfo);
+                            // Remove attendee capacity information from the OrderedItem. For more information see: https://github.com/openactive/open-booking-api/issues/156#issuecomment-926643733
+                            BookedOrderItemHelper.RemovePropertiesFromBookedOrderItem(ctx);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:
@@ -596,7 +599,7 @@ namespace BookingSystem
             }
         }
 
-        // TODO check logic here, it's just been copied from BookOrderItems. Possibly could remove duplication here.
+        // TODO check logic here, it's just been copied from BookOrderItems. Possibly could remove duplication here. Common logic between this, BookOrderItems, and LeaseOrderItems should be pulled out.
         protected override async ValueTask ProposeOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
@@ -642,6 +645,8 @@ namespace BookingSystem
                         foreach (var (ctx, bookedOrderItemInfo) in ctxGroup.Zip(bookedOrderItemInfos, (ctx, bookedOrderItemInfo) => (ctx, bookedOrderItemInfo)))
                         {
                             ctx.SetOrderItemId(flowContext, bookedOrderItemInfo.OrderItemId);
+                            // Remove attendee capacity information from the OrderedItem. For more information see: https://github.com/openactive/open-booking-api/issues/156#issuecomment-926643733
+                            BookedOrderItemHelper.RemovePropertiesFromBookedOrderItem(ctx);
                         }
                         break;
                     case ReserveOrderItemsResult.SellerIdMismatch:

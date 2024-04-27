@@ -20,6 +20,7 @@ namespace BookingSystem
         public bool OnlyFreeOpportunities { get; set; } = false;
         public bool PrepaymentAlwaysRequired { get; set; } = false;
         public bool FacilityUseHasSlots { get; set; } = false;
+        public bool IsLoremFitsumMode { get; set; } = false;
     }
 
     public class PaymentSettings

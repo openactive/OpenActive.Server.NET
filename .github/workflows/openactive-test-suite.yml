@@ -1,4 +1,5 @@
 name: Ref Impl
+# This workflow is triggered when there is a push or a pull request to the master branch.
 on:
   push:
     branches: [ master ]
@@ -9,84 +10,138 @@ jobs:
   test-server:
     runs-on: ubuntu-latest
     steps:
+      # Checks out this project ie OpenActive.Server.NET
     - name: Checkout
       uses: actions/checkout@v2
+
+      # Uses the actions/setup-dotnet action to set up the .NET Core runtime environment with version 3.1.419
     - name: Setup .NET Core 3.1.419
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.419
+
+      # Runs the `dotnet build` command to build the "OpenActive.Server.NET.Tests" project and its dependencies. It uses
+      # the `--configuration Release` flag to build in release mode, which results in optimized code generation  
     - name: Build OpenActive.Server.NET.Tests and dependencies
       run: dotnet build ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release
+
+      # Runs the tests for the "OpenActive.Server.NET.Tests" project using the `dotnet test` command. It runs the unit
+      # tests and uses the `--configuration Release` flag for release mode, `--no-build` to skip rebuilding the project
+      # since it was built in the previous step, and `--verbosity normal` for the level of detail in the test output
     - name: Run OpenActive.Server.NET.Tests
       run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-build --verbosity normal
   
   test-fake-database:
     runs-on: ubuntu-latest
     steps:
+      # Checks out this project ie OpenActive.Server.NET
     - name: Checkout
       uses: actions/checkout@v2
+
+      # Uses the actions/setup-dotnet action to set up the .NET Core runtime environment with version 3.1.419
     - name: Setup .NET Core 3.1.419
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.419
+
+      # Runs the `dotnet build` command to build the "OpenActive.FakeDatabase.NET.Tests" project and its dependencies.
+      # It uses the `--configuration Release` flag to build in release mode, which results in optimized code generation  
     - name: Build OpenActive.FakeDatabase.NET.Tests
       run: dotnet build ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release
+      
+      # Runs the tests for the "OpenActive.FakeDatabase.NET.Tests" project using the `dotnet test` command. It runs the
+      # unit tests and uses the `--configuration Release` flag for release mode, `--no-build` to skip rebuilding the
+      # project since it was built in the previous step, and `--verbosity normal` for the level of detail in the test
+      # output
     - name: Run OpenActive.FakeDatabase.NET.Tests
       run: dotnet test ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release --no-build --verbosity normal
   
   core:
+    # Specifies that this job depends on the successful completion of two other jobs: "test-server" and "test-fake-database"
     needs:
       - test-server
       - test-fake-database
     runs-on: ubuntu-latest
+
+    # Defines a matrix strategy for running tests with different combinations of parameters, allowing for parallel test
+    # runs with various configurations. For more information about these parameters, see `.github/README.md` in Test
+    # Suite
     strategy:
       fail-fast: false
       matrix:
         mode: ['random', 'controlled']
         profile: ['all-features', 'single-seller', 'no-payment-reconciliation', 'no-auth', 'no-tax-calculation', 'prepayment-always-required', 'facilityuse-has-slots']
     steps:
+
+    # checks out the `OpenActive.Server.NET` project's code repository and places it in a directory named "server"  
     - name: Checkout OpenActive.Server.NET
       uses: actions/checkout@v2
       with:
         path: server
+
+    # checks if the workflow is triggered by a branch starting with `coverage/`. If so, it sets an output variable named
+    # `mirror_ref` with the branch name, allowing later steps to use it
     - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
       if: ${{ startsWith(github.head_ref, 'coverage/') }}
       id: refs
       run: echo "::set-output name=mirror_ref::${{ github.head_ref }}"
+    
+    # checks out Test Suite and places it in a directory named "tests." The branch used for checkout is determined by
+    # the `mirror_ref` set in the previous step  
     - name: Checkout OpenActive Test Suite ${{ steps.refs.outputs.mirror_ref }}
       uses: actions/checkout@v2
       with:
         repository: openactive/openactive-test-suite
         ref: ${{ steps.refs.outputs.mirror_ref }}
         path: tests
+    
+    # sets up the .NET Core SDK version 3.1.419 in the job's environment    
     - name: Setup .NET Core SDK 3.1.419
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.419
-    - name: Setup Node.js 14.x
+    - name: Setup Node.js 18.17.1
       uses: actions/setup-node@v1
       with:
-        node-version: 14.x
+        node-version: 18.17.1
+
+    # runs `dotnet restore` to install the dependencies for the "OpenActive.Server.NET" project. It is conditional and
+    # depends on the "profile" value not being 'no-auth' or 'single-seller'
     - name: Install OpenActive.Server.NET dependencies
       if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: dotnet restore ./server/
+
+    # builds `BookingSystem.AspNetCore.IdentityServer` if the `profile` is not `no-auth` or `single-seller` as it is not
+    # needed for these profiles  
     - name: Build .NET Core Authentication Authority Reference Implementation
       if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-restore
+
+    # starts IdentityServer if the profiles are relevant (see above)  
     - name: Start .NET Core Authentication Authority Reference Implementation
       if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: |
         dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-build &
+
+    # builds Reference Implementation booking server     
     - name: Build .NET Core Booking Server Reference Implementation
       run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' && '--no-restore' || '' }}
+
+    # starts Reference Implementation booking server  
     - name: Start .NET Core Booking Server Reference Implementation
       run: |
         dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
       env:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
+
+    # runs `npm install` to install the JavaScript dependencies for Test Suite, which is located in the "tests"
+    # directory    
     - name: Install OpenActive Test Suite
       run: npm install
       working-directory: tests
+
+    # runs the OpenActive integration tests using `npm start` and specifies various environment variables based on the
+    # `mode` and `profile` matrix variables specified above  
     - name: Run OpenActive Integration Tests in ${{ matrix.mode }} mode
       run: npm start
       env:
@@ -96,12 +151,18 @@ jobs:
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
       working-directory: tests
+
+    # uploads the test output as an artifact, which can be used for reference or debugging later  
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
       uses: actions/upload-artifact@v2
       if: ${{ success() || failure() }}
       with:
         name: core.${{ matrix.mode }}.${{ matrix.profile }}
         path: ./tests/output/
+
+    # deploys a conformance certificate to Azure Blob Storage, but it is conditional and only runs when the GitHub
+    # branch is `master` and the `profile` is 'all-features' and the `mode` is 'controlled'. For more information on
+    # Coformance Certificates, see `packages/openactive-integration-tests/test/certification/README.md` in Test Suite    
     - name: Deploy conformance certificate to Azure Blob Storage (master branch for 'all-features' profile in controlled mode only)
       uses: bacongobbler/azure-blob-storage-upload@v1.2.0
       if: ${{ github.ref == 'refs/heads/master' }}
@@ -111,11 +172,15 @@ jobs:
         connection_string: ${{ secrets.CONFORMANCE_CERTIFICATE_BLOB_STORAGE_CONNECTION_STRING }}
         sync: false
   
+  # This job is very similar to the `core` job explained above. However because it runs on .NET Framework as opposed to
+  # .NET Core, there are some differences. Due to the similarity, only the differences are outlined below.
   framework:
     needs:
       - test-server
       - test-fake-database
+    # runs on an Windows 2019 virtual machine, not an Ubuntu machine
     runs-on: windows-2019
+    
     strategy:
       fail-fast: false
       matrix:
@@ -136,10 +201,13 @@ jobs:
         repository: openactive/openactive-test-suite
         ref: ${{ steps.refs.outputs.mirror_ref }}
         path: tests
-    - name: Setup Node.js 14.x
+    - name: Setup Node.js 18.17.1
       uses: actions/setup-node@v1
       with:
-        node-version: 14.x
+        node-version: 18.17.1
+
+    # Building and deploying Framework is done using `msbuild` as opposed to `dotnet build`/`dotnet run`. It is started
+    # using IIS Express    
     - name: Setup MSBuild path
       uses: microsoft/setup-msbuild@v1.0.2
     - name: Setup NuGet
@@ -172,6 +240,8 @@ jobs:
         name: framework.${{ matrix.mode }}.${{ matrix.profile }}
         path: ./tests/output/
 
+  # This job uses many of the steps and setup used above. Because of this, only important or different parts have been
+  # highlighted.      
   deploy-reference-implementation:
     # Master branch only
     if: ${{ github.ref == 'refs/heads/master' }}
@@ -197,7 +267,9 @@ jobs:
         run: dotnet build ./Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-restore
       - name: Publish OpenActive.Server.NET Authentication Authority Reference Implementation
         run: dotnet publish ./Examples/BookingSystem.AspNetCore.IdentityServer/BookingSystem.AspNetCore.IdentityServer.csproj --configuration Release --no-build --output './web-app-package/BookingSystem.AspNetCore.IdentityServer' 
-      # Deploy to Azure Web apps
+      # Deploy to Azure Web apps 
+      # deploys the `master` branch of Reference Implementation Booking Server and Identity
+      # Server Reference Implementation to two Azure webapps
       - name: 'Deploy Booking Server Reference Implementation using publish profile credentials'
         uses: azure/webapps-deploy@v2
         with: 
@@ -211,6 +283,8 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_AUTH_PUBLISH_PROFILE  }} # Define secret variable in repository settings as per action documentation
           package: './web-app-package/BookingSystem.AspNetCore.IdentityServer'
   
+  # This job uses many of the steps and setup used above. Because of this, only important or different parts have been
+  # highlighted.        
   publish-server:
     # Master branch only
     if: ${{ github.ref == 'refs/heads/master' }}
@@ -240,6 +314,9 @@ jobs:
         run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-restore --verbosity normal
       - name: Pack
         run: dotnet pack  ./OpenActive.Server.NET/OpenActive.Server.NET.csproj  --configuration Release --include-source --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+      
+      # publishes the `master` branch of OpenActive.Server.NET to Nuget. It then creates a release in the GitHub
+      # repository
       - name: Push to Nuget
         if: "! contains(toJSON(github.event.commits.*.message), '[no-release]')"
         run: dotnet nuget push "./OpenActive.Server.NET/**/*.nupkg" -k ${{secrets.NUGET_API_KEY}} --skip-duplicate -s https://api.nuget.org/v3/index.json
