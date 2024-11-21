@@ -51,14 +51,14 @@ jobs:
 
     steps:
       - name: Run OpenActive Test Suite
-        uses: openactive/openactive-test-suite@d7cbdac7f03ce75f282927fe67c9a375f1e440a8
+        uses: openactive/openactive-test-suite@latest
         with:
           NODE_CONFIG: |
             {"broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://reference.bookingsystem/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "useRandomOpportunities": true }, "sellers": {"primary": {  "@id": "http://reference.bookingsystem/api/identifiers/sellers/1","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference.bookingsystem/api/identifiers/sellers/1"}}},"secondary": {  "@id": "http://reference.bookingsystem/api/identifiers/sellers/2","authentication": {"requestHeaders": {"X-OpenActive-Test-Seller-Id": "http://reference.bookingsystem/api/identifiers/sellers/2"}}}}}
           NODE_ENV: .example.all-features
           NODE_APP_INSTANCE: ci
       - name: Upload test output as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: ${{ success() || failure() }}
         with:
           name: docker-test
