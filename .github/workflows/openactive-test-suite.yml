@@ -1,9 +1,9 @@
 name: Ref Impl
 on:
   push:
-    branches: [ master ]
+    branches: [ master-null ]
   pull_request:
-    branches: [ master ]
+    branches: [ master-null ]
 
 jobs:
   test-server:
