@@ -36,7 +36,7 @@ jobs:
       uses: openactive/openactive-test-suite@master
       with:
         NODE_CONFIG: |
-          {"ci": true, "broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://host.docker.internal/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
+          {"ci": true, "broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://host.docker.internal:5001/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
 
