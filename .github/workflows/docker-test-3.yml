@@ -30,6 +30,8 @@ jobs:
       env:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
         ApplicationHostBaseUrl: http://booking.system
+        Urls: ''
+        ASPNETCORE_URLS: ''
           
     - name: Create output dir
       run: mkdir -p ./output/
