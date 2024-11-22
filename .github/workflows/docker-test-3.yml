@@ -29,7 +29,7 @@ jobs:
         dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
       env:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
-        ApplicationHostBaseUrl: http://booking.system
+        ApplicationHostBaseUrl: http://booking.system:5000
         Urls: 'http://*:5000'
         ASPNETCORE_URLS: 'http://*:5000'
           
