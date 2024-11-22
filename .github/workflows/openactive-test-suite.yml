@@ -2,9 +2,9 @@ name: Ref Impl
 # This workflow is triggered when there is a push or a pull request to the master branch.
 on:
   push:
-    branches: [ master ]
+    branches: [ master-null ]
   pull_request:
-    branches: [ master ]
+    branches: [ master-null ]
 
 jobs:
   test-server:
@@ -333,6 +333,8 @@ jobs:
             This release contains minor amendments based on updates to the [OpenActive Vocabulary](https://openactive.io/ns/) (codified by the [Data Models](https://github.com/openactive/data-models)), and the latest version of the [Dataset Site Template](https://github.com/openactive/dataset-site-template).
             
             Published to Nuget: [OpenActive.Server.NET](https://www.nuget.org/packages/OpenActive.Server.NET/${{ steps.nbgv.outputs.SimpleVersion }}) and [OpenActive.FakeDatabase.NET](https://www.nuget.org/packages/OpenActive.FakeDatabase.NET/${{ steps.nbgv.outputs.SimpleVersion }}).
+
+            Published to GitHub Container Registry: [reference.bookingsystem](https://github.com/openactive/OpenActive.Server.NET/pkgs/container/reference.bookingsystem) and [reference.bookingsystem.identity](https://github.com/openactive/OpenActive.Server.NET/pkgs/container/reference.bookingsystem.identity)
           draft: false
           prerelease: false
 
@@ -368,3 +370,77 @@ jobs:
       - name: Push to Nuget
         if: "! contains(toJSON(github.event.commits.*.message), '[no-release]')"
         run: dotnet nuget push "./Fakes/OpenActive.FakeDatabase.NET/**/*.nupkg" -k ${{secrets.NUGET_API_KEY}} --skip-duplicate -s https://api.nuget.org/v3/index.json
+
+  build-and-push-docker-image:
+    # Publish to GitHub Container Registry
+    # Master branch only
+    # if: ${{ github.ref == 'refs/heads/master' }}
+    # needs:
+    #  - core
+    #  - framework
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env: 
+      REGISTRY: ghcr.io
+      # IMAGE_NAME: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
+      - name: Install Nerdbank.GitVersioning
+        run: cp Directory.Build.props.template Directory.Build.props
+      - name: Get current version
+        uses: dotnet/nbgv@master
+        id: nbgv
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Booking System
+        id: meta-booking
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/OpenActive/Reference.BookingSystem
+          labels: |
+            org.opencontainers.image.title=OpenActive Reference Implementation - Booking System
+            org.opencontainers.image.description=Reference Implementation for OpenActive data publishing and Open Booking API implementation
+            org.opencontainers.image.vendor=OpenActive
+          tags: |
+            type=semver,pattern={{version}},value=v${{ steps.nbgv.outputs.SimpleVersion }}
+
+      - name: Extract metadata (tags, labels) for Identity Server
+        id: meta-id
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/OpenActive/Reference.BookingSystem.Identity
+          labels: |
+            org.opencontainers.image.title=OpenActive Reference Implementation - Identity Server
+            org.opencontainers.image.description=Reference Implementation for OpenID Connect implementation for OpenActive
+            org.opencontainers.image.vendor=OpenActive
+          tags: |
+            type=semver,pattern={{version}},value=v${{ steps.nbgv.outputs.SimpleVersion }}
+
+      - name: Build and push Docker image for Booking System
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta-booking.outputs.tags }}
+          labels: ${{ steps.meta-booking.outputs.labels }}
+          target: booking-server
+
+      - name: Build and push Docker image for Identity Server
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta-id.outputs.tags }}
+          labels: ${{ steps.meta-id.outputs.labels }}
+          target: identity-server

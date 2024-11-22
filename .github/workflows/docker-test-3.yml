@@ -1,0 +1,52 @@
+name: Test using Docker for CI
+on:
+  push:
+    branches: [ feature/docker-image ]
+
+jobs:
+  docker-test:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:3.1
+      options: --network-alias booking.system
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ['random']
+        profile: ['no-auth']
+    steps:
+    - name: Checkout OpenActive.Server.NET
+      uses: actions/checkout@v2
+      with:
+        path: server
+    - name: Install OpenActive.Server.NET dependencies
+      if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
+      run: dotnet restore ./server/
+    - name: Build .NET Core Booking Server Reference Implementation
+      run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' && '--no-restore' || '' }}
+    - name: Start .NET Core Booking Server Reference Implementation
+      run: |
+        dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
+      env:
+        ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
+        ApplicationHostBaseUrl: http://booking.system:5000
+        Urls: 'http://*:5000'
+        ASPNETCORE_URLS: 'http://*:5000'
+          
+    - name: Create output dir
+      run: mkdir -p ./output/
+  
+    - name: Run OpenActive Test Suite
+      uses: openactive/openactive-test-suite@master
+      with:
+        NODE_CONFIG: |
+          {"ci": true, "broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://booking.system:5000/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
+        NODE_ENV: .example.${{ matrix.profile }}
+        NODE_APP_INSTANCE: ci
+
+    - name: Upload test output for ${{ matrix.mode }} mode as artifact
+      uses: actions/upload-artifact@v4
+      if: ${{ success() || failure() }}
+      with:
+        name: core.${{ matrix.mode }}.${{ matrix.profile }}
+        path: ./output/
