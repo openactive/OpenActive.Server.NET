@@ -29,7 +29,7 @@ jobs:
         dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
       env:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
-        ApplicationHostBaseUrl: http://host.docker.internal
+        ApplicationHostBaseUrl: http://booking.system
           
     - name: Create output dir
       run: mkdir -p ./output/
