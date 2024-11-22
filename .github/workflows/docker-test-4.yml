@@ -30,7 +30,7 @@ jobs:
         dotnet run --no-launch-profile --project ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release --no-build &
       env:
         ASPNETCORE_ENVIRONMENT: ${{ matrix.profile }}
-        ApplicationHostBaseUrl: http://host.docker.internal:5000
+        ApplicationHostBaseUrl: http://172.17.0.1:5000
         Urls: 'http://*:5000'
         ASPNETCORE_URLS: 'http://*:5000'
           
@@ -41,7 +41,7 @@ jobs:
       uses: openactive/openactive-test-suite@master
       with:
         NODE_CONFIG: |
-          {"ci": true, "broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://host.docker.internal:5000/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
+          {"ci": true, "broker": {"outputPath": "/github/workspace/output/", "datasetSiteUrl": "http://172.17.0.1:5000/openactive"}, "integrationTests": { "outputPath": "/github/workspace/output/", "conformanceCertificatePath": "/github/workspace/conformance/examples/${{ matrix.profile }}/${{ matrix.mode }}/", "useRandomOpportunities": ${{ matrix.mode == 'random' }}, "conformanceCertificateId": "https://certificates.reference-implementation.openactive.io/examples/${{ matrix.profile }}/${{ matrix.mode }}/" }}
         NODE_ENV: .example.${{ matrix.profile }}
         NODE_APP_INSTANCE: ci
 
