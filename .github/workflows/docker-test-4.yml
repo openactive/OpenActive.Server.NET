@@ -1,7 +1,7 @@
 name: Test using Docker for CI
 on:
   push:
-    branches: [ feature/docker-image-4 ]
+    branches: [ feature/docker-image ]
 
 jobs:
   docker-test:
