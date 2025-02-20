@@ -2089,6 +2089,106 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
+        /// <summary>
+        /// When refreshing data, the furthest number of days into the future
+        /// that an old ScheduledSession/Slot will be moved to.
+        ///
+        /// To give a clear example, if this is set to `15`, and an opportunity
+        /// starts 5 days in the past, Data Refresher will move it to -5 + 15 =
+        /// 10 days into the future.
+        /// </summary>
+        private static readonly int DataRefresherDaysInterval = 15;
+
+        public async Task SoftDeletePastOpportunitiesAndInsertNewAtEdgeOfWindow()
+        {
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                // Get Occurrences to be soft deleted
+                var toBeSoftDeletedOccurrences = await db.SelectAsync<OccurrenceTable>(
+                    x => x.Deleted != true
+                    && x.Start < DateTime.Now);
+                // Create new copy of occurrences in which dates are moved into
+                // the future, reset the uses, and insert
+                var occurrencesAtEdgeOfWindow = toBeSoftDeletedOccurrences.Select(x =>
+                    new OccurrenceTable
+                    {
+                        Deleted = false,
+                        TestDatasetIdentifier = x.TestDatasetIdentifier,
+                        ClassTable = x.ClassTable,
+                        ClassId = x.ClassId,
+                        Start = DateTimeUtils.MoveToNextFutureInterval(x.Start, DataRefresherDaysInterval),
+                        End = DateTimeUtils.MoveToNextFutureInterval(x.End, DataRefresherDaysInterval),
+                        RemainingSpaces = x.TotalSpaces,
+                        LeasedSpaces = 0,
+                        TotalSpaces = x.TotalSpaces,
+                    }
+                ).ToList();
+                await db.InsertAllAsync(occurrencesAtEdgeOfWindow);
+
+                // Mark old occurrences as soft deleted and update
+                var softDeletedOccurrences = toBeSoftDeletedOccurrences.Select(x =>
+                {
+                    x.Deleted = true;
+                    return x;
+                });
+                await db.UpdateAllAsync(softDeletedOccurrences);
+
+                // Get Slots to be soft deleted
+                var toBeSoftDeletedSlots = await db.SelectAsync<SlotTable>(x =>
+                    x.Deleted != true
+                    && x.Start < DateTime.Now);
+                // Create new copy of slots in which dates are moved into the
+                // future, reset the uses, and insert
+                var slotsAtEdgeOfWindow = toBeSoftDeletedSlots.Select(x => new SlotTable
+                {
+                    Deleted = false,
+                    TestDatasetIdentifier = x.TestDatasetIdentifier,
+                    FacilityUseTable = x.FacilityUseTable,
+                    FacilityUseId = x.FacilityUseId,
+                    IndividualFacilityUseId = x.IndividualFacilityUseId,
+                    Start = DateTimeUtils.MoveToNextFutureInterval(x.Start, DataRefresherDaysInterval),
+                    End = DateTimeUtils.MoveToNextFutureInterval(x.End, DataRefresherDaysInterval),
+                    MaximumUses = x.MaximumUses,
+                    LeasedUses = 0,
+                    RemainingUses = x.MaximumUses,
+                    Price = x.Price,
+                    AllowCustomerCancellationFullRefund = x.AllowCustomerCancellationFullRefund,
+                    Prepayment = x.Prepayment,
+                    RequiresAttendeeValidation = x.RequiresAttendeeValidation,
+                    RequiresApproval = x.RequiresApproval,
+                    RequiresAdditionalDetails = x.RequiresAdditionalDetails,
+                    RequiredAdditionalDetails = x.RequiredAdditionalDetails,
+                    ValidFromBeforeStartDate = x.ValidFromBeforeStartDate,
+                    LatestCancellationBeforeStartDate = x.LatestCancellationBeforeStartDate,
+                    AllowsProposalAmendment = x.AllowsProposalAmendment,
+                }
+                ).ToList();
+                await db.InsertAllAsync(slotsAtEdgeOfWindow);
+
+                // Mark old slots as soft deleted and update
+                var softDeletedSlots = toBeSoftDeletedSlots.Select(x =>
+                {
+                    x.Deleted = true;
+                    return x;
+                });
+                await db.UpdateAllAsync(softDeletedSlots);
+            }
+        }
+
+        public async Task HardDeleteOldSoftDeletedOccurrencesAndSlots()
+        {
+            var yesterday = DateTime.Today.AddDays(-1);
+            using (var db = await Mem.Database.OpenAsync())
+            {
+                await db.DeleteAsync<OccurrenceTable>(x =>
+                    x.Deleted == true
+                    && x.Modified < new DateTimeOffset(yesterday).UtcTicks);
+                await db.DeleteAsync<SlotTable>(x =>
+                    x.Deleted == true
+                    && x.Modified < new DateTimeOffset(yesterday).UtcTicks);
+            }
+        }
+
         private static readonly (Bounds, Bounds?, bool)[] BucketDefinitions =
         {
             // Approval not required

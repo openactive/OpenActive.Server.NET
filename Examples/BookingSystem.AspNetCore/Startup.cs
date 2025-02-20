@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -92,7 +93,21 @@ namespace BookingSystem.AspNetCore
                 .AddControllers()
                 .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()));
 
-            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(AppSettings, new FakeBookingSystem(AppSettings.FeatureFlags.FacilityUseHasSlots)));
+            services.AddSingleton(x => AppSettings);
+
+            services.AddSingleton(sp => new FakeBookingSystem(AppSettings.FeatureFlags.FacilityUseHasSlots));
+
+            // Use the singleton FakeBookingSystem in IBookingEngine registration
+            services.AddSingleton<IBookingEngine>(sp => 
+                EngineConfig.CreateStoreBookingEngine(
+                    AppSettings, 
+                    sp.GetRequiredService<FakeBookingSystem>()
+                ));
+
+            var doRunDataRefresher = Environment.GetEnvironmentVariable("PERIODICALLY_REFRESH_DATA")?.ToLowerInvariant() == "true";
+            if (doRunDataRefresher) {
+                services.AddHostedService<FakeDataRefresherService>();
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
