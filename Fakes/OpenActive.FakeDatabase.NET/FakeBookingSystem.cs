@@ -82,7 +82,6 @@ namespace OpenActive.FakeDatabase.NET
             }
 
             var persistPreviousDatabase = Environment.GetEnvironmentVariable("PERSIST_PREVIOUS_DATABASE")?.ToLowerInvariant() == "true";
-            // TODO3 here we are. What else do we need to do for the bare minimum (no data refresher)?
 
             // Create empty tables
             Console.WriteLine($"Creating tables. Persist? {persistPreviousDatabase}");
@@ -2177,6 +2176,7 @@ namespace OpenActive.FakeDatabase.NET
 
         public async Task HardDeleteOldSoftDeletedOccurrencesAndSlots()
         {
+            // TODO3 confirm that soft/hard delete process corresonds with RPDE guidelines
             var yesterday = DateTime.Today.AddDays(-1);
             using (var db = await Mem.Database.OpenAsync())
             {
