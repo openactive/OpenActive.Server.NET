@@ -59,12 +59,15 @@ namespace OpenActive.FakeDatabase.NET
     public class InMemorySQLite
     {
         public readonly OrmLiteConnectionFactory Database;
+        public readonly bool IsPersistedDatabase;
 
         public InMemorySQLite()
         {
+            // TODO2 create an env var
             // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
             // There are issues with transactions when using full in-memory SQLite. To workaround this, we create a temporary file and use this to hold the SQLite database.
-            var connectionString = Path.GetTempPath() + "openactive-fakedatabase.db";
+            // var connectionString = Path.GetTempPath() + "openactive-fakedatabase.db";
+            var connectionString = "/Users/lukewinship/Databases/openactive-fakedatabase.db";
             Database = new OrmLiteConnectionFactory(connectionString, SqliteDialect.Provider);
 
             using (var connection = Database.Open())
@@ -78,8 +81,14 @@ namespace OpenActive.FakeDatabase.NET
                 walCommand.ExecuteNonQuery();
             }
 
+            var persistPreviousDatabase = Environment.GetEnvironmentVariable("PERSIST_PREVIOUS_DATABASE")?.ToLowerInvariant() == "true";
+            // TODO3 here we are. What else do we need to do for the bare minimum (no data refresher)?
+
             // Create empty tables
-            DatabaseCreator.CreateTables(Database);
+            Console.WriteLine($"Creating tables. Persist? {persistPreviousDatabase}");
+            var tablesFreshlyCreated = DatabaseCreator.CreateTables(Database, !persistPreviousDatabase);
+            Console.WriteLine($"Created tables. Fresh? {tablesFreshlyCreated}");
+            IsPersistedDatabase = !tablesFreshlyCreated;
 
             // OrmLiteUtils.PrintSql();
         }
@@ -1358,11 +1367,27 @@ namespace OpenActive.FakeDatabase.NET
 
         public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase(bool facilityUseHasSlots)
         {
+            Console.WriteLine($"GetPrepopulatedFakeDatabase - start");
             var database = new FakeDatabase(facilityUseHasSlots);
+            if (database.Mem.IsPersistedDatabase)
+            {
+                Console.WriteLine($"GetPrepopulatedFakeDatabase - is persisted");
+                // Since we are persisting the previous database, we need to
+                // make sure that the current setting for `FacilityUseHasSlots`
+                // matches the one in which data was initially populated.
+                using (var db = await database.Mem.Database.OpenAsync())
+                {
+                    await AssertExistingFacilitiesMatchFacilityUseHasSlots(db, facilityUseHasSlots);
+                }
+                Console.WriteLine($"GetPrepopulatedFakeDatabase - is persisted / finished");
+                // No need to do any population, as the database is being
+                // persisted from a previous session.
+                return database;
+            }
+            Console.WriteLine($"GetPrepopulatedFakeDatabase - is fresh");
             using (var db = await database.Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
-
                 await CreateSellers(db);
                 await CreateSellerUsers(db);
                 await CreateFakeClasses(db);
@@ -1371,8 +1396,8 @@ namespace OpenActive.FakeDatabase.NET
                 await CreateGrants(db);
                 await BookingPartnerTable.Create(db);
                 transaction.Commit();
-
             }
+            Console.WriteLine($"GetPrepopulatedFakeDatabase - is fresh / finished");
 
             return database;
         }
@@ -1439,6 +1464,31 @@ namespace OpenActive.FakeDatabase.NET
             await db.InsertAllAsync(facilities);
             await db.InsertAllAsync(slotTableSlots);
         }
+
+        /// <summary>
+        /// Assert that the facilities in the database match the FacilityUseHasSlots setting.
+        /// i.e. if FacilityUseHasSlots is true, all facilities should have IndividualFacilityUses.
+        /// If FacilityUseHasSlots is false, all facilities should not have IndividualFacilityUses.
+        /// </summary>
+        private static async Task AssertExistingFacilitiesMatchFacilityUseHasSlots(IDbConnection db, bool facilityUseHasSlots) {
+            if (facilityUseHasSlots) {
+                var query = db.From<FacilityUseTable>()
+                    .Where(x => !x.Deleted && x.IndividualFacilityUses != null)
+                    .Limit(1);
+                if (await db.CountAsync(query) > 0) {
+                    throw new Exception("FacilityUseHasSlots is true but there are facilities with IndividualFacilityUses");
+                }
+            }
+            else {
+                var query = db.From<FacilityUseTable>()
+                    .Where(x => !x.Deleted && x.IndividualFacilityUses == null)
+                    .Limit(1);
+                if (await db.CountAsync(query) > 0) {
+                    throw new Exception("FacilityUseHasSlots is false but there are facilities without IndividualFacilityUses");
+                }
+            }
+        }
+
         private static SlotTable GenerateSlot(OpportunitySeed seed, long? individualFacilityUseId, ref int slotId, DateTime startDate, int totalUses, decimal price)
         {
             var requiresAdditionalDetails = Faker.Random.Bool(ProportionWithRequiresAdditionalDetails);
