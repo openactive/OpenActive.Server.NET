@@ -28,20 +28,20 @@ namespace BookingSystem
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogDebug($"FakeDataRefresherService is starting..");
 
             stoppingToken.Register(() =>
-                _logger.LogDebug($"FakeDataRefresherService background task is stopping."));
+                _logger.LogInformation($"FakeDataRefresherService background task is stopping."));
 
             while (!stoppingToken.IsCancellationRequested)
             {
+                _logger.LogInformation($"FakeDataRefresherService is starting..");
                 await _bookingSystem.Database.HardDeleteOldSoftDeletedOccurrencesAndSlots();
-                _logger.LogDebug($"FakeDataRefresherService hard deleted opportunities that were previously old and soft deleted");
+                _logger.LogInformation($"FakeDataRefresherService hard deleted opportunities that were previously old and soft deleted");
 
                 await _bookingSystem.Database.SoftDeletePastOpportunitiesAndInsertNewAtEdgeOfWindow();
-                _logger.LogDebug($"FakeDataRefresherService soft deleted opportunities and inserted new ones at edge of window.");
+                _logger.LogInformation($"FakeDataRefresherService soft deleted opportunities and inserted new ones at edge of window.");
 
-                _logger.LogDebug($"FakeDataRefresherService is finished");
+                _logger.LogInformation($"FakeDataRefresherService is finished");
                 await Task.Delay(_settings.DataRefresherInterval, stoppingToken);
             }
         }
