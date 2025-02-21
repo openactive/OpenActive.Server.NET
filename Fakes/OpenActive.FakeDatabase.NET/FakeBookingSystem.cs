@@ -63,12 +63,11 @@ namespace OpenActive.FakeDatabase.NET
 
         public InMemorySQLite()
         {
-            // TODO2 create an env var
+            var sqliteDbPath = Environment.GetEnvironmentVariable("SQLITE_DB_PATH")
+                ?? Path.GetTempPath() + "openactive-fakedatabase.db";
             // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
             // There are issues with transactions when using full in-memory SQLite. To workaround this, we create a temporary file and use this to hold the SQLite database.
-            // var connectionString = Path.GetTempPath() + "openactive-fakedatabase.db";
-            var connectionString = "/Users/lukewinship/Databases/openactive-fakedatabase.db";
-            Database = new OrmLiteConnectionFactory(connectionString, SqliteDialect.Provider);
+            Database = new OrmLiteConnectionFactory(sqliteDbPath, SqliteDialect.Provider);
 
             using (var connection = Database.Open())
             {
@@ -81,7 +80,9 @@ namespace OpenActive.FakeDatabase.NET
                 walCommand.ExecuteNonQuery();
             }
 
-            var persistPreviousDatabase = Environment.GetEnvironmentVariable("PERSIST_PREVIOUS_DATABASE")?.ToLowerInvariant() == "true";
+            var persistPreviousDatabase = Environment
+                .GetEnvironmentVariable("PERSIST_PREVIOUS_DATABASE")
+                ?.ToLowerInvariant() == "true";
 
             // Create empty tables
             Console.WriteLine($"Creating tables. Persist? {persistPreviousDatabase}");

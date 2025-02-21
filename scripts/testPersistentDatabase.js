@@ -1,9 +1,12 @@
 const http = require('http');
 
+// This is required for localhost RefImpl, which requires https with a
+// self-signed certificate
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 /*
 
-TODO3 the plan is:
+TODO2 the test plan is:
 
 STEP 1:
 
@@ -11,6 +14,7 @@ a. Turn on RefImpl like
   ```
   ASPNETCORE_ENVIRONMENT=single-seller \
   OPPORTUNITY_COUNT=0 \
+  SQLITE_DB_PATH=/Users/lukewinship/Databases/openactive-fakedatabase.db \
   dotnet run --no-launch-profile \
     --project ./Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj \
     --configuration Release
@@ -26,6 +30,7 @@ a. Turn on RefImpl like
   ```
   ASPNETCORE_ENVIRONMENT=single-seller \
   OPPORTUNITY_COUNT=0 \
+  SQLITE_DB_PATH=/Users/lukewinship/Databases/openactive-fakedatabase.db \
   PERIODICALLY_REFRESH_DATA=true \
   PERSIST_PREVIOUS_DATABASE=true \
   dotnet run --no-launch-profile \
