@@ -2098,6 +2098,16 @@ namespace OpenActive.FakeDatabase.NET
         /// </summary>
         private static readonly int DataRefresherDaysInterval = 15;
 
+        /// <summary>
+        /// Part of Data Refresher.
+        /// It updates old (startDate < now) opportunities (that are not
+        /// currently soft-deleted) by:
+        /// - Copying them into the future, so that there are fresh new
+        ///   opportunities for clients to use.
+        /// - Soft-deleting the old opportunities (according to the Retention
+        ///   Period guidance:
+        ///   https://developer.openactive.io/publishing-data/data-feeds/scaling-feeds#option-1-retention-period-to-minimise-storage-requirements).
+        /// </summary>
         public async Task SoftDeletePastOpportunitiesAndInsertNewAtEdgeOfWindow()
         {
             using (var db = await Mem.Database.OpenAsync())
@@ -2176,8 +2186,11 @@ namespace OpenActive.FakeDatabase.NET
 
         public async Task HardDeleteOldSoftDeletedOccurrencesAndSlots()
         {
-            // TODO3 confirm that soft/hard delete process corresonds with RPDE guidelines
-            var yesterday = DateTime.Today.AddDays(-1);
+            // Old (startDate < now) opportunities that have already been
+            // soft-deleted are hard-deleted. This is an implementation of the
+            // "Retention period" guidance documented here:
+            // https://developer.openactive.io/publishing-data/data-feeds/scaling-feeds#option-1-retention-period-to-minimise-storage-requirements.
+            var yesterday = DateTime.Today.AddDays(-7);
             using (var db = await Mem.Database.OpenAsync())
             {
                 await db.DeleteAsync<OccurrenceTable>(x =>
