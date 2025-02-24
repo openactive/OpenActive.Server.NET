@@ -336,3 +336,6 @@ ASALocalRun/
 
 # Fake database
 *fakedatabase.db
+
+# Output path for app publishing
+/web-app-package/
