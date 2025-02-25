@@ -81,7 +81,6 @@ namespace OpenActive.FakeDatabase.NET
                 else
                 {
                     var tablesAlreadyExist = db.TableExists(TableTypesToCreate[0].Name);
-                    Console.WriteLine($"Tables already exist: {tablesAlreadyExist} (using {TableTypesToCreate[0].Name})");
                     if (tablesAlreadyExist)
                     {
                         foreach (var tableType in TableTypesToCreate)

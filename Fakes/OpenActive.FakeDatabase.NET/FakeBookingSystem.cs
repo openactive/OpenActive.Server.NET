@@ -12,21 +12,26 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using ServiceStack.OrmLite.Dapper;
+using Microsoft.Extensions.Logging;
 using OpenActive.NET;
 
 namespace OpenActive.FakeDatabase.NET
 {
     /// <summary>
     /// This class models the database schema within an actual booking system.
-    /// It is designed to simulate the database that woFuld be available in a full implementation.
+    /// It is designed to simulate the database that would be available in a full implementation.
     /// </summary>
     public class FakeBookingSystem
     {
+        private readonly ILogger<FakeBookingSystem> _logger;
         public FakeDatabase Database { get; set; }
-        public FakeBookingSystem(bool facilityUseHasSlots)
-        {
-            Database = FakeDatabase.GetPrepopulatedFakeDatabase(facilityUseHasSlots).Result;
 
+        public FakeBookingSystem(
+            bool facilityUseHasSlots,
+            ILogger<FakeBookingSystem> logger)
+        {
+            _logger = logger;
+            Database = FakeDatabase.GetPrepopulatedFakeDatabase(facilityUseHasSlots, logger).Result;
         }
     }
 
@@ -58,13 +63,16 @@ namespace OpenActive.FakeDatabase.NET
     // ReSharper disable once InconsistentNaming
     public class InMemorySQLite
     {
+        private readonly ILogger _logger;
         public readonly OrmLiteConnectionFactory Database;
         public readonly bool IsPersistedDatabase;
 
-        public InMemorySQLite()
+        public InMemorySQLite(ILogger logger)
         {
+            _logger = logger;
             var sqliteDbPath = Environment.GetEnvironmentVariable("SQLITE_DB_PATH")
                 ?? Path.GetTempPath() + "openactive-fakedatabase.db";
+            _logger.LogInformation($"InMemorySQLite - using SQLite database at {sqliteDbPath}");
             // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
             // There are issues with transactions when using full in-memory SQLite. To workaround this, we create a temporary file and use this to hold the SQLite database.
             Database = new OrmLiteConnectionFactory(sqliteDbPath, SqliteDialect.Provider);
@@ -85,9 +93,12 @@ namespace OpenActive.FakeDatabase.NET
                 ?.ToLowerInvariant() == "true";
 
             // Create empty tables
-            Console.WriteLine($"Creating tables. Persist? {persistPreviousDatabase}");
             var tablesFreshlyCreated = DatabaseCreator.CreateTables(Database, !persistPreviousDatabase);
-            Console.WriteLine($"Created tables. Fresh? {tablesFreshlyCreated}");
+            if (tablesFreshlyCreated) {
+                _logger.LogInformation($"InMemorySQLite - Database tables freshly created");
+            } else {
+                _logger.LogInformation($"InMemorySQLite - Database tables not created as they already exist");
+            }
             IsPersistedDatabase = !tablesFreshlyCreated;
 
             // OrmLiteUtils.PrintSql();
@@ -153,16 +164,19 @@ namespace OpenActive.FakeDatabase.NET
 
     public class FakeDatabase
     {
+        private readonly ILogger _logger;
         private const float ProportionWithRequiresAttendeeValidation = 1f / 10;
         private const float ProportionWithRequiresAdditionalDetails = 1f / 10;
         private bool _facilityUseHasSlots;
-        public readonly InMemorySQLite Mem = new InMemorySQLite();
+        public readonly InMemorySQLite Mem;
 
         private static readonly Faker Faker = new Faker();
 
-        public FakeDatabase(bool facilityUseHasSlots)
+        public FakeDatabase(bool facilityUseHasSlots, ILogger logger)
         {
+            _logger = logger;
             _facilityUseHasSlots = facilityUseHasSlots;
+            Mem = new InMemorySQLite(logger);
         }
 
         static FakeDatabase()
@@ -1365,13 +1379,11 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase(bool facilityUseHasSlots)
+        public static async Task<FakeDatabase> GetPrepopulatedFakeDatabase(bool facilityUseHasSlots, ILogger logger)
         {
-            Console.WriteLine($"GetPrepopulatedFakeDatabase - start");
-            var database = new FakeDatabase(facilityUseHasSlots);
+            var database = new FakeDatabase(facilityUseHasSlots, logger);
             if (database.Mem.IsPersistedDatabase)
             {
-                Console.WriteLine($"GetPrepopulatedFakeDatabase - is persisted");
                 // Since we are persisting the previous database, we need to
                 // make sure that the current setting for `FacilityUseHasSlots`
                 // matches the one in which data was initially populated.
@@ -1379,12 +1391,11 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     await AssertExistingFacilitiesMatchFacilityUseHasSlots(db, facilityUseHasSlots);
                 }
-                Console.WriteLine($"GetPrepopulatedFakeDatabase - is persisted / finished");
                 // No need to do any population, as the database is being
                 // persisted from a previous session.
+                logger.LogInformation($"FakeDatabase.GetPrepopulatedFakeDatabase - Database is persisted from an earlier session, so is not being pre-populated now.");
                 return database;
             }
-            Console.WriteLine($"GetPrepopulatedFakeDatabase - is fresh");
             using (var db = await database.Mem.Database.OpenAsync())
             using (var transaction = db.OpenTransaction(IsolationLevel.Serializable))
             {
@@ -1396,8 +1407,8 @@ namespace OpenActive.FakeDatabase.NET
                 await CreateGrants(db);
                 await BookingPartnerTable.Create(db);
                 transaction.Commit();
+                logger.LogInformation($"FakeDatabase.GetPrepopulatedFakeDatabase - Database has been pre-populated.");
             }
-            Console.WriteLine($"GetPrepopulatedFakeDatabase - is fresh / finished");
 
             return database;
         }
@@ -2109,7 +2120,7 @@ namespace OpenActive.FakeDatabase.NET
         ///   Period guidance:
         ///   https://developer.openactive.io/publishing-data/data-feeds/scaling-feeds#option-1-retention-period-to-minimise-storage-requirements).
         /// </summary>
-        public async Task SoftDeletePastOpportunitiesAndInsertNewAtEdgeOfWindow()
+        public async Task<(int numRefreshedOccurrences, int numRefreshedSlots)> SoftDeletePastOpportunitiesAndInsertNewAtEdgeOfWindow()
         {
             using (var db = await Mem.Database.OpenAsync())
             {
@@ -2136,12 +2147,13 @@ namespace OpenActive.FakeDatabase.NET
                 await db.InsertAllAsync(occurrencesAtEdgeOfWindow);
 
                 // Mark old occurrences as soft deleted and update
-                var softDeletedOccurrences = toBeSoftDeletedOccurrences.Select(x =>
+                // TODO create new OccurrenceTable instances using ...x when upgraded to C# v8+
+                foreach (var occurrence in toBeSoftDeletedOccurrences)
                 {
-                    x.Deleted = true;
-                    return x;
-                });
-                await db.UpdateAllAsync(softDeletedOccurrences);
+                    occurrence.Deleted = true;
+                    occurrence.Modified = DateTimeOffset.Now.UtcTicks;
+                }
+                await db.UpdateAllAsync(toBeSoftDeletedOccurrences);
 
                 // Get Slots to be soft deleted
                 var toBeSoftDeletedSlots = await db.SelectAsync<SlotTable>(x =>
@@ -2176,16 +2188,18 @@ namespace OpenActive.FakeDatabase.NET
                 await db.InsertAllAsync(slotsAtEdgeOfWindow);
 
                 // Mark old slots as soft deleted and update
-                var softDeletedSlots = toBeSoftDeletedSlots.Select(x =>
+                // TODO create new SlotTable instances using ...x when upgraded to C# v8+
+                foreach (var slot in toBeSoftDeletedSlots)
                 {
-                    x.Deleted = true;
-                    return x;
-                });
-                await db.UpdateAllAsync(softDeletedSlots);
+                    slot.Deleted = true;
+                    slot.Modified = DateTimeOffset.Now.UtcTicks;
+                }
+                await db.UpdateAllAsync(toBeSoftDeletedSlots);
+                return (toBeSoftDeletedOccurrences.Count, toBeSoftDeletedSlots.Count);
             }
         }
 
-        public async Task HardDeleteOldSoftDeletedOccurrencesAndSlots()
+        public async Task<(int numDeletedOccurrences, int numDeletedSlots)> HardDeleteOldSoftDeletedOccurrencesAndSlots()
         {
             // Old (startDate < now) opportunities that have already been
             // soft-deleted are hard-deleted. This is an implementation of the
@@ -2194,12 +2208,15 @@ namespace OpenActive.FakeDatabase.NET
             var yesterday = DateTime.Today.AddDays(-7);
             using (var db = await Mem.Database.OpenAsync())
             {
-                await db.DeleteAsync<OccurrenceTable>(x =>
+                var numDeletedOccurrences = await db.DeleteAsync<OccurrenceTable>(x =>
                     x.Deleted == true
                     && x.Modified < new DateTimeOffset(yesterday).UtcTicks);
-                await db.DeleteAsync<SlotTable>(x =>
+
+                var numDeletedSlots = await db.DeleteAsync<SlotTable>(x =>
                     x.Deleted == true
                     && x.Modified < new DateTimeOffset(yesterday).UtcTicks);
+
+                return (numDeletedOccurrences, numDeletedSlots);
             }
         }
 

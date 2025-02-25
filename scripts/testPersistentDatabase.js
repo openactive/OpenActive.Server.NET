@@ -42,6 +42,8 @@ b. Wait for data refresher to run
 c. Turn on Broker
 d. Run `node scripts/testPersistentDatabase.js 2d` (assert bookable opp)
 e. Turn off RefImpl
+
+TODO (for a later issue): test that the refreshed opportunity has modifieds updated as expected
 */
 
 if (require.main === module) {
@@ -96,14 +98,7 @@ async function testStep2dAssertBookableOpportunity() {
  */
 async function putOldOpportunityIntoRefImplDb() {
   const payload = {
-    '@type': 'ScheduledSession',
-    'superEvent': {
-      '@type': 'SessionSeries',
-      'organizer': {
-        '@type': 'Organization',
-        '@id': 'https://localhost:5001/api/identifiers/seller'
-      }
-    },
+    ...getPayloadOpportunityDataForPutOldOpportunity('IndividualFacilityUseSlot'),
     '@context': [
       'https://openactive.io/',
       'https://openactive.io/test-interface'
@@ -127,6 +122,44 @@ async function putOldOpportunityIntoRefImplDb() {
   });
   const data = await res.json();
   return { status: res.status, data };
+}
+
+/**
+ * @param {'ScheduledSession' | 'IndividualFacilityUseSlot' | 'FacilityUseSlot'} opportunityType
+ */
+function getPayloadOpportunityDataForPutOldOpportunity(opportunityType) {
+  const seller = {
+    '@type': 'Organization',
+    '@id': 'https://localhost:5001/api/identifiers/seller'
+  };
+  switch (opportunityType) {
+    case 'ScheduledSession':
+      return {
+        '@type': 'ScheduledSession',
+        'superEvent': {
+          '@type': 'SessionSeries',
+          'organizer': seller,
+        },
+      };
+    case 'IndividualFacilityUseSlot':
+      return {
+        '@type': 'Slot',
+        facilityUse: {
+          '@type': 'IndividualFacilityUse',
+          provider: seller,
+        },
+      };
+    case 'FacilityUseSlot':
+      return {
+        '@type': 'Slot',
+        facilityUse: {
+          '@type': 'FacilityUse',
+          provider: seller,
+        },
+      };
+    default:
+      throw new Error(`Invalid opportunity type: ${opportunityType}`);
+  }
 }
 
 async function getRandomBookableOpportunityFromBroker() {

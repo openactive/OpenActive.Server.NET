@@ -35,11 +35,15 @@ namespace BookingSystem
             while (!stoppingToken.IsCancellationRequested)
             {
                 _logger.LogInformation($"FakeDataRefresherService is starting..");
-                await _bookingSystem.Database.HardDeleteOldSoftDeletedOccurrencesAndSlots();
-                _logger.LogInformation($"FakeDataRefresherService hard deleted opportunities that were previously old and soft deleted");
+                var (numDeletedOccurrences, numDeletedSlots) = await _bookingSystem
+                  .Database
+                  .HardDeleteOldSoftDeletedOccurrencesAndSlots();
+                _logger.LogInformation($"FakeDataRefresherService hard deleted {numDeletedOccurrences} occurrences and {numDeletedSlots} slots that were previously old and soft-deleted.");
 
-                await _bookingSystem.Database.SoftDeletePastOpportunitiesAndInsertNewAtEdgeOfWindow();
-                _logger.LogInformation($"FakeDataRefresherService soft deleted opportunities and inserted new ones at edge of window.");
+                var (numRefreshedOccurrences, numRefreshedSlots) = await _bookingSystem
+                  .Database
+                  .SoftDeletePastOpportunitiesAndInsertNewAtEdgeOfWindow();
+                _logger.LogInformation($"FakeDataRefresherService, for {numRefreshedOccurrences} old occurrences and {numRefreshedSlots} old slots, inserted new copies into the future and soft-deleted the old ones.");
 
                 _logger.LogInformation($"FakeDataRefresherService is finished");
                 await Task.Delay(_settings.DataRefresherInterval, stoppingToken);

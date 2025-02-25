@@ -10,6 +10,7 @@ using System.Net.Http;
 using OpenActive.Server.NET.OpenBookingHelper;
 using Microsoft.AspNetCore.Authorization;
 using OpenActive.FakeDatabase.NET;
+using Microsoft.Extensions.Logging;
 
 namespace BookingSystem.AspNetCore
 {
@@ -95,7 +96,10 @@ namespace BookingSystem.AspNetCore
 
             services.AddSingleton(x => AppSettings);
 
-            services.AddSingleton(sp => new FakeBookingSystem(AppSettings.FeatureFlags.FacilityUseHasSlots));
+            services.AddSingleton(sp => new FakeBookingSystem(
+                AppSettings.FeatureFlags.FacilityUseHasSlots,
+                sp.GetRequiredService<ILogger<FakeBookingSystem>>()
+            ));
 
             // Use the singleton FakeBookingSystem in IBookingEngine registration
             services.AddSingleton<IBookingEngine>(sp => 
