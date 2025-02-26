@@ -22,21 +22,36 @@ namespace BookingSystem.AspNetCore
             configuration.Bind(AppSettings);
 
             // Provide a simple way to disable token auth for some testing scenarios
-            if (System.Environment.GetEnvironmentVariable("DISABLE_TOKEN_AUTH") == "true")
+            var disableTokenAuthEnvVar = System.Environment.GetEnvironmentVariable("DISABLE_TOKEN_AUTH");
+            if (disableTokenAuthEnvVar == "true")
             {
                 AppSettings.FeatureFlags.EnableTokenAuth = false;
             }
+            else if (disableTokenAuthEnvVar == "false")
+            {
+                AppSettings.FeatureFlags.EnableTokenAuth = true;
+            }
 
             // Provide a simple way to enable FacilityUseHasSlots for some testing scenarios
-            if (System.Environment.GetEnvironmentVariable("FACILITY_USE_HAS_SLOTS") == "true")
+            var facilityUseHasSlotsEnvVar = System.Environment.GetEnvironmentVariable("FACILITY_USE_HAS_SLOTS");
+            if (facilityUseHasSlotsEnvVar == "true")
             {
                 AppSettings.FeatureFlags.FacilityUseHasSlots = true;
             }
+            else if (facilityUseHasSlotsEnvVar == "false")
+            {
+                AppSettings.FeatureFlags.FacilityUseHasSlots = false;
+            }
 
             // Provide a simple way to enable CI mode 
-            if (System.Environment.GetEnvironmentVariable("IS_LOREM_FITSUM_MODE") == "true")
+            var isLoremFitsumModeEnvVar = System.Environment.GetEnvironmentVariable("IS_LOREM_FITSUM_MODE");
+            if (isLoremFitsumModeEnvVar == "true")
             {
                 AppSettings.FeatureFlags.IsLoremFitsumMode = true;
+            }
+            else if (isLoremFitsumModeEnvVar == "false")
+            {
+                AppSettings.FeatureFlags.IsLoremFitsumMode = false;
             }
         }
 
