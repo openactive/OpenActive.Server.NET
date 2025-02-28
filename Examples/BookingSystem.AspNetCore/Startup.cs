@@ -11,6 +11,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using Microsoft.AspNetCore.Authorization;
 using OpenActive.FakeDatabase.NET;
 using Microsoft.Extensions.Logging;
+using BookingSystem.AspNetCore.Services;
 
 namespace BookingSystem.AspNetCore
 {
@@ -116,6 +117,9 @@ namespace BookingSystem.AspNetCore
                 sp.GetRequiredService<ILogger<FakeBookingSystem>>()
             ));
 
+            // Register our DataRefresherStatusService as a singleton
+            services.AddSingleton<DataRefresherStatusService>();
+
             // Use the singleton FakeBookingSystem in IBookingEngine registration
             services.AddSingleton<IBookingEngine>(sp => 
                 EngineConfig.CreateStoreBookingEngine(
@@ -126,6 +130,11 @@ namespace BookingSystem.AspNetCore
             var doRunDataRefresher = Environment.GetEnvironmentVariable("PERIODICALLY_REFRESH_DATA")?.ToLowerInvariant() == "true";
             if (doRunDataRefresher) {
                 services.AddHostedService<FakeDataRefresherService>();
+            }
+            else {
+                // If data refresher is not configured to run, update the status service
+                var statusService = services.BuildServiceProvider().GetRequiredService<DataRefresherStatusService>();
+                statusService.SetRefresherConfigured(false);
             }
         }
 

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenActive.FakeDatabase.NET;
+using BookingSystem.AspNetCore.Services;
 
 
 namespace BookingSystem
@@ -15,15 +16,21 @@ namespace BookingSystem
         private readonly ILogger<FakeDataRefresherService> _logger;
         private readonly AppSettings _settings;
         private readonly FakeBookingSystem _bookingSystem;
+        private readonly DataRefresherStatusService _statusService;
 
         public FakeDataRefresherService(
             AppSettings settings, 
             ILogger<FakeDataRefresherService> logger,
-            FakeBookingSystem bookingSystem)
+            FakeBookingSystem bookingSystem,
+            DataRefresherStatusService statusService)
         {
             _settings = settings;
             _logger = logger;
             _bookingSystem = bookingSystem;
+            _statusService = statusService;
+
+            // Indicate that the refresher service is configured to run
+            _statusService.SetRefresherConfigured(true);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -46,6 +53,10 @@ namespace BookingSystem
                 _logger.LogInformation($"FakeDataRefresherService, for {numRefreshedOccurrences} old occurrences and {numRefreshedSlots} old slots, inserted new copies into the future and soft-deleted the old ones.");
 
                 _logger.LogInformation($"FakeDataRefresherService is finished");
+
+                // Signal that a cycle has completed
+                _statusService.SignalCycleCompletion();
+
                 await Task.Delay(_settings.DataRefresherInterval, stoppingToken);
             }
         }
