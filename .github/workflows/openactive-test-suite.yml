@@ -58,6 +58,57 @@ jobs:
     - name: Run OpenActive.FakeDatabase.NET.Tests
       run: dotnet test ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release --no-build --verbosity normal
 
+  # TODO document this job in .github/workflows/README.md
+  test-persistent-database:
+    needs:
+      - test-server
+      - test-fake-database
+    runs-on: ubuntu-latest
+    steps:
+      # INITIAL SET UP
+      - name: Checkout OpenActive.Server.NET
+        uses: actions/checkout@v2
+        with:
+          path: server
+
+      # checks if the workflow is triggered by a branch starting with `coverage/`. If so, it sets an output variable named
+      # `mirror_ref` with the branch name, allowing later steps to use it
+      - name: Use matching coverage/* branch ${{ github.head_ref }} in OpenActive Test Suite 
+        if: ${{ startsWith(github.head_ref, 'coverage/') }}
+        id: refs
+        run: echo "::set-output name=mirror_ref::${{ github.head_ref }}"
+      
+      # checks out Test Suite and places it in a directory named "tests." The branch used for checkout is determined by
+      # the `mirror_ref` set in the previous step  
+      - name: Checkout OpenActive Test Suite ${{ steps.refs.outputs.mirror_ref }}
+        uses: actions/checkout@v2
+        with:
+          repository: openactive/openactive-test-suite
+          ref: ${{ steps.refs.outputs.mirror_ref }}
+          path: tests
+
+      # sets up .NET for running OpenActive.Server.NET
+      - name: Setup .NET Core SDK 3.1.419
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.419
+      # sets up Node.js for running Test Suite
+      - name: Setup Node.js 18.17.1
+        uses: actions/setup-node@v1
+        with:
+          node-version: 18.17.1
+
+      - name: Install OpenActive Test Suite
+        run: npm install
+        working-directory: tests
+
+      - name: Build .NET Core Booking Server Reference Implementation
+        run: dotnet build ./server/Examples/BookingSystem.AspNetCore/BookingSystem.AspNetCore.csproj --configuration Release
+
+      # Run tests
+      - name: Run tests
+        run: node ./scripts/testPersistentDatabase.js
+
   core:
     # Specifies that this job depends on the successful completion of two other jobs: "test-server" and "test-fake-database"
     needs:
