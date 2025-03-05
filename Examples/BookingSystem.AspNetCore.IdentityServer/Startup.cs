@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using OpenActive.FakeDatabase.NET;
+using Microsoft.Extensions.Logging;
 
 namespace IdentityServer
 {
@@ -27,7 +28,11 @@ namespace IdentityServer
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddTransient<IClientStore, ClientStore>();
-            services.AddSingleton(x => new FakeBookingSystem(AppSettings.FeatureFlags.FacilityUseHasSlots));
+            services.AddSingleton(x => new FakeBookingSystem
+            (
+                AppSettings.FeatureFlags.FacilityUseHasSlots,
+                x.GetRequiredService<ILogger<FakeBookingSystem>>()
+            ));
 
             var builder = services.AddIdentityServer(options =>
                 {

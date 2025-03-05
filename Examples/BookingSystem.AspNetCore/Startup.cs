@@ -112,7 +112,8 @@ namespace BookingSystem.AspNetCore
 
             services.AddSingleton(x => AppSettings);
 
-            services.AddSingleton(sp => new FakeBookingSystem(
+            services.AddSingleton(sp => new FakeBookingSystem
+            (
                 AppSettings.FeatureFlags.FacilityUseHasSlots,
                 sp.GetRequiredService<ILogger<FakeBookingSystem>>()
             ));
