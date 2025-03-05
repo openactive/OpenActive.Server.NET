@@ -19,12 +19,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.419
-        
-      # Install required OpenSSL libraries
-    - name: Install OpenSSL dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libssl1.0-dev || sudo apt-get install -y libssl1.0.0 || sudo apt-get install -y libssl-dev
 
       # Runs the `dotnet build` command to build the "OpenActive.Server.NET.Tests" project and its dependencies. It uses
       # the `--configuration Release` flag to build in release mode, which results in optimized code generation  
@@ -49,12 +43,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.419
-
-      # Install required OpenSSL libraries
-    - name: Install OpenSSL dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libssl1.0-dev || sudo apt-get install -y libssl1.0.0 || sudo apt-get install -y libssl-dev
 
       # Runs the `dotnet build` command to build the "OpenActive.FakeDatabase.NET.Tests" project and its dependencies.
       # It uses the `--configuration Release` flag to build in release mode, which results in optimized code generation  
@@ -269,11 +257,6 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 3.1.419
-      # Install required OpenSSL libraries
-      - name: Install OpenSSL dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libssl1.0-dev || sudo apt-get install -y libssl1.0.0 || sudo apt-get install -y libssl-dev
       # Run dotnet build and publish
       - name: Install OpenActive.Server.NET dependencies
         run: dotnet restore
@@ -324,11 +307,6 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 3.1.419
-      # Install required OpenSSL libraries
-      - name: Install OpenSSL dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libssl1.0-dev || sudo apt-get install -y libssl1.0.0 || sudo apt-get install -y libssl-dev
       - name: Install dependencies
         run: dotnet restore
       - name: Build
@@ -380,11 +358,6 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 3.1.419
-      # Install required OpenSSL libraries
-      - name: Install OpenSSL dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libssl1.0-dev || sudo apt-get install -y libssl1.0.0 || sudo apt-get install -y libssl-dev
       - name: Install dependencies
         run: dotnet restore
       - name: Build
