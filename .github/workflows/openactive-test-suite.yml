@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-server:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       # Checks out this project ie OpenActive.Server.NET
     - name: Checkout
@@ -32,7 +32,7 @@ jobs:
       run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-build --verbosity normal
   
   test-fake-database:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       # Checks out this project ie OpenActive.Server.NET
     - name: Checkout
@@ -61,7 +61,7 @@ jobs:
     needs:
       - test-server
       - test-fake-database
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     # Defines a matrix strategy for running tests with different combinations of parameters, allowing for parallel test
     # runs with various configurations. For more information about these parameters, see `.github/README.md` in Test
@@ -247,7 +247,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/master' }}
     needs:
       - core
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       # Checkout the repo
       - uses: actions/checkout@master
@@ -291,7 +291,7 @@ jobs:
     needs:
       - core
       - framework
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -342,7 +342,7 @@ jobs:
     needs:
       - core
       - framework
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
