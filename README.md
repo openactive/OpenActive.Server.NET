@@ -14,3 +14,15 @@ This is designed to have its code copied-and-pasted to provide a quick working s
 
 # OpenActive.FakeDatabase.NET [![Nuget](https://img.shields.io/nuget/v/OpenActive.FakeDatabase.NET.svg)](https://www.nuget.org/packages/OpenActive.FakeDatabase.NET/) [![OpenActive.FakeDatabase.NET.Tests](https://github.com/openactive/OpenActive.Server.NET/workflows/OpenActive.FakeDatabase.NET.Tests/badge.svg?branch=master)](https://github.com/openactive/OpenActive.Server.NET/actions?query=workflow%3AOpenActive.FakeDatabase.NET.Tests)
 [`OpenActive.FakeDatabase.NET`](https://github.com/openactive/OpenActive.Server.NET/tree/master/Fakes/OpenActive.FakeDatabase.NET) is an in-memory database that is used by BookingSystem.AspNetCore for illustration purposes. It can be added as a dependency to your project during the initial stages of implementation, to get a conformant test implementation as a starting position.
+
+Env vars to use when running OpenActive.FakeDatabase.NET:
+
+- `SQLITE_DB_PATH`: (optional) The path to the SQLite database file. If not
+  provided, a temporary file will be created. Be sure to provide this if you
+  want to persist data between runs.
+- `PERSIST_PREVIOUS_DATABASE`: (optional - default `false`) If set to `false`,
+  the database will be recreated from scratch with each run. If set to `true`,
+  and the database file already has data in it, this data will be preserved.
+- `PERIODICALLY_REFRESH_DATA`: (optional - default `false`) If set to `true`,
+  the database will be periodically refreshed, deleting past data and replacing
+  it with future data.

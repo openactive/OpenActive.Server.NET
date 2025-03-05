@@ -4,6 +4,10 @@ using System.Threading.Tasks;
 
 namespace BookingSystem.AspNetCore.Services
 {
+    /// <summary>
+    /// A service which tracks the status of the data refresher, including
+    /// whether it is configured to run and whether a cycle has completed.
+    /// </summary>
     public class DataRefresherStatusService
     {
         private readonly SemaphoreSlim _completionSemaphore = new SemaphoreSlim(0, 1);
@@ -31,6 +35,12 @@ namespace BookingSystem.AspNetCore.Services
             }
         }
 
+        /// <summary>
+        /// Has the data refresher completed a cycle?
+        ///
+        /// This makes it possible to write scripts (for CI) which don't start
+        /// until the data refresher has completed at least one cycle.
+        /// </summary>
         public bool HasCompletedCycle()
         {
             return _hasCompletedCycle;

@@ -117,10 +117,8 @@ namespace BookingSystem.AspNetCore
                 sp.GetRequiredService<ILogger<FakeBookingSystem>>()
             ));
 
-            // Register our DataRefresherStatusService as a singleton
             services.AddSingleton<DataRefresherStatusService>();
 
-            // Use the singleton FakeBookingSystem in IBookingEngine registration
             services.AddSingleton<IBookingEngine>(sp => 
                 EngineConfig.CreateStoreBookingEngine(
                     AppSettings, 
@@ -128,19 +126,22 @@ namespace BookingSystem.AspNetCore
                 ));
 
             var doRunDataRefresher = Environment.GetEnvironmentVariable("PERIODICALLY_REFRESH_DATA")?.ToLowerInvariant() == "true";
-            if (doRunDataRefresher) {
+            if (doRunDataRefresher)
+            {
                 services.AddHostedService<FakeDataRefresherService>();
-            }
-            else {
-                // If data refresher is not configured to run, update the status service
-                var statusService = services.BuildServiceProvider().GetRequiredService<DataRefresherStatusService>();
-                statusService.SetRefresherConfigured(false);
             }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, DataRefresherStatusService statusService)
         {
+            // If data refresher is not configured to run, make this clear in the status service
+            var doRunDataRefresher = Environment.GetEnvironmentVariable("PERIODICALLY_REFRESH_DATA")?.ToLowerInvariant() == "true";
+            if (!doRunDataRefresher)
+            {
+                statusService.SetRefresherConfigured(false);
+            }
+
             // Note this will prevent UnknownOrIncorrectEndpointError being produced for 404 status in Development mode
             // Hence the `unknown-endpoint` test of the OpenActive Test Suite will always fail in Development mode
             if (env.IsDevelopment())
