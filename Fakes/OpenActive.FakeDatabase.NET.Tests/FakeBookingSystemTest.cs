@@ -4,13 +4,18 @@ using Xunit.Abstractions;
 using System;
 using ServiceStack.OrmLite;
 using System.Data;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace OpenActive.FakeDatabase.NET.Test
 {
     public class FakeBookingSystemTest
     {
         private readonly ITestOutputHelper output;
-        private readonly FakeBookingSystem fakeBookingSystem = new FakeBookingSystem(false);
+        private readonly FakeBookingSystem fakeBookingSystem = new FakeBookingSystem
+        (
+            false,
+            new NullLogger<FakeBookingSystem>()
+        );
 
         public FakeBookingSystemTest(ITestOutputHelper output)
         {

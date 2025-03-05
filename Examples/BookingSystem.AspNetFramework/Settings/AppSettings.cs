@@ -1,3 +1,5 @@
+using System;
+
 namespace BookingSystem
 {
     public class AppSettings
@@ -6,6 +8,7 @@ namespace BookingSystem
         public string OpenIdIssuerUrl { get; set; }
         public FeatureSettings FeatureFlags { get; set; }
         public PaymentSettings Payment { get; set; }
+        public int DataRefresherIntervalHours { get; set; } = 6;
     }
 
     /**
@@ -20,6 +23,7 @@ namespace BookingSystem
         public bool OnlyFreeOpportunities { get; set; } = false;
         public bool PrepaymentAlwaysRequired { get; set; } = false;
         public bool FacilityUseHasSlots { get; set; } = false;
+        public bool IsLoremFitsumMode { get; set; } = false;
     }
 
     public class PaymentSettings

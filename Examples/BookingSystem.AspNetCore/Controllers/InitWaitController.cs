@@ -28,9 +28,14 @@ namespace BookingSystem.AspNetCore.Controllers
 
         /// <summary>
         /// Wait for the data refresher to complete its first cycle.
-        /// Returns 204 when the data refresher has completed its first cycle.
-        /// Returns 503 if the data refresher is not configured to run.
-        /// Returns 504 if the data refresher fails to complete a cycle within the default timeout.
+        ///
+        /// This makes it possible to write scripts (for CI) which don't start
+        /// until the data refresher has completed at least one cycle.
+        ///
+        /// - Returns 204 when the data refresher has completed its first cycle.
+        /// - Returns 503 if the data refresher is not configured to run.
+        /// - Returns 504 if the data refresher fails to complete a cycle within
+        ///   the default timeout.
         /// </summary>
         [HttpGet("data-refresher")]
         public async Task<IActionResult> WaitForDataRefresher()

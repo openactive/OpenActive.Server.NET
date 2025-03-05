@@ -8,7 +8,8 @@ on:
 
 jobs:
   test-server:
-    runs-on: ubuntu-latest
+    # ubuntu-latest's SSL library no longer supports .NET 3.1
+    runs-on: ubuntu-22.04
     steps:
       # Checks out this project ie OpenActive.Server.NET
     - name: Checkout
@@ -32,7 +33,8 @@ jobs:
       run: dotnet test ./OpenActive.Server.NET.Tests/OpenActive.Server.NET.Tests.csproj --configuration Release --no-build --verbosity normal
   
   test-fake-database:
-    runs-on: ubuntu-latest
+    # ubuntu-latest's SSL library no longer supports .NET 3.1
+    runs-on: ubuntu-22.04
     steps:
       # Checks out this project ie OpenActive.Server.NET
     - name: Checkout
@@ -112,7 +114,8 @@ jobs:
     needs:
       - test-server
       - test-fake-database
-    runs-on: ubuntu-latest
+    # ubuntu-latest's SSL library no longer supports .NET 3.1
+    runs-on: ubuntu-22.04
 
     # Defines a matrix strategy for running tests with different combinations of parameters, allowing for parallel test
     # runs with various configurations. For more information about these parameters, see `.github/README.md` in Test
@@ -158,7 +161,7 @@ jobs:
 
     # runs `dotnet restore` to install the dependencies for the "OpenActive.Server.NET" project. It is conditional and
     # depends on the "profile" value not being 'no-auth' or 'single-seller'
-    # LW: Why?
+    # LW: Why is it conditional?
     - name: Install OpenActive.Server.NET dependencies
       if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: dotnet restore ./server/
@@ -206,7 +209,7 @@ jobs:
 
     # uploads the test output as an artifact, which can be used for reference or debugging later  
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: ${{ success() || failure() }}
       with:
         name: core.${{ matrix.mode }}.${{ matrix.profile }}
@@ -286,7 +289,7 @@ jobs:
         NODE_APP_INSTANCE: framework
       working-directory: tests
     - name: Upload test output for ${{ matrix.mode }} mode as artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: ${{ success() || failure() }}
       with:
         name: framework.${{ matrix.mode }}.${{ matrix.profile }}
@@ -299,7 +302,8 @@ jobs:
     if: ${{ github.ref == 'refs/heads/master' }}
     needs:
       - core
-    runs-on: ubuntu-latest
+    # ubuntu-latest's SSL library no longer supports .NET 3.1
+    runs-on: ubuntu-22.04
     steps:
       # Checkout the repo
       - uses: actions/checkout@master
@@ -343,7 +347,8 @@ jobs:
     needs:
       - core
       - framework
-    runs-on: ubuntu-latest
+    # ubuntu-latest's SSL library no longer supports .NET 3.1
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -394,7 +399,8 @@ jobs:
     needs:
       - core
       - framework
-    runs-on: ubuntu-latest
+    # ubuntu-latest's SSL library no longer supports .NET 3.1
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
