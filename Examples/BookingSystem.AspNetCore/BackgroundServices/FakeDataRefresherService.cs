@@ -9,8 +9,14 @@ using BookingSystem.AspNetCore.Services;
 
 namespace BookingSystem
 {
-    // Background task
-    // More information: https://docs.microsoft.com/en-us/dotnet/architecture/microservices/multi-container-microservice-net-applications/background-tasks-with-ihostedservice#implementing-ihostedservice-with-a-custom-hosted-service-class-deriving-from-the-backgroundservice-base-class
+    /// <summary>
+    /// A background task which periodically refreshes the data in the
+    /// FakeBookingSystem. This means that past data is deleted and new copies
+    /// are created in the future.
+    ///
+    /// It is a background task. More information on that here:
+    /// https://docs.microsoft.com/en-us/dotnet/architecture/microservices/multi-container-microservice-net-applications/background-tasks-with-ihostedservice#implementing-ihostedservice-with-a-custom-hosted-service-class-deriving-from-the-backgroundservice-base-class
+    /// </summary>
     public class FakeDataRefresherService : BackgroundService
     {
         private readonly ILogger<FakeDataRefresherService> _logger;

@@ -107,7 +107,7 @@ jobs:
 
     # runs `dotnet restore` to install the dependencies for the "OpenActive.Server.NET" project. It is conditional and
     # depends on the "profile" value not being 'no-auth' or 'single-seller'
-    # LW: Why?
+    # LW: Why is it conditional?
     - name: Install OpenActive.Server.NET dependencies
       if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: dotnet restore ./server/
