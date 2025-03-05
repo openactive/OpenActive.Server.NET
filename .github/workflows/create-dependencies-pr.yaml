@@ -7,6 +7,7 @@ on:
 
 jobs:
   generate:
+    # ubuntu-latest's SSL library no longer supports .NET 3.1
     runs-on: ubuntu-22.04
 
     steps:
