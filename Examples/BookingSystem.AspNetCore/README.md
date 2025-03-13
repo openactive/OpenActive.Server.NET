@@ -33,6 +33,15 @@ ASPNETCORE_ENVIRONMENT=no-auth dotnet run --no-launch-profile --project ./Bookin
 
 The above example starts the BookingSystem.AspNetCore in `no-auth` mode.
 
+## Env Vars
+
+BookingSystem.AspNetCore uses the following environment variables (note: this list is not exhaustive):
+
+- `PERIODICALLY_REFRESH_DATA`: (optional - default `false`) If set to `true`,
+  the database will be periodically refreshed, deleting past data and replacing
+  it with future data.
+- `IS_LOREM_FITSUM_MODE`: (optional - default `false`) If set to `true`, data is created in ["Lorem Fitsum" mode](#lorem-fitsum-mode).
+
 ## BookingSystem.AspNetCore Data Generation
 
 BookingSystem.AspNetCore has three main uses that make it very important in the OpenActive ecosystem:
@@ -64,6 +73,6 @@ In the CLI this can be done by running the following command for example:
 IS_LOREM_FITSUM_MODE=true dotnet run --no-launch-profile --project ./BookingSystem.AspNetCore.csproj --configuration Release --no-build
 ```
 
-### Golden Records
+#### Golden Records
 Golden records are randomly generated records that have maximally enriched properties in the generated data. For example where a record might have one image normally, a golden record will have four.
 
