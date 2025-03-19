@@ -31,7 +31,17 @@ if (require.main === module) {
 this logic is being orchestrated in a node.js script, rather than directly in
 Github action (where process management would be more complicated), it'll be
 harder to see what's going on without good logging. */
+/* TODO remove the readline prompts once this script does the orchestration
+itself. */
 async function start() {
+  console.log("Starting test process...");
+  
+  // Ask user to add logging
+  const readline = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+  
   // Step 1: Create a fresh database, and put an past opportunity into it
   // Step 1a: Turn on RefImpl, configured to create a fresh database
   /*
@@ -42,6 +52,18 @@ async function start() {
   OPPORTUNITY_COUNT: 0
   SQLITE_DB_PATH: ~/openactive-fakedatabase.db
   */
+  
+  await new Promise(resolve => {
+    readline.question('1a). Please spawn a RefImpl process in the background with the specified env vars. Type "y" when done: ', answer => {
+      if (answer.toLowerCase() === 'y') {
+        console.log('Continuing with RefImpl running...');
+        resolve();
+      } else {
+        console.log('Exiting...');
+        process.exit(0);
+      }
+    });
+  });
 
   // Step 1b: Put an past opportunity into the database
   await testStep1bInsertOldOpportunity('ScheduledSession', 'https://openactive.io/test-interface#TestOpportunityBookableInPast');
@@ -58,12 +80,36 @@ async function start() {
   NODE_ENV: .example.single-seller
   NODE_APP_INSTANCE: ci
   */
+  
+  await new Promise(resolve => {
+    readline.question('1c). Please spawn a Broker process in the background with the specified env vars. Type "y" when done: ', answer => {
+      if (answer.toLowerCase() === 'y') {
+        console.log('Continuing with Broker running...');
+        resolve();
+      } else {
+        console.log('Exiting...');
+        process.exit(0);
+      }
+    });
+  });
 
   // Step 1d: Assert that there is no bookable opportunity in the broker feed
   await testStep1dAssertNoBookableOpportunity();
 
   // Step 1e: Turn off Broker, RefImpl
   // TODO kill those processes
+  
+  await new Promise(resolve => {
+    readline.question('1e). Please kill the Broker and RefImpl processes. Type "y" when done: ', answer => {
+      if (answer.toLowerCase() === 'y') {
+        console.log('Continuing after killing processes...');
+        resolve();
+      } else {
+        console.log('Exiting...');
+        process.exit(0);
+      }
+    });
+  });
 
   // Step 2: Using the same database, await data refresher and find the past
   // opportunity turned into a future opportunity
@@ -79,18 +125,55 @@ async function start() {
   PERIODICALLY_REFRESH_DATA=true
   PERSIST_PREVIOUS_DATABASE=true
   */
+  
+  await new Promise(resolve => {
+    readline.question('2a). Please spawn a RefImpl process with data refresher enabled. Type "y" when done: ', answer => {
+      if (answer.toLowerCase() === 'y') {
+        console.log('Continuing with RefImpl and data refresher running...');
+        resolve();
+      } else {
+        console.log('Exiting...');
+        process.exit(0);
+      }
+    });
+  });
 
   // Step 2b: Wait for Data Refresher to have completed one cycle
   await testStep2bAwaitDataRefresher();
 
   // Step 2c: Turn on Broker
   // TODO: same as 1c
+  
+  await new Promise(resolve => {
+    readline.question('2c). Please spawn a Broker process (same as in step 1c). Type "y" when done: ', answer => {
+      if (answer.toLowerCase() === 'y') {
+        console.log('Continuing with Broker running...');
+        resolve();
+      } else {
+        console.log('Exiting...');
+        process.exit(0);
+      }
+    });
+  });
 
   // Step 2d: Assert that there is now a bookable opportunity in the broker feed
   await testStep2dAssertBookableOpportunity();
 
   // Step 2e: Turn off Broker, RefImpl
   // TODO kill those processes and exit
+  
+  await new Promise(resolve => {
+    readline.question('2e). Please kill all processes and prepare to exit. Type "y" when done: ', answer => {
+      if (answer.toLowerCase() === 'y') {
+        console.log('Test completed successfully!');
+        readline.close();
+        resolve();
+      } else {
+        console.log('Exiting...');
+        process.exit(0);
+      }
+    });
+  });
 }
 
 /**
@@ -100,7 +183,7 @@ async function start() {
 async function testStep1bInsertOldOpportunity(opportunityType, criteria) {
   const putRes = await putOldOpportunityIntoRefImplDb(opportunityType, criteria);
   if (!isHttpStatusSuccess(putRes.status)) {
-    console.error('Failed to put old opportunity into ref impl db:', putRes.status, putRes.data);
+    console.error('❌ Failed to put old opportunity into ref impl db:', putRes.status, putRes.data);
     process.exit(1);
   }
   console.log('Put old opportunity into ref impl db:', putRes.status, putRes.data);
@@ -116,10 +199,10 @@ async function testStep1dAssertNoBookableOpportunity() {
       'https://openactive.io/test-interface#TestOpportunityBookableInPast',
     );
     if (!isHttpStatusSuccess(getRes.status)) {
-      console.error('Could not find random bookable past-opportunity from broker, but there should be one, as it was created in step 1a');
+      console.error('❌ Could not find random bookable past-opportunity from broker, but there should be one, as it was created in step 1a');
       process.exit(1);
     }
-    console.log('Confirmed that past-bookable opportunity was found in broker feed');
+    console.log('✅ Confirmed that past-bookable opportunity was found in broker feed');
   }
   
   {
@@ -128,11 +211,11 @@ async function testStep1dAssertNoBookableOpportunity() {
       'https://openactive.io/test-interface#TestOpportunityBookable',
     );
     if (isHttpStatusSuccess(getRes.status)) {
-      console.error('Got random bookable (future-)opportunity from broker, but there should be none, as the inserted opportunity is in the past',
+      console.error('❌ Got random bookable (future-)opportunity from broker, but there should be none, as the inserted opportunity is in the past',
         getRes.status, getRes.data);
       process.exit(1);
     }
-    console.log('Asserted that there is no bookable opportunity in broker feed');
+    console.log('✅ Asserted that there is no bookable opportunity in broker feed');
   }
 }
 
@@ -144,7 +227,7 @@ async function testStep2bAwaitDataRefresher() {
     })
   });
   if (!isHttpStatusSuccess(res.status)) {
-    console.error('There was an error waiting for the data refresher to complete its first cycle', res.status, res.data);
+    console.error('❌ There was an error waiting for the data refresher to complete its first cycle', res.status, res.data);
     process.exit(1);
   }
   console.log('Data refresher has completed its first cycle');
@@ -154,13 +237,16 @@ async function testStep2dAssertBookableOpportunity() {
   // Await Broker health check first, to ensure that it has processed all feeds.
   await awaitBrokerHealthCheck();
 
-  const getRes = await getRandomBookableOpportunityFromBroker();
+  const getRes = await getRandomBookableOpportunityFromBroker(
+    'ScheduledSession',
+    'https://openactive.io/test-interface#TestOpportunityBookable',
+  );
   if (!isHttpStatusSuccess(getRes.status)) {
-    console.error('Could not find random bookable opportunity from broker, but there should be one, as the previously-past opportunity should have been refreshed into the future',
+    console.error('❌ Could not find random bookable opportunity from broker, but there should be one, as the previously-past opportunity should have been refreshed into the future',
       getRes.status, getRes.data);
     process.exit(1);
   }
-  console.log('Asserted that there is a bookable opportunity in broker feed');
+  console.log('✅ Asserted that there is a bookable opportunity in broker feed');
 }
 /**
  * Sends a POST request to create an old opportunity in the database
