@@ -26,6 +26,7 @@ namespace BookingSystem
             this._fakeBookingSystem = fakeBookingSystem;
         }
 
+        // TODO this method should use async queries so as not to block the main thread
         protected override async Task<List<RpdeItem<FacilityUse>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             var facilityTypeId = Environment.GetEnvironmentVariable("FACILITY_TYPE_ID") ?? "https://openactive.io/facility-types#a1f82b7a-1258-4d9a-8dc5-bfc2ae961651";
@@ -204,6 +205,7 @@ namespace BookingSystem
             this._fakeBookingSystem = fakeBookingSystem;
         }
 
+        // TODO this method should use async queries so as not to block the main thread
         protected override async Task<List<RpdeItem<Slot>>> GetRpdeItems(long? afterTimestamp, long? afterId)
         {
             using (var db = _fakeBookingSystem.Database.Mem.Database.Open())

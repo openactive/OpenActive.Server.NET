@@ -32,30 +32,76 @@ namespace OpenActive.FakeDatabase.NET
 
     public static class DatabaseCreator
     {
-        public static void CreateTables(OrmLiteConnectionFactory dbFactory)
+        private static readonly Type[] TableTypesToCreate = new[]
+        {
+            typeof(GrantTable),
+            typeof(BookingPartnerTable),
+            typeof(SellerTable),
+            typeof(ClassTable),
+            typeof(OrderTable),
+            typeof(OccurrenceTable),
+            typeof(OrderItemsTable),
+            typeof(FacilityUseTable),
+            typeof(SlotTable),
+            typeof(SellerUserTable)
+        };
+
+        private static readonly Type[] TableTypesToDrop = new []
+        {
+            typeof(SellerUserTable),
+            typeof(OrderItemsTable),
+            typeof(OccurrenceTable),
+            typeof(OrderTable),
+            typeof(ClassTable),
+            typeof(SellerTable),
+            typeof(FacilityUseTable),
+            typeof(SlotTable),
+            typeof(GrantTable),
+            typeof(BookingPartnerTable)
+        };
+
+        /// <returns>True if the tables were created, false if they already existed</returns>
+        public static bool CreateTables(OrmLiteConnectionFactory dbFactory, bool dropTablesOnRestart)
         {
             using (var db = dbFactory.Open())
             {
-                db.DropTable<SellerUserTable>();
-                db.DropTable<OrderItemsTable>();
-                db.DropTable<OccurrenceTable>();
-                db.DropTable<OrderTable>();
-                db.DropTable<ClassTable>();
-                db.DropTable<SellerTable>();
-                db.DropTable<FacilityUseTable>();
-                db.DropTable<SlotTable>();
-                db.DropTable<GrantTable>();
-                db.DropTable<BookingPartnerTable>();
-                db.CreateTable<GrantTable>();
-                db.CreateTable<BookingPartnerTable>();
-                db.CreateTable<SellerTable>();
-                db.CreateTable<ClassTable>();
-                db.CreateTable<OrderTable>();
-                db.CreateTable<OccurrenceTable>();
-                db.CreateTable<OrderItemsTable>();
-                db.CreateTable<FacilityUseTable>();
-                db.CreateTable<SlotTable>();
-                db.CreateTable<SellerUserTable>();
+                if (dropTablesOnRestart)
+                {
+                    // Drop tables in reverse order to handle dependencies
+                    foreach (var tableType in TableTypesToDrop)
+                    {
+                        db.DropTable(tableType);
+                    }
+                    foreach (var tableType in TableTypesToCreate)
+                    {
+                        db.CreateTable(false, tableType);
+                    }
+                    return true;
+                }
+                else
+                {
+                    var tablesAlreadyExist = db.TableExists(TableTypesToCreate[0].Name);
+                    if (tablesAlreadyExist)
+                    {
+                        foreach (var tableType in TableTypesToCreate)
+                        {
+                            if (!db.TableExists(tableType.Name))
+                            {
+                                throw new Exception($"Database is in unexpected state (perhaps the code has changed, changing the schema). As migrations are not supported, please restart with PERSIST_PREVIOUS_DATABASE=false\n" +
+                                    $"Table {TableTypesToCreate[0].Name} exists but table is: {tableType.Name}");
+                            }
+                        }
+                        return false;
+                    }
+                    else
+                    {
+                        foreach (var tableType in TableTypesToCreate)
+                        {
+                            db.CreateTable(false, tableType);
+                        }
+                        return true;
+                    }
+                }
             }
         }
     }

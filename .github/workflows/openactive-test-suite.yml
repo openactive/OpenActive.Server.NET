@@ -57,7 +57,7 @@ jobs:
       # output
     - name: Run OpenActive.FakeDatabase.NET.Tests
       run: dotnet test ./Fakes/OpenActive.FakeDatabase.NET.Tests/OpenActive.FakeDatabase.NET.Tests.csproj --configuration Release --no-build --verbosity normal
-  
+
   core:
     # Specifies that this job depends on the successful completion of two other jobs: "test-server" and "test-fake-database"
     needs:
@@ -110,6 +110,7 @@ jobs:
 
     # runs `dotnet restore` to install the dependencies for the "OpenActive.Server.NET" project. It is conditional and
     # depends on the "profile" value not being 'no-auth' or 'single-seller'
+    # LW: Why is it conditional?
     - name: Install OpenActive.Server.NET dependencies
       if: ${{ matrix.profile != 'no-auth' && matrix.profile != 'single-seller' }}
       run: dotnet restore ./server/

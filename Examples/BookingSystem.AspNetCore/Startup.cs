@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +10,8 @@ using System.Net.Http;
 using OpenActive.Server.NET.OpenBookingHelper;
 using Microsoft.AspNetCore.Authorization;
 using OpenActive.FakeDatabase.NET;
+using Microsoft.Extensions.Logging;
+using BookingSystem.AspNetCore.Services;
 
 namespace BookingSystem.AspNetCore
 {
@@ -20,21 +23,36 @@ namespace BookingSystem.AspNetCore
             configuration.Bind(AppSettings);
 
             // Provide a simple way to disable token auth for some testing scenarios
-            if (System.Environment.GetEnvironmentVariable("DISABLE_TOKEN_AUTH") == "true")
+            var disableTokenAuthEnvVar = System.Environment.GetEnvironmentVariable("DISABLE_TOKEN_AUTH");
+            if (disableTokenAuthEnvVar == "true")
             {
                 AppSettings.FeatureFlags.EnableTokenAuth = false;
             }
+            else if (disableTokenAuthEnvVar == "false")
+            {
+                AppSettings.FeatureFlags.EnableTokenAuth = true;
+            }
 
             // Provide a simple way to enable FacilityUseHasSlots for some testing scenarios
-            if (System.Environment.GetEnvironmentVariable("FACILITY_USE_HAS_SLOTS") == "true")
+            var facilityUseHasSlotsEnvVar = System.Environment.GetEnvironmentVariable("FACILITY_USE_HAS_SLOTS");
+            if (facilityUseHasSlotsEnvVar == "true")
             {
                 AppSettings.FeatureFlags.FacilityUseHasSlots = true;
             }
+            else if (facilityUseHasSlotsEnvVar == "false")
+            {
+                AppSettings.FeatureFlags.FacilityUseHasSlots = false;
+            }
 
             // Provide a simple way to enable CI mode 
-            if (System.Environment.GetEnvironmentVariable("IS_LOREM_FITSUM_MODE") == "true")
+            var isLoremFitsumModeEnvVar = System.Environment.GetEnvironmentVariable("IS_LOREM_FITSUM_MODE");
+            if (isLoremFitsumModeEnvVar == "true")
             {
                 AppSettings.FeatureFlags.IsLoremFitsumMode = true;
+            }
+            else if (isLoremFitsumModeEnvVar == "false")
+            {
+                AppSettings.FeatureFlags.IsLoremFitsumMode = false;
             }
         }
 
@@ -92,12 +110,39 @@ namespace BookingSystem.AspNetCore
                 .AddControllers()
                 .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()));
 
-            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(AppSettings, new FakeBookingSystem(AppSettings.FeatureFlags.FacilityUseHasSlots)));
+            services.AddSingleton(x => AppSettings);
+
+            services.AddSingleton(sp => new FakeBookingSystem
+            (
+                AppSettings.FeatureFlags.FacilityUseHasSlots,
+                sp.GetRequiredService<ILogger<FakeBookingSystem>>()
+            ));
+
+            services.AddSingleton<DataRefresherStatusService>();
+
+            services.AddSingleton<IBookingEngine>(sp => 
+                EngineConfig.CreateStoreBookingEngine(
+                    AppSettings, 
+                    sp.GetRequiredService<FakeBookingSystem>()
+                ));
+
+            var doRunDataRefresher = Environment.GetEnvironmentVariable("PERIODICALLY_REFRESH_DATA")?.ToLowerInvariant() == "true";
+            if (doRunDataRefresher)
+            {
+                services.AddHostedService<FakeDataRefresherService>();
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, DataRefresherStatusService statusService)
         {
+            // If data refresher is not configured to run, make this clear in the status service
+            var doRunDataRefresher = Environment.GetEnvironmentVariable("PERIODICALLY_REFRESH_DATA")?.ToLowerInvariant() == "true";
+            if (!doRunDataRefresher)
+            {
+                statusService.SetRefresherConfigured(false);
+            }
+
             // Note this will prevent UnknownOrIncorrectEndpointError being produced for 404 status in Development mode
             // Hence the `unknown-endpoint` test of the OpenActive Test Suite will always fail in Development mode
             if (env.IsDevelopment())
