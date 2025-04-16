@@ -182,8 +182,9 @@ jobs:
     needs:
       - test-server
       - test-fake-database
-    # runs on an Windows 2019 virtual machine, not an Ubuntu machine
-    runs-on: windows-2019
+      
+    # runs on an Windows virtual machine, not an Ubuntu machine (latest is used to force failure if dependencies become outdated)
+    runs-on: windows-latest
     
     strategy:
       fail-fast: false
@@ -213,9 +214,9 @@ jobs:
     # Building and deploying Framework is done using `msbuild` as opposed to `dotnet build`/`dotnet run`. It is started
     # using IIS Express    
     - name: Setup MSBuild path
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v2
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      uses: NuGet/setup-nuget@v2
     - name: Install OpenActive.Server.NET dependencies
       run: nuget restore .\server\
     - name: Build .NET Framework Reference Implementation
