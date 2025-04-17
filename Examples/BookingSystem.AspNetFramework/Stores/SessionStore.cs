@@ -8,7 +8,7 @@ using OpenActive.Server.NET.OpenBookingHelper;
 using OpenActive.FakeDatabase.NET;
 using RequiredStatusType = OpenActive.FakeDatabase.NET.RequiredStatusType;
 using System.Threading.Tasks;
-using BookingSystem.AspNetCore.Helpers;
+using BookingSystem.AspNetFramework.Helpers;
 
 namespace BookingSystem
 {
