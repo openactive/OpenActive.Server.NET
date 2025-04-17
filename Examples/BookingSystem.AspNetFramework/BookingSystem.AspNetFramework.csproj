@@ -485,6 +485,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Examples\BookingSystem.AspNetCore\BookingSystem.AspNetCore.csproj">
+      <Project>{29A8AF39-ED3C-4433-8103-3535CE8C32EC}</Project>
+      <Name>BookingSystem.AspNetCore</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Fakes\OpenActive.FakeDatabase.NET\OpenActive.FakeDatabase.NET.csproj">
       <Project>{81c43fe1-aa19-435f-95a3-6aadfe9637fb}</Project>
       <Name>OpenActive.FakeDatabase.NET</Name>
