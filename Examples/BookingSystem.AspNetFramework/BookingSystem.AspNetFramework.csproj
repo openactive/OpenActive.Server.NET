@@ -449,6 +449,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helpers\AuthenticationHelper.cs" />
+    <Compile Include="Helpers\FeedGenerationHelper.cs" />
     <Compile Include="Helpers\OpenBookingInputFormatter.cs" />
     <Compile Include="Extensions\RequiredStatusTypeExtensions.cs" />
     <Compile Include="Helpers\ResponseContentHelper.cs" />
