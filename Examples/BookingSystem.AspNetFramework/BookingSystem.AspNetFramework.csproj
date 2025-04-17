@@ -462,6 +462,7 @@
     <Compile Include="Settings\AppSettings.cs" />
     <Compile Include="Settings\EngineConfig.cs" />
     <Compile Include="Stores\FacilityStore.cs" />
+    <Compile Include="Stores\IdempotencyStore.cs" />
     <Compile Include="Stores\OrderStore.cs" />
     <Compile Include="Stores\OrderTransaction.cs" />
     <Compile Include="Stores\SellerStore.cs" />
