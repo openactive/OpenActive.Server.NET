@@ -10,7 +10,7 @@ using System.Security.Policy;
 
 
 
-namespace BookingSystem.AspNetCore.Helpers
+namespace BookingSystem.AspNetFramework.Helpers
 {
     public static class FeedGenerationHelper
     {
