@@ -2,6 +2,7 @@
 using BookingSystem.AspNetFramework.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using OpenActive.Server.NET;
 using System.Configuration;
 using System.Web.Http;
