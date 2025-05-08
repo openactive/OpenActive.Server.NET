@@ -33,7 +33,7 @@ namespace BookingSystem.AspNetFramework
             services.AddTransient<DatasetSiteController>();
             services.AddTransient<OpenDataController>();
             services.AddTransient<OpenBookingController>();
-            var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<FakeBookingSystem>();
+            var logger = LoggerFactory.AddConsole().CreateLogger<FakeBookingSystem>();
             services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(appSettings, new FakeBookingSystem(false, logger)));
 
             var resolver = new DependencyResolver(services.BuildServiceProvider(true));
