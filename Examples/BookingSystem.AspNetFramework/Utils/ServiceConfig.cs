@@ -1,6 +1,7 @@
 ﻿using BookingSystem.AspNetFramework.Helpers;
 using BookingSystem.AspNetFramework.Controllers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OpenActive.Server.NET;
 using System.Configuration;
 using System.Web.Http;
@@ -32,7 +33,8 @@ namespace BookingSystem.AspNetFramework
             services.AddTransient<DatasetSiteController>();
             services.AddTransient<OpenDataController>();
             services.AddTransient<OpenBookingController>();
-            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(appSettings, new FakeBookingSystem(false)));
+            var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<FakeBookingSystem>();
+            services.AddSingleton<IBookingEngine>(sp => EngineConfig.CreateStoreBookingEngine(appSettings, new FakeBookingSystem(false, logger)));
 
             var resolver = new DependencyResolver(services.BuildServiceProvider(true));
             config.DependencyResolver = resolver;
