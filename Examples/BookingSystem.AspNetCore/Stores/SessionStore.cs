@@ -381,17 +381,17 @@ namespace BookingSystem
                         },
                         Attendee = orderItemContext.RequestOrderItem.Attendee,
                         AttendeeDetailsRequired = @class.RequiresAttendeeValidation
-                                         ? new List<PropertyEnumeration>
-                                         {
-                                             PropertyEnumeration.GivenName,
-                                             PropertyEnumeration.FamilyName,
-                                             PropertyEnumeration.Email,
-                                             PropertyEnumeration.Telephone,
-                                         }
-                                         : null,
+                                        ? new List<PropertyEnumeration>
+                                        {
+                                            PropertyEnumeration.GivenName,
+                                            PropertyEnumeration.FamilyName,
+                                            PropertyEnumeration.Email,
+                                            PropertyEnumeration.Telephone,
+                                        }
+                                        : null,
                         OrderItemIntakeForm = @class.RequiresAdditionalDetails
-                                     ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(@class.RequiredAdditionalDetails)
-                                     : null,
+                                    ? PropertyValueSpecificationHelper.HydrateAdditionalDetailsIntoPropertyValueSpecifications(@class.RequiredAdditionalDetails)
+                                    : null,
                         OrderItemIntakeFormResponse = orderItemContext.RequestOrderItem.OrderItemIntakeFormResponse,
                     },
                     SellerId = _appSettings.FeatureFlags.SingleSeller ? new SimpleIdComponents() : new SimpleIdComponents { IdLong = @class.SellerId },

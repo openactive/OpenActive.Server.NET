@@ -6,11 +6,12 @@
   "profiles": {
     "BookingSystem.AspNetCore": {
       "commandName": "Project",
-      "launchUrl": "https://localhost:5001/openactive",
-      "applicationUrl": "https://localhost:5001",
+      "launchUrl": "https://localhost:5004/openactive",
+      "applicationUrl": "https://localhost:5004",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ApplicationHostBaseUrl": "https://localhost:5001"
+        "ApplicationHostBaseUrl": "https://localhost:5004",
+        "IS_LOREM_FITSUM_MODE": "false"
       }
     }
   }
