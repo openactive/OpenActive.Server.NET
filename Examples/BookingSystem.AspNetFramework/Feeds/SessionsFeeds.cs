@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Bogus;
-using BookingSystem.AspNetCore.Helpers;
+using BookingSystem.AspNetFramework.Helpers;
 using ServiceStack;
 using System.Globalization;
 

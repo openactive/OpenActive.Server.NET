@@ -1,5 +1,5 @@
 ﻿using Bogus;
-using BookingSystem.AspNetCore.Helpers;
+using BookingSystem.AspNetFramework.Helpers;
 using OpenActive.DatasetSite.NET;
 using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;

@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <LangVersion>8.0</LangVersion>
     <UserSecretsId>aspnet-BookingSystem.AspNetCore-443B4F82-A20C-41CE-9924-329A0BCF0D14</UserSecretsId>
     <Configurations>Release;Debug</Configurations>
   </PropertyGroup>

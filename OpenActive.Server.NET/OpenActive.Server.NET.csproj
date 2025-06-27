@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <LangVersion>8.0</LangVersion>
     <Authors>OpenActive Community</Authors>
     <Company>OpenActive</Company>
     <Copyright>OpenActive</Copyright>
