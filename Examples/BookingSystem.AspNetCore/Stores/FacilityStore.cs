@@ -652,9 +652,9 @@ namespace BookingSystem
                         new TaxChargeSpecification
                         {
                             Name = "VAT at 20%",
-                            Price = slot.Price * (decimal?) 0.2,
+                            Price = slot.Price * 0.2M,
                             PriceCurrency = "GBP",
-                            Rate = (decimal?) 0.2
+                            Rate = 0.2M
                         }
                     };
                 case TaxPayeeRelationship.BusinessToBusiness when !_appSettings.Payment.TaxCalculationB2B:

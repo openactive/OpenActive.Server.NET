@@ -49,8 +49,8 @@ namespace BookingSystem.AspNetCore.Helpers
                         },
                         Geo = new GeoCoordinates
                         {
-                            Latitude = (decimal?)51.7502,
-                            Longitude = (decimal?)-1.2674
+                            Latitude = 51.7502M,
+                            Longitude = -1.2674M
                         },
                         Image = new List<ImageObject> {
                             new ImageObject
@@ -97,8 +97,8 @@ namespace BookingSystem.AspNetCore.Helpers
                         },
                         Geo = new GeoCoordinates
                         {
-                            Latitude = (decimal?)51.7504933,
-                            Longitude = (decimal?)-1.2620685
+                            Latitude = 51.7504933M,
+                            Longitude = -1.2620685M
                         },
                         Image = new List<ImageObject> {
                             new ImageObject
@@ -145,8 +145,8 @@ namespace BookingSystem.AspNetCore.Helpers
                         },
                         Geo = new GeoCoordinates
                         {
-                            Latitude = (decimal?)51.749826,
-                            Longitude = (decimal?)-1.261492
+                            Latitude = 51.749826M,
+                            Longitude = -1.261492M
                         },
                         Image = new List<ImageObject> {
                             new ImageObject
